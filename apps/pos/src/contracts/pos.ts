@@ -1,4 +1,5 @@
 import type {
+  Customer,
   DeviceSession,
   EmployeeSession,
   Money,
@@ -68,6 +69,17 @@ export interface SaleLayoutContract {
   }): Promise<readonly SalePage[]>;
 }
 
+export interface CustomerCreditContract {
+  search(input: { query: string }): Promise<readonly Customer[]>;
+  create(input: { commandId: string; name: string; mobile: string }): Promise<Customer>;
+  chargeTicket(input: {
+    commandId: string;
+    customerId: string;
+    ticketId: string;
+  }): Promise<{ customer: Customer; nextTicket: Ticket }>;
+  settleFull(input: { commandId: string; customerId: string }): Promise<Customer>;
+}
+
 export interface CheckoutContract {
   begin(input: { commandId: string; ticketId: string }): Promise<{ checkoutId: string }>;
   selectPaymentMethod(input: { checkoutId: string; method: "cash" }): Promise<void>;
@@ -93,6 +105,7 @@ export interface MockPosRuntime {
   catalog: CatalogContract;
   saleLayout: SaleLayoutContract;
   sales: SalesContract;
+  customerCredit: CustomerCreditContract;
   checkout: CheckoutContract;
   receipts: ReceiptsContract;
   printing: PrintingContract;
