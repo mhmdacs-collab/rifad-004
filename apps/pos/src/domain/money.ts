@@ -1,10 +1,9 @@
 import type { Money } from "./models";
 
-const formatter = new Intl.NumberFormat("ar-SA", {
-  style: "currency",
-  currency: "SAR",
+const numberFormatter = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
+  useGrouping: true,
 });
 
 export const money = (halalas: number): Money => {
@@ -24,7 +23,7 @@ export const multiplyMoney = (value: Money, quantity: number): Money => {
   return money(value.halalas * quantity);
 };
 
-export const formatMoney = (value: Money): string => formatter.format(value.halalas / 100);
+export const formatMoney = (value: Money): string => `${numberFormatter.format(value.halalas / 100)} SAR`;
 
 export const parseRiyalsToHalalas = (value: string): number | null => {
   const normalized = value.replace(/[^0-9.]/g, "");
