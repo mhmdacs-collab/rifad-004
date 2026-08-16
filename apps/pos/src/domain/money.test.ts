@@ -17,8 +17,8 @@ describe("money authority", () => {
     expect(suggestedCashHalalas(10800)).not.toContain(10800);
   });
 
-  it("does not inject 120 into an unrelated 54 riyal sale", () => {
-    expect(suggestedCashHalalas(5400)).toEqual([6000, 10000, 50000]);
+  it("does not inject 120 into an unrelated 54 riyal sale and keeps 200 as a core checkpoint", () => {
+    expect(suggestedCashHalalas(5400)).toEqual([6000, 10000, 20000, 50000]);
     expect(suggestedCashHalalas(5400)).not.toContain(12000);
   });
 
