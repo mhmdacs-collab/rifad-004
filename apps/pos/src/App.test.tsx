@@ -153,6 +153,34 @@ describe("always print receipt", () => {
   });
 });
 
+describe("unified ticket customer", () => {
+  it("attaches one customer to the ticket and carries the same identity to the cash receipt", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await openSales(user);
+
+    await user.click(screen.getByRole("button", { name: "إضافة عميل إلى التذكرة" }));
+    expect(await screen.findByRole("heading", { name: "إضافة عميل إلى التذكرة" })).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: /أحمد محمد/ }));
+    await user.click(screen.getByRole("button", { name: "إضافة إلى التذكرة" }));
+
+    expect(await screen.findByRole("button", { name: "العميل أحمد محمد" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /قهوة سعودية/ }));
+    await user.click(screen.getByRole("button", { name: "دفع" }));
+    await screen.findByText("اختيار طريقة الدفع");
+    await user.click(screen.getByRole("button", { name: /نقدًا/ }));
+    await screen.findByRole("heading", { name: /ريال سعودي/ });
+    await user.click(screen.getByRole("button", { name: "سداد" }));
+    await screen.findByRole("heading", { name: "تمت عملية البيع بنجاح" });
+
+    const persisted = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}") as {
+      receipt?: { customer?: { id: string; mobile: string } | null };
+    };
+    expect(persisted.receipt?.customer?.id).toBe("customer-001");
+    expect(persisted.receipt?.customer?.mobile).toBe("0501234567");
+  });
+});
+
 describe("basic screen customer debt workflow", () => {
   it("keeps the product search focused and restores focus after adding an item", async () => {
     const user = userEvent.setup();
@@ -168,7 +196,7 @@ describe("basic screen customer debt workflow", () => {
     expect(screen.getByRole("button", { name: "آجل" })).toBeEnabled();
   });
 
-  it("searches customers live and records one partial settlement even on a double submit", async () => {
+  it("uses the settlement action as a debt book and records one partial payment on a double submit", async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -177,65 +205,70 @@ describe("basic screen customer debt workflow", () => {
     expect(settleButton).toBeEnabled();
     await user.click(settleButton);
 
-    expect(await screen.findByRole("heading", { name: "سداد دين عميل" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "بحث" })).not.toBeInTheDocument();
+    const debtBook = await screen.findByRole("dialog", { name: "دفتر الديون" });
+    expect(within(debtBook).getByRole("textbox", { name: "بحث دفتر الديون" })).toBeInTheDocument();
+    expect(within(debtBook).getByRole("button", { name: /أحمد محمد/ })).toBeInTheDocument();
+    expect(within(debtBook).getByRole("button", { name: /سارة خالد/ })).toBeInTheDocument();
 
-    const customerSearch = screen.getByRole("textbox", { name: "بحث العميل" });
-    await user.type(customerSearch, "سار");
-    expect(await screen.findByRole("button", { name: /سارة خالد/ })).toBeInTheDocument();
-    await waitFor(() => expect(screen.queryByRole("button", { name: /أحمد محمد/ })).not.toBeInTheDocument());
+    const debtSearch = within(debtBook).getByRole("textbox", { name: "بحث دفتر الديون" });
+    await user.type(debtSearch, "0501");
+    await user.click(await within(debtBook).findByRole("button", { name: /أحمد محمد/ }));
 
-    await user.clear(customerSearch);
-    await user.type(customerSearch, "0501");
-    await user.click(await screen.findByRole("button", { name: /أحمد محمد/ }));
-
-    expect(screen.getByRole("button", { name: "تعديل المبلغ" })).toBeEnabled();
-    await user.click(screen.getByRole("button", { name: "تعديل المبلغ" }));
-    const amountInput = screen.getByRole("textbox", { name: "مبلغ السداد" });
+    expect(await within(debtBook).findByText("رصيد افتتاحي")).toBeInTheDocument();
+    await user.click(within(debtBook).getByRole("button", { name: "تعديل المبلغ" }));
+    const amountInput = within(debtBook).getByRole("textbox", { name: "مبلغ السداد" });
     await user.clear(amountInput);
     await user.type(amountInput, "50.00");
 
-    const customerDialog = screen.getByRole("dialog", { name: "سداد دين عميل" });
-    const confirmButton = within(customerDialog).getByRole("button", { name: "تأكيد سداد 50.00 ر.س" });
+    const confirmButton = within(debtBook).getByRole("button", { name: "تأكيد سداد 50.00 ر.س" });
     fireEvent.click(confirmButton);
     fireEvent.click(confirmButton);
 
     expect(await screen.findByText("تم سداد 50.00 ر.س")).toBeInTheDocument();
-    expect(within(customerDialog).queryByRole("button", { name: /تأكيد سداد|كامل الدين|تعديل المبلغ/ })).not.toBeInTheDocument();
 
     const persisted = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}") as {
       customers?: { id: string; debt: { halalas: number } }[];
       debtPayments?: { amount: { halalas: number } }[];
+      debtLedger?: { kind: string; customerId: string; amount: { halalas: number } }[];
     };
     expect(persisted.customers?.find((customer) => customer.id === "customer-001")?.debt.halalas).toBe(7000);
     expect(persisted.debtPayments).toHaveLength(1);
     expect(persisted.debtPayments?.[0]?.amount.halalas).toBe(5000);
+    expect(persisted.debtLedger?.filter((entry) => entry.kind === "payment" && entry.customerId === "customer-001")).toHaveLength(1);
 
-    await waitFor(() => expect(screen.queryByRole("dialog", { name: "سداد دين عميل" })).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "دفتر الديون" })).not.toBeInTheDocument());
     await waitFor(() => expect(productSearch).toHaveFocus());
   });
 
-  it("records a sale as customer debt and starts a fresh ticket", async () => {
+  it("reuses the customer already attached to the ticket when recording a credit sale", async () => {
     const user = userEvent.setup();
     render(<App />);
 
     const search = await openBasicSales(user);
+    await user.click(screen.getByRole("button", { name: "إضافة عميل إلى التذكرة" }));
+    await user.click(await screen.findByRole("button", { name: /أحمد محمد/ }));
+    await user.click(screen.getByRole("button", { name: "إضافة إلى التذكرة" }));
+    expect(await screen.findByRole("button", { name: "العميل أحمد محمد" })).toBeInTheDocument();
+
     await user.type(search, "قهوة سعودية");
     await user.click(await screen.findByRole("button", { name: /قهوة سعودية/ }));
     await user.click(screen.getByRole("button", { name: "آجل" }));
 
-    expect(await screen.findByRole("heading", { name: "بيع آجل" })).toBeInTheDocument();
-    await user.click(await screen.findByRole("button", { name: /أحمد محمد/ }));
-    await user.click(screen.getByRole("button", { name: "تسجيل آجل" }));
+    const creditDialog = await screen.findByRole("dialog", { name: "بيع آجل" });
+    expect(within(creditDialog).getByText("أحمد محمد")).toBeInTheDocument();
+    await user.click(within(creditDialog).getByRole("button", { name: "تسجيل آجل" }));
 
     await waitFor(() => expect(screen.getByRole("button", { name: "سداد" })).toBeEnabled());
     await waitFor(() => expect(screen.getByRole("textbox", { name: "البحث عن منتج" })).toHaveFocus());
 
     const persisted = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}") as {
       customers?: { id: string; debt: { halalas: number } }[];
-      creditSales?: unknown[];
+      creditSales?: { ticket: { customer?: { id: string } | null } }[];
+      debtLedger?: { kind: string; customerId: string; amount: { halalas: number } }[];
     };
     expect(persisted.customers?.find((customer) => customer.id === "customer-001")?.debt.halalas).toBe(13800);
     expect(persisted.creditSales).toHaveLength(1);
+    expect(persisted.creditSales?.[0]?.ticket.customer?.id).toBe("customer-001");
+    expect(persisted.debtLedger?.filter((entry) => entry.kind === "credit-sale" && entry.customerId === "customer-001")).toHaveLength(1);
   });
 });
