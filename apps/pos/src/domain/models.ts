@@ -33,10 +33,17 @@ export type TicketLine = Readonly<{
   tone: ProductTone;
 }>;
 
+export type CustomerReference = Readonly<{
+  id: string;
+  name: string;
+  mobile: string;
+}>;
+
 export type Ticket = Readonly<{
   id: string;
   sequence: number;
   lines: readonly TicketLine[];
+  customer: CustomerReference | null;
   subtotal: Money;
   taxIncluded: Money;
   total: Money;
@@ -48,6 +55,16 @@ export type Customer = Readonly<{
   name: string;
   mobile: string;
   debt: Money;
+}>;
+
+export type DebtLedgerEntry = Readonly<{
+  id: string;
+  customerId: string;
+  kind: "opening" | "credit-sale" | "payment";
+  direction: "debit" | "credit";
+  amount: Money;
+  createdAt: string;
+  ticketSequence: number | null;
 }>;
 
 export type EmployeeSession = Readonly<{
@@ -73,6 +90,7 @@ export type Receipt = Readonly<{
   completedAt: string;
   employeeName: string;
   branchName: string;
+  customer: CustomerReference | null;
 }>;
 
 export type PrintDeliveryStatus = "idle" | "queued" | "printed" | "failed" | "delivery-unknown";
