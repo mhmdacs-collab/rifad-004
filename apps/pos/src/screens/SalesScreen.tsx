@@ -71,7 +71,7 @@ type SalesScreenProps = {
   onSearchCustomers: (query: string) => Promise<readonly Customer[]>;
   onCreateCustomer: (name: string, mobile: string) => Promise<Customer | null>;
   onChargeCredit: (customerId: string) => Promise<Customer | null>;
-  onSettleDebt: (customerId: string) => Promise<Customer | null>;
+  onSettleDebt: (customerId: string, amountHalalas: number) => Promise<Customer | null>;
 };
 
 export function SalesScreen(props: SalesScreenProps) {
