@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type { LoyaltyRedemptionQuote, LoyaltyStatus } from "../domain/loyalty";
 import { formatMoneyAmount } from "../domain/money";
 import type { Customer, CustomerDetails, CustomerReference, Money, Receipt } from "../domain/models";
+import { useCustomerFlowContext } from "../state/CustomerFlowContext";
 import { MoneyAmount } from "./MoneyAmount";
 
 export type CustomerPickerPurpose = "attach" | "credit";
@@ -10,20 +11,13 @@ type CustomerView = "picker" | "profile" | "edit" | "history" | "redeem";
 type CustomerPickerDialogProps = {
   purpose: CustomerPickerPurpose;
   ticketTotal: Money;
-  ticketSubtotal: Money;
-  loyaltyRedemption: Money;
   attachedCustomer: CustomerReference | null;
   busy: boolean;
   onClose: () => void;
   onSearch: (query: string) => Promise<readonly Customer[]>;
   onCreateCustomer: (name: string, mobile: string, details: CustomerDetails) => Promise<Customer | null>;
-  onUpdateCustomer: (customerId: string, name: string, mobile: string, details: CustomerDetails) => Promise<Customer | null>;
   onAttachCustomer: (customerId: string | null) => Promise<boolean>;
   onChargeCredit: (customerId: string) => Promise<Customer | null>;
-  onLoadLoyaltyStatus: (customerId: string) => Promise<LoyaltyStatus | null>;
-  onQuoteLoyaltyRedemption: (customerId: string, ticketTotalHalalas: number) => Promise<LoyaltyRedemptionQuote | null>;
-  onApplyLoyaltyRedemption: (amountHalalas: number) => Promise<boolean>;
-  onLoadPurchases: (customerId: string) => Promise<readonly Receipt[]>;
 };
 
 const EMPTY_DETAILS: CustomerDetails = {
@@ -56,21 +50,25 @@ const digitsToHalalas = (digits: string) => {
 export function CustomerPickerDialog({
   purpose,
   ticketTotal,
-  ticketSubtotal,
-  loyaltyRedemption,
   attachedCustomer,
   busy,
   onClose,
   onSearch,
   onCreateCustomer,
-  onUpdateCustomer,
   onAttachCustomer,
   onChargeCredit,
-  onLoadLoyaltyStatus,
-  onQuoteLoyaltyRedemption,
-  onApplyLoyaltyRedemption,
-  onLoadPurchases,
 }: CustomerPickerDialogProps) {
+  const {
+    ticket,
+    updateCustomer: onUpdateCustomer,
+    applyLoyaltyRedemption: onApplyLoyaltyRedemption,
+    loadLoyaltyStatus: onLoadLoyaltyStatus,
+    quoteLoyaltyRedemption: onQuoteLoyaltyRedemption,
+    loadCustomerPurchases: onLoadPurchases,
+  } = useCustomerFlowContext();
+  const ticketSubtotal = ticket?.subtotal ?? ticketTotal;
+  const loyaltyRedemption = ticket?.loyaltyRedemption ?? { halalas: 0, currency: "SAR" as const };
+
   const [view, setView] = useState<CustomerView>(purpose === "attach" && attachedCustomer ? "profile" : "picker");
   const [query, setQuery] = useState(attachedCustomer?.mobile ?? "");
   const [results, setResults] = useState<readonly Customer[]>([]);
@@ -257,10 +255,7 @@ export function CustomerPickerDialog({
   const redeemValid = redeemHalalas > 0 && redeemHalalas <= redeemMaximum;
 
   const appendRedeemDigit = (digit: string) => {
-    setRedeemDigits((current) => {
-      const next = `${current}${digit}`.replace(/^0+(?=\d)/, "").slice(0, 8);
-      return next;
-    });
+    setRedeemDigits((current) => `${current}${digit}`.replace(/^0+(?=\d)/, "").slice(0, 8));
   };
 
   const applyRedemption = async () => {
