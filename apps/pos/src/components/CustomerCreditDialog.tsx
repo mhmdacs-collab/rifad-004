@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { MoneyAmount } from "./MoneyAmount";
 import type { Customer, Money } from "../domain/models";
 
@@ -12,10 +12,25 @@ type CustomerCreditDialogProps = {
   onSearch: (query: string) => Promise<readonly Customer[]>;
   onCreateCustomer: (name: string, mobile: string) => Promise<Customer | null>;
   onChargeCredit: (customerId: string) => Promise<Customer | null>;
-  onSettleDebt: (customerId: string) => Promise<Customer | null>;
+  onSettleDebt: (customerId: string, amountHalalas: number) => Promise<Customer | null>;
 };
 
-const digitsOnly = (value: string) => value.replace(/\D/g, "");
+const formatHalalasForInput = (halalas: number) => {
+  const whole = Math.floor(halalas / 100);
+  const fraction = String(halalas % 100).padStart(2, "0");
+  return `${whole}.${fraction}`;
+};
+
+const parseSarInputToHalalas = (value: string): number | null => {
+  const normalized = value.trim().replace(",", ".");
+  if (!/^\d+(?:\.\d{0,2})?$/.test(normalized)) return null;
+  const [wholePart = "0", fractionPart = ""] = normalized.split(".");
+  const whole = Number(wholePart);
+  if (!Number.isSafeInteger(whole)) return null;
+  const fraction = Number((fractionPart + "00").slice(0, 2));
+  const halalas = whole * 100 + fraction;
+  return Number.isSafeInteger(halalas) ? halalas : null;
+};
 
 export function CustomerCreditDialog({
   mode,
@@ -35,35 +50,29 @@ export function CustomerCreditDialog({
   const [newName, setNewName] = useState("");
   const [newMobile, setNewMobile] = useState("");
   const [message, setMessage] = useState<string | null>(null);
-
-  const runSearch = async (value: string) => {
-    setSearching(true);
-    setMessage(null);
-    try {
-      const items = await onSearch(value);
-      const text = value.trim().toLocaleLowerCase("ar");
-      const mobile = digitsOnly(value);
-      if (!text) {
-        setResults(items);
-        return;
-      }
-      setResults(items.filter((customer) =>
-        customer.name.toLocaleLowerCase("ar").includes(text)
-        || (mobile.length > 0 && digitsOnly(customer.mobile).includes(mobile)),
-      ));
-    } finally {
-      setSearching(false);
-    }
-  };
+  const [settlementEditing, setSettlementEditing] = useState(false);
+  const [settlementInput, setSettlementInput] = useState("");
+  const searchSequence = useRef(0);
 
   useEffect(() => {
-    void runSearch("");
-  }, []);
+    const sequence = ++searchSequence.current;
+    setSearching(true);
+    setMessage(null);
+    void onSearch(query)
+      .then((items) => {
+        if (sequence === searchSequence.current) setResults(items);
+      })
+      .finally(() => {
+        if (sequence === searchSequence.current) setSearching(false);
+      });
+  }, [onSearch, query]);
 
   const selectCustomer = (customer: Customer) => {
     setSelected(customer);
     setCreateOpen(false);
     setMessage(null);
+    setSettlementEditing(false);
+    setSettlementInput(formatHalalasForInput(customer.debt.halalas));
   };
 
   const submitCreate = async (event: FormEvent) => {
@@ -73,11 +82,17 @@ export function CustomerCreditDialog({
       setMessage("تعذر إضافة العميل. تحقق من الاسم ورقم الجوال.");
       return;
     }
-    setResults((current) => [created, ...current]);
-    setSelected(created);
-    setCreateOpen(false);
+    setResults((current) => [created, ...current.filter((customer) => customer.id !== created.id)]);
+    selectCustomer(created);
     setMessage("تمت إضافة العميل.");
   };
+
+  const settlementHalalas = parseSarInputToHalalas(settlementInput);
+  const settlementInvalid = mode === "settlement" && selected
+    ? settlementHalalas === null
+      || settlementHalalas <= 0
+      || settlementHalalas > selected.debt.halalas
+    : false;
 
   const submitAction = async () => {
     if (!selected) return;
@@ -91,14 +106,26 @@ export function CustomerCreditDialog({
       return;
     }
 
-    const updated = await onSettleDebt(selected.id);
+    if (settlementHalalas === null || settlementHalalas <= 0) {
+      setMessage("أدخل مبلغ سداد صحيحًا أكبر من صفر.");
+      return;
+    }
+    if (settlementHalalas > selected.debt.halalas) {
+      setMessage("مبلغ السداد أكبر من دين العميل.");
+      return;
+    }
+
+    const wasFullSettlement = settlementHalalas === selected.debt.halalas;
+    const updated = await onSettleDebt(selected.id, settlementHalalas);
     if (!updated) {
-      setMessage("تعذر سداد الدين.");
+      setMessage("تعذر تسجيل سداد الدين.");
       return;
     }
     setSelected(updated);
     setResults((current) => current.map((customer) => customer.id === updated.id ? updated : customer));
-    setMessage("تم سداد الدين بالكامل.");
+    setSettlementEditing(false);
+    setSettlementInput(formatHalalasForInput(updated.debt.halalas));
+    setMessage(wasFullSettlement ? "تم سداد الدين بالكامل." : "تم تسجيل السداد الجزئي. الرصيد المتبقي موضح أعلاه.");
   };
 
   const debtAfterCredit: Money | null = selected && mode === "credit"
@@ -112,24 +139,24 @@ export function CustomerCreditDialog({
           <button type="button" onClick={onClose} aria-label="إغلاق">×</button>
           <div>
             <h2 id="customer-credit-title">{mode === "credit" ? "بيع آجل" : "سداد دين عميل"}</h2>
-            <span>{mode === "credit" ? "اختر العميل الذي ستُسجل عليه قيمة التذكرة." : "اختر العميل لمعرفة رصيد دينه وسداده."}</span>
+            <span>{mode === "credit" ? "اختر العميل الذي ستُسجل عليه قيمة التذكرة." : "ابحث بالاسم أو رقم الجوال، ثم اختر مبلغ السداد."}</span>
           </div>
         </header>
 
-        <form className="customer-search-form" onSubmit={(event) => { event.preventDefault(); void runSearch(query); }}>
+        <div className="customer-search-form customer-search-form--live">
           <label>
             <span>العميل أو رقم الجوال</span>
             <input
               autoFocus
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="مثال: 0501234567"
+              placeholder="ابدأ بالاسم أو 0501234567"
               aria-label="بحث العميل"
             />
           </label>
-          <button type="submit" disabled={searching}>{searching ? "جارٍ البحث…" : "بحث"}</button>
-        </form>
-        <p className="customer-mobile-note">رقم الجوال هو المعرف الأساسي للعميل ويجب أن يكون فريدًا.</p>
+          <span className="customer-live-search-status" role="status">{searching ? "جارٍ البحث…" : `${results.length} نتيجة`}</span>
+        </div>
+        <p className="customer-mobile-note">البحث يتحدث مباشرة مع كل حرف أو رقم. رقم الجوال هو المعرف الأساسي للعميل ويجب أن يكون فريدًا.</p>
 
         <div className="customer-credit-body">
           <div className="customer-results" aria-label="نتائج العملاء">
@@ -162,8 +189,56 @@ export function CustomerCreditDialog({
                 </>
               ) : (
                 <>
-                  <div className="customer-balance-row customer-balance-row--total"><span>المبلغ المستحق</span><strong><MoneyAmount value={selected.debt} /></strong></div>
-                  <button type="button" className="primary-button customer-credit-submit" onClick={() => void submitAction()} disabled={busy || selected.debt.halalas <= 0}>سداد كامل الدين</button>
+                  <div className="customer-settlement-row">
+                    <div>
+                      <span>مبلغ السداد</span>
+                      {!settlementEditing ? (
+                        <strong><MoneyAmount value={{ halalas: settlementHalalas ?? 0, currency: selected.debt.currency }} /></strong>
+                      ) : (
+                        <label className="customer-settlement-input">
+                          <input
+                            autoFocus
+                            dir="ltr"
+                            inputMode="decimal"
+                            value={settlementInput}
+                            onChange={(event) => setSettlementInput(event.target.value)}
+                            aria-label="مبلغ السداد"
+                          />
+                          <span>ر.س</span>
+                        </label>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (settlementEditing) {
+                          setSettlementInput(formatHalalasForInput(selected.debt.halalas));
+                          setSettlementEditing(false);
+                        } else {
+                          setSettlementEditing(true);
+                        }
+                        setMessage(null);
+                      }}
+                      disabled={selected.debt.halalas <= 0}
+                    >
+                      {settlementEditing ? "كامل الدين" : "تعديل المبلغ"}
+                    </button>
+                  </div>
+                  {settlementEditing && settlementHalalas !== null && settlementHalalas > 0 && settlementHalalas <= selected.debt.halalas ? (
+                    <div className="customer-balance-row customer-balance-row--total">
+                      <span>المتبقي بعد السداد</span>
+                      <strong><MoneyAmount value={{ halalas: selected.debt.halalas - settlementHalalas, currency: selected.debt.currency }} /></strong>
+                    </div>
+                  ) : null}
+                  {settlementInvalid ? <small className="customer-settlement-error">أدخل مبلغًا أكبر من صفر ولا يتجاوز الدين الحالي.</small> : null}
+                  <button
+                    type="button"
+                    className="primary-button customer-credit-submit"
+                    onClick={() => void submitAction()}
+                    disabled={busy || selected.debt.halalas <= 0 || settlementInvalid}
+                  >
+                    سداد
+                  </button>
                   {selected.debt.halalas <= 0 ? <small className="customer-no-debt">لا يوجد دين مستحق على هذا العميل.</small> : null}
                 </>
               )}
