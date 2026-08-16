@@ -5,19 +5,33 @@ import App from "./App";
 import { PRINT_RECEIPT_ALWAYS_KEY } from "./domain/posPreferences";
 
 const ORDER_TYPES_KEY = "rifad.pos.visible-order-types.v1";
+const SALE_SCREEN_MODE_KEY = "rifad.pos.sale-screen-mode.v1";
+const STORAGE_KEY = "rifad.pos.mock.v1";
 
 afterEach(() => {
   window.localStorage.removeItem(ORDER_TYPES_KEY);
+  window.localStorage.removeItem(SALE_SCREEN_MODE_KEY);
   window.localStorage.removeItem(PRINT_RECEIPT_ALWAYS_KEY);
+  window.localStorage.removeItem(STORAGE_KEY);
 });
 
-const openSales = async (user: ReturnType<typeof userEvent.setup>) => {
+const unlockPos = async (user: ReturnType<typeof userEvent.setup>) => {
   await user.click(screen.getByRole("button", { name: "تسجيل الدخول" }));
   await screen.findByRole("heading", { name: "أدخل الرقم السري" });
   for (const digit of ["1", "2", "3", "4"]) {
     await user.click(screen.getByRole("button", { name: `رقم ${digit}` }));
   }
+};
+
+const openSales = async (user: ReturnType<typeof userEvent.setup>) => {
+  await unlockPos(user);
   await screen.findByRole("button", { name: /قهوة سعودية/ });
+};
+
+const openBasicSales = async (user: ReturnType<typeof userEvent.setup>) => {
+  window.localStorage.setItem(SALE_SCREEN_MODE_KEY, "basic");
+  await unlockPos(user);
+  return await screen.findByRole("textbox", { name: "البحث عن منتج" });
 };
 
 describe("POS-FLOW-001", () => {
@@ -38,7 +52,7 @@ describe("POS-FLOW-001", () => {
 
     await screen.findByRole("heading", { name: "تمت عملية البيع بنجاح" });
     expect(screen.getByText("محفوظ محليًا")).toBeInTheDocument();
-    expect(window.localStorage.getItem("rifad.pos.mock.v1")).toContain('"receipt"');
+    expect(window.localStorage.getItem(STORAGE_KEY)).toContain('"receipt"');
   });
 });
 
@@ -75,7 +89,7 @@ describe("POS-FLOW-006", () => {
     await user.click(screen.getByRole("button", { name: "تم" }));
 
     expect(screen.getByRole("button", { name: /قهوة سعودية/ })).toBeInTheDocument();
-    expect(window.localStorage.getItem("rifad.pos.mock.v1")).toContain("المشاوي");
+    expect(window.localStorage.getItem(STORAGE_KEY)).toContain("المشاوي");
   });
 });
 
@@ -136,5 +150,64 @@ describe("always print receipt", () => {
     expect(await screen.findByText("R-00001")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "طباعة" }));
     expect(await screen.findByText("تم إرسال الإيصال للطابعة.")).toBeInTheDocument();
+  });
+});
+
+describe("basic screen customer debt workflow", () => {
+  it("keeps the product search focused and restores focus after adding an item", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const search = await openBasicSales(user);
+    await waitFor(() => expect(search).toHaveFocus());
+
+    await user.type(search, "قهوة سعودية");
+    await user.click(await screen.findByRole("button", { name: /قهوة سعودية/ }));
+
+    await waitFor(() => expect(search).toHaveFocus());
+    expect(screen.getByRole("button", { name: "آجل" })).toBeEnabled();
+  });
+
+  it("shows settlement with an empty cart, displays customer debt, and settles it", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await openBasicSales(user);
+    const settleButton = screen.getByRole("button", { name: "سداد" });
+    expect(settleButton).toBeEnabled();
+    await user.click(settleButton);
+
+    expect(await screen.findByRole("heading", { name: "سداد دين عميل" })).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: /أحمد محمد/ }));
+    expect(screen.getByText("المبلغ المستحق")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "سداد كامل الدين" })).toBeEnabled();
+
+    await user.click(screen.getByRole("button", { name: "سداد كامل الدين" }));
+    expect(await screen.findByText("تم سداد الدين بالكامل.")).toBeInTheDocument();
+    expect(screen.getByText("لا يوجد دين مستحق على هذا العميل.")).toBeInTheDocument();
+  });
+
+  it("records a sale as customer debt and starts a fresh ticket", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const search = await openBasicSales(user);
+    await user.type(search, "قهوة سعودية");
+    await user.click(await screen.findByRole("button", { name: /قهوة سعودية/ }));
+    await user.click(screen.getByRole("button", { name: "آجل" }));
+
+    expect(await screen.findByRole("heading", { name: "بيع آجل" })).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: /أحمد محمد/ }));
+    await user.click(screen.getByRole("button", { name: "تسجيل آجل" }));
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "سداد" })).toBeEnabled());
+    await waitFor(() => expect(screen.getByRole("textbox", { name: "البحث عن منتج" })).toHaveFocus());
+
+    const persisted = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}") as {
+      customers?: { id: string; debt: { halalas: number } }[];
+      creditSales?: unknown[];
+    };
+    expect(persisted.customers?.find((customer) => customer.id === "customer-001")?.debt.halalas).toBe(13800);
+    expect(persisted.creditSales).toHaveLength(1);
   });
 });
