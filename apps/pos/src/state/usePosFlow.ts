@@ -47,6 +47,7 @@ export const usePosFlow = () => {
   const [busy, setBusy] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [printStatus, setPrintStatus] = useState<PrintDeliveryStatus>("idle");
+  const [lastTouchedLineId, setLastTouchedLineId] = useState<string | null>(null);
   const deferredQuery = useDeferredValue(query);
 
   useEffect(() => {
@@ -118,6 +119,7 @@ export const usePosFlow = () => {
         setEmployee(activeEmployee);
         setTicket(activeTicket);
         setReceipt(null);
+        setLastTouchedLineId(null);
         setStage("sales");
       } catch (error) {
         setErrorMessage(messageFrom(error));
@@ -141,6 +143,7 @@ export const usePosFlow = () => {
           productId,
         });
         setTicket(updated);
+        setLastTouchedLineId(updated.lines.find((line) => line.productId === productId)?.id ?? null);
       } catch (error) {
         setErrorMessage(messageFrom(error));
       } finally {
@@ -158,6 +161,7 @@ export const usePosFlow = () => {
       try {
         const updated = await runtime.sales.setLineQuantity({ ticketId: ticket.id, lineId, quantity });
         setTicket(updated);
+        setLastTouchedLineId(quantity > 0 ? lineId : null);
       } catch (error) {
         setErrorMessage(messageFrom(error));
       } finally {
@@ -175,6 +179,7 @@ export const usePosFlow = () => {
       try {
         const updated = await runtime.sales.removeLine({ ticketId: ticket.id, lineId });
         setTicket(updated);
+        setLastTouchedLineId(updated.lines.at(-1)?.id ?? null);
       } catch (error) {
         setErrorMessage(messageFrom(error));
       } finally {
@@ -194,6 +199,7 @@ export const usePosFlow = () => {
         ticketId: ticket.id,
       });
       setTicket(nextTicket);
+      setLastTouchedLineId(null);
     } catch (error) {
       setErrorMessage(messageFrom(error));
     } finally {
@@ -208,6 +214,56 @@ export const usePosFlow = () => {
       const pages = await runtime.saleLayout.createPage({ commandId: commandId("sale-page"), name });
       setSalePages(pages);
       setActivePageId(pages.at(-1)?.id ?? "all-items");
+      return true;
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+      return false;
+    } finally {
+      setBusy(null);
+    }
+  }, [runtime]);
+
+  const renameSalePage = useCallback(async (pageId: string, name: string) => {
+    setBusy("sale-layout");
+    setErrorMessage(null);
+    try {
+      const pages = await runtime.saleLayout.renamePage({ commandId: commandId("sale-page-rename"), pageId, name });
+      setSalePages(pages);
+      return true;
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+      return false;
+    } finally {
+      setBusy(null);
+    }
+  }, [runtime]);
+
+  const deleteSalePage = useCallback(async (pageId: string) => {
+    setBusy("sale-layout");
+    setErrorMessage(null);
+    try {
+      const pages = await runtime.saleLayout.deletePage({ commandId: commandId("sale-page-delete"), pageId });
+      setSalePages(pages);
+      setActivePageId((current) => current === pageId
+        ? (pages.find((page) => !page.isDefault)?.id ?? pages[0]?.id ?? "all-items")
+        : current);
+      return true;
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+      return false;
+    } finally {
+      setBusy(null);
+    }
+  }, [runtime]);
+
+  const moveSalePage = useCallback(async (pageId: string, direction: "previous" | "next") => {
+    setBusy("sale-layout");
+    setErrorMessage(null);
+    try {
+      const pages = await runtime.saleLayout.movePage({
+        commandId: commandId("sale-page-move"), pageId, direction,
+      });
+      setSalePages(pages);
       return true;
     } catch (error) {
       setErrorMessage(messageFrom(error));
@@ -290,6 +346,7 @@ export const usePosFlow = () => {
         });
         setReceipt(completed);
         setTicket(null);
+        setLastTouchedLineId(null);
         setStage("success");
       } catch (error) {
         setErrorMessage(messageFrom(error));
@@ -327,6 +384,7 @@ export const usePosFlow = () => {
       setCheckoutId(null);
       setCashCommandId(null);
       setPrintStatus("idle");
+      setLastTouchedLineId(null);
       setQuery("");
       setCategoryId("all");
       setStage("sales");
@@ -353,6 +411,7 @@ export const usePosFlow = () => {
     busy,
     errorMessage,
     printStatus,
+    lastTouchedLineId,
     setQuery,
     setCategoryId,
     setActivePageId,
@@ -364,6 +423,9 @@ export const usePosFlow = () => {
     removeLine,
     saveOpenTicket,
     createSalePage,
+    renameSalePage,
+    deleteSalePage,
+    moveSalePage,
     placeSalePageProduct,
     removeSalePageProduct,
     beginCheckout,
