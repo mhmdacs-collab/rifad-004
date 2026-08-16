@@ -5,6 +5,7 @@ import { money } from "../domain/money";
 import { readPrintReceiptAlways } from "../domain/posPreferences";
 import type {
   Customer,
+  CustomerDetails,
   DebtLedgerEntry,
   DeviceSession,
   EmployeeSession,
@@ -220,11 +221,11 @@ export const usePosFlow = () => {
     }
   }, [runtime]);
 
-  const createCustomer = useCallback(async (name: string, mobile: string): Promise<Customer | null> => {
+  const createCustomer = useCallback(async (name: string, mobile: string, details: CustomerDetails): Promise<Customer | null> => {
     setBusy("customer-create");
     setErrorMessage(null);
     try {
-      return await runtime.customerCredit.create({ commandId: commandId("customer"), name, mobile });
+      return await runtime.customerCredit.create({ commandId: commandId("customer"), name, mobile, details });
     } catch (error) {
       setErrorMessage(messageFrom(error));
       return null;
@@ -262,6 +263,43 @@ export const usePosFlow = () => {
     }
   }, [runtime]);
 
+  const finalizeCompletedReceipt = useCallback(async (completed: Receipt) => {
+    setLastTouchedLineId(null);
+    setCheckoutId(null);
+    setCashCommandId(null);
+    setQuery("");
+    setCategoryId("all");
+    setPrintStatus("idle");
+
+    if (readPrintReceiptAlways()) {
+      try {
+        await runtime.printing.submit({
+          commandId: commandId("auto-print"),
+          receiptId: completed.id,
+        });
+      } catch {
+        // The receipt is already persisted and remains available in Receipts.
+      }
+
+      try {
+        const activeTicket = await runtime.sales.startTicket({ commandId: commandId("ticket") });
+        setTicket(activeTicket);
+        setReceipt(null);
+        setStage("sales");
+      } catch (error) {
+        setTicket(null);
+        setReceipt(completed);
+        setStage("success");
+        setErrorMessage(messageFrom(error));
+      }
+      return;
+    }
+
+    setReceipt(completed);
+    setTicket(null);
+    setStage("success");
+  }, [runtime]);
+
   const chargeTicketToCustomer = useCallback(async (customerId: string): Promise<Customer | null> => {
     if (!ticket || ticket.lines.length === 0) return null;
     setBusy("customer-credit");
@@ -272,14 +310,7 @@ export const usePosFlow = () => {
         customerId,
         ticketId: ticket.id,
       });
-      setTicket(result.nextTicket);
-      setReceipt(null);
-      setCheckoutId(null);
-      setCashCommandId(null);
-      setLastTouchedLineId(null);
-      setQuery("");
-      setCategoryId("all");
-      setStage("sales");
+      await finalizeCompletedReceipt(result.receipt);
       return result.customer;
     } catch (error) {
       setErrorMessage(messageFrom(error));
@@ -287,7 +318,7 @@ export const usePosFlow = () => {
     } finally {
       setBusy(null);
     }
-  }, [runtime, ticket]);
+  }, [finalizeCompletedReceipt, runtime, ticket]);
 
   const settleCustomerDebt = useCallback(async (customerId: string, amountHalalas: number): Promise<Customer | null> => {
     setBusy("customer-settlement");
@@ -443,46 +474,14 @@ export const usePosFlow = () => {
           checkoutId,
           tendered: money(tenderedHalalas),
         });
-        setLastTouchedLineId(null);
-
-        if (readPrintReceiptAlways()) {
-          try {
-            await runtime.printing.submit({
-              commandId: commandId("auto-print"),
-              receiptId: completed.id,
-            });
-          } catch {
-            // The receipt is already persisted and remains available in Receipts.
-          }
-
-          try {
-            const activeTicket = await runtime.sales.startTicket({ commandId: commandId("ticket") });
-            setTicket(activeTicket);
-            setReceipt(null);
-            setCheckoutId(null);
-            setCashCommandId(null);
-            setPrintStatus("idle");
-            setQuery("");
-            setCategoryId("all");
-            setStage("sales");
-          } catch (error) {
-            setTicket(null);
-            setReceipt(completed);
-            setStage("success");
-            setErrorMessage(messageFrom(error));
-          }
-        } else {
-          setReceipt(completed);
-          setTicket(null);
-          setStage("success");
-        }
+        await finalizeCompletedReceipt(completed);
       } catch (error) {
         setErrorMessage(messageFrom(error));
       } finally {
         setBusy(null);
       }
     },
-    [cashCommandId, checkoutId, runtime],
+    [cashCommandId, checkoutId, finalizeCompletedReceipt, runtime],
   );
 
   const printReceipt = useCallback(async () => {
