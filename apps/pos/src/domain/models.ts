@@ -43,6 +43,13 @@ export type Ticket = Readonly<{
   updatedAt: string;
 }>;
 
+export type Customer = Readonly<{
+  id: string;
+  name: string;
+  mobile: string;
+  debt: Money;
+}>;
+
 export type EmployeeSession = Readonly<{
   employeeId: string;
   employeeName: string;
