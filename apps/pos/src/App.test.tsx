@@ -25,8 +25,8 @@ describe("POS-FLOW-001", () => {
     await screen.findByText("اختيار طريقة الدفع");
     await user.click(screen.getByRole("button", { name: /نقدًا/ }));
 
-    await screen.findByRole("heading", { name: /SAR/ });
-    await user.click(screen.getByRole("button", { name: "تأكيد وإتمام البيع" }));
+    await screen.findByRole("heading", { name: /ريال سعودي/ });
+    await user.click(screen.getByRole("button", { name: "سداد" }));
 
     await screen.findByRole("heading", { name: "تمت عملية البيع بنجاح" });
     expect(screen.getByText("محفوظ محليًا")).toBeInTheDocument();
