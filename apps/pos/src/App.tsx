@@ -63,6 +63,8 @@ export default function App() {
         onOpenReceipts={() => void flow.openReceipts()}
         onSearchCustomers={flow.searchCustomers}
         onCreateCustomer={flow.createCustomer}
+        onSetTicketCustomer={flow.setTicketCustomer}
+        onLoadCustomerLedger={flow.loadCustomerLedger}
         onChargeCredit={flow.chargeTicketToCustomer}
         onSettleDebt={flow.settleCustomerDebt}
       />
