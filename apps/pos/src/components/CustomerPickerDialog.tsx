@@ -148,6 +148,41 @@ export function CustomerPickerDialog({
     ? { halalas: selected.debt.halalas + ticketTotal.halalas, currency: selected.debt.currency }
     : null;
 
+  if (purpose === "credit" && attachedCustomer) {
+    return (
+      <div className="dialog-backdrop customer-credit-backdrop" role="presentation" onClick={() => { if (!submitting) onClose(); }}>
+        <section className="customer-credit-dialog customer-credit-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="credit-confirm-title" onClick={(event) => event.stopPropagation()}>
+          <header>
+            <button type="button" onClick={onClose} aria-label="إغلاق" disabled={submitting}>×</button>
+            <div>
+              <h2 id="credit-confirm-title">تأكيد البيع الآجل</h2>
+              <span>العميل مضاف إلى التذكرة مسبقًا، لذلك لا تحتاج لاختياره مرة أخرى.</span>
+            </div>
+          </header>
+
+          {selected ? (
+            <div className="customer-account-card customer-credit-confirm-card">
+              <div className="customer-account-head">
+                <span><strong>{selected.name}</strong><small dir="ltr">{selected.mobile}</small></span>
+              </div>
+              <div className="customer-balance-row"><span>الدين الحالي</span><strong><MoneyAmount value={selected.debt} /></strong></div>
+              <div className="customer-balance-row"><span>قيمة البيع الآجل</span><strong><MoneyAmount value={ticketTotal} /></strong></div>
+              {debtAfterCredit ? <div className="customer-balance-row customer-balance-row--total"><span>الدين بعد العملية</span><strong><MoneyAmount value={debtAfterCredit} /></strong></div> : null}
+              <button type="button" className="primary-button customer-credit-submit" onClick={() => void submitCredit()} disabled={busy || submitting}>{submitting ? "جارٍ التسجيل…" : "تأكيد البيع الآجل"}</button>
+            </div>
+          ) : (
+            <div className="customer-account-placeholder customer-credit-confirm-loading">
+              <strong>{searching ? "جارٍ تحميل حساب العميل…" : "تعذر تحميل حساب العميل"}</strong>
+              <span>{searching ? "لحظة واحدة." : "أغلق النافذة وحاول مرة أخرى."}</span>
+            </div>
+          )}
+
+          {message ? <div className="customer-credit-message" role="status">{message}</div> : null}
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="dialog-backdrop customer-credit-backdrop" role="presentation" onClick={() => { if (!submitting) onClose(); }}>
       <section className="customer-credit-dialog customer-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="customer-picker-title" onClick={(event) => event.stopPropagation()}>
