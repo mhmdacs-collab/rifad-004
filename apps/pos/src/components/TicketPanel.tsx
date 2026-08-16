@@ -1,19 +1,33 @@
-import type { Money, Ticket, TicketLine } from "../domain/models";
+import { useEffect, useRef } from "react";
+import { formatMoney } from "../domain/money";
+import type { Ticket, TicketLine } from "../domain/models";
 import { Icon } from "./Icon";
-
-const formatTicketMoney = (value: Money) => `${(value.halalas / 100).toFixed(2)} SAR`;
 
 type TicketPanelProps = {
   ticket: Ticket;
   editable?: boolean;
+  lastTouchedLineId?: string | null;
   onEditLine?: (line: TicketLine) => void;
 };
 
 export function TicketPanel({
   ticket,
   editable = false,
+  lastTouchedLineId = null,
   onEditLine,
 }: TicketPanelProps) {
+  const linesRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!lastTouchedLineId || !linesRef.current) return;
+    const line = linesRef.current.querySelector<HTMLElement>(`[data-line-id="${lastTouchedLineId}"]`);
+    if (line && typeof line.scrollIntoView === "function") {
+      line.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    } else {
+      linesRef.current.scrollTop = linesRef.current.scrollHeight;
+    }
+  }, [lastTouchedLineId, ticket.updatedAt]);
+
   return (
     <aside className="ticket-panel" aria-label="التذكرة الحالية">
       <header className="ticket-header">
@@ -24,7 +38,7 @@ export function TicketPanel({
         </div>
       </header>
 
-      <div className="ticket-lines">
+      <div className="ticket-lines" ref={linesRef}>
         {ticket.lines.length === 0 ? (
           <div className="empty-ticket">
             <span><Icon name="receipt" size={30} /></span>
@@ -32,23 +46,23 @@ export function TicketPanel({
             <p>اختر منتجًا من القائمة لإضافته.</p>
           </div>
         ) : ticket.lines.map((line) => (
-          <article className="ticket-line" key={line.id}>
+          <article className="ticket-line" key={line.id} data-line-id={line.id}>
             <button
               className="ticket-line-button"
               type="button"
               onClick={() => editable && onEditLine?.(line)}
               disabled={!editable}
             >
-              <span className="ticket-line-name"><strong>{line.name}</strong><small>× {line.quantity}</small></span>
-              <strong className="line-total">{formatTicketMoney({ ...line.unitPrice, halalas: line.unitPrice.halalas * line.quantity })}</strong>
+              <span className="ticket-line-name"><strong>{line.name}</strong><small dir="ltr">{line.quantity} x</small></span>
+              <strong className="line-total" dir="ltr">{formatMoney({ ...line.unitPrice, halalas: line.unitPrice.halalas * line.quantity })}</strong>
             </button>
           </article>
         ))}
       </div>
 
       <footer className="ticket-totals">
-        <div><span>الضريبة (مضمنة)</span><span>{formatTicketMoney(ticket.taxIncluded)}</span></div>
-        <div className="ticket-grand-total"><strong>الإجمالي</strong><strong>{formatTicketMoney(ticket.total)}</strong></div>
+        <div><span>الضريبة (مضمنة)</span><span dir="ltr">{formatMoney(ticket.taxIncluded)}</span></div>
+        <div className="ticket-grand-total"><strong>الإجمالي</strong><strong dir="ltr">{formatMoney(ticket.total)}</strong></div>
       </footer>
     </aside>
   );
