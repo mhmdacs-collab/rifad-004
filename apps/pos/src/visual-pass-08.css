@@ -43,10 +43,22 @@
   box-sizing: border-box;
 }
 
+/*
+ * IMPORTANT: the legacy sale basket defines .ticket-line as a three-column grid
+ * whose first column is only 11px wide. Checkout rows are a completely different
+ * geometry, so reset that parent here. Without this reset the entire checkout row
+ * gets auto-placed into the legacy 11px column and appears visually empty.
+ */
 .checkout-workspace .ticket-panel--checkout .ticket-line {
+  display: block !important;
+  grid-template-columns: none !important;
+  grid-template-rows: none !important;
+  gap: 0 !important;
+  align-items: stretch !important;
   min-width: 0;
   width: 100%;
   max-width: 100%;
+  padding: 0 !important;
   overflow: visible;
   box-sizing: border-box;
   border-bottom: 1px solid #edf0ee;
@@ -190,10 +202,22 @@
   text-align: right;
 }
 
-/* Slightly stronger product names in the sale basket only. */
+/* Sale basket: slightly calmer product name, stronger row total. */
 .ticket-panel--sale .ticket-product-name {
-  font-size: 1.14rem !important;
-  line-height: 1.5;
+  font-size: 1.04rem !important;
+  line-height: 1.48;
+  font-weight: 800;
+}
+
+.ticket-panel--sale .ticket-line-total {
+  color: #0f1b16;
+  font-size: 1.08rem !important;
+  font-weight: 900 !important;
+}
+
+.ticket-panel--sale .ticket-line-total .money-amount {
+  font-size: 1em !important;
+  font-weight: inherit;
 }
 
 @media (min-width: 1500px) {
@@ -215,6 +239,14 @@
 
   .checkout-workspace .ticket-panel--checkout > .ticket-totals--audit > div {
     grid-template-columns: 126px minmax(0, 1fr);
+  }
+
+  .ticket-panel--sale .ticket-product-name {
+    font-size: 1.06rem !important;
+  }
+
+  .ticket-panel--sale .ticket-line-total {
+    font-size: 1.12rem !important;
   }
 }
 
