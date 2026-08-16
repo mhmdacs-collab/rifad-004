@@ -23,7 +23,8 @@ export const multiplyMoney = (value: Money, quantity: number): Money => {
   return money(value.halalas * quantity);
 };
 
-export const formatMoney = (value: Money): string => `${numberFormatter.format(value.halalas / 100)} SAR`;
+export const formatMoneyAmount = (value: Money): string => numberFormatter.format(value.halalas / 100);
+export const formatMoney = (value: Money): string => `${formatMoneyAmount(value)} SAR`;
 
 export const parseRiyalsToHalalas = (value: string): number | null => {
   const normalized = value.replace(/[^0-9.]/g, "");
@@ -33,13 +34,26 @@ export const parseRiyalsToHalalas = (value: string): number | null => {
   return Number.isSafeInteger(halalas) ? halalas : null;
 };
 
+const roundStrictlyUp = (value: number, increment: number): number => {
+  const rounded = Math.ceil(value / increment) * increment;
+  return rounded > value ? rounded : rounded + increment;
+};
+
 export const suggestedCashHalalas = (totalHalalas: number): readonly number[] => {
-  const denominations = [500, 1000, 2000, 5000, 10000];
-  const suggestions = new Set<number>([totalHalalas]);
-  for (const denomination of denominations) {
-    const rounded = Math.ceil(totalHalalas / denomination) * denomination;
-    if (rounded >= totalHalalas) suggestions.add(rounded);
-    if (suggestions.size >= 4) break;
+  if (!Number.isSafeInteger(totalHalalas) || totalHalalas < 0) {
+    throw new Error("Cash total must be a non-negative safe integer halala amount.");
   }
-  return [...suggestions].sort((a, b) => a - b).slice(0, 4);
+
+  // Suggested tender amounts must be higher than the ticket total. Exact payment is
+  // already the default input, so repeating it as a shortcut wastes a cashier tap.
+  // These increments produce practical cashier targets such as:
+  // 108.00 -> 110, 120, 150, 200, 500.
+  const increments = [1000, 2000, 5000, 10000, 50000];
+  const suggestions = new Set<number>();
+
+  for (const increment of increments) {
+    suggestions.add(roundStrictlyUp(totalHalalas, increment));
+  }
+
+  return [...suggestions].sort((a, b) => a - b);
 };
