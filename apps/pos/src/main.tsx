@@ -8,6 +8,7 @@ import "./visual-pass-03.css";
 import "./visual-pass-04.css";
 import "./visual-pass-05.css";
 import "./visual-pass-06.css";
+import "./visual-pass-07.css";
 
 createRoot(document.getElementById("root")!).render(<StrictMode><App /></StrictMode>);
 
