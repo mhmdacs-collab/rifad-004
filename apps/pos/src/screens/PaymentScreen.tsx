@@ -56,7 +56,7 @@ export function PaymentScreen({ ticket, busy, errorMessage, onDismissError, onBa
           <div className="offline-note"><Icon name="wifi" size={18} /><span><strong>الدفع النقدي يعمل محليًا.</strong> ستتم مزامنة العملية عند توفر الاتصال.</span></div>
         </div>
       </section>
-      <div className="checkout-ticket"><TicketPanel ticket={ticket} /></div>
+      <div className="checkout-ticket"><TicketPanel ticket={ticket} variant="checkout" /></div>
     </main>
   );
 }
