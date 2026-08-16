@@ -1,6 +1,7 @@
 import { CashPaymentScreen } from "./screens/CashPaymentScreen";
 import { PaymentScreen } from "./screens/PaymentScreen";
 import { PinScreen } from "./screens/PinScreen";
+import { ReceiptsScreen } from "./screens/ReceiptsScreen";
 import { SalesScreen } from "./screens/SalesScreen";
 import { SignInScreen } from "./screens/SignInScreen";
 import { SuccessScreen } from "./screens/SuccessScreen";
@@ -59,6 +60,18 @@ export default function App() {
         onRemoveLine={(id) => void flow.removeLine(id)}
         onSaveTicket={() => void flow.saveOpenTicket()}
         onCheckout={() => void flow.beginCheckout()}
+        onOpenReceipts={() => void flow.openReceipts()}
+      />
+    );
+  }
+
+  if (flow.stage === "receipts") {
+    return (
+      <ReceiptsScreen
+        receipts={flow.receipts}
+        busy={flow.busy}
+        onBack={flow.returnToSales}
+        onPrint={flow.printArchivedReceipt}
       />
     );
   }
