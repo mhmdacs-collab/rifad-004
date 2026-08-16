@@ -23,6 +23,7 @@ const printMessages: Record<PrintDeliveryStatus, string | null> = {
 
 export function SuccessScreen({ receipt, printStatus, busy, onPrint, onNewSale }: SuccessScreenProps) {
   const [printAlways, setPrintAlways] = useState(readPrintReceiptAlways);
+  const isCredit = receipt.paymentMethod === "credit";
 
   const updatePrintAlways = (enabled: boolean) => {
     setPrintAlways(enabled);
@@ -35,13 +36,22 @@ export function SuccessScreen({ receipt, printStatus, busy, onPrint, onNewSale }
       <section className="success-card" aria-labelledby="success-title">
         <span className="success-mark"><Icon name="check" size={45} strokeWidth={2.3} /></span>
         <span className="eyebrow">اكتملت العملية</span>
-        <h1 id="success-title">تمت عملية البيع بنجاح</h1>
-        <p>حُفظت العملية محليًا وهي جاهزة للمزامنة.</p>
+        <h1 id="success-title">{isCredit ? "تم تسجيل البيع الآجل بنجاح" : "تمت عملية البيع بنجاح"}</h1>
+        <p>{isCredit ? "حُفظت الفاتورة على حساب العميل وأضيفت إلى دفتر ديونه." : "حُفظت العملية محليًا وهي جاهزة للمزامنة."}</p>
         <div className="receipt-summary">
           <div><span>رقم الإيصال</span><strong dir="ltr">{receipt.number}</strong></div>
           <div><span>الإجمالي</span><strong><MoneyAmount value={receipt.total} /></strong></div>
-          <div><span>المستلم</span><strong><MoneyAmount value={receipt.tendered} /></strong></div>
-          <div className="receipt-change"><span>الباقي</span><strong><MoneyAmount value={receipt.change} /></strong></div>
+          {isCredit ? (
+            <>
+              <div><span>طريقة الإنهاء</span><strong>آجل</strong></div>
+              <div className="receipt-change"><span>العميل</span><strong>{receipt.customer?.name ?? "—"}</strong></div>
+            </>
+          ) : (
+            <>
+              <div><span>المستلم</span><strong><MoneyAmount value={receipt.tendered} /></strong></div>
+              <div className="receipt-change"><span>الباقي</span><strong><MoneyAmount value={receipt.change} /></strong></div>
+            </>
+          )}
         </div>
         {printMessages[printStatus] ? <div className={`print-status print-status--${printStatus}`} role="status"><Icon name="printer" size={18} />{printMessages[printStatus]}</div> : null}
         <label className="print-always-toggle print-always-toggle--summary">
