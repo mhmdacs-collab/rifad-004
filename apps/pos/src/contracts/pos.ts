@@ -78,6 +78,10 @@ export interface CheckoutContract {
   }): Promise<Receipt>;
 }
 
+export interface ReceiptsContract {
+  list(): Promise<readonly Receipt[]>;
+}
+
 export interface PrintingContract {
   submit(input: { commandId: string; receiptId: string }): Promise<PrintDeliveryStatus>;
 }
@@ -90,5 +94,6 @@ export interface MockPosRuntime {
   saleLayout: SaleLayoutContract;
   sales: SalesContract;
   checkout: CheckoutContract;
+  receipts: ReceiptsContract;
   printing: PrintingContract;
 }
