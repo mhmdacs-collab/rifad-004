@@ -1,0 +1,119 @@
+/*
+ * Rifad POS — Visual Pass 09
+ * Checkout ticket line hierarchy:
+ * right = product name, left = line total with quantity × unit price directly below.
+ */
+
+.checkout-workspace .ticket-panel--checkout .checkout-ticket-row {
+  grid-template-columns: 122px minmax(0, 1fr) !important;
+  grid-template-areas: "values copy" !important;
+  align-items: center;
+  column-gap: 16px;
+}
+
+.checkout-workspace .ticket-panel--checkout .checkout-ticket-row-copy {
+  grid-area: copy;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+  overflow: hidden;
+  direction: rtl;
+  text-align: right;
+}
+
+.checkout-workspace .ticket-panel--checkout .checkout-ticket-row-name {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  color: #122019;
+  font-size: 1.02rem;
+  font-weight: 800;
+  line-height: 1.45;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.checkout-workspace .ticket-panel--checkout .checkout-ticket-row-values {
+  grid-area: values;
+  width: 122px;
+  min-width: 122px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+  direction: ltr;
+  overflow: hidden;
+}
+
+.checkout-workspace .ticket-panel--checkout .checkout-ticket-row-total {
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0;
+  color: #0d1814;
+  font-size: 1.12rem !important;
+  font-weight: 900 !important;
+  line-height: 1.15;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.checkout-workspace .ticket-panel--checkout .checkout-ticket-row-total .money-amount {
+  justify-content: flex-start;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+}
+
+.checkout-workspace .ticket-panel--checkout .checkout-ticket-row-meta {
+  width: 100% !important;
+  max-width: 100%;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start !important;
+  gap: 5px;
+  color: #7a8580;
+  font-size: .7rem !important;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.checkout-workspace .ticket-panel--checkout .checkout-ticket-row-meta b {
+  color: var(--brand);
+  font-size: .74rem !important;
+  font-weight: 800;
+}
+
+/* Sale basket: calm the name slightly and keep line total clearly stronger. */
+.ticket-panel--sale .ticket-product-name {
+  font-size: 1rem !important;
+}
+
+.ticket-panel--sale .ticket-line-total {
+  font-size: 1.14rem !important;
+  font-weight: 900 !important;
+}
+
+@media (min-width: 1500px) {
+  .checkout-workspace .ticket-panel--checkout .checkout-ticket-row {
+    grid-template-columns: 132px minmax(0, 1fr) !important;
+    column-gap: 18px;
+  }
+
+  .checkout-workspace .ticket-panel--checkout .checkout-ticket-row-values {
+    width: 132px;
+    min-width: 132px;
+  }
+
+  .checkout-workspace .ticket-panel--checkout .checkout-ticket-row-total {
+    font-size: 1.16rem !important;
+  }
+
+  .checkout-workspace .ticket-panel--checkout .checkout-ticket-row-name {
+    font-size: 1.04rem;
+  }
+}
