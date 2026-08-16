@@ -1,5 +1,6 @@
 import type {
   Customer,
+  DebtLedgerEntry,
   DeviceSession,
   EmployeeSession,
   Money,
@@ -44,6 +45,7 @@ export interface SalesContract {
   setLineQuantity(input: { ticketId: string; lineId: string; quantity: number }): Promise<Ticket>;
   removeLine(input: { ticketId: string; lineId: string }): Promise<Ticket>;
   saveOpenTicket(input: { commandId: string; ticketId: string }): Promise<Ticket>;
+  setCustomer(input: { commandId: string; ticketId: string; customerId: string | null }): Promise<Ticket>;
 }
 
 export interface SaleLayoutContract {
@@ -72,6 +74,7 @@ export interface SaleLayoutContract {
 export interface CustomerCreditContract {
   search(input: { query: string }): Promise<readonly Customer[]>;
   create(input: { commandId: string; name: string; mobile: string }): Promise<Customer>;
+  ledger(input: { customerId: string }): Promise<readonly DebtLedgerEntry[]>;
   chargeTicket(input: {
     commandId: string;
     customerId: string;
