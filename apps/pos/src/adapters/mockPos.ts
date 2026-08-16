@@ -14,6 +14,7 @@ import { PosContractError } from "../contracts/pos";
 import { addMoney, money, multiplyMoney } from "../domain/money";
 import type {
   Customer,
+  CustomerDetails,
   CustomerReference,
   DebtLedgerEntry,
   DeviceSession,
@@ -59,6 +60,7 @@ type CreditSaleRecord = {
   ticket: Ticket;
   amount: Money;
   createdAt: string;
+  receiptId?: string;
 };
 
 type DebtPaymentRecord = {
@@ -84,6 +86,17 @@ type Persisted = {
   debtLedger: DebtLedgerEntry[];
 };
 
+const EMPTY_CUSTOMER_DETAILS: CustomerDetails = {
+  email: "",
+  address: "",
+  city: "",
+  region: "",
+  postalCode: "",
+  country: "",
+  customerCode: "",
+  note: "",
+};
+
 const emptySlots = () => Array<string | null>(20).fill(null);
 
 const initialSalePages = (): SalePage[] => [
@@ -103,8 +116,20 @@ const initialSalePages = (): SalePage[] => [
 ];
 
 const initialCustomers = (): Customer[] => [
-  { id: "customer-001", name: "أحمد محمد", mobile: "0501234567", debt: money(12000) },
-  { id: "customer-002", name: "سارة خالد", mobile: "0559876543", debt: money(3500) },
+  {
+    id: "customer-001",
+    name: "أحمد محمد",
+    mobile: "0501234567",
+    details: { ...EMPTY_CUSTOMER_DETAILS, email: "ahmad@example.com", city: "الرياض", region: "الرياض", country: "السعودية", customerCode: "C-001" },
+    debt: money(12000),
+  },
+  {
+    id: "customer-002",
+    name: "سارة خالد",
+    mobile: "0559876543",
+    details: { ...EMPTY_CUSTOMER_DETAILS, city: "الرياض", country: "السعودية", customerCode: "C-002" },
+    debt: money(3500),
+  },
 ];
 
 const initialDebtLedger = (): DebtLedgerEntry[] => [
@@ -153,20 +178,46 @@ const normalizeMobile = (value: string) => {
   return digits;
 };
 
+const normalizeCustomerDetails = (details: Partial<CustomerDetails> | null | undefined): CustomerDetails => ({
+  email: details?.email?.trim() ?? "",
+  address: details?.address?.trim() ?? "",
+  city: details?.city?.trim() ?? "",
+  region: details?.region?.trim() ?? "",
+  postalCode: details?.postalCode?.trim() ?? "",
+  country: details?.country?.trim() ?? "",
+  customerCode: details?.customerCode?.trim() ?? "",
+  note: details?.note?.trim() ?? "",
+});
+
+const normalizeCustomer = (customer: Customer): Customer => ({
+  ...customer,
+  details: normalizeCustomerDetails(customer.details),
+});
+
 const customerReference = (customer: Customer): CustomerReference => ({
   id: customer.id,
   name: customer.name,
   mobile: customer.mobile,
+  details: normalizeCustomerDetails(customer.details),
 });
+
+const normalizeCustomerReference = (customer: CustomerReference | null | undefined): CustomerReference | null => {
+  if (!customer) return null;
+  return { ...customer, details: normalizeCustomerDetails(customer.details) };
+};
 
 const normalizeTicket = (ticket: Ticket | null | undefined): Ticket | null => {
   if (!ticket) return null;
-  return { ...ticket, customer: ticket.customer ?? null };
+  return { ...ticket, customer: normalizeCustomerReference(ticket.customer) };
 };
 
 const normalizeReceipt = (receipt: Receipt | null | undefined): Receipt | null => {
   if (!receipt) return null;
-  return { ...receipt, customer: receipt.customer ?? null };
+  return {
+    ...receipt,
+    paymentMethod: receipt.paymentMethod ?? "cash",
+    customer: normalizeCustomerReference(receipt.customer),
+  };
 };
 
 const migrateDebtLedger = (
@@ -238,7 +289,7 @@ class MockStore {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (!raw) return emptyState();
       const parsed = JSON.parse(raw) as Partial<Persisted>;
-      const customers = parsed.customers ?? initialCustomers();
+      const customers = (parsed.customers ?? initialCustomers()).map((customer) => normalizeCustomer(customer));
       const creditSales = (parsed.creditSales ?? []).map((record) => ({
         ...record,
         ticket: normalizeTicket(record.ticket) ?? record.ticket,
@@ -277,7 +328,7 @@ class MockStore {
   }
 
   private customerWithBalance(customer: Customer): Customer {
-    return { ...customer, debt: money(Math.max(0, this.debtBalanceHalalas(customer.id))) };
+    return { ...normalizeCustomer(customer), debt: money(Math.max(0, this.debtBalanceHalalas(customer.id))) };
   }
 
   async link(email: string, password: string): Promise<DeviceSession> {
@@ -353,7 +404,7 @@ class MockStore {
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
 
-  async createCustomer(name: string, mobileInput: string): Promise<Customer> {
+  async createCustomer(name: string, mobileInput: string, details: CustomerDetails): Promise<Customer> {
     await pause();
     const nameValue = name.trim();
     const mobile = normalizeMobile(mobileInput);
@@ -364,10 +415,15 @@ class MockStore {
     if (this.state.customers.some((customer) => normalizeMobile(customer.mobile) === mobile)) {
       throw new PosContractError("CUSTOMER_MOBILE_EXISTS", "يوجد عميل مسجل بهذا الرقم بالفعل.");
     }
+    const normalizedDetails = normalizeCustomerDetails(details);
+    if (normalizedDetails.customerCode && this.state.customers.some((customer) => customer.details.customerCode === normalizedDetails.customerCode)) {
+      throw new PosContractError("CUSTOMER_CODE_EXISTS", "رمز العميل مستخدم لعميل آخر.");
+    }
     const customer: Customer = {
       id: createId("customer"),
       name: nameValue,
       mobile,
+      details: normalizedDetails,
       debt: money(0),
     };
     this.state = { ...this.state, customers: [...this.state.customers, customer] };
@@ -387,13 +443,25 @@ class MockStore {
     return this.saveTicket(updated);
   }
 
-  async chargeTicketToCustomer(commandId: string, customerId: string, ticketId: string): Promise<{ customer: Customer; nextTicket: Ticket }> {
+  async chargeTicketToCustomer(commandId: string, customerId: string, ticketId: string): Promise<{ customer: Customer; receipt: Receipt }> {
     await pause();
     const prior = this.state.creditSales.find((record) => record.commandId === commandId);
     if (prior) {
       const customer = this.requireCustomer(prior.customerId);
-      const nextTicket = this.state.ticket ?? this.createTicket([], this.state.nextTicketSequence);
-      return { customer, nextTicket };
+      const storedReceipt = prior.receiptId ? this.state.receipts.find((item) => item.id === prior.receiptId) : null;
+      const receipt = storedReceipt ?? {
+        id: prior.receiptId ?? `receipt-${prior.id}`,
+        number: `R-${String(prior.ticket.sequence).padStart(5, "0")}`,
+        paymentMethod: "credit" as const,
+        total: prior.ticket.total,
+        tendered: money(0),
+        change: money(0),
+        completedAt: prior.createdAt,
+        employeeName: this.state.employee?.employeeName ?? "موظف رفاد",
+        branchName: this.state.device?.branchName ?? "فرع رفاد",
+        customer: prior.ticket.customer ?? customerReference(customer),
+      };
+      return { customer, receipt };
     }
 
     const ticket = this.requireTicket(ticketId);
@@ -406,13 +474,27 @@ class MockStore {
       customer: customerReference(customer),
       updatedAt: new Date().toISOString(),
     };
+    const createdAt = new Date().toISOString();
+    const receipt: Receipt = {
+      id: createId("receipt"),
+      number: `R-${String(chargedTicket.sequence).padStart(5, "0")}`,
+      paymentMethod: "credit",
+      total: chargedTicket.total,
+      tendered: money(0),
+      change: money(0),
+      completedAt: createdAt,
+      employeeName: this.state.employee?.employeeName ?? "موظف رفاد",
+      branchName: this.state.device?.branchName ?? "فرع رفاد",
+      customer: chargedTicket.customer,
+    };
     const record: CreditSaleRecord = {
       id: createId("credit-sale"),
       commandId,
       customerId,
       ticket: chargedTicket,
       amount: chargedTicket.total,
-      createdAt: new Date().toISOString(),
+      createdAt,
+      receiptId: receipt.id,
     };
     const ledgerEntry: DebtLedgerEntry = {
       id: createId("debt-entry"),
@@ -420,10 +502,9 @@ class MockStore {
       kind: "credit-sale",
       direction: "debit",
       amount: chargedTicket.total,
-      createdAt: record.createdAt,
+      createdAt,
       ticketSequence: chargedTicket.sequence,
     };
-    const nextTicket = this.createTicket([], this.state.nextTicketSequence);
     const nextLedger = [ledgerEntry, ...this.state.debtLedger];
     const updatedCustomer: Customer = {
       ...customer,
@@ -435,13 +516,13 @@ class MockStore {
       customers: this.state.customers.map((item) => item.id === customerId ? updatedCustomer : item),
       creditSales: [record, ...this.state.creditSales],
       debtLedger: nextLedger,
-      ticket: nextTicket,
-      receipt: null,
-      nextTicketSequence: this.state.nextTicketSequence + 1,
+      receipt,
+      receipts: [receipt, ...this.state.receipts.filter((item) => item.id !== receipt.id)],
+      ticket: null,
     };
     this.checkout = null;
     this.persist();
-    return { customer: this.customerWithBalance(updatedCustomer), nextTicket };
+    return { customer: this.customerWithBalance(updatedCustomer), receipt };
   }
 
   async settleCustomerDebt(commandId: string, customerId: string, amount: Money): Promise<Customer> {
@@ -685,6 +766,7 @@ class MockStore {
     const receipt: Receipt = {
       id: createId("receipt"),
       number: `R-${String(checkout.ticket.sequence).padStart(5, "0")}`,
+      paymentMethod: "cash",
       total: checkout.ticket.total,
       tendered: money(tenderedHalalas),
       change: money(tenderedHalalas - checkout.ticket.total.halalas),
@@ -724,7 +806,7 @@ class MockStore {
     if (!ticket || ticket.id !== ticketId) {
       throw new PosContractError("TICKET_NOT_FOUND", "تعذر العثور على التذكرة الحالية.");
     }
-    return { ...ticket, customer: ticket.customer ?? null };
+    return { ...ticket, customer: normalizeCustomerReference(ticket.customer) };
   }
 
   private requireCheckout(checkoutId: string) {
@@ -793,7 +875,7 @@ export const createMockPosRuntime = (): MockPosRuntime => {
   };
   const customerCredit: CustomerCreditContract = {
     search: ({ query }) => store.searchCustomers(query),
-    create: ({ name, mobile }) => store.createCustomer(name, mobile),
+    create: ({ name, mobile, details }) => store.createCustomer(name, mobile, details),
     ledger: ({ customerId }) => store.listCustomerLedger(customerId),
     chargeTicket: ({ commandId, customerId, ticketId }) => store.chargeTicketToCustomer(commandId, customerId, ticketId),
     settle: ({ commandId, customerId, amount }) => store.settleCustomerDebt(commandId, customerId, amount),
