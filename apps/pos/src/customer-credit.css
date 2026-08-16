@@ -278,7 +278,7 @@
 
 .customer-create-form {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: 1fr;
   gap: 12px;
   padding: 15px;
   border: 1px solid #e0e7e3;
@@ -287,8 +287,13 @@
 }
 
 .customer-create-form > strong,
-.customer-create-form > div {
-  grid-column: 1 / -1;
+.customer-create-form > div,
+.customer-create-form > label,
+.customer-create-form > .customer-extra-fields,
+.customer-create-form > .customer-extra-toggle {
+  grid-column: 1;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .customer-create-form > div {
