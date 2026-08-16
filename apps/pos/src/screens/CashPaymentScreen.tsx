@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { Icon } from "../components/Icon";
 import { InlineNotice } from "../components/InlineNotice";
+import { MoneyAmount } from "../components/MoneyAmount";
 import { TicketPanel } from "../components/TicketPanel";
-import { formatMoney, money, parseRiyalsToHalalas, suggestedCashHalalas } from "../domain/money";
+import { money, parseRiyalsToHalalas, suggestedCashHalalas } from "../domain/money";
 import type { Ticket } from "../domain/models";
 
 type CashPaymentScreenProps = {
@@ -32,30 +33,30 @@ export function CashPaymentScreen({ ticket, busy, errorMessage, onDismissError, 
         <section className="cash-content cash-content--panel" aria-labelledby="cash-title">
           <div className="cash-total">
             <span>الإجمالي المستحق</span>
-            <h1 id="cash-title" dir="ltr">{formatMoney(ticket.total)}</h1>
+            <h1 id="cash-title"><MoneyAmount value={ticket.total} /></h1>
           </div>
           <InlineNotice message={errorMessage} onDismiss={onDismissError} />
 
           <label className="cash-input-wrap">
             <span>المبلغ المستلم من العميل</span>
-            <div className="cash-input"><input dir="ltr" inputMode="decimal" autoFocus value={input} onChange={(event) => setInput(event.target.value)} aria-label="المبلغ المستلم" /><b>SAR</b></div>
+            <div className="cash-input"><input dir="ltr" inputMode="decimal" autoFocus value={input} onChange={(event) => setInput(event.target.value)} aria-label="المبلغ المستلم" /></div>
           </label>
 
-          <div className="cash-suggestions" aria-label="مبالغ مقترحة">
+          <div className="cash-suggestions cash-suggestions--tender" aria-label="مبالغ مقترحة أعلى من الإجمالي">
             {suggestions.map((value) => (
               <button type="button" key={value} className={tendered === value ? "selected" : ""} onClick={() => setInput((value / 100).toFixed(2))}>
-                {formatMoney(money(value))}
+                <MoneyAmount value={money(value)} />
               </button>
             ))}
           </div>
 
           <div className={`change-card ${valid ? "ready" : ""}`}>
             <span>الباقي للعميل</span>
-            <strong dir="ltr">{formatMoney(money(change ?? 0))}</strong>
+            <strong><MoneyAmount value={money(change ?? 0)} /></strong>
           </div>
           {!valid && input.length > 0 ? <p className="cash-validation">المبلغ المستلم يجب أن يساوي الإجمالي أو يزيد عليه.</p> : null}
           <button type="button" className="primary-button complete-sale" disabled={!valid || busy} onClick={() => tendered !== null && onComplete(tendered)}>
-            <Icon name="check" size={21} /> {busy ? "جارٍ تسجيل العملية…" : "تأكيد وإتمام البيع"}
+            <Icon name="check" size={21} /> {busy ? "جارٍ السداد…" : "سداد"}
           </button>
         </section>
       </section>
