@@ -12,12 +12,17 @@ describe("money authority", () => {
     expect(parseRiyalsToHalalas("22.555")).toBeNull();
   });
 
-  it("suggests only higher practical tender amounts and never repeats the exact total", () => {
+  it("keeps the requested low-total cashier pattern", () => {
     expect(suggestedCashHalalas(10800)).toEqual([11000, 12000, 15000, 20000, 50000]);
     expect(suggestedCashHalalas(10800)).not.toContain(10800);
   });
 
-  it("deduplicates tender targets when several denomination steps land on the same amount", () => {
-    expect(suggestedCashHalalas(11500)).toEqual([12000, 15000, 20000, 50000]);
+  it("does not suggest arbitrary intermediate tens for a 126 riyal sale", () => {
+    expect(suggestedCashHalalas(12600)).toEqual([13000, 15000, 20000, 50000]);
+    expect(suggestedCashHalalas(12600)).not.toContain(14000);
+  });
+
+  it("skips the next-ten shortcut when the total is already a round ten", () => {
+    expect(suggestedCashHalalas(17000)).toEqual([20000, 50000]);
   });
 });
