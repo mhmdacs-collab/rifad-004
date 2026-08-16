@@ -1,0 +1,117 @@
+/* Customer credit follow-up — live search + partial debt settlement */
+
+.customer-search-form--live {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.customer-live-search-status {
+  min-width: 92px;
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  border: 1px solid #dce4e0;
+  border-radius: 10px;
+  background: #f7f9f8;
+  color: #66736d;
+  font-size: .72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.customer-settlement-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 0;
+  border-bottom: 1px solid #f0f3f1;
+}
+
+.customer-settlement-row > div {
+  display: grid;
+  gap: 5px;
+}
+
+.customer-settlement-row > div > span {
+  color: #56635d;
+  font-size: .76rem;
+}
+
+.customer-settlement-row > div > strong {
+  color: #17251e;
+  font-size: 1.12rem;
+  font-weight: 900;
+}
+
+.customer-settlement-row > button {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid #cdd9d3;
+  border-radius: 9px;
+  background: #f8faf9;
+  color: var(--brand);
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.customer-settlement-row > button:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+
+.customer-settlement-input {
+  width: min(220px, 100%);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  border: 1px solid #b9cdc3;
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+  box-shadow: 0 0 0 3px rgb(7 82 58 / 7%);
+}
+
+.customer-settlement-input input {
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 11px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #16241d;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 900;
+  text-align: left;
+}
+
+.customer-settlement-input span {
+  padding: 0 11px;
+  color: #6d7973;
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.customer-settlement-error {
+  display: block;
+  margin-top: 8px;
+  color: #a34835 !important;
+  font-size: .7rem !important;
+  font-weight: 750;
+}
+
+@media (max-width: 780px) {
+  .customer-search-form--live,
+  .customer-settlement-row {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-live-search-status {
+    min-height: 36px;
+    justify-self: stretch;
+  }
+}
