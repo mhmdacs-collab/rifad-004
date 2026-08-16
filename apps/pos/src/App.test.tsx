@@ -2,11 +2,13 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import App from "./App";
+import { PRINT_RECEIPT_ALWAYS_KEY } from "./domain/posPreferences";
 
 const ORDER_TYPES_KEY = "rifad.pos.visible-order-types.v1";
 
 afterEach(() => {
   window.localStorage.removeItem(ORDER_TYPES_KEY);
+  window.localStorage.removeItem(PRINT_RECEIPT_ALWAYS_KEY);
 });
 
 const openSales = async (user: ReturnType<typeof userEvent.setup>) => {
@@ -108,5 +110,31 @@ describe("ticket order type gate", () => {
     expect(screen.getByText("محدد تلقائيًا")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "حفظ" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "دفع" })).toBeEnabled();
+  });
+});
+
+describe("always print receipt", () => {
+  it("skips the success summary, starts a new sale, and keeps the receipt available for reprint", async () => {
+    window.localStorage.setItem(PRINT_RECEIPT_ALWAYS_KEY, "1");
+    const user = userEvent.setup();
+    render(<App />);
+
+    await openSales(user);
+    await user.click(await screen.findByRole("button", { name: /قهوة سعودية/ }));
+    await user.click(screen.getByRole("button", { name: "دفع" }));
+    await screen.findByText("اختيار طريقة الدفع");
+    await user.click(screen.getByRole("button", { name: /نقدًا/ }));
+    await screen.findByRole("heading", { name: /ريال سعودي/ });
+    await user.click(screen.getByRole("button", { name: "سداد" }));
+
+    await screen.findByRole("button", { name: /قهوة سعودية/ });
+    expect(screen.queryByRole("heading", { name: "تمت عملية البيع بنجاح" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "فتح القائمة" }));
+    await user.click(screen.getByRole("button", { name: "الإيصالات" }));
+
+    expect(await screen.findByText("R-00001")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "طباعة" }));
+    expect(await screen.findByText("تم إرسال الإيصال للطابعة.")).toBeInTheDocument();
   });
 });
