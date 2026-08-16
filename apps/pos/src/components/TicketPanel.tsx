@@ -31,7 +31,10 @@ export function TicketPanel({
   return (
     <aside className="ticket-panel" aria-label="التذكرة الحالية">
       <header className="ticket-header">
-        <h2>تذكرة</h2>
+        <div className="ticket-title-block">
+          <h2>تذكرة</h2>
+          <span dir="ltr">#{ticket.sequence}</span>
+        </div>
         <div className="ticket-header-tools" aria-hidden="true">
           <span className="ticket-more">⋮</span>
           <span className="ticket-customer"><Icon name="user" size={20} /><Icon name="plus" size={12} /></span>
@@ -45,19 +48,29 @@ export function TicketPanel({
             <strong>التذكرة فارغة</strong>
             <p>اختر منتجًا من القائمة لإضافته.</p>
           </div>
-        ) : ticket.lines.map((line) => (
-          <article className="ticket-line" key={line.id} data-line-id={line.id}>
-            <button
-              className="ticket-line-button"
-              type="button"
-              onClick={() => editable && onEditLine?.(line)}
-              disabled={!editable}
-            >
-              <span className="ticket-line-name"><strong>{line.name}</strong><small dir="ltr">{line.quantity} x</small></span>
-              <strong className="line-total" dir="ltr">{formatMoney({ ...line.unitPrice, halalas: line.unitPrice.halalas * line.quantity })}</strong>
-            </button>
-          </article>
-        ))}
+        ) : ticket.lines.map((line) => {
+          const lineTotal = { ...line.unitPrice, halalas: line.unitPrice.halalas * line.quantity };
+          return (
+            <article className={`ticket-line ${lastTouchedLineId === line.id ? "ticket-line--latest" : ""}`} key={line.id} data-line-id={line.id}>
+              <button
+                className="ticket-line-button"
+                type="button"
+                onClick={() => editable && onEditLine?.(line)}
+                disabled={!editable}
+              >
+                <span className="ticket-line-main">
+                  <strong className="ticket-product-name">{line.name}</strong>
+                  <strong className="line-total" dir="ltr">{formatMoney(lineTotal)}</strong>
+                </span>
+                <span className="ticket-line-meta" dir="ltr">
+                  <b>{line.quantity}</b>
+                  <span>×</span>
+                  <span>{formatMoney(line.unitPrice)}</span>
+                </span>
+              </button>
+            </article>
+          );
+        })}
       </div>
 
       <footer className="ticket-totals">
