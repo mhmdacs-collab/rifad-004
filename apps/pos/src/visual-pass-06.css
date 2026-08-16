@@ -1,0 +1,187 @@
+/*
+ * Rifad POS — Visual Pass 06
+ * Checkout-ticket separation, cashier-logical tender layout and stronger change hierarchy.
+ */
+
+/* Keep the sale ticket treatment intact; only checkout/cash receives the stacked audit layout. */
+.ticket-panel--checkout .ticket-line-button--structured,
+.ticket-panel--checkout .ticket-line-button--structured:disabled {
+  min-height: 96px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  grid-template-areas:
+    "name name"
+    "total meta";
+  align-items: center;
+  column-gap: 18px;
+  row-gap: 8px;
+  padding: 15px 0;
+  direction: ltr;
+}
+
+.ticket-panel--checkout .ticket-line-copy {
+  display: contents;
+}
+
+.ticket-panel--checkout .ticket-product-name {
+  grid-area: name;
+  width: 100%;
+  min-width: 0;
+  padding-inline: 0;
+  direction: rtl;
+  text-align: right;
+  color: #14211d;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ticket-panel--checkout .ticket-line-meta {
+  grid-area: meta;
+  justify-self: end;
+  width: auto;
+  direction: ltr;
+  color: #65716c;
+  font-size: .78rem;
+  font-weight: 600;
+}
+
+.ticket-panel--checkout .ticket-line-total {
+  grid-area: total;
+  justify-self: start;
+  min-width: max-content;
+  direction: ltr;
+  color: #101815;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+/* Cash hero amount: explicitly keep both number and Saudi-riyal mark on one visual scale. */
+.cash-content--panel .cash-total {
+  margin-bottom: 24px;
+}
+
+.cash-content--panel .cash-total > span {
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+.cash-content--panel .cash-total h1 {
+  min-height: 92px;
+  margin: 8px 0 16px;
+}
+
+.cash-content--panel .cash-total h1 > .money-amount {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  font-size: 1em !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+}
+
+.cash-content--panel .cash-total h1 > .money-amount > span {
+  display: inline-block;
+  font-size: 1em !important;
+  font-weight: inherit;
+  line-height: 1 !important;
+}
+
+.cash-content--panel .cash-total h1 .riyal-symbol {
+  width: .48em;
+  height: .58em;
+}
+
+/* Variable suggestion counts should fill the row naturally: 126 -> 130, 150, 200, 500. */
+.cash-suggestions--tender {
+  grid-template-columns: repeat(auto-fit, minmax(138px, 1fr));
+  gap: 14px;
+}
+
+.cash-suggestions--tender button {
+  min-height: 82px;
+  font-size: 1.15rem;
+}
+
+/* The label stays calm; the change amount is the cashier checkpoint. */
+.change-card {
+  position: relative;
+  min-height: 116px;
+  display: grid;
+  grid-template-columns: 1fr;
+  align-content: center;
+  gap: 6px;
+  padding: 17px 22px 18px;
+  overflow: hidden;
+  text-align: right;
+  border: 1px solid #bfdccb;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f1faf5 0%, #e5f4ec 100%);
+  box-shadow: 0 9px 24px rgb(10 117 79 / 9%);
+}
+
+.change-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: var(--brand);
+}
+
+.change-card span {
+  justify-self: end;
+  color: #486157;
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+.change-card strong {
+  justify-self: center;
+  width: 100%;
+  color: var(--brand-dark);
+  font-size: 2.35rem !important;
+  font-weight: 900;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.change-card strong .money-amount {
+  font-size: 1em !important;
+}
+
+@media (min-width: 1500px) {
+  .ticket-panel--checkout .ticket-lines {
+    padding-inline: 22px;
+  }
+
+  .ticket-panel--checkout .ticket-line-button--structured,
+  .ticket-panel--checkout .ticket-line-button--structured:disabled {
+    min-height: 104px;
+    row-gap: 9px;
+  }
+
+  .ticket-panel--checkout .ticket-product-name {
+    font-size: 1.04rem;
+  }
+
+  .cash-content--panel .cash-total h1 {
+    font-size: 4.6rem !important;
+  }
+
+  .cash-suggestions--tender {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+
+  .change-card strong {
+    font-size: 2.55rem !important;
+  }
+}
+
+@media (max-width: 1180px) and (min-width: 781px) {
+  .cash-suggestions--tender {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
