@@ -60,7 +60,7 @@ export function CashPaymentScreen({ ticket, busy, errorMessage, onDismissError, 
           </button>
         </section>
       </section>
-      <div className="checkout-ticket"><TicketPanel ticket={ticket} /></div>
+      <div className="checkout-ticket"><TicketPanel ticket={ticket} variant="checkout" /></div>
     </main>
   );
 }
