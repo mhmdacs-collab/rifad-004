@@ -1,0 +1,158 @@
+# Rifad UI-First Plan
+
+## Goal
+
+Close the product-interface problem first without coupling the interface to unfinished backend implementations.
+
+The first implementation phase builds all primary Rifad surfaces using Rifad-owned contracts and mock adapters.
+
+## Surfaces
+
+1. POS
+2. Back Office
+3. Dashboard
+4. KDS
+5. Customer Display
+
+The detailed Loyverse behavior/reference material already stored in `Loyverse_Info/` is the acceptance reference for screen inventory, workflows, states and interaction patterns.
+
+## Technology baseline
+
+- React
+- TypeScript
+- Vite
+- PWA for tablet/mobile installation
+- Windows desktop application shell around the same UI
+
+Technology exists to serve the interaction model; it must not force the UI to look like a generic web dashboard.
+
+## UX acceptance rule
+
+> If the installed tablet experience looks like a website, it fails.
+
+Required qualities:
+
+- standalone/full-screen installed experience where supported;
+- no browser-style page layout assumptions;
+- tablet-first dimensions and density;
+- immediate pressed/selected/disabled states;
+- touch-sized controls;
+- swipe/drag/long-press only where the product workflow benefits from them;
+- dialogs, sheets, drawers and navigation that behave as application surfaces;
+- RTL and LTR from the beginning;
+- responsive phone/tablet/desktop layouts without turning POS into a generic responsive website;
+- offline-loadable application shell;
+- keyboard/mouse support on Windows without degrading touch interaction.
+
+## Visual oracle
+
+Loyverse provides the primary product and interaction reference:
+
+- layout hierarchy;
+- screen density;
+- ticket/product relationships;
+- navigation patterns;
+- modal flows;
+- empty/loading/error states;
+- KDS/CDS operational behavior;
+- tablet-oriented ergonomics.
+
+Rifad must use its own identity, assets and implementation.
+
+## Contract-driven mocks
+
+Every screen action calls a contract from day one.
+
+Example:
+
+```text
+UI button: Add branch
+        ↓
+BranchContract.create(input)
+        ↓
+MockBranchAdapter (phase 1)
+        ↓
+Real Branch adapter (later)
+```
+
+The UI does not change when the mock is replaced.
+
+## Phase 1 screen families
+
+### POS
+
+- employee/PIN entry
+- sales workspace
+- product/category navigation
+- current ticket
+- modifiers/variants
+- customer selection
+- discounts/taxes
+- open tickets
+- restaurant table/floor flows
+- payment and split payment surfaces
+- receipts/refunds
+- shifts/cash movements
+- item management shortcuts
+- device settings
+
+### Back Office
+
+- stores/branches
+- POS devices
+- items/categories/modifiers
+- inventory/purchasing/transfers/counts
+- customers/loyalty
+- employees/roles/permissions
+- reports
+- taxes/payment types
+- integrations/settings
+
+### Dashboard
+
+- sales summary
+- comparison periods
+- inventory alerts
+- branch summary
+- owner-level operational indicators
+
+### KDS
+
+- incoming tickets
+- category/station routing presentation
+- item/order completion
+- recall
+- elapsed time and status
+- offline/LAN state presentation
+
+### CDS
+
+- cart/ticket presentation
+- totals/tax/discount
+- customer-facing payment state
+- receipt/contact flow where applicable
+- disconnected/reconnect state
+
+## Definition of UI phase complete
+
+UI phase is complete only when:
+
+1. every documented primary screen has an implementation;
+2. principal flows can be completed end-to-end with mock data;
+3. every business action crosses a Rifad contract;
+4. no domain logic is buried in view components;
+5. RTL/LTR work on target layouts;
+6. installed PWA presentation feels app-like;
+7. Windows shell can host the same application UI;
+8. visual regression coverage exists for major screens/states;
+9. mock adapters can be individually replaced without restructuring the UI.
+
+## What is explicitly not part of UI phase
+
+- repairing donor applications;
+- binding Rifad to Odoo/FloCafe internals;
+- implementing final synchronization before its contract is known from the UI/product workflows;
+- premature cloud infrastructure;
+- creating duplicate native UIs merely to obtain a native appearance.
+
+The UI phase produces a complete interactive Rifad product shell and a concrete shopping list of backend/module contracts.
