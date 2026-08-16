@@ -23,6 +23,17 @@ const commandId = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
 const messageFrom = (error: unknown) =>
   error instanceof PosContractError ? error.message : "حدث خطأ غير متوقع. حاول مرة أخرى.";
 
+const EMPTY_CUSTOMER_DETAILS: CustomerDetails = {
+  email: "",
+  address: "",
+  city: "",
+  region: "",
+  postalCode: "",
+  country: "",
+  customerCode: "",
+  note: "",
+};
+
 export const usePosFlow = () => {
   const [runtime] = useState(createMockPosRuntime);
   const [restored] = useState(() => runtime.restore());
@@ -221,7 +232,11 @@ export const usePosFlow = () => {
     }
   }, [runtime]);
 
-  const createCustomer = useCallback(async (name: string, mobile: string, details: CustomerDetails): Promise<Customer | null> => {
+  const createCustomer = useCallback(async (
+    name: string,
+    mobile: string,
+    details: CustomerDetails = EMPTY_CUSTOMER_DETAILS,
+  ): Promise<Customer | null> => {
     setBusy("customer-create");
     setErrorMessage(null);
     try {
