@@ -168,11 +168,11 @@ describe("basic screen customer debt workflow", () => {
     expect(screen.getByRole("button", { name: "آجل" })).toBeEnabled();
   });
 
-  it("searches customers live and records a partial debt settlement", async () => {
+  it("searches customers live and records one partial settlement even on a double submit", async () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await openBasicSales(user);
+    const productSearch = await openBasicSales(user);
     const settleButton = screen.getByRole("button", { name: "سداد" });
     expect(settleButton).toBeEnabled();
     await user.click(settleButton);
@@ -194,17 +194,25 @@ describe("basic screen customer debt workflow", () => {
     const amountInput = screen.getByRole("textbox", { name: "مبلغ السداد" });
     await user.clear(amountInput);
     await user.type(amountInput, "50.00");
-    const customerDialog = screen.getByRole("dialog", { name: "سداد دين عميل" });
-    await user.click(within(customerDialog).getByRole("button", { name: "سداد" }));
 
-    expect(await screen.findByText("تم تسجيل السداد الجزئي. الرصيد المتبقي موضح أعلاه.")).toBeInTheDocument();
+    const customerDialog = screen.getByRole("dialog", { name: "سداد دين عميل" });
+    const confirmButton = within(customerDialog).getByRole("button", { name: "تأكيد سداد 50.00 ر.س" });
+    fireEvent.click(confirmButton);
+    fireEvent.click(confirmButton);
+
+    expect(await screen.findByText("تم سداد 50.00 ر.س")).toBeInTheDocument();
+    expect(within(customerDialog).queryByRole("button", { name: /تأكيد سداد|كامل الدين|تعديل المبلغ/ })).not.toBeInTheDocument();
 
     const persisted = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}") as {
       customers?: { id: string; debt: { halalas: number } }[];
       debtPayments?: { amount: { halalas: number } }[];
     };
     expect(persisted.customers?.find((customer) => customer.id === "customer-001")?.debt.halalas).toBe(7000);
+    expect(persisted.debtPayments).toHaveLength(1);
     expect(persisted.debtPayments?.[0]?.amount.halalas).toBe(5000);
+
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "سداد دين عميل" })).not.toBeInTheDocument());
+    await waitFor(() => expect(productSearch).toHaveFocus());
   });
 
   it("records a sale as customer debt and starts a fresh ticket", async () => {
