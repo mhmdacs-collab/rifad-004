@@ -16,6 +16,7 @@ import "./visual-pass-11.css";
 import "./visual-pass-12.css";
 import "./customer-credit.css";
 import "./customer-credit-partial.css";
+import "./customer-system.css";
 
 createRoot(document.getElementById("root")!).render(<StrictMode><App /></StrictMode>);
 
