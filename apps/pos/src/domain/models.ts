@@ -17,6 +17,13 @@ export type Product = Readonly<{
   tone: ProductTone;
 }>;
 
+export type SalePage = Readonly<{
+  id: string;
+  name: string;
+  isDefault: boolean;
+  productSlots: readonly (string | null)[];
+}>;
+
 export type TicketLine = Readonly<{
   id: string;
   productId: string;

@@ -6,6 +6,7 @@ import type {
   Product,
   Receipt,
   RestoredPosState,
+  SalePage,
   Ticket,
 } from "../domain/models";
 
@@ -41,6 +42,23 @@ export interface SalesContract {
   addItem(input: { commandId: string; ticketId: string; productId: string }): Promise<Ticket>;
   setLineQuantity(input: { ticketId: string; lineId: string; quantity: number }): Promise<Ticket>;
   removeLine(input: { ticketId: string; lineId: string }): Promise<Ticket>;
+  saveOpenTicket(input: { commandId: string; ticketId: string }): Promise<Ticket>;
+}
+
+export interface SaleLayoutContract {
+  listPages(): Promise<readonly SalePage[]>;
+  createPage(input: { commandId: string; name: string }): Promise<readonly SalePage[]>;
+  placeProduct(input: {
+    commandId: string;
+    pageId: string;
+    slotIndex: number;
+    productId: string;
+  }): Promise<readonly SalePage[]>;
+  removeProduct(input: {
+    commandId: string;
+    pageId: string;
+    slotIndex: number;
+  }): Promise<readonly SalePage[]>;
 }
 
 export interface CheckoutContract {
@@ -62,6 +80,7 @@ export interface MockPosRuntime {
   deviceSession: DeviceSessionContract;
   employeeSession: EmployeeSessionContract;
   catalog: CatalogContract;
+  saleLayout: SaleLayoutContract;
   sales: SalesContract;
   checkout: CheckoutContract;
   printing: PrintingContract;

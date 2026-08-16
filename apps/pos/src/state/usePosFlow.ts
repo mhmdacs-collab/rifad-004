@@ -8,6 +8,7 @@ import type {
   PrintDeliveryStatus,
   Product,
   Receipt,
+  SalePage,
   Ticket,
 } from "../domain/models";
 
@@ -20,7 +21,7 @@ const messageFrom = (error: unknown) =>
 
 export const usePosFlow = () => {
   const [runtime] = useState(createMockPosRuntime);
-  const restored = runtime.restore();
+  const [restored] = useState(() => runtime.restore());
   const initialStage: FlowStage = restored.receipt
     ? "success"
     : restored.employee && restored.ticket
@@ -35,6 +36,9 @@ export const usePosFlow = () => {
   const [ticket, setTicket] = useState<Ticket | null>(restored.ticket);
   const [receipt, setReceipt] = useState<Receipt | null>(restored.receipt);
   const [products, setProducts] = useState<readonly Product[]>([]);
+  const [allProducts, setAllProducts] = useState<readonly Product[]>([]);
+  const [salePages, setSalePages] = useState<readonly SalePage[]>([]);
+  const [activePageId, setActivePageId] = useState("page-popular");
   const [categories, setCategories] = useState<readonly { id: string; name: string }[]>([]);
   const [query, setQuery] = useState("");
   const [categoryId, setCategoryId] = useState("all");
@@ -47,8 +51,16 @@ export const usePosFlow = () => {
 
   useEffect(() => {
     let active = true;
-    runtime.catalog.categories().then((items) => {
-      if (active) setCategories(items);
+    Promise.all([
+      runtime.catalog.categories(),
+      runtime.catalog.search({ query: "", categoryId: "all" }),
+      runtime.saleLayout.listPages(),
+    ]).then(([categoryItems, catalogItems, pages]) => {
+      if (!active) return;
+      setCategories(categoryItems);
+      setAllProducts(catalogItems);
+      setSalePages(pages);
+      setActivePageId((current) => pages.some((page) => page.id === current) ? current : (pages[0]?.id ?? "all-items"));
     });
     return () => {
       active = false;
@@ -172,6 +184,69 @@ export const usePosFlow = () => {
     [runtime, ticket],
   );
 
+  const saveOpenTicket = useCallback(async () => {
+    if (!ticket) return;
+    setBusy("save-ticket");
+    setErrorMessage(null);
+    try {
+      const nextTicket = await runtime.sales.saveOpenTicket({
+        commandId: commandId("save-ticket"),
+        ticketId: ticket.id,
+      });
+      setTicket(nextTicket);
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+    } finally {
+      setBusy(null);
+    }
+  }, [runtime, ticket]);
+
+  const createSalePage = useCallback(async (name: string) => {
+    setBusy("sale-layout");
+    setErrorMessage(null);
+    try {
+      const pages = await runtime.saleLayout.createPage({ commandId: commandId("sale-page"), name });
+      setSalePages(pages);
+      setActivePageId(pages.at(-1)?.id ?? "all-items");
+      return true;
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+      return false;
+    } finally {
+      setBusy(null);
+    }
+  }, [runtime]);
+
+  const placeSalePageProduct = useCallback(async (pageId: string, slotIndex: number, productId: string) => {
+    setBusy("sale-layout");
+    setErrorMessage(null);
+    try {
+      const pages = await runtime.saleLayout.placeProduct({
+        commandId: commandId("sale-page-place"), pageId, slotIndex, productId,
+      });
+      setSalePages(pages);
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+    } finally {
+      setBusy(null);
+    }
+  }, [runtime]);
+
+  const removeSalePageProduct = useCallback(async (pageId: string, slotIndex: number) => {
+    setBusy("sale-layout");
+    setErrorMessage(null);
+    try {
+      const pages = await runtime.saleLayout.removeProduct({
+        commandId: commandId("sale-page-remove"), pageId, slotIndex,
+      });
+      setSalePages(pages);
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+    } finally {
+      setBusy(null);
+    }
+  }, [runtime]);
+
   const beginCheckout = useCallback(async () => {
     if (!ticket) return;
     setBusy("checkout");
@@ -269,6 +344,9 @@ export const usePosFlow = () => {
     ticket,
     receipt,
     products,
+    allProducts,
+    salePages,
+    activePageId,
     categories,
     query,
     categoryId,
@@ -277,12 +355,17 @@ export const usePosFlow = () => {
     printStatus,
     setQuery,
     setCategoryId,
+    setActivePageId,
     clearError: () => setErrorMessage(null),
     signIn,
     unlock,
     addProduct,
     setQuantity,
     removeLine,
+    saveOpenTicket,
+    createSalePage,
+    placeSalePageProduct,
+    removeSalePageProduct,
     beginCheckout,
     selectCash,
     completeCash,

@@ -5,6 +5,7 @@ import type {
   EmployeeSessionContract,
   MockPosRuntime,
   PrintingContract,
+  SaleLayoutContract,
   SalesContract,
 } from "../contracts/pos";
 import { PosContractError } from "../contracts/pos";
@@ -15,6 +16,7 @@ import type {
   Product,
   Receipt,
   RestoredPosState,
+  SalePage,
   Ticket,
   TicketLine,
 } from "../domain/models";
@@ -50,7 +52,27 @@ type Persisted = {
   ticket: Ticket | null;
   receipt: Receipt | null;
   nextTicketSequence: number;
+  openTickets: Ticket[];
+  salePages: SalePage[];
 };
+
+const emptySlots = () => Array<string | null>(20).fill(null);
+
+const initialSalePages = (): SalePage[] => [
+  { id: "all-items", name: "كافة العناصر", isDefault: true, productSlots: [] },
+  {
+    id: "page-popular",
+    name: "أهم المنتجات",
+    isDefault: false,
+    productSlots: ["p-001", "p-002", "p-003", null, null, ...emptySlots().slice(5)],
+  },
+  {
+    id: "page-drinks",
+    name: "المشروبات",
+    isDefault: false,
+    productSlots: ["p-006", "p-007", "p-005", "p-004", null, ...emptySlots().slice(5)],
+  },
+];
 
 const emptyState = (): Persisted => ({
   device: null,
@@ -58,6 +80,8 @@ const emptyState = (): Persisted => ({
   ticket: null,
   receipt: null,
   nextTicketSequence: 1,
+  openTickets: [],
+  salePages: initialSalePages(),
 });
 
 const pause = () => new Promise<void>((resolve) => window.setTimeout(resolve, WAIT_MS));
@@ -84,7 +108,14 @@ class MockStore {
   private read(): Persisted {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
-      return raw ? (JSON.parse(raw) as Persisted) : emptyState();
+      if (!raw) return emptyState();
+      const parsed = JSON.parse(raw) as Partial<Persisted>;
+      return {
+        ...emptyState(),
+        ...parsed,
+        openTickets: parsed.openTickets ?? [],
+        salePages: parsed.salePages?.length ? parsed.salePages : initialSalePages(),
+      };
     } catch {
       return emptyState();
     }
@@ -134,6 +165,65 @@ class MockStore {
       const matchesQuery = !normalized || product.name.toLocaleLowerCase("ar").includes(normalized);
       return matchesCategory && matchesQuery;
     });
+  }
+
+  async listSalePages(): Promise<readonly SalePage[]> {
+    await pause();
+    return this.state.salePages;
+  }
+
+  async createSalePage(name: string): Promise<readonly SalePage[]> {
+    await pause();
+    const cleanName = name.trim();
+    if (!cleanName) throw new PosContractError("PAGE_NAME_REQUIRED", "اكتب اسمًا للصفحة.");
+    if (this.state.salePages.some((page) => page.name === cleanName)) {
+      throw new PosContractError("PAGE_NAME_DUPLICATE", "يوجد بالفعل صفحة بهذا الاسم.");
+    }
+    const page: SalePage = {
+      id: createId("sale-page"),
+      name: cleanName,
+      isDefault: false,
+      productSlots: emptySlots(),
+    };
+    this.state = { ...this.state, salePages: [...this.state.salePages, page] };
+    this.persist();
+    return this.state.salePages;
+  }
+
+  async placeSalePageProduct(pageId: string, slotIndex: number, productId: string): Promise<readonly SalePage[]> {
+    await pause();
+    if (!products.some((product) => product.id === productId)) {
+      throw new PosContractError("PRODUCT_NOT_FOUND", "العنصر غير متاح.");
+    }
+    this.state = {
+      ...this.state,
+      salePages: this.state.salePages.map((page) => {
+        if (page.id !== pageId || page.isDefault) return page;
+        const productSlots = [...page.productSlots];
+        if (slotIndex < 0 || slotIndex >= productSlots.length) {
+          throw new PosContractError("INVALID_PAGE_SLOT", "مكان المنتج غير صالح.");
+        }
+        productSlots[slotIndex] = productId;
+        return { ...page, productSlots };
+      }),
+    };
+    this.persist();
+    return this.state.salePages;
+  }
+
+  async removeSalePageProduct(pageId: string, slotIndex: number): Promise<readonly SalePage[]> {
+    await pause();
+    this.state = {
+      ...this.state,
+      salePages: this.state.salePages.map((page) => {
+        if (page.id !== pageId || page.isDefault) return page;
+        const productSlots = [...page.productSlots];
+        if (slotIndex >= 0 && slotIndex < productSlots.length) productSlots[slotIndex] = null;
+        return { ...page, productSlots };
+      }),
+    };
+    this.persist();
+    return this.state.salePages;
   }
 
   async startTicket(): Promise<Ticket> {
@@ -186,6 +276,23 @@ class MockStore {
 
   async removeLine(ticketId: string, lineId: string): Promise<Ticket> {
     return this.setLineQuantity(ticketId, lineId, 0);
+  }
+
+  async saveOpenTicket(ticketId: string): Promise<Ticket> {
+    await pause();
+    const ticket = this.requireTicket(ticketId);
+    if (ticket.lines.length === 0) {
+      throw new PosContractError("EMPTY_TICKET", "أضف عنصرًا واحدًا على الأقل قبل الحفظ.");
+    }
+    const nextTicket = this.createTicket([], this.state.nextTicketSequence);
+    this.state = {
+      ...this.state,
+      openTickets: [...this.state.openTickets, ticket],
+      ticket: nextTicket,
+      nextTicketSequence: this.state.nextTicketSequence + 1,
+    };
+    this.persist();
+    return nextTicket;
   }
 
   async begin(ticketId: string): Promise<{ checkoutId: string }> {
@@ -290,11 +397,19 @@ export const createMockPosRuntime = (): MockPosRuntime => {
     search: ({ query, categoryId }) => store.search(query, categoryId),
     categories: async () => categories,
   };
+  const saleLayout: SaleLayoutContract = {
+    listPages: () => store.listSalePages(),
+    createPage: ({ name }) => store.createSalePage(name),
+    placeProduct: ({ pageId, slotIndex, productId }) =>
+      store.placeSalePageProduct(pageId, slotIndex, productId),
+    removeProduct: ({ pageId, slotIndex }) => store.removeSalePageProduct(pageId, slotIndex),
+  };
   const sales: SalesContract = {
     startTicket: () => store.startTicket(),
     addItem: ({ ticketId, productId }) => store.addItem(ticketId, productId),
     setLineQuantity: ({ ticketId, lineId, quantity }) => store.setLineQuantity(ticketId, lineId, quantity),
     removeLine: ({ ticketId, lineId }) => store.removeLine(ticketId, lineId),
+    saveOpenTicket: ({ ticketId }) => store.saveOpenTicket(ticketId),
   };
   const checkout: CheckoutContract = {
     begin: ({ ticketId }) => store.begin(ticketId),
@@ -311,6 +426,7 @@ export const createMockPosRuntime = (): MockPosRuntime => {
     deviceSession,
     employeeSession,
     catalog,
+    saleLayout,
     sales,
     checkout,
     printing,

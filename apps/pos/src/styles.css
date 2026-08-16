@@ -271,3 +271,127 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation-duration: .01ms !important; }
 }
+
+/* Loyverse-aligned tablet sales workspace, independently implemented for Rifad. */
+.loyverse-shell { grid-template-columns: minmax(0, 1fr) minmax(360px, 30%); background: #f1f1f1; }
+.loyverse-shell .sales-catalog { background: #f1f1f1; }
+.loyverse-shell .workspace-header { height: 84px; min-height: 84px; gap: 8px; padding: 0 22px; background: var(--brand); box-shadow: 0 2px 6px rgb(0 0 0 / 17%); }
+.appbar-icon { width: 46px; height: 46px; display: grid; place-items: center; color: #fff; border: 0; background: transparent; cursor: pointer; }
+.appbar-icon:hover { background: rgb(255 255 255 / 10%); }
+.category-select { height: 100%; min-width: 210px; display: flex; align-items: center; gap: 7px; color: #fff; }
+.category-select select { appearance: none; min-width: 170px; color: #fff; border: 0; outline: 0; background: transparent; cursor: pointer; font-size: 1.05rem; font-weight: 600; }
+.category-select option { color: var(--ink); background: #fff; }
+.category-select svg { transform: rotate(90deg); }
+.appbar-spacer { flex: 1; }
+.layout-entry, .appbar-text-action { min-height: 42px; padding: 0 16px; color: #fff; border: 1px solid rgb(255 255 255 / 32%); background: transparent; cursor: pointer; font-size: .72rem; }
+.layout-entry:hover, .appbar-text-action:hover { background: rgb(255 255 255 / 10%); }
+.layout-title { margin-inline-end: 8px; color: #fff; font-size: .86rem; }
+.workspace-header--editing { justify-content: space-between; }
+.loyverse-shell .catalog-search { flex: 0 1 360px; height: 46px; max-width: 360px; margin: 0; color: var(--ink); background: #fff; border: 0; }
+.loyverse-shell .catalog-search input { color: var(--ink); }
+.loyverse-shell .catalog-search button { width: 38px; height: 38px; color: var(--muted); border: 0; background: transparent; cursor: pointer; font-size: 1.35rem; }
+.loyverse-shell > .sales-catalog > .inline-notice { position: absolute; z-index: 7; inset: 94px 32% auto 20px; box-shadow: 0 6px 18px rgb(0 0 0 / 10%); }
+.loyverse-shell .product-area { flex: 1; padding: 13px; overflow: auto; background: #f1f1f1; }
+.loyverse-shell .product-grid { min-height: 100%; display: grid; grid-template-columns: repeat(5, minmax(112px, 1fr)); grid-auto-rows: 154px; align-content: start; gap: 13px; direction: rtl; }
+.catalog-cell { position: relative; min-width: 0; min-height: 0; border: 0; }
+.catalog-product { display: grid; place-items: center; padding: 12px; text-align: center; color: #272d2a; cursor: pointer; overflow: hidden; box-shadow: 0 1px 2px rgb(0 0 0 / 8%); }
+.catalog-product strong { max-width: 100%; font-size: .91rem; font-weight: 500; line-height: 1.7; }
+.catalog-product:hover:not(:disabled) { outline: 2px solid rgb(10 113 78 / 35%); outline-offset: -2px; filter: brightness(.98); }
+.catalog-cell--editing { border: 2px solid var(--brand); background: #fff; }
+.catalog-cell--editing .catalog-product { width: 100%; height: 100%; box-shadow: none; }
+.remove-layout-item { position: absolute; z-index: 2; inset: 7px 7px auto auto; width: 30px; height: 30px; color: #fff; border: 0; border-radius: 50%; background: #9c3f3f; cursor: pointer; font-size: 1.15rem; }
+.empty-layout-slot { display: grid; place-items: center; color: var(--brand); border: 1px solid #d1d5d3; background: #f8f9f8; cursor: pointer; }
+.empty-layout-slot:hover { border-color: var(--brand); background: var(--brand-soft); }
+.blank-layout-slot { background: transparent; }
+.product-area--editing .blank-layout-slot { border: 1px solid #d1d5d3; }
+.loyverse-shell .empty-products { min-height: 300px; }
+.sale-page-tabs { min-height: 86px; display: flex; align-items: stretch; gap: 0; padding: 0 18px; direction: rtl; overflow-x: auto; background: #fff; border-top: 1px solid #ddd; box-shadow: 0 -2px 5px rgb(0 0 0 / 5%); }
+.sale-page-tabs button { position: relative; min-width: 150px; padding: 0 22px; white-space: nowrap; color: #6e7471; border: 0; border-top: 3px solid transparent; background: #fff; cursor: pointer; font-size: .9rem; }
+.sale-page-tabs button.active { color: var(--brand); border-top-color: var(--brand); font-weight: 600; }
+.sale-page-tabs .grid-page, .sale-page-tabs .add-sale-page { min-width: 90px; display: grid; place-items: center; color: var(--brand); }
+.sale-page-tabs .add-sale-page { margin-inline-start: auto; color: #87908c; }
+.loyverse-shell .ticket-column { border-inline-start: 0; border-inline-end: 1px solid #d7d7d7; box-shadow: 3px 0 7px rgb(0 0 0 / 9%); }
+.loyverse-shell .ticket-header { min-height: 84px; flex-direction: row; padding: 0 24px; background: #fff; box-shadow: 0 2px 6px rgb(0 0 0 / 12%); }
+.ticket-header h2 { margin: 0; font-size: 1.14rem; font-weight: 500; }
+.ticket-header h2 small { color: #89908d; font-size: .65rem; font-weight: 400; }
+.ticket-header-tools { display: flex; align-items: center; gap: 22px; color: #747a77; }
+.ticket-more { font-size: 1.75rem; line-height: 1; }
+.ticket-customer { position: relative; display: inline-flex; }
+.ticket-customer svg:last-child { position: absolute; inset: -4px -7px auto auto; }
+.loyverse-shell .ticket-lines { padding: 0 24px; }
+.loyverse-shell .empty-ticket { min-height: 250px; }
+.loyverse-shell .empty-ticket > span { display: none; }
+.loyverse-shell .empty-ticket strong { font-size: .95rem; font-weight: 500; }
+.loyverse-shell .empty-ticket p { font-size: .72rem; }
+.loyverse-shell .ticket-line { display: block; padding: 0; border-bottom: 1px solid #e2e2e2; }
+.ticket-line-button { width: 100%; min-height: 78px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; text-align: right; border: 0; background: #fff; cursor: pointer; }
+.ticket-line-button:disabled { opacity: 1; cursor: default; }
+.ticket-line-name { min-width: 0; display: flex; align-items: baseline; gap: 6px; }
+.ticket-line-name strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .82rem; font-weight: 500; }
+.ticket-line-name small { color: #737a76; font-size: .7rem; }
+.ticket-line-button .line-total { grid-column: auto; grid-row: auto; direction: ltr; font-size: .78rem; font-weight: 500; }
+.loyverse-shell .ticket-totals { padding: 17px 24px; border-top: 0; }
+.loyverse-shell .ticket-totals > div { margin: 13px 0; font-size: .78rem; }
+.loyverse-shell .ticket-totals .ticket-grand-total { margin-top: 18px; padding-top: 20px; font-size: 1rem; border-top: 1px solid #ddd; }
+.ticket-actions { min-height: 86px; display: grid; grid-template-columns: 1fr 1fr; padding: 0 24px 22px; background: #fff; }
+.ticket-actions button { color: #fff; border: 0; background: var(--brand); cursor: pointer; font-size: 1rem; }
+.ticket-actions button + button { border-inline-start: 1px solid rgb(255 255 255 / 22%); }
+.ticket-actions button:hover:not(:disabled) { background: var(--brand-dark); }
+
+.dialog-backdrop, .pos-drawer-backdrop { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 24px; background: rgb(0 0 0 / 42%); }
+.layout-dialog { width: min(620px, 100%); max-height: min(760px, calc(100vh - 48px)); display: flex; flex-direction: column; direction: rtl; background: #fff; box-shadow: 0 18px 60px rgb(0 0 0 / 24%); }
+.layout-dialog > header { min-height: 64px; display: flex; align-items: center; gap: 16px; padding: 0 20px; border-bottom: 1px solid #ddd; }
+.layout-dialog > header button { width: 36px; height: 36px; color: #6f7672; border: 0; background: transparent; cursor: pointer; font-size: 1.35rem; }
+.layout-dialog h2 { margin: 0; font-size: .96rem; }
+.picker-tabs { min-height: 56px; display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid #ddd; }
+.picker-tabs button { border: 0; border-bottom: 3px solid transparent; background: #fff; color: #727a76; }
+.picker-tabs button.active { color: var(--brand); border-bottom-color: var(--brand); }
+.picker-list { min-height: 0; overflow-y: auto; }
+.picker-list > button { width: 100%; min-height: 62px; display: grid; grid-template-columns: 42px 1fr auto; align-items: center; gap: 12px; padding: 8px 18px; text-align: right; border: 0; border-bottom: 1px solid #eee; background: #fff; cursor: pointer; }
+.picker-list > button:hover { background: #f5f7f6; }
+.picker-swatch { width: 42px; height: 42px; display: grid; place-items: center; font-size: .68rem; }
+.picker-list strong { font-size: .77rem; font-weight: 500; }
+.picker-list small { direction: ltr; color: #656d69; font-size: .7rem; }
+.page-name-dialog { padding-bottom: 22px; }
+.page-name-dialog label { display: grid; gap: 9px; padding: 24px; font-size: .73rem; }
+.page-name-dialog input { height: 52px; padding: 0 13px; border: 1px solid #cfd5d2; }
+.page-name-dialog > .primary-button { margin: 0 24px; }
+.line-editor { padding-bottom: 20px; }
+.line-editor > label { padding: 22px 22px 9px; color: var(--brand); font-size: .7rem; }
+.line-quantity-editor { height: 72px; margin: 0 22px 24px; display: grid; grid-template-columns: 64px 1fr 64px; border: 1px solid #d3d8d5; }
+.line-quantity-editor button { display: grid; place-items: center; border: 0; background: #f1f3f2; cursor: pointer; }
+.line-quantity-editor strong { display: grid; place-items: center; }
+.line-editor-actions { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; padding: 0 22px; }
+.line-editor-actions button { min-height: 50px; }
+.delete-line { display: flex; align-items: center; justify-content: center; gap: 7px; color: #a44242; border: 1px solid #e0bcbc; background: #fff; cursor: pointer; }
+.pos-drawer-backdrop { place-items: stretch end; padding: 0; }
+.pos-drawer { width: min(390px, 86vw); height: 100%; direction: rtl; background: #fff; box-shadow: -8px 0 30px rgb(0 0 0 / 20%); }
+.pos-drawer header { min-height: 132px; display: flex; flex-direction: column; justify-content: end; gap: 6px; padding: 24px; color: #fff; background: var(--brand); }
+.pos-drawer header span { color: #cbe2da; font-size: .7rem; }
+.pos-drawer > button { width: 100%; min-height: 60px; display: flex; align-items: center; gap: 15px; padding: 0 24px; text-align: right; border: 0; background: #fff; cursor: pointer; }
+.pos-drawer > button.active { color: var(--brand); background: var(--brand-soft); font-weight: 700; }
+
+@media (max-width: 1120px) and (min-width: 781px) {
+  .loyverse-shell { grid-template-columns: minmax(0, 1fr) 340px; }
+  .loyverse-shell .product-grid { grid-template-columns: repeat(4, minmax(105px, 1fr)); }
+  .loyverse-shell > .sales-catalog > .inline-notice { inset-inline-end: 350px; }
+}
+
+@media (max-width: 780px) {
+  .loyverse-shell { display: block; min-height: 100vh; overflow: visible; }
+  .loyverse-shell .workspace-header { height: 64px; min-height: 64px; padding: 0 8px; }
+  .category-select { min-width: 150px; }
+  .category-select select { min-width: 125px; font-size: .84rem; }
+  .layout-entry { display: none; }
+  .loyverse-shell .product-area { padding: 8px 8px 154px; }
+  .loyverse-shell .product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 120px; gap: 7px; }
+  .catalog-product strong { font-size: .72rem; }
+  .sale-page-tabs { position: fixed; z-index: 5; inset: auto 0 70px; min-height: 60px; padding: 0 5px; }
+  .sale-page-tabs button { min-width: 105px; padding: 0 10px; font-size: .72rem; }
+  .sale-page-tabs .grid-page, .sale-page-tabs .add-sale-page { min-width: 58px; }
+  .loyverse-shell .mobile-checkout { inset: auto 8px 8px; width: calc(100% - 16px); min-height: 54px; }
+  .mobile-ticket-surface .ticket-actions { min-height: 76px; padding: 0 14px 14px; }
+  .loyverse-shell > .sales-catalog > .inline-notice { position: fixed; inset: 72px 10px auto; }
+  .dialog-backdrop { padding: 10px; }
+  .layout-dialog { max-height: calc(100vh - 20px); }
+}

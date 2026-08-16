@@ -6,6 +6,7 @@ type IconName =
   | "chevron"
   | "grid"
   | "lock"
+  | "menu"
   | "minus"
   | "plus"
   | "printer"
@@ -29,6 +30,7 @@ const paths: Record<IconName, ReactNode> = {
   chevron: <path d="m9 18 6-6-6-6" />,
   grid: <><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><rect x="14" y="14" width="6" height="6" rx="1" /></>,
   lock: <><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></>,
+  menu: <><path d="M4 6h16M4 12h16M4 18h16" /></>,
   minus: <path d="M5 12h14" />,
   plus: <><path d="M12 5v14M5 12h14" /></>,
   printer: <><path d="M6 9V3h12v6" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="7" rx="1" /></>,
