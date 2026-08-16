@@ -1,0 +1,537 @@
+/*
+ * Rifad POS — Visual Pass 01
+ * Pure presentation overrides. No workflow, contract or state changes.
+ * Goal: tighter tablet density, stronger hierarchy, more tactile controls,
+ * and a calmer operational surface while preserving the existing flow.
+ */
+
+:root {
+  --brand: #08704d;
+  --brand-dark: #05543a;
+  --brand-strong: #064d37;
+  --brand-soft: #eaf3ef;
+  --ink: #18211e;
+  --muted: #6e7773;
+  --line: #dfe4e1;
+  --line-strong: #cfd6d2;
+  --surface: #ffffff;
+  --canvas: #f2f3f1;
+  --danger: #a83f3f;
+  --shadow-soft: 0 1px 2px rgb(22 35 30 / 8%);
+  --shadow-float: 0 10px 28px rgb(17 38 30 / 12%);
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  background: var(--canvas);
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  transition: background-color 110ms ease, color 110ms ease, border-color 110ms ease,
+    transform 80ms ease, box-shadow 110ms ease, filter 110ms ease;
+}
+
+button:active:not(:disabled) {
+  transform: scale(.985);
+}
+
+/* ===== Sales workspace ===== */
+
+.loyverse-shell {
+  grid-template-columns: minmax(0, 1fr) clamp(360px, 31vw, 410px);
+  background: var(--canvas);
+}
+
+.loyverse-shell .sales-catalog {
+  background: var(--canvas);
+}
+
+.loyverse-shell .workspace-header {
+  height: 64px;
+  min-height: 64px;
+  padding: 0 14px;
+  gap: 6px;
+  background: var(--brand);
+  box-shadow: 0 1px 0 rgb(0 0 0 / 14%), 0 3px 10px rgb(0 0 0 / 9%);
+}
+
+.appbar-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 3px;
+}
+
+.appbar-icon:hover {
+  background: rgb(255 255 255 / 10%);
+}
+
+.appbar-icon:active {
+  background: rgb(255 255 255 / 16%);
+}
+
+.category-select {
+  min-width: 180px;
+  height: 64px;
+  padding-inline: 4px 8px;
+}
+
+.category-select select {
+  min-width: 150px;
+  font-size: .95rem;
+  font-weight: 600;
+  letter-spacing: -.01em;
+}
+
+.loyverse-shell .catalog-search {
+  flex-basis: 340px;
+  height: 42px;
+  max-width: 340px;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 4%);
+}
+
+.loyverse-shell .catalog-search input {
+  font-size: .82rem;
+}
+
+.loyverse-shell .product-area {
+  padding: 10px;
+  background: #f0f1ef;
+  scrollbar-gutter: stable;
+}
+
+.loyverse-shell .product-grid {
+  grid-template-columns: repeat(5, minmax(104px, 1fr));
+  grid-auto-rows: 126px;
+  gap: 8px;
+  align-content: start;
+}
+
+.catalog-cell {
+  border-radius: 3px;
+}
+
+.catalog-product {
+  padding: 10px;
+  border: 1px solid rgb(31 43 38 / 8%);
+  border-radius: 3px;
+  box-shadow: var(--shadow-soft);
+}
+
+.catalog-product strong {
+  font-size: .86rem;
+  font-weight: 600;
+  line-height: 1.55;
+  letter-spacing: -.01em;
+}
+
+.catalog-product:hover:not(:disabled) {
+  outline: none;
+  border-color: rgb(8 112 77 / 34%);
+  box-shadow: 0 3px 8px rgb(20 40 32 / 10%);
+  filter: brightness(.992);
+}
+
+.catalog-product:active:not(:disabled) {
+  box-shadow: inset 0 0 0 2px rgb(8 112 77 / 30%);
+  filter: brightness(.965);
+}
+
+.catalog-cell--editing {
+  border: 2px solid var(--brand);
+  border-radius: 3px;
+  box-shadow: 0 0 0 2px rgb(8 112 77 / 9%);
+}
+
+.blank-layout-slot {
+  border-radius: 3px;
+}
+
+.empty-layout-slot {
+  border-radius: 3px;
+  border-style: dashed;
+}
+
+.remove-layout-item {
+  width: 28px;
+  height: 28px;
+  inset: 6px 6px auto auto;
+  border-radius: 50%;
+  box-shadow: 0 2px 7px rgb(0 0 0 / 16%);
+}
+
+.sale-page-tabs {
+  min-height: 64px;
+  height: 64px;
+  padding: 0 8px;
+  background: #fff;
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -1px 7px rgb(0 0 0 / 5%);
+}
+
+.sale-page-tabs button {
+  min-width: 122px;
+  padding: 0 15px;
+  font-size: .78rem;
+  border-top-width: 3px;
+}
+
+.sale-page-tabs button.active {
+  background: #fbfcfb;
+}
+
+.sale-page-tabs .grid-page,
+.sale-page-tabs .add-sale-page {
+  min-width: 66px;
+}
+
+/* ===== Ticket panel ===== */
+
+.loyverse-shell .ticket-column {
+  background: #fff;
+  border-inline-start: 1px solid #d7dcd9;
+  border-inline-end: 0;
+  box-shadow: -5px 0 16px rgb(20 38 31 / 6%);
+}
+
+.loyverse-shell .ticket-header {
+  min-height: 64px;
+  height: 64px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--line);
+  box-shadow: none;
+}
+
+.ticket-header h2 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.ticket-header-tools {
+  gap: 17px;
+  color: #69716d;
+}
+
+.ticket-more {
+  font-size: 1.55rem;
+}
+
+.loyverse-shell .ticket-lines {
+  padding: 0 18px;
+}
+
+.loyverse-shell .empty-ticket {
+  min-height: 220px;
+  color: #858e89;
+}
+
+.loyverse-shell .empty-ticket strong {
+  color: #5f6864;
+  font-size: .9rem;
+  font-weight: 600;
+}
+
+.loyverse-shell .empty-ticket p {
+  margin-top: 5px;
+  font-size: .7rem;
+}
+
+.loyverse-shell .ticket-line {
+  border-bottom-color: #e8ebe9;
+}
+
+.ticket-line-button {
+  min-height: 66px;
+  padding: 10px 0;
+}
+
+.ticket-line-button:hover:not(:disabled) {
+  background: #fafbfa;
+}
+
+.ticket-line-name strong {
+  font-size: .8rem;
+  font-weight: 600;
+}
+
+.ticket-line-name small,
+.ticket-line-button .line-total {
+  font-size: .69rem;
+}
+
+.loyverse-shell .ticket-totals {
+  padding: 10px 18px 12px;
+  border-top: 1px solid #edf0ee;
+}
+
+.loyverse-shell .ticket-totals > div {
+  margin: 8px 0;
+  font-size: .72rem;
+}
+
+.loyverse-shell .ticket-totals .ticket-grand-total {
+  margin-top: 10px;
+  padding-top: 12px;
+  font-size: .92rem;
+}
+
+.ticket-actions {
+  min-height: 70px;
+  height: 70px;
+  grid-template-columns: .72fr 1.28fr;
+  gap: 8px;
+  padding: 8px 14px 12px;
+  border-top: 1px solid #eef0ef;
+}
+
+.ticket-actions button {
+  border-radius: 3px;
+  font-size: .88rem;
+  font-weight: 700;
+}
+
+.ticket-actions button:first-child {
+  color: #45514c;
+  background: #fff;
+  border: 1px solid #cfd6d2;
+}
+
+.ticket-actions button:first-child:hover:not(:disabled) {
+  background: #f5f7f6;
+  border-color: #b7c2bc;
+}
+
+.ticket-actions button:last-child {
+  background: var(--brand);
+  box-shadow: 0 2px 6px rgb(8 112 77 / 18%);
+}
+
+.ticket-actions button:last-child:hover:not(:disabled) {
+  background: var(--brand-dark);
+}
+
+/* ===== Drawer / dialogs ===== */
+
+.dialog-backdrop,
+.pos-drawer-backdrop {
+  background: rgb(10 20 16 / 45%);
+  backdrop-filter: blur(1.5px);
+}
+
+.pos-drawer {
+  width: min(330px, 86vw);
+  box-shadow: -14px 0 36px rgb(0 0 0 / 22%);
+}
+
+.pos-drawer header {
+  min-height: 116px;
+  padding: 20px 22px;
+  background: var(--brand);
+}
+
+.pos-drawer > button {
+  min-height: 54px;
+  padding: 0 22px;
+  font-size: .8rem;
+}
+
+.layout-dialog {
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: 0 24px 70px rgb(0 0 0 / 27%);
+}
+
+.layout-dialog > header {
+  min-height: 58px;
+}
+
+.picker-list > button {
+  min-height: 58px;
+}
+
+/* ===== Checkout ===== */
+
+.checkout-workspace {
+  grid-template-columns: minmax(0, 1fr) clamp(360px, 31vw, 410px);
+  background: var(--canvas);
+}
+
+.checkout-header,
+.cash-header {
+  min-height: 64px;
+  height: 64px;
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 5%);
+}
+
+.payment-content {
+  width: min(100% - 36px, 720px);
+  margin-inline: auto;
+}
+
+.payment-content h1 {
+  letter-spacing: -.03em;
+}
+
+.payment-method {
+  min-height: 72px;
+  border-radius: 4px;
+  border-color: #d8dedb;
+  box-shadow: var(--shadow-soft);
+}
+
+.payment-method:hover:not(:disabled) {
+  border-color: rgb(8 112 77 / 35%);
+  box-shadow: 0 4px 12px rgb(15 40 30 / 8%);
+}
+
+.payment-icon {
+  border-radius: 4px;
+}
+
+.offline-note {
+  border-radius: 4px;
+  border-color: #dce6e1;
+  background: #f3f8f6;
+}
+
+/* ===== Cash ===== */
+
+.cash-screen {
+  background: #f3f4f2;
+}
+
+.cash-content {
+  width: min(100% - 32px, 560px);
+}
+
+.cash-total h1 {
+  letter-spacing: -.035em;
+}
+
+.cash-input,
+.cash-suggestions button,
+.change-card,
+.complete-sale {
+  border-radius: 4px;
+}
+
+.cash-input:focus-within {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgb(8 112 77 / 10%);
+}
+
+.cash-suggestions button:hover {
+  border-color: rgb(8 112 77 / 35%);
+  background: #f7faf8;
+}
+
+.change-card.ready {
+  background: #edf7f2;
+  border-color: #cae4d9;
+}
+
+/* ===== Success ===== */
+
+.success-screen {
+  background: #f1f3f1;
+}
+
+.success-header {
+  min-height: 60px;
+  height: 60px;
+  border-bottom: 1px solid var(--line);
+  box-shadow: none;
+}
+
+.success-card {
+  border-radius: 6px;
+  border: 1px solid #e1e5e2;
+  box-shadow: 0 14px 38px rgb(20 36 30 / 9%);
+}
+
+.success-mark {
+  box-shadow: 0 0 0 8px rgb(8 112 77 / 7%);
+}
+
+.receipt-summary {
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.success-actions button {
+  border-radius: 4px;
+}
+
+/* ===== Responsive tablet tuning ===== */
+
+@media (max-width: 1180px) and (min-width: 781px) {
+  .loyverse-shell,
+  .checkout-workspace {
+    grid-template-columns: minmax(0, 1fr) 352px;
+  }
+
+  .loyverse-shell .product-grid {
+    grid-template-columns: repeat(4, minmax(104px, 1fr));
+    grid-auto-rows: 124px;
+  }
+
+  .category-select {
+    min-width: 158px;
+  }
+
+  .category-select select {
+    min-width: 132px;
+    font-size: .88rem;
+  }
+
+  .sale-page-tabs button {
+    min-width: 108px;
+  }
+}
+
+@media (max-width: 900px) and (min-width: 781px) {
+  .loyverse-shell,
+  .checkout-workspace {
+    grid-template-columns: minmax(0, 1fr) 330px;
+  }
+
+  .loyverse-shell .product-grid {
+    grid-template-columns: repeat(3, minmax(100px, 1fr));
+  }
+}
+
+@media (max-width: 780px) {
+  .loyverse-shell .workspace-header {
+    height: 58px;
+    min-height: 58px;
+  }
+
+  .loyverse-shell .product-grid {
+    grid-auto-rows: 112px;
+  }
+
+  .sale-page-tabs {
+    min-height: 56px;
+    height: 56px;
+  }
+
+  .sale-page-tabs button {
+    min-width: 96px;
+  }
+}
