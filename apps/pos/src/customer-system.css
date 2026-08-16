@@ -144,7 +144,7 @@
 .customer-extra-fields {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 12px;
   padding: 14px;
   border: 1px solid #e0e7e3;
@@ -193,7 +193,20 @@
 }
 
 .customer-extra-wide {
-  grid-column: 1 / -1;
+  grid-column: auto;
+}
+
+.customer-credit-confirm-dialog {
+  width: min(500px, calc(100vw - 32px));
+}
+
+.customer-credit-confirm-card {
+  margin-top: 18px;
+}
+
+.customer-credit-confirm-loading {
+  min-height: 180px;
+  margin-top: 18px;
 }
 
 .debt-book-dialog {
