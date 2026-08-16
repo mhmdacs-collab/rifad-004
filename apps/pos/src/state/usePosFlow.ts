@@ -1,6 +1,7 @@
 import { useCallback, useDeferredValue, useEffect, useState } from "react";
 import { createMockPosRuntime } from "../adapters/mockPos";
 import { PosContractError } from "../contracts/pos";
+import type { LoyaltyRedemptionQuote, LoyaltyStatus } from "../domain/loyalty";
 import { money } from "../domain/money";
 import { readPrintReceiptAlways } from "../domain/posPreferences";
 import type {
@@ -19,9 +20,7 @@ import type {
 export type FlowStage = "sign-in" | "pin" | "sales" | "payment" | "cash" | "success" | "receipts";
 
 const commandId = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
-
-const messageFrom = (error: unknown) =>
-  error instanceof PosContractError ? error.message : "حدث خطأ غير متوقع. حاول مرة أخرى.";
+const messageFrom = (error: unknown) => error instanceof PosContractError ? error.message : "حدث خطأ غير متوقع. حاول مرة أخرى.";
 
 const EMPTY_CUSTOMER_DETAILS: CustomerDetails = {
   email: "",
@@ -79,141 +78,104 @@ export const usePosFlow = () => {
       setSalePages(pages);
       setActivePageId((current) => pages.some((page) => page.id === current) ? current : (pages[0]?.id ?? "all-items"));
     });
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [runtime]);
 
   useEffect(() => {
     if (stage !== "sales") return;
     let active = true;
     setBusy("catalog");
-    runtime.catalog
-      .search({ query: deferredQuery, categoryId })
-      .then((items) => {
-        if (active) setProducts(items);
-      })
-      .catch((error: unknown) => {
-        if (active) setErrorMessage(messageFrom(error));
-      })
-      .finally(() => {
-        if (active) setBusy((current) => (current === "catalog" ? null : current));
-      });
-    return () => {
-      active = false;
-    };
+    runtime.catalog.search({ query: deferredQuery, categoryId })
+      .then((items) => { if (active) setProducts(items); })
+      .catch((error: unknown) => { if (active) setErrorMessage(messageFrom(error)); })
+      .finally(() => { if (active) setBusy((current) => current === "catalog" ? null : current); });
+    return () => { active = false; };
   }, [categoryId, deferredQuery, runtime, stage]);
 
-  const signIn = useCallback(
-    async (email: string, password: string) => {
-      setBusy("sign-in");
-      setErrorMessage(null);
-      try {
-        const linked = await runtime.deviceSession.linkWithCredentials({
-          commandId: commandId("device-link"),
-          email,
-          password,
-        });
-        setDevice(linked);
-        setStage("pin");
-      } catch (error) {
-        setErrorMessage(messageFrom(error));
-      } finally {
-        setBusy(null);
-      }
-    },
-    [runtime],
-  );
+  const signIn = useCallback(async (email: string, password: string) => {
+    setBusy("sign-in");
+    setErrorMessage(null);
+    try {
+      const linked = await runtime.deviceSession.linkWithCredentials({ commandId: commandId("device-link"), email, password });
+      setDevice(linked);
+      setStage("pin");
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+    } finally {
+      setBusy(null);
+    }
+  }, [runtime]);
 
-  const unlock = useCallback(
-    async (pin: string) => {
-      setBusy("pin");
-      setErrorMessage(null);
-      try {
-        const activeEmployee = await runtime.employeeSession.unlock({ pin });
-        const activeTicket = await runtime.sales.startTicket({ commandId: commandId("ticket") });
-        setEmployee(activeEmployee);
-        setTicket(activeTicket);
-        setReceipt(null);
-        setLastTouchedLineId(null);
-        setStage("sales");
-      } catch (error) {
-        setErrorMessage(messageFrom(error));
-        throw error;
-      } finally {
-        setBusy(null);
-      }
-    },
-    [runtime],
-  );
+  const unlock = useCallback(async (pin: string) => {
+    setBusy("pin");
+    setErrorMessage(null);
+    try {
+      const activeEmployee = await runtime.employeeSession.unlock({ pin });
+      const activeTicket = await runtime.sales.startTicket({ commandId: commandId("ticket") });
+      setEmployee(activeEmployee);
+      setTicket(activeTicket);
+      setReceipt(null);
+      setLastTouchedLineId(null);
+      setStage("sales");
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+      throw error;
+    } finally {
+      setBusy(null);
+    }
+  }, [runtime]);
 
-  const addProduct = useCallback(
-    async (productId: string) => {
-      if (!ticket) return;
-      setBusy(`product:${productId}`);
-      setErrorMessage(null);
-      try {
-        const updated = await runtime.sales.addItem({
-          commandId: commandId("add-item"),
-          ticketId: ticket.id,
-          productId,
-        });
-        setTicket(updated);
-        setLastTouchedLineId(updated.lines.find((line) => line.productId === productId)?.id ?? null);
-      } catch (error) {
-        setErrorMessage(messageFrom(error));
-      } finally {
-        setBusy(null);
-      }
-    },
-    [runtime, ticket],
-  );
+  const addProduct = useCallback(async (productId: string) => {
+    if (!ticket) return;
+    setBusy(`product:${productId}`);
+    setErrorMessage(null);
+    try {
+      const updated = await runtime.sales.addItem({ commandId: commandId("add-item"), ticketId: ticket.id, productId });
+      setTicket(updated);
+      setLastTouchedLineId(updated.lines.find((line) => line.productId === productId)?.id ?? null);
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+    } finally {
+      setBusy(null);
+    }
+  }, [runtime, ticket]);
 
-  const setQuantity = useCallback(
-    async (lineId: string, quantity: number) => {
-      if (!ticket) return;
-      setBusy(`line:${lineId}`);
-      setErrorMessage(null);
-      try {
-        const updated = await runtime.sales.setLineQuantity({ ticketId: ticket.id, lineId, quantity });
-        setTicket(updated);
-        setLastTouchedLineId(quantity > 0 ? lineId : null);
-      } catch (error) {
-        setErrorMessage(messageFrom(error));
-      } finally {
-        setBusy(null);
-      }
-    },
-    [runtime, ticket],
-  );
+  const setQuantity = useCallback(async (lineId: string, quantity: number) => {
+    if (!ticket) return;
+    setBusy(`line:${lineId}`);
+    setErrorMessage(null);
+    try {
+      const updated = await runtime.sales.setLineQuantity({ ticketId: ticket.id, lineId, quantity });
+      setTicket(updated);
+      setLastTouchedLineId(quantity > 0 ? lineId : null);
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+    } finally {
+      setBusy(null);
+    }
+  }, [runtime, ticket]);
 
-  const removeLine = useCallback(
-    async (lineId: string) => {
-      if (!ticket) return;
-      setBusy(`line:${lineId}`);
-      setErrorMessage(null);
-      try {
-        const updated = await runtime.sales.removeLine({ ticketId: ticket.id, lineId });
-        setTicket(updated);
-        setLastTouchedLineId(updated.lines.at(-1)?.id ?? null);
-      } catch (error) {
-        setErrorMessage(messageFrom(error));
-      } finally {
-        setBusy(null);
-      }
-    },
-    [runtime, ticket],
-  );
+  const removeLine = useCallback(async (lineId: string) => {
+    if (!ticket) return;
+    setBusy(`line:${lineId}`);
+    setErrorMessage(null);
+    try {
+      const updated = await runtime.sales.removeLine({ ticketId: ticket.id, lineId });
+      setTicket(updated);
+      setLastTouchedLineId(updated.lines.at(-1)?.id ?? null);
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+    } finally {
+      setBusy(null);
+    }
+  }, [runtime, ticket]);
 
   const saveOpenTicket = useCallback(async () => {
     if (!ticket) return;
     setBusy("save-ticket");
     setErrorMessage(null);
     try {
-      const nextTicket = await runtime.sales.saveOpenTicket({
-        commandId: commandId("save-ticket"),
-        ticketId: ticket.id,
-      });
+      const nextTicket = await runtime.sales.saveOpenTicket({ commandId: commandId("save-ticket"), ticketId: ticket.id });
       setTicket(nextTicket);
       setLastTouchedLineId(null);
     } catch (error) {
@@ -249,16 +211,35 @@ export const usePosFlow = () => {
     }
   }, [runtime]);
 
+  const updateCustomer = useCallback(async (
+    customerId: string,
+    name: string,
+    mobile: string,
+    details: CustomerDetails,
+  ): Promise<Customer | null> => {
+    setBusy("customer-update");
+    setErrorMessage(null);
+    try {
+      const updated = await runtime.customerCredit.update({ commandId: commandId("customer-update"), customerId, name, mobile, details });
+      if (ticket?.customer?.id === customerId) {
+        const updatedTicket = await runtime.sales.setCustomer({ commandId: commandId("ticket-customer-refresh"), ticketId: ticket.id, customerId });
+        setTicket(updatedTicket);
+      }
+      return updated;
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+      return null;
+    } finally {
+      setBusy(null);
+    }
+  }, [runtime, ticket]);
+
   const setTicketCustomer = useCallback(async (customerId: string | null): Promise<boolean> => {
     if (!ticket) return false;
     setBusy("ticket-customer");
     setErrorMessage(null);
     try {
-      const updated = await runtime.sales.setCustomer({
-        commandId: commandId("ticket-customer"),
-        ticketId: ticket.id,
-        customerId,
-      });
+      const updated = await runtime.sales.setCustomer({ commandId: commandId("ticket-customer"), ticketId: ticket.id, customerId });
       setTicket(updated);
       return true;
     } catch (error) {
@@ -269,12 +250,71 @@ export const usePosFlow = () => {
     }
   }, [runtime, ticket]);
 
+  const applyLoyaltyRedemption = useCallback(async (amountHalalas: number): Promise<boolean> => {
+    if (!ticket?.customer) return false;
+    setBusy("loyalty-redemption");
+    setErrorMessage(null);
+    try {
+      const updated = await runtime.sales.setLoyaltyRedemption({ commandId: commandId("loyalty-redemption"), ticketId: ticket.id, amount: money(amountHalalas) });
+      setTicket(updated);
+      return true;
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+      return false;
+    } finally {
+      setBusy(null);
+    }
+  }, [runtime, ticket]);
+
+  const loadLoyaltyStatus = useCallback(async (customerId: string): Promise<LoyaltyStatus | null> => {
+    try {
+      return await runtime.loyalty.status({ customerId });
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+      return null;
+    }
+  }, [runtime]);
+
+  const quoteLoyaltyRedemption = useCallback(async (customerId: string, ticketTotalHalalas: number): Promise<LoyaltyRedemptionQuote | null> => {
+    try {
+      return await runtime.loyalty.quoteRedemption({ customerId, ticketTotal: money(ticketTotalHalalas) });
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+      return null;
+    }
+  }, [runtime]);
+
+  const loadCustomerPurchases = useCallback(async (customerId: string): Promise<readonly Receipt[]> => {
+    try {
+      return await runtime.receipts.listByCustomer({ customerId });
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+      return [];
+    }
+  }, [runtime]);
+
   const loadCustomerLedger = useCallback(async (customerId: string): Promise<readonly DebtLedgerEntry[]> => {
     try {
       return await runtime.customerCredit.ledger({ customerId });
     } catch (error) {
       setErrorMessage(messageFrom(error));
       return [];
+    }
+  }, [runtime]);
+
+  const completeCustomerLoyalty = useCallback(async (completed: Receipt): Promise<Receipt> => {
+    if (!completed.customer) return completed;
+    try {
+      const loyalty = await runtime.loyalty.completeSale({
+        commandId: `loyalty-sale-${completed.id}`,
+        receiptId: completed.id,
+        customerId: completed.customer.id,
+        netTotal: completed.total,
+        redeemed: completed.loyaltyRedemption,
+      });
+      return await runtime.receipts.setLoyaltyEarned({ receiptId: completed.id, earned: loyalty.earned });
+    } catch {
+      return completed;
     }
   }, [runtime]);
 
@@ -288,14 +328,10 @@ export const usePosFlow = () => {
 
     if (readPrintReceiptAlways()) {
       try {
-        await runtime.printing.submit({
-          commandId: commandId("auto-print"),
-          receiptId: completed.id,
-        });
+        await runtime.printing.submit({ commandId: commandId("auto-print"), receiptId: completed.id });
       } catch {
-        // The receipt is already persisted and remains available in Receipts.
+        // Receipt remains available in Receipts even if print delivery fails or is unknown.
       }
-
       try {
         const activeTicket = await runtime.sales.startTicket({ commandId: commandId("ticket") });
         setTicket(activeTicket);
@@ -320,12 +356,9 @@ export const usePosFlow = () => {
     setBusy("customer-credit");
     setErrorMessage(null);
     try {
-      const result = await runtime.customerCredit.chargeTicket({
-        commandId: commandId("customer-credit"),
-        customerId,
-        ticketId: ticket.id,
-      });
-      await finalizeCompletedReceipt(result.receipt);
+      const result = await runtime.customerCredit.chargeTicket({ commandId: commandId("customer-credit"), customerId, ticketId: ticket.id });
+      const completed = await completeCustomerLoyalty(result.receipt);
+      await finalizeCompletedReceipt(completed);
       return result.customer;
     } catch (error) {
       setErrorMessage(messageFrom(error));
@@ -333,17 +366,13 @@ export const usePosFlow = () => {
     } finally {
       setBusy(null);
     }
-  }, [finalizeCompletedReceipt, runtime, ticket]);
+  }, [completeCustomerLoyalty, finalizeCompletedReceipt, runtime, ticket]);
 
   const settleCustomerDebt = useCallback(async (customerId: string, amountHalalas: number): Promise<Customer | null> => {
     setBusy("customer-settlement");
     setErrorMessage(null);
     try {
-      return await runtime.customerCredit.settle({
-        commandId: commandId("customer-settlement"),
-        customerId,
-        amount: money(amountHalalas),
-      });
+      return await runtime.customerCredit.settle({ commandId: commandId("customer-settlement"), customerId, amount: money(amountHalalas) });
     } catch (error) {
       setErrorMessage(messageFrom(error));
       return null;
@@ -389,9 +418,7 @@ export const usePosFlow = () => {
     try {
       const pages = await runtime.saleLayout.deletePage({ commandId: commandId("sale-page-delete"), pageId });
       setSalePages(pages);
-      setActivePageId((current) => current === pageId
-        ? (pages.find((page) => !page.isDefault)?.id ?? pages[0]?.id ?? "all-items")
-        : current);
+      setActivePageId((current) => current === pageId ? (pages.find((page) => !page.isDefault)?.id ?? pages[0]?.id ?? "all-items") : current);
       return true;
     } catch (error) {
       setErrorMessage(messageFrom(error));
@@ -405,9 +432,7 @@ export const usePosFlow = () => {
     setBusy("sale-layout");
     setErrorMessage(null);
     try {
-      const pages = await runtime.saleLayout.movePage({
-        commandId: commandId("sale-page-move"), pageId, direction,
-      });
+      const pages = await runtime.saleLayout.movePage({ commandId: commandId("sale-page-move"), pageId, direction });
       setSalePages(pages);
       return true;
     } catch (error) {
@@ -422,9 +447,7 @@ export const usePosFlow = () => {
     setBusy("sale-layout");
     setErrorMessage(null);
     try {
-      const pages = await runtime.saleLayout.placeProduct({
-        commandId: commandId("sale-page-place"), pageId, slotIndex, productId,
-      });
+      const pages = await runtime.saleLayout.placeProduct({ commandId: commandId("sale-page-place"), pageId, slotIndex, productId });
       setSalePages(pages);
     } catch (error) {
       setErrorMessage(messageFrom(error));
@@ -437,9 +460,7 @@ export const usePosFlow = () => {
     setBusy("sale-layout");
     setErrorMessage(null);
     try {
-      const pages = await runtime.saleLayout.removeProduct({
-        commandId: commandId("sale-page-remove"), pageId, slotIndex,
-      });
+      const pages = await runtime.saleLayout.removeProduct({ commandId: commandId("sale-page-remove"), pageId, slotIndex });
       setSalePages(pages);
     } catch (error) {
       setErrorMessage(messageFrom(error));
@@ -478,39 +499,44 @@ export const usePosFlow = () => {
     }
   }, [checkoutId, runtime]);
 
-  const completeCash = useCallback(
-    async (tenderedHalalas: number) => {
-      if (!checkoutId || !cashCommandId) return;
-      setBusy("complete-cash");
-      setErrorMessage(null);
-      try {
-        const completed = await runtime.checkout.completeCashSale({
-          commandId: cashCommandId,
-          checkoutId,
-          tendered: money(tenderedHalalas),
-        });
-        await finalizeCompletedReceipt(completed);
-      } catch (error) {
-        setErrorMessage(messageFrom(error));
-      } finally {
-        setBusy(null);
-      }
-    },
-    [cashCommandId, checkoutId, finalizeCompletedReceipt, runtime],
-  );
+  const completeCash = useCallback(async (tenderedHalalas: number) => {
+    if (!checkoutId || !cashCommandId) return;
+    setBusy("complete-cash");
+    setErrorMessage(null);
+    try {
+      const completedReceipt = await runtime.checkout.completeCashSale({ commandId: cashCommandId, checkoutId, tendered: money(tenderedHalalas) });
+      const completed = await completeCustomerLoyalty(completedReceipt);
+      await finalizeCompletedReceipt(completed);
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+    } finally {
+      setBusy(null);
+    }
+  }, [cashCommandId, checkoutId, completeCustomerLoyalty, finalizeCompletedReceipt, runtime]);
 
   const printReceipt = useCallback(async () => {
     if (!receipt) return;
     setBusy("print");
     setPrintStatus("queued");
     try {
-      const result = await runtime.printing.submit({
-        commandId: commandId("print"),
-        receiptId: receipt.id,
-      });
-      setPrintStatus(result);
+      setPrintStatus(await runtime.printing.submit({ commandId: commandId("print"), receiptId: receipt.id }));
     } catch {
       setPrintStatus("failed");
+    } finally {
+      setBusy(null);
+    }
+  }, [receipt, runtime]);
+
+  const emailReceipt = useCallback(async (email: string): Promise<boolean> => {
+    if (!receipt) return false;
+    setBusy("email-receipt");
+    setErrorMessage(null);
+    try {
+      await runtime.receipts.emailReceipt({ commandId: commandId("email-receipt"), receiptId: receipt.id, email });
+      return true;
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+      return false;
     } finally {
       setBusy(null);
     }
@@ -531,8 +557,7 @@ export const usePosFlow = () => {
     setBusy("receipts");
     setErrorMessage(null);
     try {
-      const items = await runtime.receipts.list();
-      setReceipts(items);
+      setReceipts(await runtime.receipts.list());
       setStage("receipts");
     } catch (error) {
       setErrorMessage(messageFrom(error));
@@ -592,7 +617,12 @@ export const usePosFlow = () => {
     saveOpenTicket,
     searchCustomers,
     createCustomer,
+    updateCustomer,
     setTicketCustomer,
+    applyLoyaltyRedemption,
+    loadLoyaltyStatus,
+    quoteLoyaltyRedemption,
+    loadCustomerPurchases,
     loadCustomerLedger,
     chargeTicketToCustomer,
     settleCustomerDebt,
@@ -606,6 +636,7 @@ export const usePosFlow = () => {
     selectCash,
     completeCash,
     printReceipt,
+    emailReceipt,
     printArchivedReceipt,
     openReceipts,
     newSale,
