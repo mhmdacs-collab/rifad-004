@@ -54,22 +54,40 @@ export function TicketPanel({
           const lineTotal = { ...line.unitPrice, halalas: line.unitPrice.halalas * line.quantity };
           return (
             <article className={`ticket-line ${lastTouchedLineId === line.id ? "ticket-line--latest" : ""}`} key={line.id} data-line-id={line.id}>
-              <button
-                className="ticket-line-button ticket-line-button--structured"
-                type="button"
-                onClick={() => editable && onEditLine?.(line)}
-                disabled={!editable}
-              >
-                <span className="ticket-line-copy">
-                  <strong className="ticket-product-name">{line.name}</strong>
-                  <span className="ticket-line-meta" dir="ltr">
-                    <b>{line.quantity}</b>
-                    <span>×</span>
-                    <MoneyAmount value={line.unitPrice} />
+              {variant === "checkout" ? (
+                <button
+                  className="ticket-line-button ticket-line-button--checkout"
+                  type="button"
+                  disabled
+                >
+                  <span className="checkout-ticket-line-copy">
+                    <strong className="checkout-ticket-product-name">{line.name}</strong>
+                    <span className="checkout-ticket-line-meta" dir="ltr">
+                      <b>{line.quantity}</b>
+                      <span>×</span>
+                      <MoneyAmount value={line.unitPrice} />
+                    </span>
                   </span>
-                </span>
-                <strong className="line-total ticket-line-total"><MoneyAmount value={lineTotal} /></strong>
-              </button>
+                  <strong className="checkout-ticket-line-total"><MoneyAmount value={lineTotal} /></strong>
+                </button>
+              ) : (
+                <button
+                  className="ticket-line-button ticket-line-button--structured"
+                  type="button"
+                  onClick={() => editable && onEditLine?.(line)}
+                  disabled={!editable}
+                >
+                  <span className="ticket-line-copy">
+                    <strong className="ticket-product-name">{line.name}</strong>
+                    <span className="ticket-line-meta" dir="ltr">
+                      <b>{line.quantity}</b>
+                      <span>×</span>
+                      <MoneyAmount value={line.unitPrice} />
+                    </span>
+                  </span>
+                  <strong className="line-total ticket-line-total"><MoneyAmount value={lineTotal} /></strong>
+                </button>
+              )}
             </article>
           );
         })}
