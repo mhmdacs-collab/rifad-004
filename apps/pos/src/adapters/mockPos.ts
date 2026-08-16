@@ -5,6 +5,7 @@ import type {
   EmployeeSessionContract,
   MockPosRuntime,
   PrintingContract,
+  ReceiptsContract,
   SaleLayoutContract,
   SalesContract,
 } from "../contracts/pos";
@@ -51,6 +52,7 @@ type Persisted = {
   employee: EmployeeSession | null;
   ticket: Ticket | null;
   receipt: Receipt | null;
+  receipts: Receipt[];
   nextTicketSequence: number;
   openTickets: Ticket[];
   salePages: SalePage[];
@@ -79,6 +81,7 @@ const emptyState = (): Persisted => ({
   employee: null,
   ticket: null,
   receipt: null,
+  receipts: [],
   nextTicketSequence: 1,
   openTickets: [],
   salePages: initialSalePages(),
@@ -110,9 +113,11 @@ class MockStore {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (!raw) return emptyState();
       const parsed = JSON.parse(raw) as Partial<Persisted>;
+      const migratedReceipts = parsed.receipts ?? (parsed.receipt ? [parsed.receipt] : []);
       return {
         ...emptyState(),
         ...parsed,
+        receipts: migratedReceipts,
         openTickets: parsed.openTickets ?? [],
         salePages: parsed.salePages?.length ? parsed.salePages : initialSalePages(),
       };
@@ -170,6 +175,11 @@ class MockStore {
   async listSalePages(): Promise<readonly SalePage[]> {
     await pause();
     return this.state.salePages;
+  }
+
+  async listReceipts(): Promise<readonly Receipt[]> {
+    await pause();
+    return this.state.receipts;
   }
 
   async createSalePage(name: string): Promise<readonly SalePage[]> {
@@ -377,7 +387,12 @@ class MockStore {
       branchName: this.state.device?.branchName ?? "فرع رفاد",
     };
     this.completedCommands.set(commandId, receipt);
-    this.state = { ...this.state, receipt, ticket: null };
+    this.state = {
+      ...this.state,
+      receipt,
+      receipts: [receipt, ...this.state.receipts.filter((item) => item.id !== receipt.id)],
+      ticket: null,
+    };
     this.checkout = null;
     this.persist();
     return receipt;
@@ -463,6 +478,9 @@ export const createMockPosRuntime = (): MockPosRuntime => {
     completeCashSale: ({ commandId, checkoutId, tendered }) =>
       store.completeCash(commandId, checkoutId, tendered.halalas),
   };
+  const receipts: ReceiptsContract = {
+    list: () => store.listReceipts(),
+  };
   const printing: PrintingContract = {
     submit: () => store.print(),
   };
@@ -475,6 +493,7 @@ export const createMockPosRuntime = (): MockPosRuntime => {
     saleLayout,
     sales,
     checkout,
+    receipts,
     printing,
   };
 };
