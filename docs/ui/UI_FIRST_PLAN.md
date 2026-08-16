@@ -6,6 +6,12 @@ Close the product-interface problem first without coupling the interface to unfi
 
 The first implementation phase builds all primary Rifad surfaces using Rifad-owned contracts and mock adapters.
 
+## Live execution status
+
+This file defines the plan. The actual implementation state, verified work, visual-approval status, known gaps and exact current checkpoint are maintained in [`UI_PROGRESS.md`](./UI_PROGRESS.md).
+
+Do not infer completion from this plan alone; use the progress record to distinguish implemented, behavior-tested, visually verified and still-pending work.
+
 ## Surfaces
 
 1. POS
