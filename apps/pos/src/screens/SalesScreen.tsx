@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CustomerCreditDialog, type CustomerCreditMode } from "../components/CustomerCreditDialog";
+import { CustomerPickerDialog, type CustomerPickerPurpose } from "../components/CustomerPickerDialog";
+import { DebtBookDialog } from "../components/DebtBookDialog";
 import { Icon } from "../components/Icon";
 import { InlineNotice } from "../components/InlineNotice";
 import { TicketPanel } from "../components/TicketPanel";
 import { formatMoney } from "../domain/money";
 import { readPrintReceiptAlways, writePrintReceiptAlways } from "../domain/posPreferences";
-import type { Customer, EmployeeSession, Product, SalePage, Ticket, TicketLine } from "../domain/models";
+import type { Customer, DebtLedgerEntry, EmployeeSession, Product, SalePage, Ticket, TicketLine } from "../domain/models";
 
 type SalesScreenMode = "touch" | "basic";
 type OrderType = "dine-in" | "takeaway" | "delivery";
@@ -70,6 +71,8 @@ type SalesScreenProps = {
   onOpenReceipts: () => void;
   onSearchCustomers: (query: string) => Promise<readonly Customer[]>;
   onCreateCustomer: (name: string, mobile: string) => Promise<Customer | null>;
+  onSetTicketCustomer: (customerId: string | null) => Promise<boolean>;
+  onLoadCustomerLedger: (customerId: string) => Promise<readonly DebtLedgerEntry[]>;
   onChargeCredit: (customerId: string) => Promise<Customer | null>;
   onSettleDebt: (customerId: string, amountHalalas: number) => Promise<Customer | null>;
 };
@@ -81,7 +84,8 @@ export function SalesScreen(props: SalesScreenProps) {
     onPageChange, onCreatePage, onRenamePage, onDeletePage, onMovePage,
     onPlacePageProduct, onRemovePageProduct, onAddProduct, onSetQuantity,
     onRemoveLine, onSaveTicket, onCheckout, onOpenReceipts,
-    onSearchCustomers, onCreateCustomer, onChargeCredit, onSettleDebt,
+    onSearchCustomers, onCreateCustomer, onSetTicketCustomer, onLoadCustomerLedger,
+    onChargeCredit, onSettleDebt,
   } = props;
 
   const [mobileTicketOpen, setMobileTicketOpen] = useState(false);
@@ -92,7 +96,8 @@ export function SalesScreen(props: SalesScreenProps) {
   const [visibleOrderTypes, setVisibleOrderTypes] = useState<readonly OrderType[]>(readVisibleOrderTypes);
   const [selectedOrderType, setSelectedOrderType] = useState<OrderType | null>(null);
   const [printReceiptAlways, setPrintReceiptAlways] = useState(readPrintReceiptAlways);
-  const [customerCreditMode, setCustomerCreditMode] = useState<CustomerCreditMode | null>(null);
+  const [customerPickerPurpose, setCustomerPickerPurpose] = useState<CustomerPickerPurpose | null>(null);
+  const [debtBookOpen, setDebtBookOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [pickerSlot, setPickerSlot] = useState<number | null>(null);
   const [pageDialogOpen, setPageDialogOpen] = useState(false);
@@ -122,7 +127,6 @@ export function SalesScreen(props: SalesScreenProps) {
       setSearchOpen(true);
     } else {
       setSearchOpen(false);
-      setCustomerCreditMode(null);
     }
   }, [screenMode]);
 
@@ -152,7 +156,7 @@ export function SalesScreen(props: SalesScreenProps) {
 
   useEffect(() => {
     if (!isBasicMode) return;
-    if (menuOpen || settingsOpen || customerCreditMode || editingLine || mobileTicketOpen) return;
+    if (menuOpen || settingsOpen || customerPickerPurpose || debtBookOpen || editingLine || mobileTicketOpen) return;
     const frame = window.requestAnimationFrame(() => {
       basicSearchRef.current?.focus();
     });
@@ -161,7 +165,8 @@ export function SalesScreen(props: SalesScreenProps) {
     isBasicMode,
     menuOpen,
     settingsOpen,
-    customerCreditMode,
+    customerPickerPurpose,
+    debtBookOpen,
     editingLine,
     mobileTicketOpen,
     ticket.sequence,
@@ -241,8 +246,11 @@ export function SalesScreen(props: SalesScreenProps) {
         <button
           type="button"
           className="basic-credit-action"
-          onClick={() => setCustomerCreditMode(itemCount > 0 ? "credit" : "settlement")}
-          disabled={busy === "customer-credit" || busy === "customer-settlement"}
+          onClick={() => {
+            if (itemCount > 0) setCustomerPickerPurpose("credit");
+            else setDebtBookOpen(true);
+          }}
+          disabled={busy === "customer-credit" || busy === "customer-settlement" || busy === "ticket-customer"}
         >
           {itemCount > 0 ? "آجل" : "سداد"}
         </button>
@@ -278,6 +286,8 @@ export function SalesScreen(props: SalesScreenProps) {
           <button type="button" className="catalog-cell empty-layout-slot" key={`slot-${slotIndex}`} onClick={() => setPickerSlot(slotIndex)} aria-label={`إضافة منتج إلى الخانة ${slotIndex + 1}`}><Icon name="plus" size={27} /></button>
         ) : <span className="catalog-cell blank-layout-slot" key={`slot-${slotIndex}`} />;
       });
+
+  const openCustomerPicker = () => setCustomerPickerPurpose("attach");
 
   return (
     <main className={`pos-workspace loyverse-shell sale-screen-${screenMode}`} data-screen-id={editMode ? "POS-SCREEN-026" : "POS-SCREEN-003"}>
@@ -378,17 +388,17 @@ export function SalesScreen(props: SalesScreenProps) {
           type="button"
           disabled={!isBasicMode && itemCount === 0}
           onClick={() => {
-            if (isBasicMode && itemCount === 0) setCustomerCreditMode("settlement");
+            if (isBasicMode && itemCount === 0) setDebtBookOpen(true);
             else setMobileTicketOpen(true);
           }}
           aria-expanded={mobileTicketOpen}
         >
-          {isBasicMode && itemCount === 0 ? "سداد دين عميل" : `عرض التذكرة · ${formatMoney(ticket.total)}`}
+          {isBasicMode && itemCount === 0 ? "دفتر الديون" : `عرض التذكرة · ${formatMoney(ticket.total)}`}
         </button>
       </section>
 
       <div className="ticket-column">
-        <TicketPanel ticket={ticket} editable lastTouchedLineId={lastTouchedLineId} onEditLine={openLineEditor} />
+        <TicketPanel ticket={ticket} editable lastTouchedLineId={lastTouchedLineId} onEditLine={openLineEditor} onCustomerClick={openCustomerPicker} />
         {renderOrderTypeSelector()}
         {renderTicketActions()}
       </div>
@@ -396,7 +406,7 @@ export function SalesScreen(props: SalesScreenProps) {
       {mobileTicketOpen ? (
         <section className="mobile-ticket-surface" aria-label="التذكرة الحالية على الهاتف">
           <button className="mobile-ticket-close" type="button" onClick={() => setMobileTicketOpen(false)}><Icon name="arrow" size={19} /> العودة إلى المنتجات</button>
-          <TicketPanel ticket={ticket} editable lastTouchedLineId={lastTouchedLineId} onEditLine={openLineEditor} />
+          <TicketPanel ticket={ticket} editable lastTouchedLineId={lastTouchedLineId} onEditLine={openLineEditor} onCustomerClick={openCustomerPicker} />
           {renderOrderTypeSelector()}
           {renderTicketActions()}
         </section>
@@ -498,15 +508,26 @@ export function SalesScreen(props: SalesScreenProps) {
         </div>
       ) : null}
 
-      {customerCreditMode ? (
-        <CustomerCreditDialog
-          mode={customerCreditMode}
+      {customerPickerPurpose ? (
+        <CustomerPickerDialog
+          purpose={customerPickerPurpose}
           ticketTotal={ticket.total}
-          busy={busy === "customer-create" || busy === "customer-credit" || busy === "customer-settlement"}
-          onClose={() => setCustomerCreditMode(null)}
+          attachedCustomer={ticket.customer ?? null}
+          busy={busy === "customer-create" || busy === "customer-credit" || busy === "ticket-customer"}
+          onClose={() => setCustomerPickerPurpose(null)}
           onSearch={onSearchCustomers}
           onCreateCustomer={onCreateCustomer}
+          onAttachCustomer={onSetTicketCustomer}
           onChargeCredit={onChargeCredit}
+        />
+      ) : null}
+
+      {debtBookOpen ? (
+        <DebtBookDialog
+          busy={busy === "customer-settlement"}
+          onClose={() => setDebtBookOpen(false)}
+          onSearch={onSearchCustomers}
+          onLoadLedger={onLoadCustomerLedger}
           onSettleDebt={onSettleDebt}
         />
       ) : null}
