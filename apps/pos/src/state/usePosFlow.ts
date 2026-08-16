@@ -4,6 +4,7 @@ import { PosContractError } from "../contracts/pos";
 import { money } from "../domain/money";
 import { readPrintReceiptAlways } from "../domain/posPreferences";
 import type {
+  Customer,
   DeviceSession,
   EmployeeSession,
   PrintDeliveryStatus,
@@ -209,6 +210,71 @@ export const usePosFlow = () => {
     }
   }, [runtime, ticket]);
 
+  const searchCustomers = useCallback(async (customerQuery: string): Promise<readonly Customer[]> => {
+    try {
+      return await runtime.customerCredit.search({ query: customerQuery });
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+      return [];
+    }
+  }, [runtime]);
+
+  const createCustomer = useCallback(async (name: string, mobile: string): Promise<Customer | null> => {
+    setBusy("customer-create");
+    setErrorMessage(null);
+    try {
+      return await runtime.customerCredit.create({ commandId: commandId("customer"), name, mobile });
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+      return null;
+    } finally {
+      setBusy(null);
+    }
+  }, [runtime]);
+
+  const chargeTicketToCustomer = useCallback(async (customerId: string): Promise<Customer | null> => {
+    if (!ticket || ticket.lines.length === 0) return null;
+    setBusy("customer-credit");
+    setErrorMessage(null);
+    try {
+      const result = await runtime.customerCredit.chargeTicket({
+        commandId: commandId("customer-credit"),
+        customerId,
+        ticketId: ticket.id,
+      });
+      setTicket(result.nextTicket);
+      setReceipt(null);
+      setCheckoutId(null);
+      setCashCommandId(null);
+      setLastTouchedLineId(null);
+      setQuery("");
+      setCategoryId("all");
+      setStage("sales");
+      return result.customer;
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+      return null;
+    } finally {
+      setBusy(null);
+    }
+  }, [runtime, ticket]);
+
+  const settleCustomerDebt = useCallback(async (customerId: string): Promise<Customer | null> => {
+    setBusy("customer-settlement");
+    setErrorMessage(null);
+    try {
+      return await runtime.customerCredit.settleFull({
+        commandId: commandId("customer-settlement"),
+        customerId,
+      });
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+      return null;
+    } finally {
+      setBusy(null);
+    }
+  }, [runtime]);
+
   const createSalePage = useCallback(async (name: string) => {
     setBusy("sale-layout");
     setErrorMessage(null);
@@ -369,7 +435,6 @@ export const usePosFlow = () => {
             setCategoryId("all");
             setStage("sales");
           } catch (error) {
-            // The sale is complete. Fall back to the success screen if a fresh ticket cannot be created.
             setTicket(null);
             setReceipt(completed);
             setStage("success");
@@ -480,6 +545,10 @@ export const usePosFlow = () => {
     setQuantity,
     removeLine,
     saveOpenTicket,
+    searchCustomers,
+    createCustomer,
+    chargeTicketToCustomer,
+    settleCustomerDebt,
     createSalePage,
     renameSalePage,
     deleteSalePage,
