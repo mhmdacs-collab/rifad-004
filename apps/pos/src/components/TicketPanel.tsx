@@ -55,21 +55,17 @@ export function TicketPanel({
           return (
             <article className={`ticket-line ${lastTouchedLineId === line.id ? "ticket-line--latest" : ""}`} key={line.id} data-line-id={line.id}>
               {variant === "checkout" ? (
-                <button
-                  className="ticket-line-button ticket-line-button--checkout"
-                  type="button"
-                  disabled
-                >
-                  <span className="checkout-ticket-line-copy">
-                    <strong className="checkout-ticket-product-name">{line.name}</strong>
-                    <span className="checkout-ticket-line-meta" dir="ltr">
+                <div className="checkout-ticket-row" data-testid="checkout-ticket-row">
+                  <div className="checkout-ticket-row-copy">
+                    <strong className="checkout-ticket-row-name">{line.name}</strong>
+                    <div className="checkout-ticket-row-meta" dir="ltr">
                       <b>{line.quantity}</b>
                       <span>×</span>
                       <MoneyAmount value={line.unitPrice} />
-                    </span>
-                  </span>
-                  <strong className="checkout-ticket-line-total"><MoneyAmount value={lineTotal} /></strong>
-                </button>
+                    </div>
+                  </div>
+                  <strong className="checkout-ticket-row-total"><MoneyAmount value={lineTotal} /></strong>
+                </div>
               ) : (
                 <button
                   className="ticket-line-button ticket-line-button--structured"
@@ -93,7 +89,7 @@ export function TicketPanel({
         })}
       </div>
 
-      <footer className="ticket-totals ticket-totals--audit">
+      <footer className="ticket-totals ticket-totals--audit" data-testid="checkout-ticket-totals">
         <div className="ticket-tax-row"><strong>الضريبة (مضمنة)</strong><strong><MoneyAmount value={ticket.taxIncluded} /></strong></div>
         <div className="ticket-grand-total"><strong>الإجمالي</strong><strong><MoneyAmount value={ticket.total} /></strong></div>
       </footer>
