@@ -293,7 +293,7 @@ describe("basic screen customer debt workflow", () => {
     await waitFor(() => expect(productSearch).toHaveFocus());
   });
 
-  it("reuses the attached customer, records credit, then shows receipt actions before a new sale", async () => {
+  it("reuses the attached customer without reopening customer search, then shows receipt actions", async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -307,9 +307,12 @@ describe("basic screen customer debt workflow", () => {
     await user.click(await screen.findByRole("button", { name: /قهوة سعودية/ }));
     await user.click(screen.getByRole("button", { name: "آجل" }));
 
-    const creditDialog = await screen.findByRole("dialog", { name: "بيع آجل" });
-    expect(within(creditDialog).getByRole("button", { name: /أحمد محمد/ })).toHaveClass("active");
-    await user.click(within(creditDialog).getByRole("button", { name: "تسجيل آجل" }));
+    const creditDialog = await screen.findByRole("dialog", { name: "تأكيد البيع الآجل" });
+    expect(within(creditDialog).queryByRole("textbox", { name: "بحث العميل" })).not.toBeInTheDocument();
+    expect(await within(creditDialog).findByText("أحمد محمد")).toBeInTheDocument();
+    expect(within(creditDialog).getByText("الدين الحالي")).toBeInTheDocument();
+    expect(within(creditDialog).getByText("الدين بعد العملية")).toBeInTheDocument();
+    await user.click(within(creditDialog).getByRole("button", { name: "تأكيد البيع الآجل" }));
 
     expect(await screen.findByRole("heading", { name: "تم تسجيل البيع الآجل بنجاح" })).toBeInTheDocument();
     expect(screen.getByText("طريقة الإنهاء")).toBeInTheDocument();
