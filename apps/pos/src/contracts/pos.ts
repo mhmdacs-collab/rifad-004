@@ -77,7 +77,11 @@ export interface CustomerCreditContract {
     customerId: string;
     ticketId: string;
   }): Promise<{ customer: Customer; nextTicket: Ticket }>;
-  settleFull(input: { commandId: string; customerId: string }): Promise<Customer>;
+  settle(input: {
+    commandId: string;
+    customerId: string;
+    amount: Money;
+  }): Promise<Customer>;
 }
 
 export interface CheckoutContract {
