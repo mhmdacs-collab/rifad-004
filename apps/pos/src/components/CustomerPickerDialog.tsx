@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { MoneyAmount } from "./MoneyAmount";
-import type { Customer, CustomerReference, Money } from "../domain/models";
+import type { Customer, CustomerDetails, CustomerReference, Money } from "../domain/models";
 
 export type CustomerPickerPurpose = "attach" | "credit";
 
@@ -11,9 +11,20 @@ type CustomerPickerDialogProps = {
   busy: boolean;
   onClose: () => void;
   onSearch: (query: string) => Promise<readonly Customer[]>;
-  onCreateCustomer: (name: string, mobile: string) => Promise<Customer | null>;
+  onCreateCustomer: (name: string, mobile: string, details: CustomerDetails) => Promise<Customer | null>;
   onAttachCustomer: (customerId: string | null) => Promise<boolean>;
   onChargeCredit: (customerId: string) => Promise<Customer | null>;
+};
+
+const EMPTY_DETAILS: CustomerDetails = {
+  email: "",
+  address: "",
+  city: "",
+  region: "",
+  postalCode: "",
+  country: "",
+  customerCode: "",
+  note: "",
 };
 
 export function CustomerPickerDialog({
@@ -32,8 +43,10 @@ export function CustomerPickerDialog({
   const [selected, setSelected] = useState<Customer | null>(null);
   const [searching, setSearching] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [extraOpen, setExtraOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newMobile, setNewMobile] = useState("");
+  const [newDetails, setNewDetails] = useState<CustomerDetails>(EMPTY_DETAILS);
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const searchSequence = useRef(0);
@@ -56,24 +69,36 @@ export function CustomerPickerDialog({
       });
   }, [attachedCustomer, onSearch, query, selected]);
 
+  const updateDetail = (key: keyof CustomerDetails, value: string) => {
+    setNewDetails((current) => ({ ...current, [key]: value }));
+  };
+
+  const resetCreate = () => {
+    setCreateOpen(false);
+    setExtraOpen(false);
+    setNewName("");
+    setNewMobile("");
+    setNewDetails(EMPTY_DETAILS);
+  };
+
   const selectCustomer = (customer: Customer) => {
     if (actionLocked.current) return;
     setSelected(customer);
-    setCreateOpen(false);
+    resetCreate();
     setMessage(null);
   };
 
   const submitCreate = async (event: FormEvent) => {
     event.preventDefault();
     if (actionLocked.current) return;
-    const created = await onCreateCustomer(newName, newMobile);
+    const created = await onCreateCustomer(newName, newMobile, newDetails);
     if (!created) {
       setMessage("تعذر إضافة العميل. تحقق من الاسم ورقم الجوال.");
       return;
     }
     setResults((current) => [created, ...current.filter((customer) => customer.id !== created.id)]);
     setSelected(created);
-    setCreateOpen(false);
+    resetCreate();
     setMessage("تم إنشاء العميل. أكمل ربطه بالتذكرة.");
   };
 
@@ -173,6 +198,8 @@ export function CustomerPickerDialog({
                 <span><strong>{selected.name}</strong><small dir="ltr">{selected.mobile}</small></span>
                 <button type="button" onClick={() => setSelected(null)} disabled={submitting}>تغيير</button>
               </div>
+              {selected.details.email ? <div className="customer-profile-line"><span>البريد</span><strong dir="ltr">{selected.details.email}</strong></div> : null}
+              {selected.details.city || selected.details.region ? <div className="customer-profile-line"><span>الموقع</span><strong>{[selected.details.city, selected.details.region].filter(Boolean).join("، ")}</strong></div> : null}
               <div className="customer-balance-row"><span>الدين الحالي</span><strong><MoneyAmount value={selected.debt} /></strong></div>
               {purpose === "credit" ? (
                 <>
@@ -200,11 +227,30 @@ export function CustomerPickerDialog({
           {!createOpen ? (
             <button type="button" className="customer-create-toggle" onClick={() => { setCreateOpen(true); setNewMobile(query); }} disabled={submitting}>+ إضافة عميل جديد</button>
           ) : (
-            <form className="customer-create-form" onSubmit={(event) => void submitCreate(event)}>
+            <form className="customer-create-form customer-create-form--expanded" onSubmit={(event) => void submitCreate(event)}>
               <strong>عميل جديد</strong>
               <label><span>اسم العميل</span><input value={newName} onChange={(event) => setNewName(event.target.value)} required disabled={submitting} /></label>
               <label><span>رقم الجوال</span><input dir="ltr" value={newMobile} onChange={(event) => setNewMobile(event.target.value)} placeholder="05XXXXXXXX" required disabled={submitting} /></label>
-              <div><button type="button" onClick={() => setCreateOpen(false)} disabled={submitting}>إلغاء</button><button type="submit" className="primary-button" disabled={busy || submitting}>إنشاء العميل</button></div>
+
+              <label className="customer-extra-toggle">
+                <input type="checkbox" checked={extraOpen} onChange={(event) => setExtraOpen(event.target.checked)} disabled={submitting} />
+                <span><strong>معلومات إضافية</strong><small>البريد، العنوان، المدينة، المنطقة، الرمز البريدي، الدولة، رمز العميل والملاحظات.</small></span>
+              </label>
+
+              {extraOpen ? (
+                <div className="customer-extra-fields">
+                  <label><span>البريد الإلكتروني</span><input dir="ltr" type="email" value={newDetails.email} onChange={(event) => updateDetail("email", event.target.value)} disabled={submitting} /></label>
+                  <label><span>رمز العميل</span><input dir="ltr" value={newDetails.customerCode} onChange={(event) => updateDetail("customerCode", event.target.value)} disabled={submitting} /></label>
+                  <label className="customer-extra-wide"><span>العنوان</span><input value={newDetails.address} onChange={(event) => updateDetail("address", event.target.value)} disabled={submitting} /></label>
+                  <label><span>المدينة</span><input value={newDetails.city} onChange={(event) => updateDetail("city", event.target.value)} disabled={submitting} /></label>
+                  <label><span>المنطقة</span><input value={newDetails.region} onChange={(event) => updateDetail("region", event.target.value)} disabled={submitting} /></label>
+                  <label><span>الرمز البريدي</span><input dir="ltr" value={newDetails.postalCode} onChange={(event) => updateDetail("postalCode", event.target.value)} disabled={submitting} /></label>
+                  <label><span>الدولة</span><input value={newDetails.country} onChange={(event) => updateDetail("country", event.target.value)} placeholder="السعودية" disabled={submitting} /></label>
+                  <label className="customer-extra-wide"><span>ملاحظات</span><textarea value={newDetails.note} onChange={(event) => updateDetail("note", event.target.value)} disabled={submitting} /></label>
+                </div>
+              ) : null}
+
+              <div><button type="button" onClick={resetCreate} disabled={submitting}>إلغاء</button><button type="submit" className="primary-button" disabled={busy || submitting}>إنشاء العميل</button></div>
             </form>
           )}
         </div>
