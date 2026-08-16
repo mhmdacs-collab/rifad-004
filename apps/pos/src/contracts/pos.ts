@@ -1,3 +1,4 @@
+import type { LoyaltyContract } from "./loyalty";
 import type {
   Customer,
   CustomerDetails,
@@ -47,6 +48,7 @@ export interface SalesContract {
   removeLine(input: { ticketId: string; lineId: string }): Promise<Ticket>;
   saveOpenTicket(input: { commandId: string; ticketId: string }): Promise<Ticket>;
   setCustomer(input: { commandId: string; ticketId: string; customerId: string | null }): Promise<Ticket>;
+  setLoyaltyRedemption(input: { commandId: string; ticketId: string; amount: Money }): Promise<Ticket>;
 }
 
 export interface SaleLayoutContract {
@@ -80,6 +82,13 @@ export interface CustomerCreditContract {
     mobile: string;
     details: CustomerDetails;
   }): Promise<Customer>;
+  update(input: {
+    commandId: string;
+    customerId: string;
+    name: string;
+    mobile: string;
+    details: CustomerDetails;
+  }): Promise<Customer>;
   ledger(input: { customerId: string }): Promise<readonly DebtLedgerEntry[]>;
   chargeTicket(input: {
     commandId: string;
@@ -105,6 +114,9 @@ export interface CheckoutContract {
 
 export interface ReceiptsContract {
   list(): Promise<readonly Receipt[]>;
+  listByCustomer(input: { customerId: string }): Promise<readonly Receipt[]>;
+  setLoyaltyEarned(input: { receiptId: string; earned: Money }): Promise<Receipt>;
+  emailReceipt(input: { commandId: string; receiptId: string; email: string }): Promise<void>;
 }
 
 export interface PrintingContract {
@@ -119,6 +131,7 @@ export interface MockPosRuntime {
   saleLayout: SaleLayoutContract;
   sales: SalesContract;
   customerCredit: CustomerCreditContract;
+  loyalty: LoyaltyContract;
   checkout: CheckoutContract;
   receipts: ReceiptsContract;
   printing: PrintingContract;
