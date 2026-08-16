@@ -6,7 +6,16 @@ import { formatMoney } from "../domain/money";
 import type { EmployeeSession, Product, SalePage, Ticket, TicketLine } from "../domain/models";
 
 type SalesScreenMode = "touch" | "basic";
+type OrderType = "dine-in" | "takeaway" | "delivery";
+
 const SALE_SCREEN_MODE_KEY = "rifad.pos.sale-screen-mode.v1";
+const ORDER_TYPES_KEY = "rifad.pos.visible-order-types.v1";
+
+const ORDER_TYPE_OPTIONS: readonly { id: OrderType; label: string }[] = [
+  { id: "dine-in", label: "محلي" },
+  { id: "takeaway", label: "سفري" },
+  { id: "delivery", label: "توصيل" },
+];
 
 const readSaleScreenMode = (): SalesScreenMode => {
   if (typeof window === "undefined") return "touch";
@@ -14,6 +23,20 @@ const readSaleScreenMode = (): SalesScreenMode => {
     return window.localStorage.getItem(SALE_SCREEN_MODE_KEY) === "basic" ? "basic" : "touch";
   } catch {
     return "touch";
+  }
+};
+
+const readVisibleOrderTypes = (): readonly OrderType[] => {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(ORDER_TYPES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const valid = new Set<OrderType>(ORDER_TYPE_OPTIONS.map((option) => option.id));
+    return parsed.filter((value): value is OrderType => valid.has(value));
+  } catch {
+    return [];
   }
 };
 
@@ -58,6 +81,8 @@ export function SalesScreen(props: SalesScreenProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [screenMode, setScreenMode] = useState<SalesScreenMode>(readSaleScreenMode);
+  const [visibleOrderTypes, setVisibleOrderTypes] = useState<readonly OrderType[]>(readVisibleOrderTypes);
+  const [selectedOrderType, setSelectedOrderType] = useState<OrderType | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [pickerSlot, setPickerSlot] = useState<number | null>(null);
   const [pageDialogOpen, setPageDialogOpen] = useState(false);
@@ -80,11 +105,32 @@ export function SalesScreen(props: SalesScreenProps) {
     } catch {
       // Device preference persistence is best-effort in this UI prototype.
     }
+
     if (screenMode === "basic") {
       setEditMode(false);
       setSearchOpen(true);
+    } else {
+      // Returning to touch mode must restore the normal app bar instead of leaving
+      // the always-open retail search field behind.
+      setSearchOpen(false);
     }
   }, [screenMode]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(ORDER_TYPES_KEY, JSON.stringify(visibleOrderTypes));
+    } catch {
+      // Device preference persistence is best-effort in this UI prototype.
+    }
+    if (selectedOrderType && !visibleOrderTypes.includes(selectedOrderType)) {
+      setSelectedOrderType(null);
+    }
+  }, [selectedOrderType, visibleOrderTypes]);
+
+  useEffect(() => {
+    // A new ticket starts without a forced order type. Choosing one is optional.
+    setSelectedOrderType(null);
+  }, [ticket.sequence]);
 
   const itemCount = ticket.lines.reduce((count, line) => count + line.quantity, 0);
   const activePage = salePages.find((page) => page.id === activePageId) ?? salePages[0];
@@ -124,6 +170,12 @@ export function SalesScreen(props: SalesScreenProps) {
     longPressTriggered.current = true;
     onPageChange(page.id);
     setPageMenu(page);
+  };
+
+  const toggleVisibleOrderType = (orderType: OrderType) => {
+    setVisibleOrderTypes((current) => current.includes(orderType)
+      ? current.filter((value) => value !== orderType)
+      : ORDER_TYPE_OPTIONS.map((option) => option.id).filter((value) => value === orderType || current.includes(value)));
   };
 
   const renderProduct = (product: Product, slotIndex?: number) => {
@@ -204,6 +256,25 @@ export function SalesScreen(props: SalesScreenProps) {
           </div>
         ) : (
           <>
+            {visibleOrderTypes.length > 0 ? (
+              <div className="order-type-strip" aria-label="نوع الطلب">
+                <span className="order-type-label">نوع الطلب <small>اختياري</small></span>
+                <div className="order-type-options">
+                  {ORDER_TYPE_OPTIONS.filter((option) => visibleOrderTypes.includes(option.id)).map((option) => (
+                    <button
+                      type="button"
+                      key={option.id}
+                      className={selectedOrderType === option.id ? "active" : ""}
+                      aria-pressed={selectedOrderType === option.id}
+                      onClick={() => setSelectedOrderType((current) => current === option.id ? null : option.id)}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
             <div className={`product-area ${editMode ? "product-area--editing" : ""}`}>
               <div className="product-grid" aria-busy={busy === "catalog" || busy === "sale-layout"}>
                 {gridContent}
@@ -249,7 +320,7 @@ export function SalesScreen(props: SalesScreenProps) {
 
       {menuOpen ? <div className="pos-drawer-backdrop" role="presentation" onClick={() => setMenuOpen(false)}><aside className="pos-drawer" aria-label="قائمة نقطة البيع" onClick={(event) => event.stopPropagation()}><header><strong>{employee?.employeeName ?? "موظف رفاد"}</strong><span>{employee?.roleName ?? "أمين صندوق"}</span></header><button type="button" className="active"><Icon name="receipt" />المبيعات</button><button type="button" disabled>الإيصالات</button><button type="button" disabled>الوردية</button><button type="button" disabled>العناصر</button><button type="button" onClick={() => { setMenuOpen(false); setSettingsOpen(true); }}><Icon name="settings" />الإعدادات</button></aside></div> : null}
 
-      {settingsOpen ? <div className="dialog-backdrop" role="presentation" onClick={() => setSettingsOpen(false)}><section className="layout-dialog pos-device-settings" role="dialog" aria-modal="true" aria-labelledby="pos-settings-title" onClick={(event) => event.stopPropagation()}><header><button type="button" onClick={() => setSettingsOpen(false)} aria-label="إغلاق">×</button><h2 id="pos-settings-title">إعدادات نقطة البيع</h2></header><div className="device-settings-section"><div className="device-settings-copy"><strong>نمط شاشة البيع</strong><span>هذا الإعداد خاص بهذا الجهاز ويمكن أن يختلف بين أجهزة نفس المنشأة.</span></div><div className="screen-mode-options"><button type="button" className={screenMode === "touch" ? "active" : ""} onClick={() => { setScreenMode("touch"); onQueryChange(""); }}><span className="screen-mode-icon"><Icon name="grid" size={24} /></span><strong>شاشة لمس</strong><small>شبكة أصناف وصفحات سريعة للمس.</small></button><button type="button" className={screenMode === "basic" ? "active" : ""} onClick={() => { setScreenMode("basic"); onQueryChange(""); }}><span className="screen-mode-icon"><Icon name="search" size={24} /></span><strong>شاشة أساسية</strong><small>بحث وباركود أولًا للبيع بالتجزئة.</small></button></div></div><button className="primary-button settings-done" type="button" onClick={() => setSettingsOpen(false)}>تم</button></section></div> : null}
+      {settingsOpen ? <div className="dialog-backdrop" role="presentation" onClick={() => setSettingsOpen(false)}><section className="layout-dialog pos-device-settings" role="dialog" aria-modal="true" aria-labelledby="pos-settings-title" onClick={(event) => event.stopPropagation()}><header><button type="button" onClick={() => setSettingsOpen(false)} aria-label="إغلاق">×</button><h2 id="pos-settings-title">إعدادات نقطة البيع</h2></header><div className="device-settings-section"><div className="device-settings-copy"><strong>نمط شاشة البيع</strong><span>هذا الإعداد خاص بهذا الجهاز ويمكن أن يختلف بين أجهزة نفس المنشأة.</span></div><div className="screen-mode-options"><button type="button" className={screenMode === "touch" ? "active" : ""} onClick={() => { setScreenMode("touch"); onQueryChange(""); }}><span className="screen-mode-icon"><Icon name="grid" size={24} /></span><strong>شاشة لمس</strong><small>شبكة أصناف وصفحات سريعة للمس.</small></button><button type="button" className={screenMode === "basic" ? "active" : ""} onClick={() => { setScreenMode("basic"); onQueryChange(""); }}><span className="screen-mode-icon"><Icon name="search" size={24} /></span><strong>شاشة أساسية</strong><small>بحث وباركود أولًا للبيع بالتجزئة.</small></button></div></div><div className="device-settings-section device-settings-section--order-types"><div className="device-settings-copy"><strong>أنواع الطلب في شاشة اللمس</strong><span>اختر الأنواع التي تريد إظهارها للكاشير. اتركها كلها غير مفعلة لإخفاء الشريط بالكامل. اختيار نوع الطلب اختياري ولا يمنع السداد.</span></div><div className="order-type-settings">{ORDER_TYPE_OPTIONS.map((option) => { const enabled = visibleOrderTypes.includes(option.id); return <button type="button" key={option.id} className={enabled ? "active" : ""} aria-pressed={enabled} onClick={() => toggleVisibleOrderType(option.id)}><span>{enabled ? <Icon name="check" size={18} /> : null}</span><strong>{option.label}</strong></button>; })}</div></div><button className="primary-button settings-done" type="button" onClick={() => setSettingsOpen(false)}>تم</button></section></div> : null}
 
       {pageMenu ? <div className="dialog-backdrop page-menu-backdrop" role="presentation" onClick={() => setPageMenu(null)}><section className="page-action-menu" role="dialog" aria-modal="true" aria-label={`إعدادات صفحة ${pageMenu.name}`} onClick={(event) => event.stopPropagation()}><header><strong>{pageMenu.name}</strong><button type="button" onClick={() => setPageMenu(null)} aria-label="إغلاق">×</button></header><button type="button" onClick={() => { setEditMode(true); setPageMenu(null); }}><Icon name="grid" size={19} />تعديل محتوى الصفحة</button><button type="button" onClick={() => { setRenameName(pageMenu.name); setRenamingPage(pageMenu); setPageMenu(null); }}><span className="page-action-glyph">✎</span>إعادة تسمية</button><button type="button" onClick={() => void onMovePage(pageMenu.id, "previous")}><span className="page-action-glyph">→</span>التحريك إلى اليمين</button><button type="button" onClick={() => void onMovePage(pageMenu.id, "next")}><span className="page-action-glyph">←</span>التحريك إلى اليسار</button><button type="button" className="danger-action" onClick={async () => { if (await onDeletePage(pageMenu.id)) setPageMenu(null); }}><Icon name="trash" size={18} />حذف الصفحة</button></section></div> : null}
 
