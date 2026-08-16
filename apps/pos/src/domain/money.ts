@@ -44,16 +44,27 @@ export const suggestedCashHalalas = (totalHalalas: number): readonly number[] =>
     throw new Error("Cash total must be a non-negative safe integer halala amount.");
   }
 
-  // Suggested tender amounts must be higher than the ticket total. Exact payment is
-  // already the default input, so repeating it as a shortcut wastes a cashier tap.
-  // These increments produce practical cashier targets such as:
-  // 108.00 -> 110, 120, 150, 200, 500.
-  const increments = [1000, 2000, 5000, 10000, 50000];
+  // Exact payment is already prefilled. Shortcuts should represent likely cash handed
+  // to a cashier, not every mathematical rounding step. We offer the nearest higher
+  // 10-riyal amount when needed, then strong round checkpoints (50 / 100 / 500).
+  // For small totals below 120 SAR, 120 is also a useful bridge amount; this preserves
+  // the intended 108 -> 110, 120, 150, 200, 500 behavior without producing 140 for 126.
   const suggestions = new Set<number>();
+  const riyals = totalHalalas / 100;
 
-  for (const increment of increments) {
-    suggestions.add(roundStrictlyUp(totalHalalas, increment));
+  if (totalHalalas % 1000 !== 0) {
+    suggestions.add(Math.ceil(totalHalalas / 1000) * 1000);
   }
 
-  return [...suggestions].sort((a, b) => a - b);
+  if (riyals < 120 && totalHalalas < 12000) {
+    suggestions.add(12000);
+  }
+
+  suggestions.add(roundStrictlyUp(totalHalalas, 5000));
+  suggestions.add(roundStrictlyUp(totalHalalas, 10000));
+  suggestions.add(roundStrictlyUp(totalHalalas, 50000));
+
+  return [...suggestions]
+    .filter((value) => value > totalHalalas)
+    .sort((a, b) => a - b);
 };
