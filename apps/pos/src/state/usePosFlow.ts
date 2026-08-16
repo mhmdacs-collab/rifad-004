@@ -2,6 +2,7 @@ import { useCallback, useDeferredValue, useEffect, useState } from "react";
 import { createMockPosRuntime } from "../adapters/mockPos";
 import { PosContractError } from "../contracts/pos";
 import { money } from "../domain/money";
+import { readPrintReceiptAlways } from "../domain/posPreferences";
 import type {
   DeviceSession,
   EmployeeSession,
@@ -12,7 +13,7 @@ import type {
   Ticket,
 } from "../domain/models";
 
-export type FlowStage = "sign-in" | "pin" | "sales" | "payment" | "cash" | "success";
+export type FlowStage = "sign-in" | "pin" | "sales" | "payment" | "cash" | "success" | "receipts";
 
 const commandId = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
 
@@ -35,6 +36,7 @@ export const usePosFlow = () => {
   const [employee, setEmployee] = useState<EmployeeSession | null>(restored.employee);
   const [ticket, setTicket] = useState<Ticket | null>(restored.ticket);
   const [receipt, setReceipt] = useState<Receipt | null>(restored.receipt);
+  const [receipts, setReceipts] = useState<readonly Receipt[]>([]);
   const [products, setProducts] = useState<readonly Product[]>([]);
   const [allProducts, setAllProducts] = useState<readonly Product[]>([]);
   const [salePages, setSalePages] = useState<readonly SalePage[]>([]);
@@ -344,10 +346,40 @@ export const usePosFlow = () => {
           checkoutId,
           tendered: money(tenderedHalalas),
         });
-        setReceipt(completed);
-        setTicket(null);
         setLastTouchedLineId(null);
-        setStage("success");
+
+        if (readPrintReceiptAlways()) {
+          try {
+            await runtime.printing.submit({
+              commandId: commandId("auto-print"),
+              receiptId: completed.id,
+            });
+          } catch {
+            // The receipt is already persisted and remains available in Receipts.
+          }
+
+          try {
+            const activeTicket = await runtime.sales.startTicket({ commandId: commandId("ticket") });
+            setTicket(activeTicket);
+            setReceipt(null);
+            setCheckoutId(null);
+            setCashCommandId(null);
+            setPrintStatus("idle");
+            setQuery("");
+            setCategoryId("all");
+            setStage("sales");
+          } catch (error) {
+            // The sale is complete. Fall back to the success screen if a fresh ticket cannot be created.
+            setTicket(null);
+            setReceipt(completed);
+            setStage("success");
+            setErrorMessage(messageFrom(error));
+          }
+        } else {
+          setReceipt(completed);
+          setTicket(null);
+          setStage("success");
+        }
       } catch (error) {
         setErrorMessage(messageFrom(error));
       } finally {
@@ -373,6 +405,31 @@ export const usePosFlow = () => {
       setBusy(null);
     }
   }, [receipt, runtime]);
+
+  const printArchivedReceipt = useCallback(async (receiptId: string): Promise<PrintDeliveryStatus> => {
+    setBusy(`print-receipt:${receiptId}`);
+    try {
+      return await runtime.printing.submit({ commandId: commandId("reprint"), receiptId });
+    } catch {
+      return "failed";
+    } finally {
+      setBusy(null);
+    }
+  }, [runtime]);
+
+  const openReceipts = useCallback(async () => {
+    setBusy("receipts");
+    setErrorMessage(null);
+    try {
+      const items = await runtime.receipts.list();
+      setReceipts(items);
+      setStage("receipts");
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+    } finally {
+      setBusy(null);
+    }
+  }, [runtime]);
 
   const newSale = useCallback(async () => {
     setBusy("new-sale");
@@ -401,6 +458,7 @@ export const usePosFlow = () => {
     employee,
     ticket,
     receipt,
+    receipts,
     products,
     allProducts,
     salePages,
@@ -432,6 +490,8 @@ export const usePosFlow = () => {
     selectCash,
     completeCash,
     printReceipt,
+    printArchivedReceipt,
+    openReceipts,
     newSale,
     returnToSales: () => setStage("sales"),
     returnToPayment: () => setStage("payment"),
