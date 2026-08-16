@@ -255,7 +255,7 @@ describe("basic screen customer debt workflow", () => {
     await user.click(screen.getByRole("button", { name: "آجل" }));
 
     const creditDialog = await screen.findByRole("dialog", { name: "بيع آجل" });
-    expect(within(creditDialog).getByText("أحمد محمد")).toBeInTheDocument();
+    expect(within(creditDialog).getByRole("button", { name: /أحمد محمد/ })).toHaveClass("active");
     await user.click(within(creditDialog).getByRole("button", { name: "تسجيل آجل" }));
 
     await waitFor(() => expect(screen.getByRole("button", { name: "سداد" })).toBeEnabled());
