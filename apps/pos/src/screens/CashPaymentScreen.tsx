@@ -38,8 +38,23 @@ export function CashPaymentScreen({ ticket, busy, errorMessage, onDismissError, 
           <InlineNotice message={errorMessage} onDismiss={onDismissError} />
 
           <label className="cash-input-wrap">
-            <span>المبلغ المستلم من العميل</span>
-            <div className="cash-input"><input dir="ltr" inputMode="decimal" autoFocus value={input} onChange={(event) => setInput(event.target.value)} aria-label="المبلغ المستلم" /></div>
+            <span className="cash-input-label">
+              <strong>المبلغ المستلم من العميل</strong>
+              <small id="cash-input-help">أدخل أي مبلغ أو اختر فئة سريعة</small>
+            </span>
+            <div className="cash-input">
+              <input
+                dir="ltr"
+                inputMode="decimal"
+                autoFocus
+                value={input}
+                placeholder="0.00"
+                aria-label="المبلغ المستلم"
+                aria-describedby="cash-input-help"
+                onFocus={(event) => event.currentTarget.select()}
+                onChange={(event) => setInput(event.target.value)}
+              />
+            </div>
           </label>
 
           <div className="cash-suggestions cash-suggestions--tender" aria-label="مبالغ مقترحة أعلى من الإجمالي">
@@ -50,9 +65,9 @@ export function CashPaymentScreen({ ticket, busy, errorMessage, onDismissError, 
             ))}
           </div>
 
-          <div className={`change-card ${valid ? "ready" : ""}`}>
-            <span>الباقي للعميل</span>
-            <strong><MoneyAmount value={money(change ?? 0)} /></strong>
+          <div className={`change-card change-card--prominent ${valid ? "ready" : ""}`}>
+            <span className="change-card-label">الباقي للعميل</span>
+            <strong className="change-card-value"><MoneyAmount className="change-value-money" value={money(change ?? 0)} /></strong>
           </div>
           {!valid && input.length > 0 ? <p className="cash-validation">المبلغ المستلم يجب أن يساوي الإجمالي أو يزيد عليه.</p> : null}
           <button type="button" className="primary-button complete-sale" disabled={!valid || busy} onClick={() => tendered !== null && onComplete(tendered)}>
