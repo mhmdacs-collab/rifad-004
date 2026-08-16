@@ -1,0 +1,344 @@
+/*
+ * Rifad POS — Visual Pass 05
+ * Wide-screen readability pass for 1920x1080 and similar cashier displays.
+ */
+
+/* Saudi riyal mark sits visually to the left of the amount. */
+.money-amount {
+  flex-direction: row-reverse;
+  gap: .22em;
+}
+
+.riyal-symbol {
+  width: .56em;
+  height: .68em;
+}
+
+/* Ticket rows: right side is product identity, left side is row total. */
+.ticket-line-button--structured,
+.ticket-line-button--structured:disabled {
+  width: 100%;
+  min-height: 92px;
+  display: grid;
+  grid-template-columns: minmax(92px, auto) minmax(0, 1fr);
+  grid-template-areas: "total copy";
+  align-items: center;
+  gap: 18px;
+  padding: 14px 0;
+  direction: ltr;
+  opacity: 1;
+}
+
+.ticket-line-copy {
+  grid-area: copy;
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+  direction: rtl;
+  text-align: right;
+}
+
+.ticket-product-name {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.ticket-line-meta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  width: max-content;
+  max-width: 100%;
+  color: #69746f;
+  font-size: .79rem;
+  font-weight: 600;
+}
+
+.ticket-line-meta b {
+  color: var(--brand);
+  font-size: .84rem;
+  font-weight: 800;
+}
+
+.ticket-line-total {
+  grid-area: total;
+  justify-self: start;
+  min-width: max-content;
+  color: #111a17;
+  font-size: .98rem;
+  font-weight: 800;
+  direction: ltr;
+}
+
+.ticket-line-total .money-amount,
+.ticket-line-meta .money-amount {
+  font-size: inherit;
+}
+
+/* Totals should read like a final cashier check, not footer trivia. */
+.ticket-totals--audit {
+  margin: 0 14px 12px;
+  padding: 0 !important;
+  overflow: hidden;
+  border: 1px solid #dbe3df !important;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 -3px 16px rgb(24 48 38 / 5%);
+}
+
+.ticket-totals--audit > div {
+  margin: 0 !important;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 0 16px;
+}
+
+.ticket-totals--audit .ticket-tax-row {
+  color: #4e5b56;
+  background: #fafcfb;
+  border-bottom: 1px solid #e3e8e5;
+  font-size: .85rem !important;
+}
+
+.ticket-totals--audit .ticket-tax-row strong {
+  font-weight: 700;
+}
+
+.ticket-totals--audit .ticket-grand-total {
+  min-height: 66px;
+  margin: 0 !important;
+  padding: 0 16px !important;
+  color: #102019;
+  background: #f1f8f4;
+  border-top: 0 !important;
+  font-size: 1.1rem !important;
+}
+
+.ticket-totals--audit .ticket-grand-total strong {
+  font-weight: 800;
+}
+
+.ticket-totals--audit .ticket-grand-total .money-amount {
+  font-size: 1.16em;
+}
+
+/* Payment/cash amount hierarchy. */
+.payment-amount-block--centered h1,
+.cash-content--panel .cash-total h1 {
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 8px 0 12px;
+  color: #101a16;
+  font-size: clamp(3.25rem, 4.4vw, 5rem) !important;
+  font-weight: 800 !important;
+  line-height: 1;
+  letter-spacing: -.035em;
+}
+
+.payment-amount-block--centered h1 .money-amount,
+.cash-content--panel .cash-total h1 .money-amount {
+  font-size: 1em !important;
+  line-height: 1;
+}
+
+.cash-content--panel {
+  width: min(calc(100% - 72px), 900px);
+  padding: 32px;
+}
+
+.cash-input input {
+  min-height: 76px;
+  padding-inline: 22px;
+  font-size: 1.75rem !important;
+  font-weight: 800;
+}
+
+.cash-suggestions--tender {
+  grid-template-columns: repeat(5, minmax(112px, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.cash-suggestions--tender button {
+  min-height: 82px;
+  padding: 10px 12px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  border-radius: 13px;
+}
+
+.cash-suggestions--tender .money-amount {
+  font-size: 1em;
+}
+
+/* Change is a primary cashier checkpoint. */
+.change-card {
+  min-height: 88px;
+  margin-top: 20px;
+  padding: 14px 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  border: 1px solid #cfe4d9;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #eff8f3, #e7f4ed);
+  box-shadow: 0 7px 20px rgb(10 117 79 / 7%);
+}
+
+.change-card span {
+  color: #3f5c50;
+  font-size: .92rem;
+  font-weight: 700;
+}
+
+.change-card strong {
+  color: var(--brand-dark);
+  font-size: 1.65rem !important;
+  font-weight: 800;
+}
+
+.change-card strong .money-amount {
+  font-size: 1em;
+}
+
+.complete-sale {
+  min-height: 64px !important;
+  font-size: 1.12rem !important;
+  font-weight: 800 !important;
+}
+
+/* Sale success should be immediately readable from standing distance. */
+.success-card {
+  width: min(100% - 40px, 650px);
+  padding: 40px 46px;
+  border-radius: 16px;
+}
+
+.success-card h1 {
+  margin: 9px 0 6px;
+  font-size: 1.95rem;
+  font-weight: 800;
+}
+
+.success-card > p {
+  margin-bottom: 30px;
+  font-size: .82rem;
+}
+
+.receipt-summary {
+  overflow: hidden;
+  border: 1px solid #dce4e0;
+  border-radius: 12px;
+}
+
+.receipt-summary > div {
+  min-height: 54px;
+  align-items: center;
+  padding: 12px 18px;
+  font-size: .82rem;
+}
+
+.receipt-summary span {
+  color: #52615b;
+  font-weight: 600;
+}
+
+.receipt-summary strong {
+  color: #17201d;
+  font-size: .9rem;
+  font-weight: 800;
+}
+
+.receipt-summary .receipt-change {
+  min-height: 62px;
+  color: var(--brand-dark);
+  background: #edf8f2;
+}
+
+.receipt-summary .receipt-change strong {
+  color: var(--brand-dark);
+  font-size: 1.08rem;
+}
+
+.success-actions button {
+  min-height: 58px;
+  font-size: .96rem;
+  font-weight: 800;
+}
+
+@media (min-width: 1500px) {
+  .checkout-workspace {
+    grid-template-columns: minmax(0, 1fr) clamp(430px, 26vw, 500px);
+  }
+
+  .checkout-ticket .ticket-lines {
+    padding-inline: 20px;
+  }
+
+  .ticket-line-button--structured,
+  .ticket-line-button--structured:disabled {
+    min-height: 98px;
+    grid-template-columns: minmax(104px, auto) minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .ticket-product-name {
+    font-size: 1.04rem;
+  }
+
+  .ticket-line-total {
+    font-size: 1rem;
+  }
+
+  .cash-content--panel {
+    width: min(calc(100% - 96px), 960px);
+  }
+}
+
+@media (max-width: 1180px) and (min-width: 781px) {
+  .cash-suggestions--tender {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .ticket-line-button--structured,
+  .ticket-line-button--structured:disabled {
+    grid-template-columns: minmax(84px, auto) minmax(0, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 780px) {
+  .cash-content--panel {
+    width: calc(100% - 24px);
+    padding: 20px;
+  }
+
+  .cash-suggestions--tender {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .payment-amount-block--centered h1,
+  .cash-content--panel .cash-total h1 {
+    font-size: clamp(2.5rem, 12vw, 3.4rem) !important;
+  }
+
+  .ticket-line-button--structured,
+  .ticket-line-button--structured:disabled {
+    grid-template-columns: minmax(84px, auto) minmax(0, 1fr);
+  }
+}
