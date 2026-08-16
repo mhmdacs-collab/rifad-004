@@ -1,0 +1,138 @@
+.customer-create-form,
+.customer-create-form--expanded,
+.customer-extra-fields {
+  grid-template-columns: 1fr !important;
+}
+
+.customer-create-form > *,
+.customer-extra-fields > * {
+  grid-column: 1 !important;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.customer-loyalty-card {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid #d9e7df;
+  border-radius: 12px;
+  background: #f8fbf9;
+}
+
+.customer-loyalty-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.customer-loyalty-head > span {
+  display: grid;
+  gap: 3px;
+}
+
+.customer-loyalty-head > span > strong {
+  color: #21372c;
+  font-size: .8rem;
+}
+
+.customer-loyalty-head small,
+.customer-loyalty-hint {
+  color: #748079;
+  font-size: .67rem;
+  line-height: 1.55;
+}
+
+.customer-loyalty-head > strong {
+  color: #15593f;
+  font-size: 1.06rem;
+  white-space: nowrap;
+}
+
+.customer-loyalty-redeem {
+  min-height: 42px;
+  border: 1px solid #93b7a6;
+  border-radius: 9px;
+  background: #fff;
+  color: #15593f;
+  font: inherit;
+  font-size: .74rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.customer-loyalty-redeem:disabled {
+  opacity: .48;
+  cursor: default;
+}
+
+.customer-loyalty-quote {
+  display: grid;
+  gap: 7px;
+  padding: 10px 11px;
+  border: 1px solid #cfe1d8;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.customer-loyalty-quote > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #53645b;
+  font-size: .7rem;
+}
+
+.customer-loyalty-quote > span strong {
+  color: #1e392c;
+}
+
+.customer-loyalty-quote > small {
+  color: #7c8881;
+  font-size: .64rem;
+  line-height: 1.5;
+}
+
+.customer-loyalty-progress {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e6eee9;
+}
+
+.customer-loyalty-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--brand);
+}
+
+.customer-loyalty-reward {
+  padding: 9px 10px;
+  border-radius: 9px;
+  background: #edf7f1;
+  color: #176143;
+  font-size: .72rem;
+  font-weight: 850;
+  text-align: center;
+}
+
+.customer-loyalty-loading,
+.customer-loyalty-disabled {
+  min-height: 56px;
+  display: grid;
+  place-items: center;
+  color: #75817b;
+  font-size: .72rem;
+  text-align: center;
+}
+
+@media (max-width: 780px) {
+  .customer-loyalty-head,
+  .customer-loyalty-quote > span {
+    align-items: flex-start;
+  }
+}
