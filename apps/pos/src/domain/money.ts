@@ -44,22 +44,23 @@ export const suggestedCashHalalas = (totalHalalas: number): readonly number[] =>
     throw new Error("Cash total must be a non-negative safe integer halala amount.");
   }
 
-  // Exact payment is already prefilled. Shortcuts should represent likely cash handed
-  // to a cashier, not every mathematical rounding step. We offer the nearest higher
-  // 10-riyal amount when needed, then strong round checkpoints (50 / 100 / 500).
-  // For small totals below 120 SAR, 120 is also a useful bridge amount; this preserves
-  // the intended 108 -> 110, 120, 150, 200, 500 behavior without producing 140 for 126.
+  // Exact payment is already prefilled. Shortcuts should model likely cash handed
+  // to a cashier, not arbitrary mathematical steps.
   const suggestions = new Set<number>();
   const riyals = totalHalalas / 100;
 
+  // Nearest higher 10-riyal amount when the total is not already on a ten.
   if (totalHalalas % 1000 !== 0) {
     suggestions.add(Math.ceil(totalHalalas / 1000) * 1000);
   }
 
-  if (riyals < 120 && totalHalalas < 12000) {
+  // 120 is useful only when the sale itself is already close to 120 (e.g. 108).
+  // Do not leak it into unrelated low totals such as 54 SAR.
+  if (riyals >= 100 && riyals < 120) {
     suggestions.add(12000);
   }
 
+  // Strong cash checkpoints.
   suggestions.add(roundStrictlyUp(totalHalalas, 5000));
   suggestions.add(roundStrictlyUp(totalHalalas, 10000));
   suggestions.add(roundStrictlyUp(totalHalalas, 50000));
