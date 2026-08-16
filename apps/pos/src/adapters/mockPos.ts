@@ -190,6 +190,45 @@ class MockStore {
     return this.state.salePages;
   }
 
+  async renameSalePage(pageId: string, name: string): Promise<readonly SalePage[]> {
+    await pause();
+    const cleanName = name.trim();
+    const page = this.state.salePages.find((item) => item.id === pageId);
+    if (!page || page.isDefault) throw new PosContractError("PAGE_NOT_EDITABLE", "هذه الصفحة لا يمكن تعديلها.");
+    if (!cleanName) throw new PosContractError("PAGE_NAME_REQUIRED", "اكتب اسمًا للصفحة.");
+    if (this.state.salePages.some((item) => item.id !== pageId && item.name === cleanName)) {
+      throw new PosContractError("PAGE_NAME_DUPLICATE", "يوجد بالفعل صفحة بهذا الاسم.");
+    }
+    this.state = {
+      ...this.state,
+      salePages: this.state.salePages.map((item) => item.id === pageId ? { ...item, name: cleanName } : item),
+    };
+    this.persist();
+    return this.state.salePages;
+  }
+
+  async deleteSalePage(pageId: string): Promise<readonly SalePage[]> {
+    await pause();
+    const page = this.state.salePages.find((item) => item.id === pageId);
+    if (!page || page.isDefault) throw new PosContractError("PAGE_NOT_EDITABLE", "هذه الصفحة لا يمكن حذفها.");
+    this.state = { ...this.state, salePages: this.state.salePages.filter((item) => item.id !== pageId) };
+    this.persist();
+    return this.state.salePages;
+  }
+
+  async moveSalePage(pageId: string, direction: "previous" | "next"): Promise<readonly SalePage[]> {
+    await pause();
+    const pages = [...this.state.salePages];
+    const index = pages.findIndex((item) => item.id === pageId);
+    if (index < 1) throw new PosContractError("PAGE_NOT_EDITABLE", "هذه الصفحة لا يمكن نقلها.");
+    const target = direction === "previous" ? index - 1 : index + 1;
+    if (target < 1 || target >= pages.length) return this.state.salePages;
+    [pages[index], pages[target]] = [pages[target], pages[index]];
+    this.state = { ...this.state, salePages: pages };
+    this.persist();
+    return this.state.salePages;
+  }
+
   async placeSalePageProduct(pageId: string, slotIndex: number, productId: string): Promise<readonly SalePage[]> {
     await pause();
     if (!products.some((product) => product.id === productId)) {
@@ -400,6 +439,9 @@ export const createMockPosRuntime = (): MockPosRuntime => {
   const saleLayout: SaleLayoutContract = {
     listPages: () => store.listSalePages(),
     createPage: ({ name }) => store.createSalePage(name),
+    renamePage: ({ pageId, name }) => store.renameSalePage(pageId, name),
+    deletePage: ({ pageId }) => store.deleteSalePage(pageId),
+    movePage: ({ pageId, direction }) => store.moveSalePage(pageId, direction),
     placeProduct: ({ pageId, slotIndex, productId }) =>
       store.placeSalePageProduct(pageId, slotIndex, productId),
     removeProduct: ({ pageId, slotIndex }) => store.removeSalePageProduct(pageId, slotIndex),
