@@ -57,6 +57,7 @@ export type Ticket = Readonly<{
   lines: readonly TicketLine[];
   customer: CustomerReference | null;
   subtotal: Money;
+  loyaltyRedemption: Money;
   taxIncluded: Money;
   total: Money;
   updatedAt: string;
@@ -94,13 +95,26 @@ export type DeviceSession = Readonly<{
   linkedEmail: string;
 }>;
 
+export type ReceiptItem = Readonly<{
+  productId: string;
+  name: string;
+  quantity: number;
+  unitPrice: Money;
+  lineTotal: Money;
+}>;
+
 export type Receipt = Readonly<{
   id: string;
   number: string;
   paymentMethod: "cash" | "credit";
+  items: readonly ReceiptItem[];
+  subtotal: Money;
+  loyaltyRedemption: Money;
+  taxIncluded: Money;
   total: Money;
   tendered: Money;
   change: Money;
+  loyaltyEarned: Money;
   completedAt: string;
   employeeName: string;
   branchName: string;
