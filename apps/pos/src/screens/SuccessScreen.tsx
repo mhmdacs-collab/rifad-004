@@ -1,6 +1,6 @@
 import { Brand } from "../components/Brand";
 import { Icon } from "../components/Icon";
-import { formatMoney } from "../domain/money";
+import { MoneyAmount } from "../components/MoneyAmount";
 import type { PrintDeliveryStatus, Receipt } from "../domain/models";
 
 type SuccessScreenProps = {
@@ -30,9 +30,9 @@ export function SuccessScreen({ receipt, printStatus, busy, onPrint, onNewSale }
         <p>حُفظت العملية محليًا وهي جاهزة للمزامنة.</p>
         <div className="receipt-summary">
           <div><span>رقم الإيصال</span><strong dir="ltr">{receipt.number}</strong></div>
-          <div><span>الإجمالي</span><strong>{formatMoney(receipt.total)}</strong></div>
-          <div><span>المستلم</span><strong>{formatMoney(receipt.tendered)}</strong></div>
-          <div className="receipt-change"><span>الباقي</span><strong>{formatMoney(receipt.change)}</strong></div>
+          <div><span>الإجمالي</span><strong><MoneyAmount value={receipt.total} /></strong></div>
+          <div><span>المستلم</span><strong><MoneyAmount value={receipt.tendered} /></strong></div>
+          <div className="receipt-change"><span>الباقي</span><strong><MoneyAmount value={receipt.change} /></strong></div>
         </div>
         {printMessages[printStatus] ? <div className={`print-status print-status--${printStatus}`} role="status"><Icon name="printer" size={18} />{printMessages[printStatus]}</div> : null}
         <div className="success-actions">
