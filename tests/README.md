@@ -15,3 +15,5 @@ Target suites:
 - `migration/` — persistent-schema upgrades and rollback/recovery paths.
 
 A donor is never considered adopted merely because its own test suite passes. It must pass Rifad contract/conformance tests in isolation.
+
+Every donor adoption record must link to the exact Rifad evidence that accepted it. For printing this includes layout fixtures for A4/80 mm/58 mm, Arabic/QR/logo cases, transport disconnect/reconnect cases, restart recovery and duplicate/unknown-delivery behavior across the supported device matrix.

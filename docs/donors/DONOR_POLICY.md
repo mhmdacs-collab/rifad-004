@@ -15,6 +15,14 @@ For each capability:
 7. Prove it in isolation against Rifad contract tests.
 8. Adopt, port or reject.
 
+## Composition boundary
+
+Donor projects never compose each other on Rifad's behalf.
+
+If donor A solves A4/80 mm printing and donor B solves 58 mm layout, Rifad does not patch donor B into donor A. Rifad extracts or ports the selected slices into its own printing implementation behind its own contract. The same rule applies to synchronization, payments, ZATCA, migrations, hardware and every other capability.
+
+This prevents the first donor from becoming the accidental product core.
+
 ## Acceptance questions
 
 A donor candidate should answer yes to most of these:
@@ -62,6 +70,18 @@ For every adopted donor slice record:
 - reuse mode: direct / port / behavioral reference;
 - local Rifad module receiving the capability;
 - deviations made during adaptation.
+
+Also record:
+
+- the Rifad contract/version used for acceptance;
+- commands used to execute donor tests or reproduce behavior;
+- failure cases characterized locally;
+- competing candidates considered and why they were rejected;
+- the Rifad tests proving replaceability and conformance.
+
+## Adoption gate
+
+A candidate is not adopted merely because its demo works. The receiving Rifad module must exist, donor types must be contained, required notices must be present, and the applicable contract/conformance/offline/hardware/fiscal tests must pass.
 
 ## Maintenance rule
 

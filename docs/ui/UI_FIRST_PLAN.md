@@ -14,7 +14,7 @@ The first implementation phase builds all primary Rifad surfaces using Rifad-own
 4. KDS
 5. Customer Display
 
-The detailed Loyverse behavior/reference material already stored in `Loyverse_Info/` is the acceptance reference for screen inventory, workflows, states and interaction patterns.
+The detailed Loyverse behavior/reference material stored in `docs/research/loyverse/` is the acceptance reference for screen inventory, workflows, states and interaction patterns.
 
 ## Technology baseline
 

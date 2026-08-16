@@ -43,3 +43,9 @@ Every contract must eventually define:
 - versioning/migration expectations.
 
 Phase 1 implementations are mocks used by the UI. Later adapters replace them without requiring product-surface rewrites.
+
+## Adoption rule
+
+Donor APIs are inputs to adapter design, never public Rifad contracts. Contracts are derived from Rifad product behavior first, then used to evaluate donor candidates.
+
+A contract must be specific enough to run the same conformance suite against a mock, a ported implementation and a replacement adapter. For hardware capabilities it also exposes capabilities/status without leaking vendor SDK types.

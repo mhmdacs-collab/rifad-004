@@ -151,6 +151,18 @@ Puzzle architecture does **not** mean running ten unrelated applications togethe
 
 The final executable should present cohesive Rifad modules with Rifad contracts. Donor diversity belongs in provenance/research, not in the public shape of the product.
 
+Composition happens at Rifad boundaries:
+
+```text
+Donor A proven slice ─┐
+                      ├─> Rifad adapter/core implementation ─> Rifad contract
+Donor B proven slice ─┘
+```
+
+It does not happen by modifying donor A until it contains donor B. That would leave donor A as the hidden architecture owner.
+
+The mandatory capability workflow is documented in `docs/adoption/CAPABILITY_ADOPTION_WORKFLOW.md`.
+
 ## 9. Architecture decisions currently fixed
 
 - Rifad owns its Core and contracts.

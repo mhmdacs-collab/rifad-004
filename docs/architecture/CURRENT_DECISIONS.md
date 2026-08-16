@@ -1,6 +1,6 @@
 # Current Rifad Decisions
 
-These decisions supersede earlier architecture proposals stored under `open_source/` when they conflict.
+These decisions supersede earlier architecture proposals stored under `docs/research/historical-proposals/` when they conflict.
 
 ## D-001 — Rifad owns the core
 
@@ -40,4 +40,16 @@ Odoo, ERPNext or other accounting/ERP engines may be connected through adapters.
 
 ## D-010 — Historical research stays available
 
-Existing `Loyverse_Info/` and `open_source/` material is retained as research evidence. Statements such as “Odoo is the fixed core” are historical proposals, not current binding architecture.
+Existing Loyverse and open-source material is retained under `docs/research/` as research evidence. Statements such as “Odoo is the fixed core” are historical proposals, not current binding architecture.
+
+## D-011 — Donor composition happens inside Rifad
+
+When multiple donors solve different parts of a capability, their selected logic is composed behind Rifad-owned contracts/core/adapters. One donor is never promoted to the integration base merely because it supplied the first implementation.
+
+## D-012 — Existing code is an accelerator, not authority
+
+Rifad starts from proven implementations, tests, protocols and failure evidence whenever practical. A donor slice is adopted only after execution, source/test inspection, license verification and Rifad conformance validation.
+
+## D-013 — Support is a tested capability matrix
+
+Rifad does not promise “any device” or “any integration” without evidence. Hardware and external-system support is published as explicit protocol/model/capability combinations backed by tests. Generic standards support and certified devices are reported separately.

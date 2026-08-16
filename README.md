@@ -18,6 +18,10 @@ Rifad is an independent Saudi POS product. This repository is the new implementa
 
 A donor implementation may be written in any language. We may reuse permissively licensed code where appropriate, or extract its behavior, algorithms, state machine and tests and reimplement them behind a Rifad contract. No donor project becomes the architecture owner.
 
+Rifad composes donor capabilities **inside Rifad**, never by turning one donor into the base and merging other donors into it. If donor A has proven A4/80 mm printing and donor B has proven 58 mm layout logic, both slices enter through Rifad contracts/adapters. Donor A does not become the product shell.
+
+See [Capability Adoption Workflow](docs/adoption/CAPABILITY_ADOPTION_WORKFLOW.md) and the [Printing Capability Example](docs/adoption/PRINTING_CAPABILITY_EXAMPLE.md).
+
 ## Build order
 
 1. Complete the Rifad application surfaces visually and interactively using mock adapters.
@@ -37,9 +41,9 @@ A donor implementation may be written in any language. We may reuse permissively
 
 ## Repository map
 
-- `Loyverse_Info/` — preserved research/reference material.
-- `open_source/` — preserved historical architecture research. Decisions in these documents are **not binding** on the new Rifad implementation.
-- `docs/` — current Rifad architecture, UI and donor policies.
+- `docs/` — current Rifad architecture, product plan, adoption workflow and donor policies.
+- `docs/research/loyverse/` — preserved Loyverse product/technical research used as reference evidence.
+- `docs/research/historical-proposals/` — preserved earlier donor/architecture proposals. These documents are **not binding**.
 - `apps/` — product applications.
 - `core/` — Rifad-owned domain modules.
 - `contracts/` — stable module boundaries.
@@ -47,3 +51,7 @@ A donor implementation may be written in any language. We may reuse permissively
 - `tests/` — cross-module acceptance and conformance suites.
 
 See `PROJECT_RULES.md` before changing implementation code.
+
+## Current repository state
+
+The repository currently establishes the implementation rules and evidence structure. The next code milestone is the executable POS shell described in `docs/ui/IMPLEMENTATION_START.md`, with real Rifad contracts and mock adapters from the first interaction.

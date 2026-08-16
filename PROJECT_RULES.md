@@ -44,6 +44,17 @@ Before adopting donor logic:
 
 Language mismatch is not a blocker. Proven logic from Java, C++, Python, PHP or another language may be reimplemented in Rifad TypeScript when that is cleaner than importing its runtime.
 
+### Donor composition boundary
+
+- Never make donor A the integration base merely because it supplied the first capability.
+- Never merge donor B into donor A and describe the combined donor codebase as Rifad.
+- Compose selected slices only inside Rifad-owned contracts, core domains and adapters.
+- Existing code is an accelerator and evidence source, not automatic authority.
+- A public repository is not automatically reusable. License and dependency obligations must be verified before copying code.
+- Record rejected candidates and the reason for rejection so the same investigation is not repeated.
+
+The binding workflow is defined in `docs/adoption/CAPABILITY_ADOPTION_WORKFLOW.md`.
+
 ## 5. Data and offline
 
 - Local-first is a product requirement, not an optimization.
@@ -64,6 +75,8 @@ Language mismatch is not a blocker. Proven logic from Java, C++, Python, PHP or 
 A module design fails if replacing its implementation requires rewriting unrelated screens or domains.
 
 For example, replacing Tables must not require rewriting Sales, Inventory or the POS UI as long as the Tables contract remains compatible.
+
+Likewise, replacing an ESC/POS renderer, Windows printer transport, synchronization engine or ZATCA client must not expose donor types or force unrelated product changes.
 
 ## 8. Definition of done
 
