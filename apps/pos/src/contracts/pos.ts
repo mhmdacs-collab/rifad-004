@@ -48,6 +48,13 @@ export interface SalesContract {
 export interface SaleLayoutContract {
   listPages(): Promise<readonly SalePage[]>;
   createPage(input: { commandId: string; name: string }): Promise<readonly SalePage[]>;
+  renamePage(input: { commandId: string; pageId: string; name: string }): Promise<readonly SalePage[]>;
+  deletePage(input: { commandId: string; pageId: string }): Promise<readonly SalePage[]>;
+  movePage(input: {
+    commandId: string;
+    pageId: string;
+    direction: "previous" | "next";
+  }): Promise<readonly SalePage[]>;
   placeProduct(input: {
     commandId: string;
     pageId: string;
