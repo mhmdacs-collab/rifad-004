@@ -12,7 +12,12 @@ describe("money authority", () => {
     expect(parseRiyalsToHalalas("22.555")).toBeNull();
   });
 
-  it("always includes the exact ticket total in cash suggestions", () => {
-    expect(suggestedCashHalalas(2250)).toContain(2250);
+  it("suggests only higher practical tender amounts and never repeats the exact total", () => {
+    expect(suggestedCashHalalas(10800)).toEqual([11000, 12000, 15000, 20000, 50000]);
+    expect(suggestedCashHalalas(10800)).not.toContain(10800);
+  });
+
+  it("deduplicates tender targets when several denomination steps land on the same amount", () => {
+    expect(suggestedCashHalalas(11500)).toEqual([12000, 15000, 20000, 50000]);
   });
 });
