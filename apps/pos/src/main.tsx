@@ -13,6 +13,7 @@ import "./visual-pass-08.css";
 import "./visual-pass-09.css";
 import "./visual-pass-10.css";
 import "./visual-pass-11.css";
+import "./visual-pass-12.css";
 
 createRoot(document.getElementById("root")!).render(<StrictMode><App /></StrictMode>);
 
