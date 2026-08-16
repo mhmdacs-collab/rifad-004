@@ -33,10 +33,22 @@ export type TicketLine = Readonly<{
   tone: ProductTone;
 }>;
 
+export type CustomerDetails = Readonly<{
+  email: string;
+  address: string;
+  city: string;
+  region: string;
+  postalCode: string;
+  country: string;
+  customerCode: string;
+  note: string;
+}>;
+
 export type CustomerReference = Readonly<{
   id: string;
   name: string;
   mobile: string;
+  details: CustomerDetails;
 }>;
 
 export type Ticket = Readonly<{
@@ -54,6 +66,7 @@ export type Customer = Readonly<{
   id: string;
   name: string;
   mobile: string;
+  details: CustomerDetails;
   debt: Money;
 }>;
 
@@ -84,6 +97,7 @@ export type DeviceSession = Readonly<{
 export type Receipt = Readonly<{
   id: string;
   number: string;
+  paymentMethod: "cash" | "credit";
   total: Money;
   tendered: Money;
   change: Money;
