@@ -59,6 +59,7 @@ export function ReceiptsScreen({ receipts, busy, onBack, onPrint }: ReceiptsScre
                     <strong dir="ltr">{receipt.number}</strong>
                     <span dir="ltr">{formatDateTime(receipt.completedAt)}</span>
                     <small>{receipt.employeeName} · {receipt.branchName}</small>
+                    {receipt.customer ? <small className="receipt-customer"><Icon name="user" size={14} />{receipt.customer.name} · <span dir="ltr">{receipt.customer.mobile}</span></small> : null}
                   </div>
                   <div className="receipt-row-total"><MoneyAmount value={receipt.total} /></div>
                   <div className="receipt-row-print">
