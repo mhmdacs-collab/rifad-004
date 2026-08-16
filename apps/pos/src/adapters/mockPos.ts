@@ -1,6 +1,7 @@
 import type {
   CatalogContract,
   CheckoutContract,
+  CustomerCreditContract,
   DeviceSessionContract,
   EmployeeSessionContract,
   MockPosRuntime,
@@ -12,8 +13,10 @@ import type {
 import { PosContractError } from "../contracts/pos";
 import { addMoney, money, multiplyMoney } from "../domain/money";
 import type {
+  Customer,
   DeviceSession,
   EmployeeSession,
+  Money,
   Product,
   Receipt,
   RestoredPosState,
@@ -47,6 +50,23 @@ const categories = [
   { id: "dessert", name: "حلويات" },
 ] as const;
 
+type CreditSaleRecord = {
+  id: string;
+  commandId: string;
+  customerId: string;
+  ticket: Ticket;
+  amount: Money;
+  createdAt: string;
+};
+
+type DebtPaymentRecord = {
+  id: string;
+  commandId: string;
+  customerId: string;
+  amount: Money;
+  createdAt: string;
+};
+
 type Persisted = {
   device: DeviceSession | null;
   employee: EmployeeSession | null;
@@ -56,6 +76,9 @@ type Persisted = {
   nextTicketSequence: number;
   openTickets: Ticket[];
   salePages: SalePage[];
+  customers: Customer[];
+  creditSales: CreditSaleRecord[];
+  debtPayments: DebtPaymentRecord[];
 };
 
 const emptySlots = () => Array<string | null>(20).fill(null);
@@ -76,6 +99,11 @@ const initialSalePages = (): SalePage[] => [
   },
 ];
 
+const initialCustomers = (): Customer[] => [
+  { id: "customer-001", name: "أحمد محمد", mobile: "0501234567", debt: money(12000) },
+  { id: "customer-002", name: "سارة خالد", mobile: "0559876543", debt: money(3500) },
+];
+
 const emptyState = (): Persisted => ({
   device: null,
   employee: null,
@@ -85,10 +113,20 @@ const emptyState = (): Persisted => ({
   nextTicketSequence: 1,
   openTickets: [],
   salePages: initialSalePages(),
+  customers: initialCustomers(),
+  creditSales: [],
+  debtPayments: [],
 });
 
 const pause = () => new Promise<void>((resolve) => window.setTimeout(resolve, WAIT_MS));
 const createId = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
+
+const normalizeMobile = (value: string) => {
+  let digits = value.replace(/\D/g, "");
+  if (digits.startsWith("966") && digits.length === 12) digits = `0${digits.slice(3)}`;
+  if (digits.startsWith("5") && digits.length === 9) digits = `0${digits}`;
+  return digits;
+};
 
 class MockStore {
   private state: Persisted;
@@ -120,6 +158,9 @@ class MockStore {
         receipts: migratedReceipts,
         openTickets: parsed.openTickets ?? [],
         salePages: parsed.salePages?.length ? parsed.salePages : initialSalePages(),
+        customers: parsed.customers ?? initialCustomers(),
+        creditSales: parsed.creditSales ?? [],
+        debtPayments: parsed.debtPayments ?? [],
       };
     } catch {
       return emptyState();
@@ -180,6 +221,101 @@ class MockStore {
   async listReceipts(): Promise<readonly Receipt[]> {
     await pause();
     return this.state.receipts;
+  }
+
+  async searchCustomers(query: string): Promise<readonly Customer[]> {
+    await pause();
+    const text = query.trim().toLocaleLowerCase("ar");
+    const mobile = normalizeMobile(query);
+    return this.state.customers.filter((customer) => {
+      if (!text) return true;
+      return customer.name.toLocaleLowerCase("ar").includes(text)
+        || normalizeMobile(customer.mobile).includes(mobile);
+    });
+  }
+
+  async createCustomer(name: string, mobileInput: string): Promise<Customer> {
+    await pause();
+    const nameValue = name.trim();
+    const mobile = normalizeMobile(mobileInput);
+    if (!nameValue) throw new PosContractError("CUSTOMER_NAME_REQUIRED", "اكتب اسم العميل.");
+    if (!/^05\d{8}$/.test(mobile)) {
+      throw new PosContractError("INVALID_CUSTOMER_MOBILE", "أدخل رقم جوال سعودي صحيحًا مثل 05XXXXXXXX.");
+    }
+    if (this.state.customers.some((customer) => normalizeMobile(customer.mobile) === mobile)) {
+      throw new PosContractError("CUSTOMER_MOBILE_EXISTS", "يوجد عميل مسجل بهذا الرقم بالفعل.");
+    }
+    const customer: Customer = {
+      id: createId("customer"),
+      name: nameValue,
+      mobile,
+      debt: money(0),
+    };
+    this.state = { ...this.state, customers: [...this.state.customers, customer] };
+    this.persist();
+    return customer;
+  }
+
+  async chargeTicketToCustomer(commandId: string, customerId: string, ticketId: string): Promise<{ customer: Customer; nextTicket: Ticket }> {
+    await pause();
+    const prior = this.state.creditSales.find((record) => record.commandId === commandId);
+    if (prior) {
+      const customer = this.requireCustomer(prior.customerId);
+      const nextTicket = this.state.ticket ?? this.createTicket([], this.state.nextTicketSequence);
+      return { customer, nextTicket };
+    }
+
+    const ticket = this.requireTicket(ticketId);
+    if (ticket.lines.length === 0) {
+      throw new PosContractError("EMPTY_TICKET", "أضف عنصرًا واحدًا على الأقل قبل البيع الآجل.");
+    }
+    const customer = this.requireCustomer(customerId);
+    const updatedCustomer: Customer = { ...customer, debt: addMoney(customer.debt, ticket.total) };
+    const nextTicket = this.createTicket([], this.state.nextTicketSequence);
+    const record: CreditSaleRecord = {
+      id: createId("credit-sale"),
+      commandId,
+      customerId,
+      ticket,
+      amount: ticket.total,
+      createdAt: new Date().toISOString(),
+    };
+
+    this.state = {
+      ...this.state,
+      customers: this.state.customers.map((item) => item.id === customerId ? updatedCustomer : item),
+      creditSales: [record, ...this.state.creditSales],
+      ticket: nextTicket,
+      receipt: null,
+      nextTicketSequence: this.state.nextTicketSequence + 1,
+    };
+    this.checkout = null;
+    this.persist();
+    return { customer: updatedCustomer, nextTicket };
+  }
+
+  async settleCustomerDebt(commandId: string, customerId: string): Promise<Customer> {
+    await pause();
+    const prior = this.state.debtPayments.find((record) => record.commandId === commandId);
+    if (prior) return this.requireCustomer(prior.customerId);
+
+    const customer = this.requireCustomer(customerId);
+    if (customer.debt.halalas <= 0) return customer;
+    const payment: DebtPaymentRecord = {
+      id: createId("debt-payment"),
+      commandId,
+      customerId,
+      amount: customer.debt,
+      createdAt: new Date().toISOString(),
+    };
+    const updatedCustomer: Customer = { ...customer, debt: money(0) };
+    this.state = {
+      ...this.state,
+      customers: this.state.customers.map((item) => item.id === customerId ? updatedCustomer : item),
+      debtPayments: [payment, ...this.state.debtPayments],
+    };
+    this.persist();
+    return updatedCustomer;
   }
 
   async createSalePage(name: string): Promise<readonly SalePage[]> {
@@ -406,6 +542,12 @@ class MockStore {
     return "queued";
   }
 
+  private requireCustomer(customerId: string): Customer {
+    const customer = this.state.customers.find((item) => item.id === customerId);
+    if (!customer) throw new PosContractError("CUSTOMER_NOT_FOUND", "تعذر العثور على العميل.");
+    return customer;
+  }
+
   private requireTicket(ticketId: string): Ticket {
     const ticket = this.state.ticket;
     if (!ticket || ticket.id !== ticketId) {
@@ -461,8 +603,7 @@ export const createMockPosRuntime = (): MockPosRuntime => {
     renamePage: ({ pageId, name }) => store.renameSalePage(pageId, name),
     deletePage: ({ pageId }) => store.deleteSalePage(pageId),
     movePage: ({ pageId, direction }) => store.moveSalePage(pageId, direction),
-    placeProduct: ({ pageId, slotIndex, productId }) =>
-      store.placeSalePageProduct(pageId, slotIndex, productId),
+    placeProduct: ({ pageId, slotIndex, productId }) => store.placeSalePageProduct(pageId, slotIndex, productId),
     removeProduct: ({ pageId, slotIndex }) => store.removeSalePageProduct(pageId, slotIndex),
   };
   const sales: SalesContract = {
@@ -472,11 +613,16 @@ export const createMockPosRuntime = (): MockPosRuntime => {
     removeLine: ({ ticketId, lineId }) => store.removeLine(ticketId, lineId),
     saveOpenTicket: ({ ticketId }) => store.saveOpenTicket(ticketId),
   };
+  const customerCredit: CustomerCreditContract = {
+    search: ({ query }) => store.searchCustomers(query),
+    create: ({ name, mobile }) => store.createCustomer(name, mobile),
+    chargeTicket: ({ commandId, customerId, ticketId }) => store.chargeTicketToCustomer(commandId, customerId, ticketId),
+    settleFull: ({ commandId, customerId }) => store.settleCustomerDebt(commandId, customerId),
+  };
   const checkout: CheckoutContract = {
     begin: ({ ticketId }) => store.begin(ticketId),
     selectPaymentMethod: ({ checkoutId }) => store.selectMethod(checkoutId),
-    completeCashSale: ({ commandId, checkoutId, tendered }) =>
-      store.completeCash(commandId, checkoutId, tendered.halalas),
+    completeCashSale: ({ commandId, checkoutId, tendered }) => store.completeCash(commandId, checkoutId, tendered.halalas),
   };
   const receipts: ReceiptsContract = {
     list: () => store.listReceipts(),
@@ -492,6 +638,7 @@ export const createMockPosRuntime = (): MockPosRuntime => {
     catalog,
     saleLayout,
     sales,
+    customerCredit,
     checkout,
     receipts,
     printing,
