@@ -53,28 +53,28 @@ export function TicketPanel({
           return (
             <article className={`ticket-line ${lastTouchedLineId === line.id ? "ticket-line--latest" : ""}`} key={line.id} data-line-id={line.id}>
               <button
-                className="ticket-line-button"
+                className="ticket-line-button ticket-line-button--structured"
                 type="button"
                 onClick={() => editable && onEditLine?.(line)}
                 disabled={!editable}
               >
-                <span className="ticket-line-main">
+                <span className="ticket-line-copy">
                   <strong className="ticket-product-name">{line.name}</strong>
-                  <strong className="line-total"><MoneyAmount value={lineTotal} /></strong>
+                  <span className="ticket-line-meta" dir="ltr">
+                    <b>{line.quantity}</b>
+                    <span>×</span>
+                    <MoneyAmount value={line.unitPrice} />
+                  </span>
                 </span>
-                <span className="ticket-line-meta" dir="ltr">
-                  <b>{line.quantity}</b>
-                  <span>×</span>
-                  <MoneyAmount value={line.unitPrice} />
-                </span>
+                <strong className="line-total ticket-line-total"><MoneyAmount value={lineTotal} /></strong>
               </button>
             </article>
           );
         })}
       </div>
 
-      <footer className="ticket-totals">
-        <div><span>الضريبة (مضمنة)</span><MoneyAmount value={ticket.taxIncluded} /></div>
+      <footer className="ticket-totals ticket-totals--audit">
+        <div className="ticket-tax-row"><strong>الضريبة (مضمنة)</strong><strong><MoneyAmount value={ticket.taxIncluded} /></strong></div>
         <div className="ticket-grand-total"><strong>الإجمالي</strong><strong><MoneyAmount value={ticket.total} /></strong></div>
       </footer>
     </aside>
