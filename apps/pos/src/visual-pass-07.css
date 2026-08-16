@@ -1,0 +1,273 @@
+/*
+ * Rifad POS — Visual Pass 07
+ * Checkout-ticket clipping fix, explicit manual tender entry,
+ * stronger customer-change hierarchy and slightly larger sale-ticket names.
+ */
+
+/* The sale basket was already visually stronger. Keep that treatment and only raise name readability slightly. */
+.ticket-panel--sale .ticket-product-name {
+  font-size: 1.08rem !important;
+  font-weight: 800;
+}
+
+/* Checkout ticket: make the column a real self-contained flex surface so rows cannot spill outside it. */
+.checkout-ticket {
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #fff;
+}
+
+.checkout-ticket .ticket-panel--checkout {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+  background: #fff;
+}
+
+.checkout-ticket .ticket-header {
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.checkout-ticket .ticket-lines {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  min-width: 0;
+  padding: 0 18px !important;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.checkout-ticket .ticket-line {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.ticket-line-button--checkout,
+.ticket-line-button--checkout:disabled {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 94px;
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 0;
+  background: #fff;
+  opacity: 1;
+  cursor: default;
+}
+
+.checkout-ticket-line-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+  overflow: hidden;
+  direction: rtl;
+  text-align: right;
+}
+
+.checkout-ticket-product-name {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  color: #14211d;
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.checkout-ticket-line-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: max-content;
+  max-width: 100%;
+  color: #65716c;
+  font-size: .79rem;
+  font-weight: 600;
+}
+
+.checkout-ticket-line-meta b {
+  color: var(--brand);
+  font-size: .84rem;
+  font-weight: 800;
+}
+
+.checkout-ticket-line-total {
+  flex: 0 0 112px;
+  width: 112px;
+  min-width: 112px;
+  max-width: 112px;
+  overflow: hidden;
+  color: #111a17;
+  direction: ltr;
+  text-align: left;
+  font-size: .98rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.checkout-ticket-line-total .money-amount {
+  width: 100%;
+  justify-content: flex-start;
+  font-size: inherit;
+}
+
+/* Keep tax and grand total pinned and visible no matter how many lines the ticket contains. */
+.checkout-ticket .ticket-totals--audit {
+  flex: 0 0 auto;
+  width: calc(100% - 28px);
+  max-width: calc(100% - 28px);
+  min-width: 0;
+  margin: 0 14px 12px !important;
+  box-sizing: border-box;
+}
+
+.checkout-ticket .ticket-totals--audit > div {
+  box-sizing: border-box;
+}
+
+/* Manual cash entry should look intentionally editable, not like a passive amount display. */
+.cash-input-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.cash-input-label strong {
+  color: #24312c;
+  font-size: .88rem;
+  font-weight: 800;
+}
+
+.cash-input-label small {
+  color: #74807b;
+  font-size: .7rem;
+  font-weight: 600;
+}
+
+.cash-input {
+  border-radius: 11px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgb(10 117 79 / 5%);
+}
+
+.cash-input:focus-within {
+  box-shadow: 0 0 0 3px rgb(10 117 79 / 11%);
+}
+
+.cash-input input {
+  caret-color: var(--brand);
+}
+
+/* Customer change: keep the label calm and make the amount impossible to miss. */
+.change-card--prominent {
+  min-height: 138px !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  align-content: center !important;
+  gap: 10px !important;
+  padding: 18px 24px 20px !important;
+}
+
+.change-card--prominent .change-card-label {
+  justify-self: end !important;
+  color: #486157 !important;
+  font-size: .92rem !important;
+  font-weight: 700 !important;
+}
+
+.change-card--prominent .change-card-value {
+  justify-self: center !important;
+  width: 100% !important;
+  color: var(--brand-dark) !important;
+  font-size: clamp(2.75rem, 3.7vw, 3.7rem) !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  text-align: center !important;
+}
+
+.change-card--prominent .change-value-money {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1em !important;
+  font-weight: inherit !important;
+  line-height: 1 !important;
+}
+
+.change-card--prominent .change-value-money > span {
+  font-size: 1em !important;
+  font-weight: inherit !important;
+}
+
+.change-card--prominent .change-value-money .riyal-symbol {
+  width: .5em;
+  height: .6em;
+}
+
+@media (min-width: 1500px) {
+  .checkout-ticket .ticket-lines {
+    padding-inline: 20px !important;
+  }
+
+  .ticket-line-button--checkout,
+  .ticket-line-button--checkout:disabled {
+    min-height: 100px;
+    gap: 16px;
+  }
+
+  .checkout-ticket-product-name {
+    font-size: 1.08rem;
+  }
+
+  .ticket-panel--sale .ticket-product-name {
+    font-size: 1.12rem !important;
+  }
+
+  .change-card--prominent .change-card-value {
+    font-size: 3.55rem !important;
+  }
+}
+
+@media (max-width: 1180px) and (min-width: 781px) {
+  .checkout-ticket-line-total {
+    flex-basis: 98px;
+    width: 98px;
+    min-width: 98px;
+    max-width: 98px;
+    font-size: .9rem;
+  }
+
+  .cash-input-label {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+}
