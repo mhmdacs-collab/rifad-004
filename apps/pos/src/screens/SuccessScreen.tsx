@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Brand } from "../components/Brand";
 import { Icon } from "../components/Icon";
 import { MoneyAmount } from "../components/MoneyAmount";
+import { readPrintReceiptAlways, writePrintReceiptAlways } from "../domain/posPreferences";
 import type { PrintDeliveryStatus, Receipt } from "../domain/models";
 
 type SuccessScreenProps = {
@@ -20,6 +22,13 @@ const printMessages: Record<PrintDeliveryStatus, string | null> = {
 };
 
 export function SuccessScreen({ receipt, printStatus, busy, onPrint, onNewSale }: SuccessScreenProps) {
+  const [printAlways, setPrintAlways] = useState(readPrintReceiptAlways);
+
+  const updatePrintAlways = (enabled: boolean) => {
+    setPrintAlways(enabled);
+    writePrintReceiptAlways(enabled);
+  };
+
   return (
     <main className="success-screen" data-screen-id="POS-SCREEN-011">
       <header className="success-header"><Brand compact /><span>رفاد POS</span><span className="local-saved"><i /> محفوظ محليًا</span></header>
@@ -35,6 +44,13 @@ export function SuccessScreen({ receipt, printStatus, busy, onPrint, onNewSale }
           <div className="receipt-change"><span>الباقي</span><strong><MoneyAmount value={receipt.change} /></strong></div>
         </div>
         {printMessages[printStatus] ? <div className={`print-status print-status--${printStatus}`} role="status"><Icon name="printer" size={18} />{printMessages[printStatus]}</div> : null}
+        <label className="print-always-toggle print-always-toggle--summary">
+          <input type="checkbox" checked={printAlways} onChange={(event) => updatePrintAlways(event.target.checked)} />
+          <span>
+            <strong>طباعة الإيصال دائمًا</strong>
+            <small>في العمليات القادمة سيُرسل الإيصال للطابعة ثم يبدأ بيع جديد مباشرة بدون إظهار هذا الملخص.</small>
+          </span>
+        </label>
         <div className="success-actions">
           <button type="button" className="secondary-button" onClick={onPrint} disabled={busy}><Icon name="printer" size={20} />{printStatus === "failed" ? "إعادة الطباعة" : "طباعة الإيصال"}</button>
           <button type="button" className="primary-button" onClick={onNewSale} disabled={busy}><Icon name="plus" size={20} />بيع جديد</button>
