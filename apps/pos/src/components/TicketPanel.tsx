@@ -106,6 +106,12 @@ export function TicketPanel({
       </div>
 
       <footer className="ticket-totals ticket-totals--audit" data-testid="checkout-ticket-totals">
+        {ticket.loyaltyRedemption.halalas > 0 ? (
+          <>
+            <div className="ticket-subtotal-row"><strong>المجموع قبل الخصم</strong><strong><MoneyAmount value={ticket.subtotal} /></strong></div>
+            <div className="ticket-loyalty-discount-row"><strong>استبدال نقاط</strong><strong>− <MoneyAmount value={ticket.loyaltyRedemption} /></strong></div>
+          </>
+        ) : null}
         <div className="ticket-tax-row"><strong>الضريبة (مضمنة)</strong><strong><MoneyAmount value={ticket.taxIncluded} /></strong></div>
         <div className="ticket-grand-total"><strong>الإجمالي</strong><strong><MoneyAmount value={ticket.total} /></strong></div>
       </footer>
