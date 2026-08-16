@@ -230,7 +230,7 @@ class MockStore {
     return this.state.customers.filter((customer) => {
       if (!text) return true;
       return customer.name.toLocaleLowerCase("ar").includes(text)
-        || normalizeMobile(customer.mobile).includes(mobile);
+        || (mobile.length > 0 && normalizeMobile(customer.mobile).includes(mobile));
     });
   }
 
@@ -294,21 +294,30 @@ class MockStore {
     return { customer: updatedCustomer, nextTicket };
   }
 
-  async settleCustomerDebt(commandId: string, customerId: string): Promise<Customer> {
+  async settleCustomerDebt(commandId: string, customerId: string, amount: Money): Promise<Customer> {
     await pause();
     const prior = this.state.debtPayments.find((record) => record.commandId === commandId);
     if (prior) return this.requireCustomer(prior.customerId);
 
     const customer = this.requireCustomer(customerId);
-    if (customer.debt.halalas <= 0) return customer;
+    if (!Number.isSafeInteger(amount.halalas) || amount.halalas <= 0) {
+      throw new PosContractError("INVALID_DEBT_PAYMENT", "أدخل مبلغ سداد أكبر من صفر.");
+    }
+    if (amount.halalas > customer.debt.halalas) {
+      throw new PosContractError("DEBT_PAYMENT_EXCEEDS_BALANCE", "مبلغ السداد أكبر من دين العميل.");
+    }
+
     const payment: DebtPaymentRecord = {
       id: createId("debt-payment"),
       commandId,
       customerId,
-      amount: customer.debt,
+      amount,
       createdAt: new Date().toISOString(),
     };
-    const updatedCustomer: Customer = { ...customer, debt: money(0) };
+    const updatedCustomer: Customer = {
+      ...customer,
+      debt: money(customer.debt.halalas - amount.halalas),
+    };
     this.state = {
       ...this.state,
       customers: this.state.customers.map((item) => item.id === customerId ? updatedCustomer : item),
@@ -617,7 +626,7 @@ export const createMockPosRuntime = (): MockPosRuntime => {
     search: ({ query }) => store.searchCustomers(query),
     create: ({ name, mobile }) => store.createCustomer(name, mobile),
     chargeTicket: ({ commandId, customerId, ticketId }) => store.chargeTicketToCustomer(commandId, customerId, ticketId),
-    settleFull: ({ commandId, customerId }) => store.settleCustomerDebt(commandId, customerId),
+    settle: ({ commandId, customerId, amount }) => store.settleCustomerDebt(commandId, customerId, amount),
   };
   const checkout: CheckoutContract = {
     begin: ({ ticketId }) => store.begin(ticketId),
