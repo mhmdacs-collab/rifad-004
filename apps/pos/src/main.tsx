@@ -5,6 +5,7 @@ import "./styles.css";
 import "./visual-pass.css";
 import "./visual-pass-02.css";
 import "./visual-pass-03.css";
+import "./visual-pass-04.css";
 
 createRoot(document.getElementById("root")!).render(<StrictMode><App /></StrictMode>);
 
