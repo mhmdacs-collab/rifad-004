@@ -1,21 +1,29 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { loyaltyContract } from "../adapters/mockLoyalty";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type { LoyaltyRedemptionQuote, LoyaltyStatus } from "../domain/loyalty";
+import { formatMoneyAmount } from "../domain/money";
+import type { Customer, CustomerDetails, CustomerReference, Money, Receipt } from "../domain/models";
 import { MoneyAmount } from "./MoneyAmount";
-import type { Customer, CustomerDetails, CustomerReference, Money } from "../domain/models";
 
 export type CustomerPickerPurpose = "attach" | "credit";
+type CustomerView = "picker" | "profile" | "edit" | "history" | "redeem";
 
 type CustomerPickerDialogProps = {
   purpose: CustomerPickerPurpose;
   ticketTotal: Money;
+  ticketSubtotal: Money;
+  loyaltyRedemption: Money;
   attachedCustomer: CustomerReference | null;
   busy: boolean;
   onClose: () => void;
   onSearch: (query: string) => Promise<readonly Customer[]>;
   onCreateCustomer: (name: string, mobile: string, details: CustomerDetails) => Promise<Customer | null>;
+  onUpdateCustomer: (customerId: string, name: string, mobile: string, details: CustomerDetails) => Promise<Customer | null>;
   onAttachCustomer: (customerId: string | null) => Promise<boolean>;
   onChargeCredit: (customerId: string) => Promise<Customer | null>;
+  onLoadLoyaltyStatus: (customerId: string) => Promise<LoyaltyStatus | null>;
+  onQuoteLoyaltyRedemption: (customerId: string, ticketTotalHalalas: number) => Promise<LoyaltyRedemptionQuote | null>;
+  onApplyLoyaltyRedemption: (amountHalalas: number) => Promise<boolean>;
+  onLoadPurchases: (customerId: string) => Promise<readonly Receipt[]>;
 };
 
 const EMPTY_DETAILS: CustomerDetails = {
@@ -29,17 +37,41 @@ const EMPTY_DETAILS: CustomerDetails = {
   note: "",
 };
 
+const dateFormatter = new Intl.DateTimeFormat("ar-SA-u-nu-latn", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+const detailAddress = (details: CustomerDetails) =>
+  [details.address, details.city, details.region, details.postalCode, details.country].filter(Boolean).join("، ");
+
+const digitsToHalalas = (digits: string) => {
+  const value = Number(digits || "0");
+  return Number.isSafeInteger(value) ? value : 0;
+};
+
 export function CustomerPickerDialog({
   purpose,
   ticketTotal,
+  ticketSubtotal,
+  loyaltyRedemption,
   attachedCustomer,
   busy,
   onClose,
   onSearch,
   onCreateCustomer,
+  onUpdateCustomer,
   onAttachCustomer,
   onChargeCredit,
+  onLoadLoyaltyStatus,
+  onQuoteLoyaltyRedemption,
+  onApplyLoyaltyRedemption,
+  onLoadPurchases,
 }: CustomerPickerDialogProps) {
+  const [view, setView] = useState<CustomerView>(purpose === "attach" && attachedCustomer ? "profile" : "picker");
   const [query, setQuery] = useState(attachedCustomer?.mobile ?? "");
   const [results, setResults] = useState<readonly Customer[]>([]);
   const [selected, setSelected] = useState<Customer | null>(null);
@@ -52,14 +84,35 @@ export function CustomerPickerDialog({
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [loyaltyStatus, setLoyaltyStatus] = useState<LoyaltyStatus | null>(null);
-  const [loyaltyLoading, setLoyaltyLoading] = useState(false);
+  const [purchases, setPurchases] = useState<readonly Receipt[]>([]);
+  const [profileLoading, setProfileLoading] = useState(Boolean(attachedCustomer && purpose === "attach"));
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [historyQuery, setHistoryQuery] = useState("");
+  const [redeemDigits, setRedeemDigits] = useState(loyaltyRedemption.halalas > 0 ? String(loyaltyRedemption.halalas) : "");
   const [redemptionQuote, setRedemptionQuote] = useState<LoyaltyRedemptionQuote | null>(null);
-  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editMobile, setEditMobile] = useState("");
+  const [editDetails, setEditDetails] = useState<CustomerDetails>(EMPTY_DETAILS);
   const searchSequence = useRef(0);
-  const loyaltySequence = useRef(0);
+  const profileSequence = useRef(0);
   const actionLocked = useRef(false);
 
+  const loadProfile = async (customer: Customer) => {
+    const sequence = ++profileSequence.current;
+    setProfileLoading(true);
+    const [loyalty, history] = await Promise.all([
+      onLoadLoyaltyStatus(customer.id),
+      onLoadPurchases(customer.id),
+    ]);
+    if (sequence !== profileSequence.current) return;
+    setSelected(customer);
+    setLoyaltyStatus(loyalty);
+    setPurchases(history);
+    setProfileLoading(false);
+  };
+
   useEffect(() => {
+    if (view !== "picker") return;
     const sequence = ++searchSequence.current;
     setSearching(true);
     setMessage(null);
@@ -74,28 +127,32 @@ export function CustomerPickerDialog({
       .finally(() => {
         if (sequence === searchSequence.current) setSearching(false);
       });
-  }, [attachedCustomer, onSearch, query, selected]);
+  }, [attachedCustomer, onSearch, query, selected, view]);
 
   useEffect(() => {
-    setRedemptionQuote(null);
-    if (purpose !== "attach" || !selected) {
-      setLoyaltyStatus(null);
-      setLoyaltyLoading(false);
-      return;
-    }
-    const sequence = ++loyaltySequence.current;
-    setLoyaltyLoading(true);
-    void loyaltyContract.status({ customerId: selected.id })
-      .then((status) => {
-        if (sequence === loyaltySequence.current) setLoyaltyStatus(status);
-      })
-      .finally(() => {
-        if (sequence === loyaltySequence.current) setLoyaltyLoading(false);
-      });
-  }, [purpose, selected]);
+    if (purpose !== "attach" || !attachedCustomer || view !== "profile" || selected?.id === attachedCustomer.id) return;
+    let active = true;
+    setProfileLoading(true);
+    void onSearch(attachedCustomer.mobile).then((items) => {
+      if (!active) return;
+      const customer = items.find((item) => item.id === attachedCustomer.id);
+      if (customer) void loadProfile(customer);
+      else setProfileLoading(false);
+    });
+    return () => { active = false; };
+  }, [attachedCustomer, onSearch, purpose, selected?.id, view]);
 
-  const updateDetail = (key: keyof CustomerDetails, value: string) => {
+  useEffect(() => {
+    if (view !== "redeem" || !selected) return;
+    void onQuoteLoyaltyRedemption(selected.id, ticketSubtotal.halalas).then(setRedemptionQuote);
+  }, [onQuoteLoyaltyRedemption, selected, ticketSubtotal.halalas, view]);
+
+  const updateNewDetail = (key: keyof CustomerDetails, value: string) => {
     setNewDetails((current) => ({ ...current, [key]: value }));
+  };
+
+  const updateEditDetail = (key: keyof CustomerDetails, value: string) => {
+    setEditDetails((current) => ({ ...current, [key]: value }));
   };
 
   const resetCreate = () => {
@@ -109,7 +166,6 @@ export function CustomerPickerDialog({
   const selectCustomer = (customer: Customer) => {
     if (actionLocked.current) return;
     setSelected(customer);
-    setRedemptionQuote(null);
     resetCreate();
     setMessage(null);
   };
@@ -125,7 +181,7 @@ export function CustomerPickerDialog({
     setResults((current) => [created, ...current.filter((customer) => customer.id !== created.id)]);
     setSelected(created);
     resetCreate();
-    setMessage("تم إنشاء العميل. أكمل ربطه بالتذكرة.");
+    setMessage("تم إنشاء العميل. اضغط «إضافة إلى التذكرة» للمتابعة.");
   };
 
   const submitAttach = async () => {
@@ -170,21 +226,79 @@ export function CustomerPickerDialog({
     onClose();
   };
 
-  const quoteLoyaltyRedemption = async () => {
-    if (!selected || !loyaltyStatus || loyaltyStatus.program.mode !== "cashback") return;
-    setQuoteLoading(true);
-    try {
-      const quote = await loyaltyContract.quoteRedemption({ customerId: selected.id, ticketTotal });
-      setRedemptionQuote(quote);
-    } finally {
-      setQuoteLoading(false);
+  const openEdit = () => {
+    if (!selected) return;
+    setEditName(selected.name);
+    setEditMobile(selected.mobile);
+    setEditDetails(selected.details);
+    setProfileMenuOpen(false);
+    setView("edit");
+  };
+
+  const submitEdit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!selected || actionLocked.current) return;
+    actionLocked.current = true;
+    setSubmitting(true);
+    const updated = await onUpdateCustomer(selected.id, editName, editMobile, editDetails);
+    actionLocked.current = false;
+    setSubmitting(false);
+    if (!updated) {
+      setMessage("تعذر حفظ بيانات العميل.");
+      return;
     }
+    await loadProfile(updated);
+    setMessage("تم تحديث الملف الشخصي.");
+    setView("profile");
+  };
+
+  const redeemHalalas = digitsToHalalas(redeemDigits);
+  const redeemMaximum = redemptionQuote?.amount.halalas ?? 0;
+  const redeemValid = redeemHalalas > 0 && redeemHalalas <= redeemMaximum;
+
+  const appendRedeemDigit = (digit: string) => {
+    setRedeemDigits((current) => {
+      const next = `${current}${digit}`.replace(/^0+(?=\d)/, "").slice(0, 8);
+      return next;
+    });
+  };
+
+  const applyRedemption = async () => {
+    if (!redeemValid || actionLocked.current) return;
+    actionLocked.current = true;
+    setSubmitting(true);
+    const applied = await onApplyLoyaltyRedemption(redeemHalalas);
+    actionLocked.current = false;
+    setSubmitting(false);
+    if (!applied) {
+      setMessage("تعذر تطبيق استبدال النقاط.");
+      return;
+    }
+    onClose();
+  };
+
+  const clearRedemption = async () => {
+    if (actionLocked.current) return;
+    actionLocked.current = true;
+    setSubmitting(true);
+    const cleared = await onApplyLoyaltyRedemption(0);
+    actionLocked.current = false;
+    setSubmitting(false);
+    if (cleared) onClose();
   };
 
   const debtAfterCredit: Money | null = selected && purpose === "credit"
     ? { halalas: selected.debt.halalas + ticketTotal.halalas, currency: selected.debt.currency }
     : null;
 
+  const filteredPurchases = useMemo(() => {
+    const needle = historyQuery.trim().toLowerCase();
+    if (!needle) return purchases;
+    return purchases.filter((receipt) => receipt.number.toLowerCase().includes(needle));
+  }, [historyQuery, purchases]);
+
+  const visitCount = purchases.length;
+  const lastVisit = purchases[0]?.completedAt ? dateFormatter.format(new Date(purchases[0].completedAt)) : "—";
   const purchaseProgress = loyaltyStatus?.program.mode === "purchase-count"
     ? loyaltyStatus.qualifyingPurchases % loyaltyStatus.program.purchasesRequired
     : 0;
@@ -193,32 +307,120 @@ export function CustomerPickerDialog({
     return (
       <div className="dialog-backdrop customer-credit-backdrop" role="presentation" onClick={() => { if (!submitting) onClose(); }}>
         <section className="customer-credit-dialog customer-credit-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="credit-confirm-title" onClick={(event) => event.stopPropagation()}>
-          <header>
+          <header className="customer-touch-header">
             <button type="button" onClick={onClose} aria-label="إغلاق" disabled={submitting}>×</button>
-            <div>
-              <h2 id="credit-confirm-title">تأكيد البيع الآجل</h2>
-              <span>العميل مضاف إلى التذكرة مسبقًا، لذلك لا تحتاج لاختياره مرة أخرى.</span>
-            </div>
+            <div><h2 id="credit-confirm-title">تأكيد البيع الآجل</h2><span>العميل مضاف إلى التذكرة مسبقًا.</span></div>
           </header>
-
           {selected ? (
             <div className="customer-account-card customer-credit-confirm-card">
-              <div className="customer-account-head">
-                <span><strong>{selected.name}</strong><small dir="ltr">{selected.mobile}</small></span>
-              </div>
+              <div className="customer-account-head"><span><strong>{selected.name}</strong><small dir="ltr">{selected.mobile}</small></span></div>
               <div className="customer-balance-row"><span>الدين الحالي</span><strong><MoneyAmount value={selected.debt} /></strong></div>
               <div className="customer-balance-row"><span>قيمة البيع الآجل</span><strong><MoneyAmount value={ticketTotal} /></strong></div>
               {debtAfterCredit ? <div className="customer-balance-row customer-balance-row--total"><span>الدين بعد العملية</span><strong><MoneyAmount value={debtAfterCredit} /></strong></div> : null}
-              <button type="button" className="primary-button customer-credit-submit" onClick={() => void submitCredit()} disabled={busy || submitting}>{submitting ? "جارٍ التسجيل…" : "تأكيد البيع الآجل"}</button>
+              <button type="button" className="primary-button customer-credit-submit customer-touch-primary" onClick={() => void submitCredit()} disabled={busy || submitting}>{submitting ? "جارٍ التسجيل…" : "تأكيد البيع الآجل"}</button>
             </div>
           ) : (
-            <div className="customer-account-placeholder customer-credit-confirm-loading">
-              <strong>{searching ? "جارٍ تحميل حساب العميل…" : "تعذر تحميل حساب العميل"}</strong>
-              <span>{searching ? "لحظة واحدة." : "أغلق النافذة وحاول مرة أخرى."}</span>
-            </div>
+            <div className="customer-account-placeholder customer-credit-confirm-loading"><strong>{searching ? "جارٍ تحميل حساب العميل…" : "تعذر تحميل حساب العميل"}</strong></div>
           )}
+        </section>
+      </div>
+    );
+  }
 
-          {message ? <div className="customer-credit-message" role="status">{message}</div> : null}
+  if (purpose === "attach" && attachedCustomer && view !== "picker") {
+    return (
+      <div className="dialog-backdrop customer-credit-backdrop" role="presentation" onClick={() => { if (!submitting) onClose(); }}>
+        <section className="customer-credit-dialog customer-profile-dialog" role="dialog" aria-modal="true" aria-label={view === "history" ? "تاريخ الشراء" : view === "redeem" ? "استبدال النقاط" : view === "edit" ? "تعديل الملف الشخصي" : "الملف الشخصي للعميل"} onClick={(event) => event.stopPropagation()}>
+          <header className="customer-touch-header customer-profile-topbar">
+            <button type="button" onClick={() => view === "profile" ? onClose() : setView("profile")} aria-label={view === "profile" ? "إغلاق" : "رجوع"}>{view === "profile" ? "×" : "→"}</button>
+            <div><h2>{view === "history" ? "تاريخ الشراء" : view === "redeem" ? "استبدال النقاط" : view === "edit" ? "تعديل الملف الشخصي" : "الملف الشخصي للعميل"}</h2></div>
+            {view === "profile" ? (
+              <div className="customer-profile-menu-wrap">
+                <button type="button" className="customer-profile-menu-trigger" aria-label="خيارات العميل" aria-expanded={profileMenuOpen} onClick={() => setProfileMenuOpen((current) => !current)}>⋮</button>
+                {profileMenuOpen ? <button type="button" className="customer-profile-remove-menu" onClick={() => void removeAttachedCustomer()} disabled={submitting}>إزالة من التذكرة</button> : null}
+              </div>
+            ) : <span className="customer-topbar-spacer" />}
+          </header>
+
+          {profileLoading || !selected ? (
+            <div className="customer-profile-loading">جارٍ تحميل ملف العميل…</div>
+          ) : view === "profile" ? (
+            <div className="customer-profile-shell">
+              <section className="customer-profile-hero">
+                <div className="customer-profile-avatar" aria-hidden="true">●</div>
+                <h3>{selected.name}</h3>
+                {selected.details.email ? <div className="customer-profile-detail"><span>✉</span><strong dir="ltr">{selected.details.email}</strong></div> : null}
+                <div className="customer-profile-detail"><span>☎</span><strong dir="ltr">{selected.mobile}</strong></div>
+                {detailAddress(selected.details) ? <div className="customer-profile-detail"><span>⌖</span><strong>{detailAddress(selected.details)}</strong></div> : null}
+                {selected.details.customerCode ? <div className="customer-profile-detail"><span>▣</span><strong dir="ltr">{selected.details.customerCode}</strong></div> : null}
+              </section>
+
+              <section className="customer-profile-stats" aria-label="ملخص العميل">
+                {loyaltyStatus?.program.mode === "cashback" ? (
+                  <div><span>★</span><strong>{formatMoneyAmount(loyaltyStatus.balance)}</strong><small>رصيد الولاء</small></div>
+                ) : loyaltyStatus?.program.mode === "purchase-count" ? (
+                  <div><span>★</span><strong dir="ltr">{purchaseProgress} / {loyaltyStatus.program.purchasesRequired}</strong><small>تقدم المكافأة</small></div>
+                ) : <div><span>★</span><strong>—</strong><small>الولاء غير مفعّل</small></div>}
+                <div><span>▰</span><strong>{visitCount}</strong><small>الزيارات</small></div>
+                <div><span>▣</span><strong>{lastVisit}</strong><small>آخر زيارة</small></div>
+              </section>
+
+              {loyaltyStatus?.program.mode === "purchase-count" && loyaltyStatus.rewardsAvailable > 0 ? <div className="customer-profile-reward">مكافأة جاهزة · {loyaltyStatus.rewardsAvailable} — {loyaltyStatus.program.rewardLabel}</div> : null}
+              {loyaltyRedemption.halalas > 0 ? <div className="customer-profile-redemption-active"><span>مطبق على التذكرة</span><strong>− {formatMoneyAmount(loyaltyRedemption)} ر.س</strong></div> : null}
+
+              <div className="customer-profile-actions">
+                <button type="button" className="customer-touch-action" onClick={openEdit}>تعديل الملف الشخصي</button>
+                <button type="button" className="customer-touch-action" onClick={() => { setRedeemDigits(loyaltyRedemption.halalas > 0 ? String(loyaltyRedemption.halalas) : ""); setView("redeem"); }} disabled={loyaltyStatus?.program.mode !== "cashback" || (loyaltyStatus?.balance.halalas ?? 0) <= 0 || ticketSubtotal.halalas <= 0}>استبدال النقاط</button>
+                <button type="button" className="customer-touch-action" onClick={() => setView("history")}>عرض المشتريات</button>
+              </div>
+              {message ? <div className="customer-credit-message" role="status">{message}</div> : null}
+            </div>
+          ) : view === "history" ? (
+            <div className="customer-history-shell">
+              <label className="customer-history-search"><span>بحث برقم الإيصال</span><input value={historyQuery} onChange={(event) => setHistoryQuery(event.target.value)} placeholder="R-00001" /></label>
+              <div className="customer-purchase-list">
+                {filteredPurchases.map((purchase) => (
+                  <article className="customer-purchase-row" key={purchase.id}>
+                    <div className="customer-purchase-main"><strong><MoneyAmount value={purchase.total} /></strong><span>{purchase.items.map((item) => `${item.quantity} × ${item.name}`).join("، ") || "عملية بيع"}</span></div>
+                    <div className="customer-purchase-meta"><strong dir="ltr">{purchase.number}</strong><span>{dateFormatter.format(new Date(purchase.completedAt))}</span>{purchase.loyaltyRedemption.halalas > 0 ? <small>استبدال نقاط: − {formatMoneyAmount(purchase.loyaltyRedemption)} ر.س</small> : null}</div>
+                  </article>
+                ))}
+                {filteredPurchases.length === 0 ? <div className="customer-history-empty">لا توجد مشتريات مطابقة.</div> : null}
+              </div>
+            </div>
+          ) : view === "redeem" ? (
+            <div className="customer-redeem-shell">
+              <section className="customer-redeem-summary">
+                <span>رصيد الولاء المتاح</span>
+                <strong>{loyaltyStatus ? formatMoneyAmount(loyaltyStatus.balance) : "0.00"} ر.س</strong>
+                <small>الحد الأقصى لهذه التذكرة: {formatMoneyAmount({ halalas: redeemMaximum, currency: "SAR" })} ر.س</small>
+              </section>
+              <section className="customer-redeem-value" aria-label="قيمة الاستبدال"><span>القيمة</span><strong>{(redeemHalalas / 100).toFixed(2)} ر.س</strong></section>
+              <div className="customer-redeem-keypad" aria-label="لوحة استبدال النقاط">
+                {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((digit) => <button type="button" key={digit} onClick={() => appendRedeemDigit(digit)}>{digit}</button>)}
+                <button type="button" onClick={() => appendRedeemDigit("0")}>0</button>
+                <button type="button" onClick={() => appendRedeemDigit("00")}>00</button>
+                <button type="button" className="customer-keypad-delete" aria-label="حذف رقم" onClick={() => setRedeemDigits((current) => current.slice(0, -1))}>⌫</button>
+              </div>
+              {redeemHalalas > redeemMaximum ? <div className="customer-redeem-error">القيمة أكبر من الرصيد المتاح لهذه التذكرة.</div> : null}
+              <button type="button" className="primary-button customer-redeem-confirm" onClick={() => void applyRedemption()} disabled={!redeemValid || submitting}>{submitting ? "جارٍ التطبيق…" : `استبدال ${(redeemHalalas / 100).toFixed(2)} ر.س`}</button>
+              {loyaltyRedemption.halalas > 0 ? <button type="button" className="customer-redeem-clear" onClick={() => void clearRedemption()} disabled={submitting}>إزالة الاستبدال الحالي</button> : null}
+            </div>
+          ) : (
+            <form className="customer-profile-edit-form" onSubmit={(event) => void submitEdit(event)}>
+              <label><span>اسم العميل</span><input value={editName} onChange={(event) => setEditName(event.target.value)} required /></label>
+              <label><span>رقم الجوال</span><input dir="ltr" value={editMobile} onChange={(event) => setEditMobile(event.target.value)} required /></label>
+              <label><span>البريد الإلكتروني</span><input dir="ltr" type="email" value={editDetails.email} onChange={(event) => updateEditDetail("email", event.target.value)} /></label>
+              <label><span>رمز العميل</span><input dir="ltr" value={editDetails.customerCode} onChange={(event) => updateEditDetail("customerCode", event.target.value)} /></label>
+              <label><span>العنوان</span><input value={editDetails.address} onChange={(event) => updateEditDetail("address", event.target.value)} /></label>
+              <label><span>المدينة</span><input value={editDetails.city} onChange={(event) => updateEditDetail("city", event.target.value)} /></label>
+              <label><span>المنطقة</span><input value={editDetails.region} onChange={(event) => updateEditDetail("region", event.target.value)} /></label>
+              <label><span>الرمز البريدي</span><input dir="ltr" value={editDetails.postalCode} onChange={(event) => updateEditDetail("postalCode", event.target.value)} /></label>
+              <label><span>الدولة</span><input value={editDetails.country} onChange={(event) => updateEditDetail("country", event.target.value)} /></label>
+              <label><span>ملاحظات</span><textarea value={editDetails.note} onChange={(event) => updateEditDetail("note", event.target.value)} /></label>
+              <button type="submit" className="primary-button customer-touch-primary" disabled={busy || submitting}>{submitting ? "جارٍ الحفظ…" : "حفظ التعديلات"}</button>
+            </form>
+          )}
         </section>
       </div>
     );
@@ -227,40 +429,20 @@ export function CustomerPickerDialog({
   return (
     <div className="dialog-backdrop customer-credit-backdrop" role="presentation" onClick={() => { if (!submitting) onClose(); }}>
       <section className="customer-credit-dialog customer-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="customer-picker-title" onClick={(event) => event.stopPropagation()}>
-        <header>
+        <header className="customer-touch-header">
           <button type="button" onClick={onClose} aria-label="إغلاق" disabled={submitting}>×</button>
-          <div>
-            <h2 id="customer-picker-title">{purpose === "credit" ? "بيع آجل" : "إضافة عميل إلى التذكرة"}</h2>
-            <span>{purpose === "credit" ? "اختر العميل الذي ستُسجل عليه قيمة التذكرة." : "اربط العميل بالطلب ليظهر على الفاتورة ويُستخدم للولاء وسجل المشتريات."}</span>
-          </div>
+          <div><h2 id="customer-picker-title">{purpose === "credit" ? "بيع آجل" : "إضافة عميل إلى التذكرة"}</h2><span>{purpose === "credit" ? "اختر العميل الذي ستُسجل عليه قيمة التذكرة." : "ابحث بالاسم أو رقم الجوال، أو أضف عميلًا جديدًا."}</span></div>
         </header>
 
         <div className="customer-search-form customer-search-form--live">
-          <label>
-            <span>العميل أو رقم الجوال</span>
-            <input
-              autoFocus
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="ابدأ بالاسم أو 0501234567"
-              aria-label="بحث العميل"
-              disabled={submitting}
-            />
-          </label>
+          <label><span>العميل أو رقم الجوال</span><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابدأ بالاسم أو 0501234567" aria-label="بحث العميل" disabled={submitting} /></label>
           <span className="customer-live-search-status" role="status">{searching ? "جارٍ البحث…" : `${results.length} نتيجة`}</span>
         </div>
-        <p className="customer-mobile-note">البحث يتحدث مباشرة. رقم الجوال هو المعرف الأساسي للعميل ولا يسمح بتكراره.</p>
 
         <div className="customer-credit-body">
           <div className="customer-results" aria-label="نتائج العملاء">
             {results.map((customer) => (
-              <button
-                type="button"
-                key={customer.id}
-                className={selected?.id === customer.id ? "active" : ""}
-                onClick={() => selectCustomer(customer)}
-                disabled={submitting}
-              >
+              <button type="button" key={customer.id} className={selected?.id === customer.id ? "active" : ""} onClick={() => selectCustomer(customer)} disabled={submitting}>
                 <span><strong>{customer.name}</strong><small dir="ltr">{customer.mobile}</small></span>
                 {purpose === "credit" ? <span className="customer-result-debt"><small>الدين</small><strong><MoneyAmount value={customer.debt} /></strong></span> : null}
               </button>
@@ -269,101 +451,48 @@ export function CustomerPickerDialog({
           </div>
 
           {selected ? (
-            <div className="customer-account-card">
-              <div className="customer-account-head">
-                <span><strong>{selected.name}</strong><small dir="ltr">{selected.mobile}</small></span>
-                <button type="button" onClick={() => setSelected(null)} disabled={submitting}>تغيير</button>
-              </div>
-              {selected.details.email ? <div className="customer-profile-line"><span>البريد</span><strong dir="ltr">{selected.details.email}</strong></div> : null}
-              {selected.details.city || selected.details.region ? <div className="customer-profile-line"><span>الموقع</span><strong>{[selected.details.city, selected.details.region].filter(Boolean).join("، ")}</strong></div> : null}
-
+            <div className="customer-account-card customer-picker-selection">
+              <div className="customer-account-head"><span><strong>{selected.name}</strong><small dir="ltr">{selected.mobile}</small></span><button type="button" onClick={() => setSelected(null)}>تغيير</button></div>
               {purpose === "credit" ? (
                 <>
                   <div className="customer-balance-row"><span>الدين الحالي</span><strong><MoneyAmount value={selected.debt} /></strong></div>
                   <div className="customer-balance-row"><span>قيمة البيع الآجل</span><strong><MoneyAmount value={ticketTotal} /></strong></div>
                   {debtAfterCredit ? <div className="customer-balance-row customer-balance-row--total"><span>الدين بعد العملية</span><strong><MoneyAmount value={debtAfterCredit} /></strong></div> : null}
-                  <button type="button" className="primary-button customer-credit-submit" onClick={() => void submitCredit()} disabled={busy || submitting}>{submitting ? "جارٍ التسجيل…" : "تسجيل آجل"}</button>
+                  <button type="button" className="primary-button customer-touch-primary" onClick={() => void submitCredit()} disabled={busy || submitting}>تسجيل آجل</button>
                 </>
               ) : (
                 <>
-                  <section className="customer-loyalty-card" aria-label="برنامج الولاء">
-                    {loyaltyLoading ? <div className="customer-loyalty-loading">جارٍ تحميل الولاء…</div> : null}
-                    {!loyaltyLoading && loyaltyStatus?.program.mode === "cashback" ? (
-                      <>
-                        <div className="customer-loyalty-head">
-                          <span><strong>رصيد الولاء</strong><small>{loyaltyStatus.program.name} · كسب {loyaltyStatus.program.earnPercent}% من المشتريات</small></span>
-                          <strong><MoneyAmount value={loyaltyStatus.balance} /></strong>
-                        </div>
-                        <button type="button" className="customer-loyalty-redeem" onClick={() => void quoteLoyaltyRedemption()} disabled={quoteLoading || loyaltyStatus.balance.halalas <= 0 || ticketTotal.halalas <= 0}>{quoteLoading ? "جارٍ الحساب…" : "استبدال"}</button>
-                        {ticketTotal.halalas <= 0 ? <small className="customer-loyalty-hint">أضف أصنافًا للتذكرة حتى يصبح الاستبدال متاحًا.</small> : null}
-                        {redemptionQuote ? (
-                          <div className="customer-loyalty-quote">
-                            <span>المتاح للاستبدال على هذه التذكرة <strong><MoneyAmount value={redemptionQuote.amount} /></strong></span>
-                            <span>الرصيد بعد الاستبدال <strong><MoneyAmount value={redemptionQuote.balanceAfter} /></strong></span>
-                            <small>هذه معاينة فقط؛ لا يُخصم الرصيد من العميل حتى تُعتمد عملية البيع.</small>
-                          </div>
-                        ) : null}
-                      </>
-                    ) : null}
-                    {!loyaltyLoading && loyaltyStatus?.program.mode === "purchase-count" ? (
-                      <>
-                        <div className="customer-loyalty-head customer-loyalty-head--count">
-                          <span><strong>{loyaltyStatus.program.name}</strong><small>{loyaltyStatus.program.rewardLabel}</small></span>
-                          <strong dir="ltr">{purchaseProgress} / {loyaltyStatus.program.purchasesRequired}</strong>
-                        </div>
-                        <div className="customer-loyalty-progress" role="progressbar" aria-valuemin={0} aria-valuemax={loyaltyStatus.program.purchasesRequired} aria-valuenow={purchaseProgress}><span style={{ width: `${Math.min(100, (purchaseProgress / loyaltyStatus.program.purchasesRequired) * 100)}%` }} /></div>
-                        {loyaltyStatus.rewardsAvailable > 0 ? <div className="customer-loyalty-reward">مكافأة جاهزة للاستبدال · {loyaltyStatus.rewardsAvailable}</div> : <small className="customer-loyalty-hint">باقي {loyaltyStatus.program.purchasesRequired - purchaseProgress} للوصول إلى المكافأة التالية.</small>}
-                      </>
-                    ) : null}
-                    {!loyaltyLoading && loyaltyStatus?.program.mode === "disabled" ? <div className="customer-loyalty-disabled">برنامج الولاء غير مفعّل من Back Office.</div> : null}
-                  </section>
-
-                  <div className="ticket-customer-purpose"><strong>سيتم ربط هذا العميل بالتذكرة الحالية</strong><span>الدفع يبقى نقدًا أو شبكة بشكل طبيعي، ولا ينشأ دين إلا عند اختيار «آجل».</span></div>
-                  <button type="button" className="primary-button customer-credit-submit" onClick={() => void submitAttach()} disabled={busy || submitting}>{submitting ? "جارٍ الربط…" : "إضافة إلى التذكرة"}</button>
-                  {attachedCustomer ? <button type="button" className="customer-remove-from-ticket" onClick={() => void removeAttachedCustomer()} disabled={busy || submitting}>إزالة العميل من التذكرة</button> : null}
+                  <div className="ticket-customer-purpose"><strong>سيتم ربط العميل بالتذكرة</strong><span>الولاء وسجل المشتريات سيستخدمان نفس العميل. الدين لا يظهر هنا.</span></div>
+                  <button type="button" className="primary-button customer-touch-primary" onClick={() => void submitAttach()} disabled={busy || submitting}>إضافة إلى التذكرة</button>
                 </>
               )}
             </div>
-          ) : (
-            <div className="customer-account-placeholder">
-              <strong>اختر عميلًا</strong>
-              <span>أو أضف عميلًا جديدًا برقم جواله.</span>
-            </div>
-          )}
+          ) : <div className="customer-account-placeholder"><strong>اختر عميلًا</strong><span>أو أضف عميلًا جديدًا.</span></div>}
         </div>
 
         <div className="customer-create-section">
-          {!createOpen ? (
-            <button type="button" className="customer-create-toggle" onClick={() => { setCreateOpen(true); setNewMobile(query); }} disabled={submitting}>+ إضافة عميل جديد</button>
-          ) : (
+          {!createOpen ? <button type="button" className="customer-create-toggle customer-touch-create" onClick={() => { setCreateOpen(true); setNewMobile(query); }} disabled={submitting}>+ إضافة عميل جديد</button> : (
             <form className="customer-create-form customer-create-form--expanded" onSubmit={(event) => void submitCreate(event)}>
               <strong>عميل جديد</strong>
-              <label><span>اسم العميل</span><input value={newName} onChange={(event) => setNewName(event.target.value)} required disabled={submitting} /></label>
-              <label><span>رقم الجوال</span><input dir="ltr" value={newMobile} onChange={(event) => setNewMobile(event.target.value)} placeholder="05XXXXXXXX" required disabled={submitting} /></label>
-
-              <label className="customer-extra-toggle">
-                <input type="checkbox" checked={extraOpen} onChange={(event) => setExtraOpen(event.target.checked)} disabled={submitting} />
-                <span><strong>معلومات إضافية</strong><small>البريد، العنوان، المدينة، المنطقة، الرمز البريدي، الدولة، رمز العميل والملاحظات.</small></span>
-              </label>
-
+              <label><span>اسم العميل</span><input value={newName} onChange={(event) => setNewName(event.target.value)} required /></label>
+              <label><span>رقم الجوال</span><input dir="ltr" value={newMobile} onChange={(event) => setNewMobile(event.target.value)} placeholder="05XXXXXXXX" required /></label>
+              <label className="customer-extra-toggle"><input type="checkbox" checked={extraOpen} onChange={(event) => setExtraOpen(event.target.checked)} /><span><strong>معلومات إضافية</strong><small>إظهار البريد والعنوان وبقية بيانات العميل.</small></span></label>
               {extraOpen ? (
                 <div className="customer-extra-fields">
-                  <label><span>البريد الإلكتروني</span><input dir="ltr" type="email" value={newDetails.email} onChange={(event) => updateDetail("email", event.target.value)} disabled={submitting} /></label>
-                  <label><span>رمز العميل</span><input dir="ltr" value={newDetails.customerCode} onChange={(event) => updateDetail("customerCode", event.target.value)} disabled={submitting} /></label>
-                  <label><span>العنوان</span><input value={newDetails.address} onChange={(event) => updateDetail("address", event.target.value)} disabled={submitting} /></label>
-                  <label><span>المدينة</span><input value={newDetails.city} onChange={(event) => updateDetail("city", event.target.value)} disabled={submitting} /></label>
-                  <label><span>المنطقة</span><input value={newDetails.region} onChange={(event) => updateDetail("region", event.target.value)} disabled={submitting} /></label>
-                  <label><span>الرمز البريدي</span><input dir="ltr" value={newDetails.postalCode} onChange={(event) => updateDetail("postalCode", event.target.value)} disabled={submitting} /></label>
-                  <label><span>الدولة</span><input value={newDetails.country} onChange={(event) => updateDetail("country", event.target.value)} placeholder="السعودية" disabled={submitting} /></label>
-                  <label><span>ملاحظات</span><textarea value={newDetails.note} onChange={(event) => updateDetail("note", event.target.value)} disabled={submitting} /></label>
+                  <label><span>البريد الإلكتروني</span><input dir="ltr" type="email" value={newDetails.email} onChange={(event) => updateNewDetail("email", event.target.value)} /></label>
+                  <label><span>رمز العميل</span><input dir="ltr" value={newDetails.customerCode} onChange={(event) => updateNewDetail("customerCode", event.target.value)} /></label>
+                  <label><span>العنوان</span><input value={newDetails.address} onChange={(event) => updateNewDetail("address", event.target.value)} /></label>
+                  <label><span>المدينة</span><input value={newDetails.city} onChange={(event) => updateNewDetail("city", event.target.value)} /></label>
+                  <label><span>المنطقة</span><input value={newDetails.region} onChange={(event) => updateNewDetail("region", event.target.value)} /></label>
+                  <label><span>الرمز البريدي</span><input dir="ltr" value={newDetails.postalCode} onChange={(event) => updateNewDetail("postalCode", event.target.value)} /></label>
+                  <label><span>الدولة</span><input value={newDetails.country} onChange={(event) => updateNewDetail("country", event.target.value)} placeholder="السعودية" /></label>
+                  <label><span>ملاحظات</span><textarea value={newDetails.note} onChange={(event) => updateNewDetail("note", event.target.value)} /></label>
                 </div>
               ) : null}
-
-              <div><button type="button" onClick={resetCreate} disabled={submitting}>إلغاء</button><button type="submit" className="primary-button" disabled={busy || submitting}>إنشاء العميل</button></div>
+              <div className="customer-create-actions"><button type="button" onClick={resetCreate}>إلغاء</button><button type="submit" className="primary-button">إنشاء العميل</button></div>
             </form>
           )}
         </div>
-
         {message ? <div className="customer-credit-message" role="status">{message}</div> : null}
       </section>
     </div>
