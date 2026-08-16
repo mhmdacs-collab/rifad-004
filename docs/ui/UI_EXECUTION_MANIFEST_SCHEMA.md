@@ -35,6 +35,8 @@ Codex or a human developer may implement UI only when either:
 
 Everything else is evidence-gathering work. Missing actions, states, layout choices or error behavior must not be invented. Update the manifest first.
 
+After a permitted scope advances to `implemented` or `verified`, it remains listed in `implementationGate.readyFlows`; the gate records the approved scope while the status records its current lifecycle stage.
+
 ## Required screen fields before `ready`
 
 - stable ID and surface;

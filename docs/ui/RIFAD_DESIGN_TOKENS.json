@@ -1,12 +1,12 @@
 {
   "version": "0.1.0",
   "status": "provisional-for-POS-FLOW-001",
-  "origin": "Current approved Rifad POS prototype palette",
+  "origin": "Official Rifad light/dark logo assets supplied as 1.png and 2.png",
   "purpose": "Prevent visual invention while the coded Rifad design system is created.",
   "colors": {
-    "brandPrimary": "#16bad3",
-    "brandPrimaryDark": "#079bb2",
-    "brandPrimarySoft": "#e8fafd",
+    "brandPrimary": "#0a714e",
+    "brandPrimaryDark": "#07543b",
+    "brandPrimarySoft": "#e8f3ef",
     "textPrimary": "#111827",
     "textMuted": "#6b7280",
     "border": "#e5e7eb",

@@ -1,0 +1,18 @@
+{
+  "name": "رفاد — نقطة البيع",
+  "short_name": "رفاد",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f5f3",
+  "theme_color": "#0a714e",
+  "icons": [
+    {
+      "src": "/brand/rifad-logo-light.png",
+      "sizes": "2000x2000",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

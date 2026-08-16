@@ -102,17 +102,21 @@ for (const flow of flows) {
       fail(`${flow.id} uses ${step.screenId} without explicit screen permission.`);
     }
   }
-  if (flow.status === "ready") {
-    if (list(flow.steps).length === 0) fail(`${flow.id} is ready without steps.`);
-    if (list(flow.acceptanceCriteria).length === 0) fail(`${flow.id} is ready without acceptance criteria.`);
-    if (list(flow.nonGoals).length === 0) fail(`${flow.id} is ready without non-goals.`);
+  if (["ready", "implemented", "verified"].includes(flow.status)) {
+    if (list(flow.steps).length === 0) fail(`${flow.id} is executable without steps.`);
+    if (list(flow.acceptanceCriteria).length === 0) fail(`${flow.id} is executable without acceptance criteria.`);
+    if (list(flow.nonGoals).length === 0) fail(`${flow.id} is executable without non-goals.`);
   }
 }
 
 const readyFromGate = new Set(list(manifest.implementationGate?.readyFlows));
-const readyFromFlows = new Set(flows.filter((flow) => flow.status === "ready").map((flow) => flow.id));
+const readyFromFlows = new Set(
+  flows
+    .filter((flow) => ["ready", "implemented", "verified"].includes(flow.status))
+    .map((flow) => flow.id),
+);
 for (const id of readyFromGate) {
-  if (!readyFromFlows.has(id)) fail(`Implementation gate lists non-ready flow ${id}`);
+  if (!readyFromFlows.has(id)) fail(`Implementation gate lists a non-executable flow ${id}`);
 }
 for (const id of readyFromFlows) {
   if (!readyFromGate.has(id)) fail(`Ready flow ${id} is missing from the implementation gate.`);
@@ -131,5 +135,5 @@ if (!tokens.version || !tokens.status) fail("Rifad design tokens require version
 
 console.log(
   `UI manifest valid: ${surfaces.length} surfaces, ${screens.length} screens, ` +
-    `${actions.length} actions, ${flows.length} flows, ${readyFromFlows.size} ready flow.`,
+    `${actions.length} actions, ${flows.length} flows, ${readyFromFlows.size} executable flow.`,
 );

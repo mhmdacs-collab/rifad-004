@@ -33,7 +33,7 @@
         {
           "id": "POS-SCREEN-001",
           "name": "Account Sign In and Device Link",
-          "status": "specified",
+          "status": "implemented",
           "implementationAllowedByFlows": ["POS-FLOW-001"],
           "evidence": {
             "sections": ["4.2 حالات بدء التشغيل والدخول"],
@@ -46,7 +46,7 @@
         {
           "id": "POS-SCREEN-002",
           "name": "Employee PIN and Time Clock",
-          "status": "specified",
+          "status": "implemented",
           "implementationAllowedByFlows": ["POS-FLOW-001"],
           "evidence": {
             "sections": ["4.2 حالات بدء التشغيل والدخول", "4.3 شاشة ساعة الدوام قبل POS"],
@@ -59,7 +59,7 @@
         {
           "id": "POS-SCREEN-003",
           "name": "Sales Workspace",
-          "status": "specified",
+          "status": "implemented",
           "implementationAllowedByFlows": ["POS-FLOW-001"],
           "evidence": {
             "sections": ["5.1 تخطيط الجهاز اللوحي", "5.2 تخطيط الهاتف", "5.3 شريط الكتالوج وأدوات العثور على عنصر", "5.6 لوحة التذكرة الحالية", "31.1 الانعكاس البنيوي"],
@@ -97,7 +97,7 @@
         {
           "id": "POS-SCREEN-007",
           "name": "Payment Method Selection",
-          "status": "specified",
+          "status": "implemented",
           "implementationAllowedByFlows": ["POS-FLOW-001"],
           "evidence": {"sections": ["6.1 شاشة اختيار طريقة الدفع", "28.2 مصفوفة الوظائف"], "confidence": "documented"},
           "states": ["payment-methods", "cash-available", "connected-method-disabled-offline", "no-enabled-method", "invalid-ticket"],
@@ -106,7 +106,7 @@
         {
           "id": "POS-SCREEN-008",
           "name": "Cash Payment",
-          "status": "specified",
+          "status": "implemented",
           "implementationAllowedByFlows": ["POS-FLOW-001"],
           "evidence": {"sections": ["6.2 الدفع النقدي", "6.7 Cash rounding"], "confidence": "documented"},
           "states": ["amount-entry", "exact-tender", "over-tender", "under-tender", "submitting", "rejected", "completed"],
@@ -129,7 +129,7 @@
         {
           "id": "POS-SCREEN-011",
           "name": "Sale Success",
-          "status": "specified",
+          "status": "implemented",
           "implementationAllowedByFlows": ["POS-FLOW-001"],
           "evidence": {"sections": ["6.5 شاشة نجاح العملية"], "confidence": "documented"},
           "states": ["completed", "print-queued", "print-failed", "email-queued", "starting-new-sale"],
@@ -438,7 +438,8 @@
     {
       "id": "POS-FLOW-001",
       "name": "Retail Cash Sale Vertical Slice",
-      "status": "ready",
+      "status": "implemented",
+      "visualDecisionIds": ["VISUAL-DECISION-001"],
       "evidence": {
         "sections": ["34. تدفق بيع تجزئة عادي", "4.2 حالات بدء التشغيل والدخول", "5. شاشة Sales: التفكيك الكامل", "6.1 شاشة اختيار طريقة الدفع", "6.2 الدفع النقدي", "6.5 شاشة نجاح العملية", "28. وضع عدم الاتصال Offline", "31. RTL والتعريب"],
         "confidence": "documented"
