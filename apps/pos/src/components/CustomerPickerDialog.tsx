@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { loyaltyContract } from "../adapters/mockLoyalty";
+import type { LoyaltyRedemptionQuote, LoyaltyStatus } from "../domain/loyalty";
 import { MoneyAmount } from "./MoneyAmount";
 import type { Customer, CustomerDetails, CustomerReference, Money } from "../domain/models";
 
@@ -49,7 +51,12 @@ export function CustomerPickerDialog({
   const [newDetails, setNewDetails] = useState<CustomerDetails>(EMPTY_DETAILS);
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [loyaltyStatus, setLoyaltyStatus] = useState<LoyaltyStatus | null>(null);
+  const [loyaltyLoading, setLoyaltyLoading] = useState(false);
+  const [redemptionQuote, setRedemptionQuote] = useState<LoyaltyRedemptionQuote | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
   const searchSequence = useRef(0);
+  const loyaltySequence = useRef(0);
   const actionLocked = useRef(false);
 
   useEffect(() => {
@@ -69,6 +76,24 @@ export function CustomerPickerDialog({
       });
   }, [attachedCustomer, onSearch, query, selected]);
 
+  useEffect(() => {
+    setRedemptionQuote(null);
+    if (purpose !== "attach" || !selected) {
+      setLoyaltyStatus(null);
+      setLoyaltyLoading(false);
+      return;
+    }
+    const sequence = ++loyaltySequence.current;
+    setLoyaltyLoading(true);
+    void loyaltyContract.status({ customerId: selected.id })
+      .then((status) => {
+        if (sequence === loyaltySequence.current) setLoyaltyStatus(status);
+      })
+      .finally(() => {
+        if (sequence === loyaltySequence.current) setLoyaltyLoading(false);
+      });
+  }, [purpose, selected]);
+
   const updateDetail = (key: keyof CustomerDetails, value: string) => {
     setNewDetails((current) => ({ ...current, [key]: value }));
   };
@@ -84,6 +109,7 @@ export function CustomerPickerDialog({
   const selectCustomer = (customer: Customer) => {
     if (actionLocked.current) return;
     setSelected(customer);
+    setRedemptionQuote(null);
     resetCreate();
     setMessage(null);
   };
@@ -144,9 +170,24 @@ export function CustomerPickerDialog({
     onClose();
   };
 
+  const quoteLoyaltyRedemption = async () => {
+    if (!selected || !loyaltyStatus || loyaltyStatus.program.mode !== "cashback") return;
+    setQuoteLoading(true);
+    try {
+      const quote = await loyaltyContract.quoteRedemption({ customerId: selected.id, ticketTotal });
+      setRedemptionQuote(quote);
+    } finally {
+      setQuoteLoading(false);
+    }
+  };
+
   const debtAfterCredit: Money | null = selected && purpose === "credit"
     ? { halalas: selected.debt.halalas + ticketTotal.halalas, currency: selected.debt.currency }
     : null;
+
+  const purchaseProgress = loyaltyStatus?.program.mode === "purchase-count"
+    ? loyaltyStatus.qualifyingPurchases % loyaltyStatus.program.purchasesRequired
+    : 0;
 
   if (purpose === "credit" && attachedCustomer) {
     return (
@@ -221,7 +262,7 @@ export function CustomerPickerDialog({
                 disabled={submitting}
               >
                 <span><strong>{customer.name}</strong><small dir="ltr">{customer.mobile}</small></span>
-                <span className="customer-result-debt"><small>الدين</small><strong><MoneyAmount value={customer.debt} /></strong></span>
+                {purpose === "credit" ? <span className="customer-result-debt"><small>الدين</small><strong><MoneyAmount value={customer.debt} /></strong></span> : null}
               </button>
             ))}
             {!searching && results.length === 0 ? <div className="customer-empty-result">لا يوجد عميل مطابق.</div> : null}
@@ -235,15 +276,48 @@ export function CustomerPickerDialog({
               </div>
               {selected.details.email ? <div className="customer-profile-line"><span>البريد</span><strong dir="ltr">{selected.details.email}</strong></div> : null}
               {selected.details.city || selected.details.region ? <div className="customer-profile-line"><span>الموقع</span><strong>{[selected.details.city, selected.details.region].filter(Boolean).join("، ")}</strong></div> : null}
-              <div className="customer-balance-row"><span>الدين الحالي</span><strong><MoneyAmount value={selected.debt} /></strong></div>
+
               {purpose === "credit" ? (
                 <>
+                  <div className="customer-balance-row"><span>الدين الحالي</span><strong><MoneyAmount value={selected.debt} /></strong></div>
                   <div className="customer-balance-row"><span>قيمة البيع الآجل</span><strong><MoneyAmount value={ticketTotal} /></strong></div>
                   {debtAfterCredit ? <div className="customer-balance-row customer-balance-row--total"><span>الدين بعد العملية</span><strong><MoneyAmount value={debtAfterCredit} /></strong></div> : null}
                   <button type="button" className="primary-button customer-credit-submit" onClick={() => void submitCredit()} disabled={busy || submitting}>{submitting ? "جارٍ التسجيل…" : "تسجيل آجل"}</button>
                 </>
               ) : (
                 <>
+                  <section className="customer-loyalty-card" aria-label="برنامج الولاء">
+                    {loyaltyLoading ? <div className="customer-loyalty-loading">جارٍ تحميل الولاء…</div> : null}
+                    {!loyaltyLoading && loyaltyStatus?.program.mode === "cashback" ? (
+                      <>
+                        <div className="customer-loyalty-head">
+                          <span><strong>رصيد الولاء</strong><small>{loyaltyStatus.program.name} · كسب {loyaltyStatus.program.earnPercent}% من المشتريات</small></span>
+                          <strong><MoneyAmount value={loyaltyStatus.balance} /></strong>
+                        </div>
+                        <button type="button" className="customer-loyalty-redeem" onClick={() => void quoteLoyaltyRedemption()} disabled={quoteLoading || loyaltyStatus.balance.halalas <= 0 || ticketTotal.halalas <= 0}>{quoteLoading ? "جارٍ الحساب…" : "استبدال"}</button>
+                        {ticketTotal.halalas <= 0 ? <small className="customer-loyalty-hint">أضف أصنافًا للتذكرة حتى يصبح الاستبدال متاحًا.</small> : null}
+                        {redemptionQuote ? (
+                          <div className="customer-loyalty-quote">
+                            <span>المتاح للاستبدال على هذه التذكرة <strong><MoneyAmount value={redemptionQuote.amount} /></strong></span>
+                            <span>الرصيد بعد الاستبدال <strong><MoneyAmount value={redemptionQuote.balanceAfter} /></strong></span>
+                            <small>هذه معاينة فقط؛ لا يُخصم الرصيد من العميل حتى تُعتمد عملية البيع.</small>
+                          </div>
+                        ) : null}
+                      </>
+                    ) : null}
+                    {!loyaltyLoading && loyaltyStatus?.program.mode === "purchase-count" ? (
+                      <>
+                        <div className="customer-loyalty-head customer-loyalty-head--count">
+                          <span><strong>{loyaltyStatus.program.name}</strong><small>{loyaltyStatus.program.rewardLabel}</small></span>
+                          <strong dir="ltr">{purchaseProgress} / {loyaltyStatus.program.purchasesRequired}</strong>
+                        </div>
+                        <div className="customer-loyalty-progress" role="progressbar" aria-valuemin={0} aria-valuemax={loyaltyStatus.program.purchasesRequired} aria-valuenow={purchaseProgress}><span style={{ width: `${Math.min(100, (purchaseProgress / loyaltyStatus.program.purchasesRequired) * 100)}%` }} /></div>
+                        {loyaltyStatus.rewardsAvailable > 0 ? <div className="customer-loyalty-reward">مكافأة جاهزة للاستبدال · {loyaltyStatus.rewardsAvailable}</div> : <small className="customer-loyalty-hint">باقي {loyaltyStatus.program.purchasesRequired - purchaseProgress} للوصول إلى المكافأة التالية.</small>}
+                      </>
+                    ) : null}
+                    {!loyaltyLoading && loyaltyStatus?.program.mode === "disabled" ? <div className="customer-loyalty-disabled">برنامج الولاء غير مفعّل من Back Office.</div> : null}
+                  </section>
+
                   <div className="ticket-customer-purpose"><strong>سيتم ربط هذا العميل بالتذكرة الحالية</strong><span>الدفع يبقى نقدًا أو شبكة بشكل طبيعي، ولا ينشأ دين إلا عند اختيار «آجل».</span></div>
                   <button type="button" className="primary-button customer-credit-submit" onClick={() => void submitAttach()} disabled={busy || submitting}>{submitting ? "جارٍ الربط…" : "إضافة إلى التذكرة"}</button>
                   {attachedCustomer ? <button type="button" className="customer-remove-from-ticket" onClick={() => void removeAttachedCustomer()} disabled={busy || submitting}>إزالة العميل من التذكرة</button> : null}
@@ -276,12 +350,12 @@ export function CustomerPickerDialog({
                 <div className="customer-extra-fields">
                   <label><span>البريد الإلكتروني</span><input dir="ltr" type="email" value={newDetails.email} onChange={(event) => updateDetail("email", event.target.value)} disabled={submitting} /></label>
                   <label><span>رمز العميل</span><input dir="ltr" value={newDetails.customerCode} onChange={(event) => updateDetail("customerCode", event.target.value)} disabled={submitting} /></label>
-                  <label className="customer-extra-wide"><span>العنوان</span><input value={newDetails.address} onChange={(event) => updateDetail("address", event.target.value)} disabled={submitting} /></label>
+                  <label><span>العنوان</span><input value={newDetails.address} onChange={(event) => updateDetail("address", event.target.value)} disabled={submitting} /></label>
                   <label><span>المدينة</span><input value={newDetails.city} onChange={(event) => updateDetail("city", event.target.value)} disabled={submitting} /></label>
                   <label><span>المنطقة</span><input value={newDetails.region} onChange={(event) => updateDetail("region", event.target.value)} disabled={submitting} /></label>
                   <label><span>الرمز البريدي</span><input dir="ltr" value={newDetails.postalCode} onChange={(event) => updateDetail("postalCode", event.target.value)} disabled={submitting} /></label>
                   <label><span>الدولة</span><input value={newDetails.country} onChange={(event) => updateDetail("country", event.target.value)} placeholder="السعودية" disabled={submitting} /></label>
-                  <label className="customer-extra-wide"><span>ملاحظات</span><textarea value={newDetails.note} onChange={(event) => updateDetail("note", event.target.value)} disabled={submitting} /></label>
+                  <label><span>ملاحظات</span><textarea value={newDetails.note} onChange={(event) => updateDetail("note", event.target.value)} disabled={submitting} /></label>
                 </div>
               ) : null}
 
