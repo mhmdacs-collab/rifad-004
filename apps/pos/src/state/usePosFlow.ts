@@ -259,13 +259,14 @@ export const usePosFlow = () => {
     }
   }, [runtime, ticket]);
 
-  const settleCustomerDebt = useCallback(async (customerId: string): Promise<Customer | null> => {
+  const settleCustomerDebt = useCallback(async (customerId: string, amountHalalas: number): Promise<Customer | null> => {
     setBusy("customer-settlement");
     setErrorMessage(null);
     try {
-      return await runtime.customerCredit.settleFull({
+      return await runtime.customerCredit.settle({
         commandId: commandId("customer-settlement"),
         customerId,
+        amount: money(amountHalalas),
       });
     } catch (error) {
       setErrorMessage(messageFrom(error));
