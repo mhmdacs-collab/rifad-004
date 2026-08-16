@@ -1,7 +1,13 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import App from "./App";
+
+const ORDER_TYPES_KEY = "rifad.pos.visible-order-types.v1";
+
+afterEach(() => {
+  window.localStorage.removeItem(ORDER_TYPES_KEY);
+});
 
 const openSales = async (user: ReturnType<typeof userEvent.setup>) => {
   await user.click(screen.getByRole("button", { name: "تسجيل الدخول" }));
@@ -21,7 +27,7 @@ describe("POS-FLOW-001", () => {
     await user.click(await screen.findByRole("button", { name: /قهوة سعودية/ }));
     await waitFor(() => expect(screen.getByRole("heading", { name: /تذكرة/ })).toBeInTheDocument());
 
-    await user.click(screen.getByRole("button", { name: "السداد" }));
+    await user.click(screen.getByRole("button", { name: "دفع" }));
     await screen.findByText("اختيار طريقة الدفع");
     await user.click(screen.getByRole("button", { name: /نقدًا/ }));
 
@@ -68,5 +74,39 @@ describe("POS-FLOW-006", () => {
 
     expect(screen.getByRole("button", { name: /قهوة سعودية/ })).toBeInTheDocument();
     expect(window.localStorage.getItem("rifad.pos.mock.v1")).toContain("المشاوي");
+  });
+});
+
+describe("ticket order type gate", () => {
+  it("requires one configured order type before save or pay when multiple types are enabled", async () => {
+    window.localStorage.setItem(ORDER_TYPES_KEY, JSON.stringify(["dine-in", "takeaway"]));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await openSales(user);
+    await user.click(await screen.findByRole("button", { name: /قهوة سعودية/ }));
+
+    expect(screen.getByRole("button", { name: "حفظ" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "دفع" })).toBeDisabled();
+    expect(screen.getByText("اختر للمتابعة")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "محلي" }));
+
+    expect(screen.getByRole("button", { name: "حفظ" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "دفع" })).toBeEnabled();
+  });
+
+  it("auto-selects the only configured order type without blocking the sale", async () => {
+    window.localStorage.setItem(ORDER_TYPES_KEY, JSON.stringify(["delivery"]));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await openSales(user);
+    await user.click(await screen.findByRole("button", { name: /قهوة سعودية/ }));
+
+    expect(screen.getByRole("button", { name: "توصيل" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("محدد تلقائيًا")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "حفظ" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "دفع" })).toBeEnabled();
   });
 });
