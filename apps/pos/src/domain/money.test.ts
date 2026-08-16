@@ -12,9 +12,14 @@ describe("money authority", () => {
     expect(parseRiyalsToHalalas("22.555")).toBeNull();
   });
 
-  it("keeps the requested low-total cashier pattern", () => {
+  it("keeps the requested near-120 cashier pattern when the total is actually close to 120", () => {
     expect(suggestedCashHalalas(10800)).toEqual([11000, 12000, 15000, 20000, 50000]);
     expect(suggestedCashHalalas(10800)).not.toContain(10800);
+  });
+
+  it("does not inject 120 into an unrelated 54 riyal sale", () => {
+    expect(suggestedCashHalalas(5400)).toEqual([6000, 10000, 50000]);
+    expect(suggestedCashHalalas(5400)).not.toContain(12000);
   });
 
   it("does not suggest arbitrary intermediate tens for a 126 riyal sale", () => {
