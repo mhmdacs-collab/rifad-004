@@ -223,7 +223,11 @@ class MockStore {
     if (index < 1) throw new PosContractError("PAGE_NOT_EDITABLE", "هذه الصفحة لا يمكن نقلها.");
     const target = direction === "previous" ? index - 1 : index + 1;
     if (target < 1 || target >= pages.length) return this.state.salePages;
-    [pages[index], pages[target]] = [pages[target], pages[index]];
+    const currentPage = pages[index];
+    const targetPage = pages[target];
+    if (!currentPage || !targetPage) return this.state.salePages;
+    pages[index] = targetPage;
+    pages[target] = currentPage;
     this.state = { ...this.state, salePages: pages };
     this.persist();
     return this.state.salePages;
