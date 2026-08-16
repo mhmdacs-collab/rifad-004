@@ -5,6 +5,7 @@ import { money } from "../domain/money";
 import { readPrintReceiptAlways } from "../domain/posPreferences";
 import type {
   Customer,
+  DebtLedgerEntry,
   DeviceSession,
   EmployeeSession,
   PrintDeliveryStatus,
@@ -229,6 +230,35 @@ export const usePosFlow = () => {
       return null;
     } finally {
       setBusy(null);
+    }
+  }, [runtime]);
+
+  const setTicketCustomer = useCallback(async (customerId: string | null): Promise<boolean> => {
+    if (!ticket) return false;
+    setBusy("ticket-customer");
+    setErrorMessage(null);
+    try {
+      const updated = await runtime.sales.setCustomer({
+        commandId: commandId("ticket-customer"),
+        ticketId: ticket.id,
+        customerId,
+      });
+      setTicket(updated);
+      return true;
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+      return false;
+    } finally {
+      setBusy(null);
+    }
+  }, [runtime, ticket]);
+
+  const loadCustomerLedger = useCallback(async (customerId: string): Promise<readonly DebtLedgerEntry[]> => {
+    try {
+      return await runtime.customerCredit.ledger({ customerId });
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+      return [];
     }
   }, [runtime]);
 
@@ -548,6 +578,8 @@ export const usePosFlow = () => {
     saveOpenTicket,
     searchCustomers,
     createCustomer,
+    setTicketCustomer,
+    loadCustomerLedger,
     chargeTicketToCustomer,
     settleCustomerDebt,
     createSalePage,
