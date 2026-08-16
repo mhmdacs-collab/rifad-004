@@ -179,6 +179,59 @@ describe("unified ticket customer", () => {
     expect(persisted.receipt?.customer?.id).toBe("customer-001");
     expect(persisted.receipt?.customer?.mobile).toBe("0501234567");
   });
+
+  it("keeps optional customer details in the same customer record", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await openSales(user);
+
+    await user.click(screen.getByRole("button", { name: "إضافة عميل إلى التذكرة" }));
+    const picker = await screen.findByRole("dialog", { name: "إضافة عميل إلى التذكرة" });
+    await user.click(within(picker).getByRole("button", { name: "+ إضافة عميل جديد" }));
+
+    await user.type(within(picker).getByLabelText("اسم العميل"), "ليان سعد");
+    await user.type(within(picker).getByLabelText("رقم الجوال"), "0561112233");
+    await user.click(within(picker).getByRole("checkbox", { name: /معلومات إضافية/ }));
+    await user.type(within(picker).getByLabelText("البريد الإلكتروني"), "layan@example.com");
+    await user.type(within(picker).getByLabelText("رمز العميل"), "C-100");
+    await user.type(within(picker).getByLabelText("العنوان"), "طريق الملك فهد");
+    await user.type(within(picker).getByLabelText("المدينة"), "الرياض");
+    await user.type(within(picker).getByLabelText("المنطقة"), "الرياض");
+    await user.type(within(picker).getByLabelText("الرمز البريدي"), "12345");
+    await user.type(within(picker).getByLabelText("الدولة"), "السعودية");
+    await user.type(within(picker).getByLabelText("ملاحظات"), "عميلة ولاء");
+    await user.click(within(picker).getByRole("button", { name: "إنشاء العميل" }));
+    await user.click(within(picker).getByRole("button", { name: "إضافة إلى التذكرة" }));
+
+    expect(await screen.findByRole("button", { name: "العميل ليان سعد" })).toBeInTheDocument();
+
+    const persisted = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}") as {
+      customers?: Array<{
+        mobile: string;
+        details: {
+          email: string;
+          address: string;
+          city: string;
+          region: string;
+          postalCode: string;
+          country: string;
+          customerCode: string;
+          note: string;
+        };
+      }>;
+    };
+    const customer = persisted.customers?.find((item) => item.mobile === "0561112233");
+    expect(customer?.details).toEqual({
+      email: "layan@example.com",
+      address: "طريق الملك فهد",
+      city: "الرياض",
+      region: "الرياض",
+      postalCode: "12345",
+      country: "السعودية",
+      customerCode: "C-100",
+      note: "عميلة ولاء",
+    });
+  });
 });
 
 describe("basic screen customer debt workflow", () => {
@@ -240,7 +293,7 @@ describe("basic screen customer debt workflow", () => {
     await waitFor(() => expect(productSearch).toHaveFocus());
   });
 
-  it("reuses the customer already attached to the ticket when recording a credit sale", async () => {
+  it("reuses the attached customer, records credit, then shows receipt actions before a new sale", async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -258,17 +311,31 @@ describe("basic screen customer debt workflow", () => {
     expect(within(creditDialog).getByRole("button", { name: /أحمد محمد/ })).toHaveClass("active");
     await user.click(within(creditDialog).getByRole("button", { name: "تسجيل آجل" }));
 
-    await waitFor(() => expect(screen.getByRole("button", { name: "سداد" })).toBeEnabled());
-    await waitFor(() => expect(screen.getByRole("textbox", { name: "البحث عن منتج" })).toHaveFocus());
+    expect(await screen.findByRole("heading", { name: "تم تسجيل البيع الآجل بنجاح" })).toBeInTheDocument();
+    expect(screen.getByText("طريقة الإنهاء")).toBeInTheDocument();
+    expect(screen.getByText("آجل")).toBeInTheDocument();
+    expect(screen.getByText("أحمد محمد")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "طباعة الإيصال" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "بيع جديد" })).toBeEnabled();
 
     const persisted = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}") as {
       customers?: { id: string; debt: { halalas: number } }[];
-      creditSales?: { ticket: { customer?: { id: string } | null } }[];
+      creditSales?: { ticket: { customer?: { id: string } | null }; receiptId?: string }[];
       debtLedger?: { kind: string; customerId: string; amount: { halalas: number } }[];
+      receipt?: { id: string; paymentMethod: string; customer?: { id: string } | null } | null;
+      receipts?: { id: string; paymentMethod: string }[];
     };
     expect(persisted.customers?.find((customer) => customer.id === "customer-001")?.debt.halalas).toBe(13800);
     expect(persisted.creditSales).toHaveLength(1);
     expect(persisted.creditSales?.[0]?.ticket.customer?.id).toBe("customer-001");
     expect(persisted.debtLedger?.filter((entry) => entry.kind === "credit-sale" && entry.customerId === "customer-001")).toHaveLength(1);
+    expect(persisted.receipt?.paymentMethod).toBe("credit");
+    expect(persisted.receipt?.customer?.id).toBe("customer-001");
+    expect(persisted.receipts?.some((item) => item.id === persisted.receipt?.id && item.paymentMethod === "credit")).toBe(true);
+
+    await user.click(screen.getByRole("button", { name: "بيع جديد" }));
+    const nextSearch = await screen.findByRole("textbox", { name: "البحث عن منتج" });
+    await waitFor(() => expect(nextSearch).toHaveFocus());
+    expect(screen.getByRole("button", { name: "سداد" })).toBeEnabled();
   });
 });
