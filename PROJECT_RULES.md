@@ -5,7 +5,7 @@ These rules are binding for implementation work in this repository.
 ## 1. Product ownership
 
 - Rifad is the product. No donor project owns Rifad's architecture.
-- Loyverse is a product/UX reference, not a source-code dependency.
+- Loyverse is a functional/workflow and ergonomic reference, not a source-code dependency or Rifad's visual identity.
 - FloCafe, Odoo, ERPNext and other projects may be donors only unless an explicit architecture decision says otherwise.
 - Do not expose donor names, schemas or internal IDs through Rifad public contracts.
 
@@ -15,6 +15,11 @@ These rules are binding for implementation work in this repository.
 - UI components may orchestrate interaction state only; business rules belong in domain modules.
 - Every visible action must call a Rifad-owned contract, even while its implementation is mocked.
 - A screen is not accepted if it looks or behaves like a generic website. Tablet interaction must feel application-native.
+- No screen, action, state or flow may be implemented merely from a family name such as “sales workspace.” It must have a stable ID and evidence in `docs/ui/UI_EXECUTION_MANIFEST.json`.
+- Implementation is allowed only for a complete `ready` screen or the explicitly permitted subset of a `ready` flow. Missing behavior is a manifest task, not an invitation to invent.
+- Every implementation PR must name the affected screen/action/flow IDs and update the manifest when behavior changes.
+- Loyverse is the primary functional/workflow reference. Rifad's design system is the visual authority.
+- External visual references require an approved decision under `docs/ui/visual-decisions/`; a mention in discussion is not approval.
 
 ## 3. Puzzle architecture
 
@@ -90,6 +95,8 @@ A capability is done only when its applicable evidence exists:
 - hardware tests where relevant,
 - migration tests where persistent data changes,
 - license/provenance record for donor-derived code.
+
+A UI slice additionally requires manifest-linked visual, interaction, responsive, RTL and contract evidence for every ID it marks implemented or verified.
 
 ## 9. Scope discipline
 

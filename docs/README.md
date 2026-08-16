@@ -8,16 +8,21 @@ When documents conflict, use this order:
 
 1. `PROJECT_RULES.md` at the repository root.
 2. `architecture/CURRENT_DECISIONS.md`.
-3. `architecture/RIFAD_ARCHITECTURE.md` and current capability/adoption policies.
-4. Current UI/product plans.
-5. Research and historical proposals as evidence only.
+3. `architecture/RIFAD_ARCHITECTURE.md`, current capability/adoption policy and UI authority policy.
+4. `ui/UI_EXECUTION_MANIFEST.json` for implementation identity/readiness/scope.
+5. Current UI/product plans.
+6. Research and historical proposals as evidence only.
 
 ## Current implementation documents
 
 - `architecture/` — binding architecture direction and current decisions.
 - `adoption/` — how Rifad evaluates and incorporates proven external logic.
 - `donors/` — donor policy and evidence record template.
-- `ui/` — UI-first product-surface plan and first executable target.
+- `ui/UI_EXECUTION_MANIFEST.json` — binding screen/action/state/flow inventory and readiness status.
+- `ui/UI_EXECUTION_MANIFEST_SCHEMA.md` — implementation gate and required evidence.
+- `ui/DESIGN_AUTHORITY.md` — functional versus visual authority and visual-donor approval policy.
+- `ui/flows/` — bounded vertical slices authorized for implementation.
+- `ui/` — UI-first product-surface plan, provisional tokens and first executable target.
 
 ## Research
 

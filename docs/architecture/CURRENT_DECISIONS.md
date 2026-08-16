@@ -8,15 +8,15 @@ Rifad is not built as a branded shell over a donor POS/ERP. External systems may
 
 ## D-002 — UI-first
 
-The first implementation focus is the complete interactive product shell: POS, Back Office, Dashboard, KDS and CDS. Missing backend capabilities are represented by mock adapters behind real Rifad contracts.
+The UI phase target is the complete interactive product shell: POS, Back Office, Dashboard, KDS and CDS. It is delivered through manifest-gated vertical flows. Missing backend capabilities are represented by mock adapters behind real Rifad contracts.
 
 ## D-003 — Primary UI stack
 
 Use React + TypeScript + Vite for the primary interface. The same product UI is hosted in a desktop application shell on Windows and installed as a PWA on supported tablet/mobile platforms.
 
-## D-004 — Loyverse as product reference
+## D-004 — Loyverse as functional/workflow reference
 
-Loyverse is the primary UX/workflow reference. Rifad independently implements the experience using Rifad branding and Rifad-owned code/contracts.
+Loyverse is the primary functional/workflow reference for screen inventory, interaction meaning, states, prerequisites and operational flows. Rifad independently implements the experience using Rifad branding and Rifad-owned code/contracts.
 
 ## D-005 — Puzzle modules
 
@@ -53,3 +53,15 @@ Rifad starts from proven implementations, tests, protocols and failure evidence 
 ## D-013 — Support is a tested capability matrix
 
 Rifad does not promise “any device” or “any integration” without evidence. Hardware and external-system support is published as explicit protocol/model/capability combinations backed by tests. Generic standards support and certified devices are reported separately.
+
+## D-014 — UI implementation is manifest-gated
+
+Every screen, action, state and end-to-end flow receives a stable ID linked to source evidence. Code may start only for a `ready` screen or the explicitly bounded subset of a `ready` flow. Missing behavior is resolved in the manifest before implementation.
+
+## D-015 — Rifad owns visual authority
+
+Rifad's design system owns final visual tokens, assets and component styling. Loyverse remains the functional/workflow and ergonomic baseline. Another interface may influence a narrow pattern only after an explicit visual decision; it cannot silently change logic or flows.
+
+## D-016 — Build vertical flows, not disconnected screen museums
+
+Implementation milestones prove an end-to-end user outcome through mocks. The first authorized milestone is `POS-FLOW-001`, a retail cash sale slice spanning entry, PIN, sales, cash payment, success and a new sale.

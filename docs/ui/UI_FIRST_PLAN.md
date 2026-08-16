@@ -14,7 +14,7 @@ The first implementation phase builds all primary Rifad surfaces using Rifad-own
 4. KDS
 5. Customer Display
 
-The detailed Loyverse behavior/reference material stored in `docs/research/loyverse/` is the acceptance reference for screen inventory, workflows, states and interaction patterns.
+The detailed Loyverse behavior/reference material stored in `docs/research/loyverse/` is the primary functional/workflow evidence. `UI_EXECUTION_MANIFEST.json` converts that evidence into the IDs and ready scopes that implementation may use.
 
 ## Technology baseline
 
@@ -44,20 +44,20 @@ Required qualities:
 - offline-loadable application shell;
 - keyboard/mouse support on Windows without degrading touch interaction.
 
-## Visual oracle
+## Authority model
 
-Loyverse provides the primary product and interaction reference:
+- Loyverse research is the primary functional/workflow reference: hierarchy, density baseline, ticket/product relationships, navigation, modal flows, states and KDS/CDS operational behavior.
+- Rifad's design system is the visual authority: identity, tokens, typography, icons, assets, accessibility and final component styling.
+- Other interfaces may influence a narrow visual pattern only through an explicit approved record under `visual-decisions/`.
+- Visual improvement may not silently change workflow, action meaning, contract, permissions, offline behavior or fiscal/payment state.
 
-- layout hierarchy;
-- screen density;
-- ticket/product relationships;
-- navigation patterns;
-- modal flows;
-- empty/loading/error states;
-- KDS/CDS operational behavior;
-- tablet-oriented ergonomics.
+See `DESIGN_AUTHORITY.md`.
 
-Rifad must use its own identity, assets and implementation.
+## Manifest implementation gate
+
+Screen-family lists below are discovery scope, not permission to invent screens. A coding task must name a `ready` screen or flow from `UI_EXECUTION_MANIFEST.json` and may implement only its declared actions/states.
+
+If required behavior is missing or only `mapped`, update the evidence and manifest before writing the UI.
 
 ## Contract-driven mocks
 
@@ -137,8 +137,8 @@ The UI does not change when the mock is replaced.
 
 UI phase is complete only when:
 
-1. every documented primary screen has an implementation;
-2. principal flows can be completed end-to-end with mock data;
+1. every documented primary screen has a stable manifest ID and reaches `verified`;
+2. principal manifest flows can be completed end-to-end with mock data;
 3. every business action crosses a Rifad contract;
 4. no domain logic is buried in view components;
 5. RTL/LTR work on target layouts;
@@ -146,6 +146,7 @@ UI phase is complete only when:
 7. Windows shell can host the same application UI;
 8. visual regression coverage exists for major screens/states;
 9. mock adapters can be individually replaced without restructuring the UI.
+10. every visual donor pattern in use has an approved decision and linked regression evidence.
 
 ## What is explicitly not part of UI phase
 

@@ -2,29 +2,26 @@
 
 ## Objective
 
-Create the first executable Rifad application shell from a clean codebase. Do not import FloCafe/Odoo application structure.
+Create the first executable Rifad vertical slice, `POS-FLOW-001`, from a clean codebase. Do not import FloCafe/Odoo application structure or implement behavior outside the manifest scope.
 
 ## Scope
 
-Start with the POS tablet/desktop shell because it establishes the design system and interaction grammar used by the other surfaces.
+Start with the POS tablet/desktop/phone shell because it establishes the design system and interaction grammar used by the other surfaces.
 
 Required first slice:
 
-- application shell/navigation;
-- employee/PIN entry state;
-- sales workspace;
-- product/category grid;
-- current ticket;
-- item selection and quantity controls;
-- modifier/variant interaction shell;
-- customer attachment shell;
-- open-ticket entry point;
-- table/floor entry point;
-- payment entry point;
+- `POS-SCREEN-001` existing-account sign-in for a mock unlinked device;
+- `POS-SCREEN-002` employee PIN unlock;
+- the permitted `POS-SCREEN-003` subset: fixed-price catalog/search/current ticket/quantity/delete;
+- `POS-SCREEN-007` cash payment-method selection;
+- `POS-SCREEN-008` cash tender and change;
+- `POS-SCREEN-011` success, mock print states and New sale;
 - responsive RTL/LTR behavior;
 - desktop keyboard/mouse usability;
 - installable PWA shell;
-- mock contracts/adapters for all actions.
+- only the draft contracts/mock adapters named by `POS-FLOW-001`.
+
+The ordered steps, actions, states, non-goals and acceptance criteria live in `UI_EXECUTION_MANIFEST.json` and `flows/POS-FLOW-001.md`.
 
 ## Non-goals
 
@@ -34,7 +31,9 @@ Required first slice:
 - no Odoo/FloCafe binding;
 - no generic admin-template UI;
 - no business rules embedded in components.
+- no modifiers/variants, customers/loyalty, discounts, open tickets, tables, integrated payments or split payments in this slice;
+- no unapproved visual donor patterns.
 
 ## Acceptance
 
-The slice passes only when it is visibly an operational POS application rather than a web dashboard and when every action is already routed through a Rifad contract that can later receive a real module implementation.
+The slice passes only when it is visibly an operational POS application rather than a web dashboard, every permitted action is routed through its named Rifad contract/mock, and all `POS-FLOW-001` acceptance criteria are evidenced. Undefined behavior must remain absent rather than invented.

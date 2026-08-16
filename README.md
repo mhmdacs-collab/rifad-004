@@ -4,7 +4,8 @@ Rifad is an independent Saudi POS product. This repository is the new implementa
 
 ## Product direction
 
-- **UI/UX reference:** Loyverse behavior and interaction patterns, independently implemented with Rifad branding.
+- **Functional/workflow reference:** Loyverse behavior, screen inventory and interaction patterns, independently implemented.
+- **Visual authority:** Rifad's design system. Other visual references require an explicit, narrow approval and may not silently change workflows.
 - **Desktop:** application experience for Windows.
 - **Tablet/mobile:** installable PWA that must feel like an application, not a website.
 - **Architecture:** modular puzzle architecture. Each business capability is isolated behind a Rifad-owned contract/adapter.
@@ -24,12 +25,14 @@ See [Capability Adoption Workflow](docs/adoption/CAPABILITY_ADOPTION_WORKFLOW.md
 
 ## Build order
 
-1. Complete the Rifad application surfaces visually and interactively using mock adapters.
-2. Freeze Rifad contracts for the actions exposed by those surfaces.
-3. For each capability, research multiple donor implementations and select the simplest proven logic.
-4. Port/reimplement the selected logic behind its adapter.
-5. Validate with contract, conformance, offline, visual and hardware tests.
-6. Replace a module without changing the rest of the product whenever its contract remains stable.
+1. Map researched behavior into stable screen/action/state/flow IDs in the UI Execution Manifest.
+2. Mark a bounded screen or vertical flow `ready`; implementation outside ready scope is forbidden.
+3. Complete the authorized Rifad application surfaces interactively using mock adapters.
+4. Freeze Rifad contracts for the actions proven by those surfaces.
+5. For each capability, research multiple donor implementations and select the simplest proven logic.
+6. Port/reimplement the selected logic behind its adapter.
+7. Validate with contract, conformance, offline, visual and hardware tests.
+8. Replace a module without changing the rest of the product whenever its contract remains stable.
 
 ## Product surfaces
 
@@ -54,4 +57,4 @@ See `PROJECT_RULES.md` before changing implementation code.
 
 ## Current repository state
 
-The repository currently establishes the implementation rules and evidence structure. The next code milestone is the executable POS shell described in `docs/ui/IMPLEMENTATION_START.md`, with real Rifad contracts and mock adapters from the first interaction.
+The repository now includes the binding [UI Execution Manifest](docs/ui/UI_EXECUTION_MANIFEST.json), [manifest gate/schema](docs/ui/UI_EXECUTION_MANIFEST_SCHEMA.md), [visual authority](docs/ui/DESIGN_AUTHORITY.md) and the first authorized vertical slice, [POS-FLOW-001](docs/ui/flows/POS-FLOW-001.md). Code must stay inside that ready scope until the manifest is expanded.

@@ -1,0 +1,502 @@
+{
+  "manifestVersion": "1.0.0",
+  "status": "active",
+  "sourceOfTruth": "docs/ui/UI_EXECUTION_MANIFEST_SCHEMA.md",
+  "authorities": {
+    "product": "PROJECT_RULES.md and docs/architecture/CURRENT_DECISIONS.md",
+    "functionalWorkflow": "docs/research/loyverse/Loyverse_Phase_1_UI_UX_Functional_Analysis_AR.md",
+    "visual": "docs/ui/DESIGN_AUTHORITY.md and the Rifad design system",
+    "optionalVisualDonors": "explicit approved records under docs/ui/visual-decisions only"
+  },
+  "implementationGate": {
+    "default": "deny",
+    "rule": "Implement only a complete ready screen or the explicitly permitted subset of a ready flow.",
+    "readyFlows": [
+      "POS-FLOW-001"
+    ]
+  },
+  "surfaces": [
+    {
+      "id": "POS",
+      "name": "Point of Sale",
+      "sourceSections": [
+        "4. بنية التنقل العامة في POS",
+        "5. شاشة Sales: التفكيك الكامل",
+        "6. الدفع وإتمام البيع",
+        "7. التذاكر المفتوحة Open tickets",
+        "8. الإيصالات والمرتجعات",
+        "9. الورديات وإدارة النقد",
+        "10. Items داخل POS",
+        "11. إعدادات POS الظاهرة للمستخدم"
+      ],
+      "screens": [
+        {
+          "id": "POS-SCREEN-001",
+          "name": "Account Sign In and Device Link",
+          "status": "specified",
+          "implementationAllowedByFlows": ["POS-FLOW-001"],
+          "evidence": {
+            "sections": ["4.2 حالات بدء التشغيل والدخول"],
+            "confidence": "documented"
+          },
+          "states": ["first-run", "credential-entry", "submitting", "invalid-credentials", "device-linked"],
+          "actionIds": ["AUTH-ACTION-001"],
+          "notes": "POS-FLOW-001 permits existing-account sign-in only. Sign-up and email confirmation are outside the first slice."
+        },
+        {
+          "id": "POS-SCREEN-002",
+          "name": "Employee PIN and Time Clock",
+          "status": "specified",
+          "implementationAllowedByFlows": ["POS-FLOW-001"],
+          "evidence": {
+            "sections": ["4.2 حالات بدء التشغيل والدخول", "4.3 شاشة ساعة الدوام قبل POS"],
+            "confidence": "documented"
+          },
+          "states": ["locked", "pin-entry", "invalid-pin", "authorized", "override-request"],
+          "actionIds": ["EMPLOYEE-ACTION-001"],
+          "notes": "POS-FLOW-001 permits PIN unlock only. Time clock and manager override remain mapped but are not authorized in the first slice."
+        },
+        {
+          "id": "POS-SCREEN-003",
+          "name": "Sales Workspace",
+          "status": "specified",
+          "implementationAllowedByFlows": ["POS-FLOW-001"],
+          "evidence": {
+            "sections": ["5.1 تخطيط الجهاز اللوحي", "5.2 تخطيط الهاتف", "5.3 شريط الكتالوج وأدوات العثور على عنصر", "5.6 لوحة التذكرة الحالية", "31.1 الانعكاس البنيوي"],
+            "confidence": "documented"
+          },
+          "states": ["empty-ticket", "active-ticket", "search-results", "no-search-results", "offline-local", "action-denied", "recoverable-error"],
+          "actionIds": ["SALES-ACTION-001", "CATALOG-ACTION-001", "SALES-ACTION-002", "SALES-ACTION-003", "SALES-ACTION-004", "CHECKOUT-ACTION-001"],
+          "responsive": {
+            "tablet": "Catalog and ticket are side by side; reference ratio is approximately 68.7/31.3, mirrored in RTL.",
+            "phone": "Catalog and ticket are separate surfaces; do not shrink the tablet split view.",
+            "windows": "Preserve tablet hierarchy with keyboard/mouse affordances."
+          }
+        },
+        {
+          "id": "POS-SCREEN-004",
+          "name": "Item Details and Open Value Entry",
+          "status": "mapped",
+          "implementationAllowed": false,
+          "evidence": {"sections": ["5.5 سلوك إضافة أنواع العناصر", "5.7 محرر سطر العنصر"], "confidence": "documented"}
+        },
+        {
+          "id": "POS-SCREEN-005",
+          "name": "Modifiers and Variants",
+          "status": "mapped",
+          "implementationAllowed": false,
+          "evidence": {"sections": ["5.5 سلوك إضافة أنواع العناصر", "5.9 Modifiers والتعليقات"], "confidence": "documented"}
+        },
+        {
+          "id": "POS-SCREEN-006",
+          "name": "Customer and Loyalty",
+          "status": "mapped",
+          "implementationAllowed": false,
+          "evidence": {"sections": ["5.11 العميل والولاء", "6.8 سجل مشتريات العميل من POS"], "confidence": "documented"}
+        },
+        {
+          "id": "POS-SCREEN-007",
+          "name": "Payment Method Selection",
+          "status": "specified",
+          "implementationAllowedByFlows": ["POS-FLOW-001"],
+          "evidence": {"sections": ["6.1 شاشة اختيار طريقة الدفع", "28.2 مصفوفة الوظائف"], "confidence": "documented"},
+          "states": ["payment-methods", "cash-available", "connected-method-disabled-offline", "no-enabled-method", "invalid-ticket"],
+          "actionIds": ["CHECKOUT-ACTION-002"]
+        },
+        {
+          "id": "POS-SCREEN-008",
+          "name": "Cash Payment",
+          "status": "specified",
+          "implementationAllowedByFlows": ["POS-FLOW-001"],
+          "evidence": {"sections": ["6.2 الدفع النقدي", "6.7 Cash rounding"], "confidence": "documented"},
+          "states": ["amount-entry", "exact-tender", "over-tender", "under-tender", "submitting", "rejected", "completed"],
+          "actionIds": ["CHECKOUT-ACTION-003"]
+        },
+        {
+          "id": "POS-SCREEN-009",
+          "name": "Integrated Payment",
+          "status": "mapped",
+          "implementationAllowed": false,
+          "evidence": {"sections": ["6.3 البطاقة والطرق المتكاملة"], "confidence": "documented"}
+        },
+        {
+          "id": "POS-SCREEN-010",
+          "name": "Split Payment",
+          "status": "mapped",
+          "implementationAllowed": false,
+          "evidence": {"sections": ["6.4 Split payment"], "confidence": "documented"}
+        },
+        {
+          "id": "POS-SCREEN-011",
+          "name": "Sale Success",
+          "status": "specified",
+          "implementationAllowedByFlows": ["POS-FLOW-001"],
+          "evidence": {"sections": ["6.5 شاشة نجاح العملية"], "confidence": "documented"},
+          "states": ["completed", "print-queued", "print-failed", "email-queued", "starting-new-sale"],
+          "actionIds": ["PRINTING-ACTION-001", "SALES-ACTION-005"]
+        },
+        {
+          "id": "POS-SCREEN-012",
+          "name": "Save Open Ticket",
+          "status": "mapped",
+          "implementationAllowed": false,
+          "evidence": {"sections": ["7.1 إنشاء تذكرة وحفظها"], "confidence": "documented"}
+        },
+        {
+          "id": "POS-SCREEN-013",
+          "name": "Open Tickets List",
+          "status": "mapped",
+          "implementationAllowed": false,
+          "evidence": {"sections": ["7.2 قائمة التذاكر", "7.3 التزامن المرئي بين أجهزة POS"], "confidence": "documented"}
+        },
+        {
+          "id": "POS-SCREEN-014",
+          "name": "Split Ticket",
+          "status": "mapped",
+          "implementationAllowed": false,
+          "evidence": {"sections": ["7.4 Split ticket"], "confidence": "documented"}
+        },
+        {
+          "id": "POS-SCREEN-015",
+          "name": "Merge Move and Bill",
+          "status": "mapped",
+          "implementationAllowed": false,
+          "evidence": {"sections": ["7.5 Merge وMove", "7.6 Bill قبل الدفع"], "confidence": "documented"}
+        },
+        {
+          "id": "POS-SCREEN-016",
+          "name": "Receipts List",
+          "status": "mapped",
+          "implementationAllowed": false,
+          "evidence": {"sections": ["8.1 قائمة Receipts"], "confidence": "documented"}
+        },
+        {
+          "id": "POS-SCREEN-017",
+          "name": "Receipt Detail",
+          "status": "mapped",
+          "implementationAllowed": false,
+          "evidence": {"sections": ["8.2 تفاصيل الإيصال"], "confidence": "documented"}
+        },
+        {
+          "id": "POS-SCREEN-018",
+          "name": "Refund",
+          "status": "mapped",
+          "implementationAllowed": false,
+          "evidence": {"sections": ["8.3 Refund"], "confidence": "documented"}
+        },
+        {
+          "id": "POS-SCREEN-019",
+          "name": "Open Shift",
+          "status": "mapped",
+          "implementationAllowed": false,
+          "evidence": {"sections": ["9.1 فتح وردية"], "confidence": "documented"}
+        },
+        {
+          "id": "POS-SCREEN-020",
+          "name": "Current Shift",
+          "status": "mapped",
+          "implementationAllowed": false,
+          "evidence": {"sections": ["9.2 شاشة الوردية الحالية"], "confidence": "documented"}
+        },
+        {
+          "id": "POS-SCREEN-021",
+          "name": "Close Shift and Reports",
+          "status": "mapped",
+          "implementationAllowed": false,
+          "evidence": {"sections": ["9.3 إغلاق الوردية"], "confidence": "documented"}
+        },
+        {
+          "id": "POS-SCREEN-022",
+          "name": "POS Items List",
+          "status": "mapped",
+          "implementationAllowed": false,
+          "evidence": {"sections": ["10.1 القائمة"], "confidence": "documented"}
+        },
+        {
+          "id": "POS-SCREEN-023",
+          "name": "POS Item Editor",
+          "status": "mapped",
+          "implementationAllowed": false,
+          "evidence": {"sections": ["10.2 Create/Edit item"], "confidence": "documented"}
+        },
+        {
+          "id": "POS-SCREEN-024",
+          "name": "POS Categories",
+          "status": "mapped",
+          "implementationAllowed": false,
+          "evidence": {"sections": ["10.3 Categories"], "confidence": "documented"}
+        },
+        {
+          "id": "POS-SCREEN-025",
+          "name": "POS Settings",
+          "status": "mapped",
+          "implementationAllowed": false,
+          "evidence": {"sections": ["11. إعدادات POS الظاهرة للمستخدم"], "confidence": "documented"}
+        }
+      ]
+    },
+    {
+      "id": "BO",
+      "name": "Back Office",
+      "sourceSections": ["12. القشرة العامة والتنقل", "13. Reports", "14. Items في Back Office", "15. Advanced Inventory", "16. Employees وAccess Rights", "17. Customers", "18. Settings في Back Office"],
+      "screens": [
+        {"id": "BO-SCREEN-001", "name": "Shell and Navigation", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["12.1 الإطار العام", "12.2 خريطة القائمة"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-002", "name": "Sales Summary", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["13.1 أدوات مشتركة", "13.2 Sales Summary"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-003", "name": "Sales by Item", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["13.3 Sales by Item"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-004", "name": "Report Explorer", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["13.4 بقية تقارير المبيعات"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-005", "name": "Back Office Receipts", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["13.5 Receipts في Back Office", "Cancel receipt"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-006", "name": "Item List", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["14.1 Item list"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-007", "name": "Item Editor", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["14.2 نموذج Add/Edit item"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-008", "name": "Variants", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["14.3 Variants"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-009", "name": "Categories", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["14.4 Categories"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-010", "name": "Discounts", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["14.5 Discounts"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-011", "name": "Modifiers", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["14.6 Modifiers"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-012", "name": "Suppliers", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["15.1 Suppliers"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-013", "name": "Purchase Orders", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["15.2 Purchase Orders"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-014", "name": "Transfer Orders", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["15.3 Transfer Orders"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-015", "name": "Stock Adjustments", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["15.4 Stock Adjustments"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-016", "name": "Inventory History", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["15.5 Inventory History"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-017", "name": "Inventory Valuation", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["15.6 Inventory Valuation"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-018", "name": "Inventory Count", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["15.7 Inventory Count"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-019", "name": "Production", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["15.8 Production"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-020", "name": "Printing Labels", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["15.9 Printing Labels"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-021", "name": "Employees", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["16.1 Employee list وملف الموظف"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-022", "name": "Access Rights", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["16.2 Access Rights"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-023", "name": "Timecards and Total Hours", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["16.3 Timecards وTotal Hours"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-024", "name": "Customers", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["17.1 Customer base", "17.3 الحالات"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-025", "name": "Customer Profile and Purchases", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["17.2 ملف العميل وسجل الشراء"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-026", "name": "Features", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["18.1 Features"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-027", "name": "Stores", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["18.2 Stores"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-028", "name": "POS Devices", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["18.3 POS Devices"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-029", "name": "Payment Types", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["18.4 Payment Types"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-030", "name": "Taxes", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["18.5 Taxes"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-031", "name": "Loyalty", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["18.6 Loyalty"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-032", "name": "Receipt Settings", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["18.7 Receipt"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-033", "name": "Open Ticket Settings", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["18.8 Open Tickets"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-034", "name": "Kitchen Printers and Displays", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["18.9 Kitchen Printers"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-035", "name": "Dining Options", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["18.10 Dining Options"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-036", "name": "Billing", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["18.11 Billing"], "confidence": "documented"}}
+      ]
+    },
+    {
+      "id": "DASH",
+      "name": "Dashboard",
+      "sourceSections": ["19. الدخول والقشرة العامة", "20. تبويب Sales", "21. تبويب Items", "22. Settings في Dashboard"],
+      "screens": [
+        {"id": "DASH-SCREEN-001", "name": "Sign In and Shell", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["19. الدخول والقشرة العامة"], "confidence": "documented"}},
+        {"id": "DASH-SCREEN-002", "name": "Sales Summary and Breakdown", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["20.1 الحالة الافتراضية", "20.2 الفترة والرسم", "20.3 القياسات المرئية"], "confidence": "documented"}},
+        {"id": "DASH-SCREEN-003", "name": "Items and Stock Alerts", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["21. تبويب Items"], "confidence": "documented"}},
+        {"id": "DASH-SCREEN-004", "name": "Dashboard Settings", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["22. Settings في Dashboard"], "confidence": "documented"}}
+      ]
+    },
+    {
+      "id": "KDS",
+      "name": "Kitchen Display System",
+      "sourceSections": ["23. الإعداد والاقتران", "24. شاشة الطلبات النشطة"],
+      "screens": [
+        {"id": "KDS-SCREEN-001", "name": "Setup Pairing and Settings", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["23. الإعداد والاقتران"], "confidence": "documented"}},
+        {"id": "KDS-SCREEN-002", "name": "Active Orders", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["24.1 الشريط العلوي", "24.2 بطاقة الطلب", "24.3 حالات اللون والزمن", "24.4 إتمام عنصر أو طلب", "24.6 حالات KDS"], "confidence": "documented"}},
+        {"id": "KDS-SCREEN-003", "name": "Completed Orders and Recall", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["24.5 Recall"], "confidence": "documented"}}
+      ]
+    },
+    {
+      "id": "CDS",
+      "name": "Customer Display System",
+      "sourceSections": ["25. الاقتران", "26. شاشة العميل"],
+      "screens": [
+        {"id": "CDS-SCREEN-001", "name": "Pairing", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["25. الاقتران"], "confidence": "documented"}},
+        {"id": "CDS-SCREEN-002", "name": "Idle and Active Ticket", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["26.1 التخطيط", "26.2 التفاعل أثناء البيع", "26.4 الحالات"], "confidence": "documented"}},
+        {"id": "CDS-SCREEN-003", "name": "Customer and Email Receipt", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["26.1 التخطيط", "26.2 التفاعل أثناء البيع"], "confidence": "documented"}},
+        {"id": "CDS-SCREEN-004", "name": "Payment Success", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["26.3 حالة نجاح الدفع"], "confidence": "documented"}}
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "AUTH-ACTION-001",
+      "trigger": "Sign in",
+      "screens": ["POS-SCREEN-001"],
+      "contract": "DeviceSessionContract.linkWithCredentials",
+      "contractStatus": "draft-unfrozen",
+      "offline": "connected-only",
+      "idempotency": "stable device-link command identity required",
+      "visibleResults": ["submitting", "device-linked", "invalid-credentials", "recoverable-error"]
+    },
+    {
+      "id": "EMPLOYEE-ACTION-001",
+      "trigger": "Submit four-digit PIN",
+      "screens": ["POS-SCREEN-002"],
+      "contract": "EmployeeSessionContract.unlock",
+      "contractStatus": "draft-unfrozen",
+      "offline": "local",
+      "idempotency": "not a durable business command",
+      "visibleResults": ["authorized", "invalid-pin", "action-denied"]
+    },
+    {
+      "id": "SALES-ACTION-001",
+      "trigger": "Enter sales workspace or New sale",
+      "screens": ["POS-SCREEN-003", "POS-SCREEN-011"],
+      "contract": "SalesContract.startTicket",
+      "contractStatus": "draft-unfrozen",
+      "offline": "local",
+      "idempotency": "stable ticket identity required",
+      "visibleResults": ["empty-ticket", "recoverable-error"]
+    },
+    {
+      "id": "CATALOG-ACTION-001",
+      "trigger": "Search catalog",
+      "screens": ["POS-SCREEN-003"],
+      "contract": "CatalogContract.search",
+      "contractStatus": "draft-unfrozen",
+      "offline": "local-catalog",
+      "idempotency": "query",
+      "visibleResults": ["search-results", "no-search-results"]
+    },
+    {
+      "id": "SALES-ACTION-002",
+      "trigger": "Tap a fixed-price item",
+      "screens": ["POS-SCREEN-003"],
+      "contract": "SalesContract.addItem",
+      "contractStatus": "draft-unfrozen",
+      "offline": "local",
+      "idempotency": "interaction command identity required to prevent accidental duplicate replay",
+      "visibleResults": ["active-ticket", "action-denied", "recoverable-error"]
+    },
+    {
+      "id": "SALES-ACTION-003",
+      "trigger": "Increase or decrease line quantity",
+      "screens": ["POS-SCREEN-003"],
+      "contract": "SalesContract.setLineQuantity",
+      "contractStatus": "draft-unfrozen",
+      "offline": "local",
+      "idempotency": "set desired quantity rather than replay an increment",
+      "visibleResults": ["active-ticket", "empty-ticket", "action-denied"]
+    },
+    {
+      "id": "SALES-ACTION-004",
+      "trigger": "Delete unsaved ticket line",
+      "screens": ["POS-SCREEN-003"],
+      "contract": "SalesContract.removeLine",
+      "contractStatus": "draft-unfrozen",
+      "offline": "local",
+      "idempotency": "stable line identity",
+      "visibleResults": ["active-ticket", "empty-ticket", "action-denied"]
+    },
+    {
+      "id": "CHECKOUT-ACTION-001",
+      "trigger": "Charge",
+      "screens": ["POS-SCREEN-003"],
+      "contract": "CheckoutContract.begin",
+      "contractStatus": "draft-unfrozen",
+      "offline": "local validation",
+      "idempotency": "stable checkout session identity",
+      "visibleResults": ["payment-methods", "invalid-ticket", "action-denied"]
+    },
+    {
+      "id": "CHECKOUT-ACTION-002",
+      "trigger": "Select Cash",
+      "screens": ["POS-SCREEN-007"],
+      "contract": "CheckoutContract.selectPaymentMethod",
+      "contractStatus": "draft-unfrozen",
+      "offline": "local for cash",
+      "idempotency": "set selected method",
+      "visibleResults": ["amount-entry", "connected-method-disabled-offline"]
+    },
+    {
+      "id": "CHECKOUT-ACTION-003",
+      "trigger": "Confirm cash tender",
+      "screens": ["POS-SCREEN-008"],
+      "contract": "CheckoutContract.completeCashSale",
+      "contractStatus": "draft-unfrozen",
+      "offline": "durable-local",
+      "idempotency": "required; one stable command ID atomically owns sale and cash-payment completion",
+      "money": "Rifad Money DTO only; no floating-point authority",
+      "visibleResults": ["submitting", "under-tender", "rejected", "completed"]
+    },
+    {
+      "id": "PRINTING-ACTION-001",
+      "trigger": "Print receipt",
+      "screens": ["POS-SCREEN-011"],
+      "contract": "PrintingContract.submit",
+      "contractStatus": "draft-unfrozen",
+      "offline": "local when printer transport is local",
+      "idempotency": "stable print job ID; delivery-unknown must not cause blind duplicate printing",
+      "visibleResults": ["print-queued", "print-failed", "delivery-unknown"]
+    },
+    {
+      "id": "SALES-ACTION-005",
+      "trigger": "New sale",
+      "screens": ["POS-SCREEN-011"],
+      "contract": "SalesContract.startTicket",
+      "contractStatus": "draft-unfrozen",
+      "offline": "local",
+      "idempotency": "stable new ticket identity",
+      "visibleResults": ["starting-new-sale", "empty-ticket"]
+    }
+  ],
+  "flows": [
+    {
+      "id": "POS-FLOW-001",
+      "name": "Retail Cash Sale Vertical Slice",
+      "status": "ready",
+      "evidence": {
+        "sections": ["34. تدفق بيع تجزئة عادي", "4.2 حالات بدء التشغيل والدخول", "5. شاشة Sales: التفكيك الكامل", "6.1 شاشة اختيار طريقة الدفع", "6.2 الدفع النقدي", "6.5 شاشة نجاح العملية", "28. وضع عدم الاتصال Offline", "31. RTL والتعريب"],
+        "confidence": "documented"
+      },
+      "entryPoints": [
+        "POS-SCREEN-001 for an unlinked mock device",
+        "POS-SCREEN-002 for an already linked device"
+      ],
+      "steps": [
+        {"order": 1, "screenId": "POS-SCREEN-001", "actionId": "AUTH-ACTION-001", "scope": "existing-account sign-in only; optional when device is already linked"},
+        {"order": 2, "screenId": "POS-SCREEN-002", "actionId": "EMPLOYEE-ACTION-001", "scope": "four-digit employee PIN unlock only"},
+        {"order": 3, "screenId": "POS-SCREEN-003", "actionId": "SALES-ACTION-001", "scope": "open an empty local ticket"},
+        {"order": 4, "screenId": "POS-SCREEN-003", "actionId": "CATALOG-ACTION-001", "scope": "search mock local catalog"},
+        {"order": 5, "screenId": "POS-SCREEN-003", "actionId": "SALES-ACTION-002", "scope": "add fixed-price item without variants/modifiers/open price"},
+        {"order": 6, "screenId": "POS-SCREEN-003", "actionId": "SALES-ACTION-003", "scope": "set line quantity and show deterministic totals"},
+        {"order": 7, "screenId": "POS-SCREEN-003", "actionId": "SALES-ACTION-004", "scope": "optionally remove an unsaved line and restore empty-ticket when the last line is removed"},
+        {"order": 8, "screenId": "POS-SCREEN-003", "actionId": "CHECKOUT-ACTION-001", "scope": "enter payment selection"},
+        {"order": 9, "screenId": "POS-SCREEN-007", "actionId": "CHECKOUT-ACTION-002", "scope": "select cash only"},
+        {"order": 10, "screenId": "POS-SCREEN-008", "actionId": "CHECKOUT-ACTION-003", "scope": "confirm exact or over tender and compute visible change through mock contract"},
+        {"order": 11, "screenId": "POS-SCREEN-011", "actionId": "PRINTING-ACTION-001", "scope": "optional mock print with queued/failed/delivery-unknown visible states"},
+        {"order": 12, "screenId": "POS-SCREEN-011", "actionId": "SALES-ACTION-005", "scope": "return to a new empty ticket"}
+      ],
+      "mockAdapters": [
+        "MockDeviceSessionAdapter",
+        "MockEmployeeSessionAdapter",
+        "MockCatalogAdapter",
+        "MockSalesAdapter",
+        "MockCheckoutAdapter",
+        "MockPrintingAdapter"
+      ],
+      "offlineVariant": "After device link, PIN, catalog, ticket editing, cash completion and local printing remain available through mock local adapters. Connected payment methods are outside this flow.",
+      "nonGoals": [
+        "sign-up or email confirmation",
+        "time clock and manager override",
+        "variants, modifiers, open price or weighed items",
+        "customer and loyalty",
+        "discounts, taxes configuration or dining options",
+        "open tickets, tables or KDS/CDS propagation",
+        "integrated card and split payment",
+        "final fiscal, database, synchronization or hardware implementation"
+      ],
+      "acceptanceCriteria": [
+        "Every permitted business action calls the named Rifad draft contract through a mock adapter.",
+        "No business mutation is implemented as component-local authority.",
+        "Tablet layout preserves catalog/ticket hierarchy and mirrors structurally in RTL.",
+        "Phone layout uses separate catalog and ticket surfaces rather than shrinking the tablet split.",
+        "Windows keyboard/mouse interaction does not remove touch-sized controls.",
+        "Cash completion uses one stable idempotent command identity and exact Rifad Money values.",
+        "Loading, invalid PIN, empty ticket, no search results, under-tender, payment rejection, print failure and delivery-unknown are visibly testable.",
+        "A refresh/restart test restores the declared mock-local state for the active flow.",
+        "The UI uses Rifad branding and no unapproved visual donor pattern.",
+        "Visual, interaction and contract tests reference POS-FLOW-001 and its screen/action IDs."
+      ]
+    },
+    {"id": "POS-FLOW-002", "name": "Restaurant Open Ticket to KDS to Payment", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["35. تدفق مطعم: Open ticket ثم KDS ثم الدفع"], "confidence": "documented"}},
+    {"id": "POS-FLOW-003", "name": "Offline Sale and Synchronization", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["36. تدفق بيع Offline ثم المزامنة"], "confidence": "documented"}},
+    {"id": "POS-FLOW-004", "name": "Refund", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["37. تدفق Refund"], "confidence": "documented"}},
+    {"id": "POS-FLOW-005", "name": "Cash Shift", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["38. تدفق وردية نقدية"], "confidence": "documented"}},
+    {"id": "BO-FLOW-001", "name": "Purchase Order to Inventory", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["39. تدفق Purchase Order إلى المخزون"], "confidence": "documented"}}
+  ]
+}

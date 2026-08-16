@@ -170,7 +170,7 @@ The mandatory capability workflow is documented in `docs/adoption/CAPABILITY_ADO
 - React + TypeScript + Vite for the primary product UI.
 - Windows desktop uses an application shell around the same product UI.
 - Tablet/mobile uses an installable PWA with application-like behavior.
-- Loyverse is the primary UX/product behavior reference.
+- Loyverse is the primary functional/workflow and ergonomic behavior reference; Rifad owns final visual authority.
 - ZATCA is core.
 - Accounting engines remain replaceable integrations.
 - No Odoo/FloCafe/ERPNext schema is the Rifad public data contract.

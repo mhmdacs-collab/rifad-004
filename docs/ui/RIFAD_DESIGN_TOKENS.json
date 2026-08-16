@@ -1,0 +1,35 @@
+{
+  "version": "0.1.0",
+  "status": "provisional-for-POS-FLOW-001",
+  "origin": "Current approved Rifad POS prototype palette",
+  "purpose": "Prevent visual invention while the coded Rifad design system is created.",
+  "colors": {
+    "brandPrimary": "#16bad3",
+    "brandPrimaryDark": "#079bb2",
+    "brandPrimarySoft": "#e8fafd",
+    "textPrimary": "#111827",
+    "textMuted": "#6b7280",
+    "border": "#e5e7eb",
+    "canvas": "#f5f7f8",
+    "surface": "#ffffff",
+    "danger": "#dc2626",
+    "success": "#16a34a",
+    "warning": "#f59e0b"
+  },
+  "typography": {
+    "fontFamily": ["Tahoma", "Segoe UI", "Arial", "sans-serif"],
+    "numericEmphasis": "Use heavier weight for totals, money and operational counters."
+  },
+  "direction": {
+    "default": "rtl",
+    "logicalPropertiesRequired": true,
+    "ltrValueTypes": ["email", "url", "sku", "barcode", "ip-address", "device-id"]
+  },
+  "interaction": {
+    "touchFirst": true,
+    "primaryActionUsesBrandColor": true,
+    "operationalStateRequiresTextAndColor": true,
+    "genericAdminTemplateProhibited": true
+  },
+  "changeRule": "Add or change tokens only through an approved visual decision linked to affected screen/flow IDs."
+}
