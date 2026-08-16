@@ -5,6 +5,18 @@ import { TicketPanel } from "../components/TicketPanel";
 import { formatMoney } from "../domain/money";
 import type { EmployeeSession, Product, SalePage, Ticket, TicketLine } from "../domain/models";
 
+type SalesScreenMode = "touch" | "basic";
+const SALE_SCREEN_MODE_KEY = "rifad.pos.sale-screen-mode.v1";
+
+const readSaleScreenMode = (): SalesScreenMode => {
+  if (typeof window === "undefined") return "touch";
+  try {
+    return window.localStorage.getItem(SALE_SCREEN_MODE_KEY) === "basic" ? "basic" : "touch";
+  } catch {
+    return "touch";
+  }
+};
+
 type SalesScreenProps = {
   employee: EmployeeSession | null;
   ticket: Ticket;
@@ -40,9 +52,12 @@ export function SalesScreen(props: SalesScreenProps) {
     onPlacePageProduct, onRemovePageProduct, onAddProduct, onSetQuantity,
     onRemoveLine, onSaveTicket, onCheckout,
   } = props;
+
   const [mobileTicketOpen, setMobileTicketOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [screenMode, setScreenMode] = useState<SalesScreenMode>(readSaleScreenMode);
   const [editMode, setEditMode] = useState(false);
   const [pickerSlot, setPickerSlot] = useState<number | null>(null);
   const [pageDialogOpen, setPageDialogOpen] = useState(false);
@@ -59,10 +74,23 @@ export function SalesScreen(props: SalesScreenProps) {
     if (pagePressTimer.current) clearTimeout(pagePressTimer.current);
   }, []);
 
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(SALE_SCREEN_MODE_KEY, screenMode);
+    } catch {
+      // Device preference persistence is best-effort in this UI prototype.
+    }
+    if (screenMode === "basic") {
+      setEditMode(false);
+      setSearchOpen(true);
+    }
+  }, [screenMode]);
+
   const itemCount = ticket.lines.reduce((count, line) => count + line.quantity, 0);
   const activePage = salePages.find((page) => page.id === activePageId) ?? salePages[0];
   const productById = useMemo(() => new Map(allProducts.map((product) => [product.id, product])), [allProducts]);
   const filteredMode = query.trim().length > 0 || activePage?.isDefault;
+  const isBasicMode = screenMode === "basic";
 
   const openLineEditor = (line: TicketLine) => {
     setEditingLine(line);
@@ -125,7 +153,7 @@ export function SalesScreen(props: SalesScreenProps) {
       });
 
   return (
-    <main className="pos-workspace loyverse-shell" data-screen-id={editMode ? "POS-SCREEN-026" : "POS-SCREEN-003"}>
+    <main className={`pos-workspace loyverse-shell sale-screen-${screenMode}`} data-screen-id={editMode ? "POS-SCREEN-026" : "POS-SCREEN-003"}>
       <section className="sales-catalog">
         <header className={`workspace-header ${editMode ? "workspace-header--editing" : ""}`}>
           {editMode ? (
@@ -138,10 +166,13 @@ export function SalesScreen(props: SalesScreenProps) {
           ) : (
             <>
               <button className="appbar-icon" type="button" onClick={() => setMenuOpen(true)} aria-label="فتح القائمة"><Icon name="menu" /></button>
-              <strong className="current-page-title">{activePage?.name ?? "المبيعات"}</strong>
+              <strong className="current-page-title">{isBasicMode ? "شاشة أساسية" : (activePage?.name ?? "المبيعات")}</strong>
               <div className="appbar-spacer" />
-              {searchOpen ? (
-                <label className="catalog-search"><input autoFocus value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder="اسم المنتج أو SKU" aria-label="البحث عن منتج" /><button type="button" onClick={() => { setSearchOpen(false); onQueryChange(""); }} aria-label="إغلاق البحث">×</button></label>
+              {isBasicMode || searchOpen ? (
+                <label className={`catalog-search ${isBasicMode ? "catalog-search--always" : ""}`}>
+                  <input autoFocus={isBasicMode || searchOpen} value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder={isBasicMode ? "امسح الباركود أو ابحث باسم الصنف / SKU" : "اسم المنتج أو SKU"} aria-label="البحث عن منتج" />
+                  {!isBasicMode ? <button type="button" onClick={() => { setSearchOpen(false); onQueryChange(""); }} aria-label="إغلاق البحث">×</button> : null}
+                </label>
               ) : <button className="appbar-icon" type="button" onClick={() => setSearchOpen(true)} aria-label="البحث"><Icon name="search" /></button>}
             </>
           )}
@@ -149,36 +180,62 @@ export function SalesScreen(props: SalesScreenProps) {
 
         <InlineNotice message={errorMessage} onDismiss={onDismissError} />
 
-        <div className={`product-area ${editMode ? "product-area--editing" : ""}`}>
-          <div className="product-grid" aria-busy={busy === "catalog" || busy === "sale-layout"}>
-            {gridContent}
-            {busy !== "catalog" && filteredMode && products.length === 0 ? <div className="empty-products"><Icon name="search" size={28} /><strong>لا توجد نتائج</strong><span>جرّب عبارة بحث أخرى.</span></div> : null}
+        {isBasicMode ? (
+          <div className="basic-sale-surface">
+            {query.trim().length === 0 ? (
+              <div className="basic-sale-empty">
+                <Icon name="search" size={42} />
+                <strong>جاهز للبحث أو الباركود</strong>
+                <span>امسح الباركود مباشرة أو اكتب اسم الصنف أو SKU في خانة البحث.</span>
+              </div>
+            ) : (
+              <div className="basic-product-results" aria-busy={busy === "catalog"}>
+                {products.map((product) => (
+                  <button type="button" className="basic-product-row" key={product.id} onClick={() => onAddProduct(product.id)} disabled={busy === `product:${product.id}`}>
+                    <span className={`basic-product-swatch tone-${product.tone}`}>{product.abbreviation}</span>
+                    <strong>{product.name}</strong>
+                    <small dir="ltr">{formatMoney(product.price)}</small>
+                    <Icon name="plus" size={20} />
+                  </button>
+                ))}
+                {busy !== "catalog" && products.length === 0 ? <div className="basic-no-results"><strong>لا توجد نتائج</strong><span>تحقق من الباركود أو جرّب اسمًا آخر.</span></div> : null}
+              </div>
+            )}
           </div>
-        </div>
+        ) : (
+          <>
+            <div className={`product-area ${editMode ? "product-area--editing" : ""}`}>
+              <div className="product-grid" aria-busy={busy === "catalog" || busy === "sale-layout"}>
+                {gridContent}
+                {busy !== "catalog" && filteredMode && products.length === 0 ? <div className="empty-products"><Icon name="search" size={28} /><strong>لا توجد نتائج</strong><span>جرّب عبارة بحث أخرى.</span></div> : null}
+              </div>
+            </div>
 
-        <nav className={`sale-page-tabs ${editMode ? "sale-page-tabs--editing" : ""}`} aria-label="صفحات البيع">
-          {salePages.filter((page) => !page.isDefault).map((page) => (
-            <button
-              type="button"
-              key={page.id}
-              className={activePageId === page.id ? "active" : ""}
-              title="اضغط مطولًا لإعدادات الصفحة"
-              onPointerDown={() => startPagePress(page)}
-              onPointerUp={cancelPagePress}
-              onPointerLeave={cancelPagePress}
-              onPointerCancel={cancelPagePress}
-              onContextMenu={(event) => { event.preventDefault(); openPageMenu(page); }}
-              onClick={() => {
-                if (longPressTriggered.current) { longPressTriggered.current = false; return; }
-                selectPage(page);
-              }}
-            >
-              {page.name}
-            </button>
-          ))}
-          {salePages.filter((page) => page.isDefault).map((page) => <button type="button" key={page.id} className={`grid-page ${activePageId === page.id ? "active" : ""}`} onClick={() => selectPage(page)} aria-label="كافة العناصر"><Icon name="grid" size={24} /></button>)}
-          <button type="button" className="add-sale-page" onClick={() => setPageDialogOpen(true)} aria-label="إضافة صفحة بيع"><Icon name="plus" size={22} /></button>
-        </nav>
+            <nav className={`sale-page-tabs ${editMode ? "sale-page-tabs--editing" : ""}`} aria-label="صفحات البيع">
+              {salePages.filter((page) => !page.isDefault).map((page) => (
+                <button
+                  type="button"
+                  key={page.id}
+                  className={activePageId === page.id ? "active" : ""}
+                  title="اضغط مطولًا لإعدادات الصفحة"
+                  onPointerDown={() => startPagePress(page)}
+                  onPointerUp={cancelPagePress}
+                  onPointerLeave={cancelPagePress}
+                  onPointerCancel={cancelPagePress}
+                  onContextMenu={(event) => { event.preventDefault(); openPageMenu(page); }}
+                  onClick={() => {
+                    if (longPressTriggered.current) { longPressTriggered.current = false; return; }
+                    selectPage(page);
+                  }}
+                >
+                  {page.name}
+                </button>
+              ))}
+              {salePages.filter((page) => page.isDefault).map((page) => <button type="button" key={page.id} className={`grid-page ${activePageId === page.id ? "active" : ""}`} onClick={() => selectPage(page)} aria-label="كافة العناصر"><Icon name="grid" size={24} /></button>)}
+              <button type="button" className="add-sale-page" onClick={() => setPageDialogOpen(true)} aria-label="إضافة صفحة بيع"><Icon name="plus" size={22} /></button>
+            </nav>
+          </>
+        )}
 
         <button className="mobile-checkout primary-button" type="button" disabled={itemCount === 0} onClick={() => setMobileTicketOpen(true)} aria-expanded={mobileTicketOpen}>عرض التذكرة · {formatMoney(ticket.total)}</button>
       </section>
@@ -190,7 +247,9 @@ export function SalesScreen(props: SalesScreenProps) {
 
       {mobileTicketOpen ? <section className="mobile-ticket-surface" aria-label="التذكرة الحالية على الهاتف"><button className="mobile-ticket-close" type="button" onClick={() => setMobileTicketOpen(false)}><Icon name="arrow" size={19} /> العودة إلى المنتجات</button><TicketPanel ticket={ticket} editable lastTouchedLineId={lastTouchedLineId} onEditLine={openLineEditor} /><div className="ticket-actions"><button type="button" onClick={onSaveTicket} disabled={itemCount === 0 || busy === "save-ticket"}>حفظ</button><button type="button" onClick={onCheckout} disabled={itemCount === 0 || busy === "checkout"}>السداد</button></div></section> : null}
 
-      {menuOpen ? <div className="pos-drawer-backdrop" role="presentation" onClick={() => setMenuOpen(false)}><aside className="pos-drawer" aria-label="قائمة نقطة البيع" onClick={(event) => event.stopPropagation()}><header><strong>{employee?.employeeName ?? "موظف رفاد"}</strong><span>{employee?.roleName ?? "أمين صندوق"}</span></header><button type="button" className="active"><Icon name="receipt" />المبيعات</button><button type="button" disabled>الإيصالات</button><button type="button" disabled>الوردية</button><button type="button" disabled>العناصر</button><button type="button" disabled>الإعدادات</button></aside></div> : null}
+      {menuOpen ? <div className="pos-drawer-backdrop" role="presentation" onClick={() => setMenuOpen(false)}><aside className="pos-drawer" aria-label="قائمة نقطة البيع" onClick={(event) => event.stopPropagation()}><header><strong>{employee?.employeeName ?? "موظف رفاد"}</strong><span>{employee?.roleName ?? "أمين صندوق"}</span></header><button type="button" className="active"><Icon name="receipt" />المبيعات</button><button type="button" disabled>الإيصالات</button><button type="button" disabled>الوردية</button><button type="button" disabled>العناصر</button><button type="button" onClick={() => { setMenuOpen(false); setSettingsOpen(true); }}><Icon name="settings" />الإعدادات</button></aside></div> : null}
+
+      {settingsOpen ? <div className="dialog-backdrop" role="presentation" onClick={() => setSettingsOpen(false)}><section className="layout-dialog pos-device-settings" role="dialog" aria-modal="true" aria-labelledby="pos-settings-title" onClick={(event) => event.stopPropagation()}><header><button type="button" onClick={() => setSettingsOpen(false)} aria-label="إغلاق">×</button><h2 id="pos-settings-title">إعدادات نقطة البيع</h2></header><div className="device-settings-section"><div className="device-settings-copy"><strong>نمط شاشة البيع</strong><span>هذا الإعداد خاص بهذا الجهاز ويمكن أن يختلف بين أجهزة نفس المنشأة.</span></div><div className="screen-mode-options"><button type="button" className={screenMode === "touch" ? "active" : ""} onClick={() => { setScreenMode("touch"); onQueryChange(""); }}><span className="screen-mode-icon"><Icon name="grid" size={24} /></span><strong>شاشة لمس</strong><small>شبكة أصناف وصفحات سريعة للمس.</small></button><button type="button" className={screenMode === "basic" ? "active" : ""} onClick={() => { setScreenMode("basic"); onQueryChange(""); }}><span className="screen-mode-icon"><Icon name="search" size={24} /></span><strong>شاشة أساسية</strong><small>بحث وباركود أولًا للبيع بالتجزئة.</small></button></div></div><button className="primary-button settings-done" type="button" onClick={() => setSettingsOpen(false)}>تم</button></section></div> : null}
 
       {pageMenu ? <div className="dialog-backdrop page-menu-backdrop" role="presentation" onClick={() => setPageMenu(null)}><section className="page-action-menu" role="dialog" aria-modal="true" aria-label={`إعدادات صفحة ${pageMenu.name}`} onClick={(event) => event.stopPropagation()}><header><strong>{pageMenu.name}</strong><button type="button" onClick={() => setPageMenu(null)} aria-label="إغلاق">×</button></header><button type="button" onClick={() => { setEditMode(true); setPageMenu(null); }}><Icon name="grid" size={19} />تعديل محتوى الصفحة</button><button type="button" onClick={() => { setRenameName(pageMenu.name); setRenamingPage(pageMenu); setPageMenu(null); }}><span className="page-action-glyph">✎</span>إعادة تسمية</button><button type="button" onClick={() => void onMovePage(pageMenu.id, "previous")}><span className="page-action-glyph">→</span>التحريك إلى اليمين</button><button type="button" onClick={() => void onMovePage(pageMenu.id, "next")}><span className="page-action-glyph">←</span>التحريك إلى اليسار</button><button type="button" className="danger-action" onClick={async () => { if (await onDeletePage(pageMenu.id)) setPageMenu(null); }}><Icon name="trash" size={18} />حذف الصفحة</button></section></div> : null}
 
