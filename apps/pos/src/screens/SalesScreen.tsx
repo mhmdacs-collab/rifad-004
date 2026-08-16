@@ -110,8 +110,6 @@ export function SalesScreen(props: SalesScreenProps) {
       setEditMode(false);
       setSearchOpen(true);
     } else {
-      // Returning to touch mode must restore the normal app bar instead of leaving
-      // the always-open retail search field behind.
       setSearchOpen(false);
     }
   }, [screenMode]);
@@ -128,7 +126,6 @@ export function SalesScreen(props: SalesScreenProps) {
   }, [selectedOrderType, visibleOrderTypes]);
 
   useEffect(() => {
-    // A new ticket starts without a forced order type. Choosing one is optional.
     setSelectedOrderType(null);
   }, [ticket.sequence]);
 
@@ -137,6 +134,9 @@ export function SalesScreen(props: SalesScreenProps) {
   const productById = useMemo(() => new Map(allProducts.map((product) => [product.id, product])), [allProducts]);
   const filteredMode = query.trim().length > 0 || activePage?.isDefault;
   const isBasicMode = screenMode === "basic";
+  const effectiveOrderType = visibleOrderTypes.length === 1 ? visibleOrderTypes[0] : selectedOrderType;
+  const showTicketOrderType = !isBasicMode && itemCount > 0 && visibleOrderTypes.length > 0;
+  const orderTypeRequired = showTicketOrderType && visibleOrderTypes.length > 1 && !effectiveOrderType;
 
   const openLineEditor = (line: TicketLine) => {
     setEditingLine(line);
@@ -177,6 +177,28 @@ export function SalesScreen(props: SalesScreenProps) {
       ? current.filter((value) => value !== orderType)
       : ORDER_TYPE_OPTIONS.map((option) => option.id).filter((value) => value === orderType || current.includes(value)));
   };
+
+  const renderOrderTypeSelector = () => showTicketOrderType ? (
+    <div className={`ticket-order-type ${orderTypeRequired ? "ticket-order-type--required" : ""}`} aria-label="نوع الطلب">
+      <div className="ticket-order-type-head">
+        <strong>نوع الطلب</strong>
+        <small>{visibleOrderTypes.length === 1 ? "محدد تلقائيًا" : (orderTypeRequired ? "اختر للمتابعة" : "تم الاختيار")}</small>
+      </div>
+      <div className="order-type-options">
+        {ORDER_TYPE_OPTIONS.filter((option) => visibleOrderTypes.includes(option.id)).map((option) => (
+          <button
+            type="button"
+            key={option.id}
+            className={effectiveOrderType === option.id ? "active" : ""}
+            aria-pressed={effectiveOrderType === option.id}
+            onClick={() => setSelectedOrderType(option.id)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  ) : null;
 
   const renderProduct = (product: Product, slotIndex?: number) => {
     if (editMode && slotIndex !== undefined) {
@@ -256,25 +278,6 @@ export function SalesScreen(props: SalesScreenProps) {
           </div>
         ) : (
           <>
-            {visibleOrderTypes.length > 0 ? (
-              <div className="order-type-strip" aria-label="نوع الطلب">
-                <span className="order-type-label">نوع الطلب <small>اختياري</small></span>
-                <div className="order-type-options">
-                  {ORDER_TYPE_OPTIONS.filter((option) => visibleOrderTypes.includes(option.id)).map((option) => (
-                    <button
-                      type="button"
-                      key={option.id}
-                      className={selectedOrderType === option.id ? "active" : ""}
-                      aria-pressed={selectedOrderType === option.id}
-                      onClick={() => setSelectedOrderType((current) => current === option.id ? null : option.id)}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
             <div className={`product-area ${editMode ? "product-area--editing" : ""}`}>
               <div className="product-grid" aria-busy={busy === "catalog" || busy === "sale-layout"}>
                 {gridContent}
@@ -313,14 +316,15 @@ export function SalesScreen(props: SalesScreenProps) {
 
       <div className="ticket-column">
         <TicketPanel ticket={ticket} editable lastTouchedLineId={lastTouchedLineId} onEditLine={openLineEditor} />
-        <div className="ticket-actions"><button type="button" onClick={onSaveTicket} disabled={itemCount === 0 || busy === "save-ticket"}>حفظ</button><button type="button" onClick={onCheckout} disabled={itemCount === 0 || busy === "checkout"}>السداد</button></div>
+        {renderOrderTypeSelector()}
+        <div className="ticket-actions"><button type="button" onClick={onSaveTicket} disabled={itemCount === 0 || orderTypeRequired || busy === "save-ticket"}>حفظ</button><button type="button" onClick={onCheckout} disabled={itemCount === 0 || orderTypeRequired || busy === "checkout"}>دفع</button></div>
       </div>
 
-      {mobileTicketOpen ? <section className="mobile-ticket-surface" aria-label="التذكرة الحالية على الهاتف"><button className="mobile-ticket-close" type="button" onClick={() => setMobileTicketOpen(false)}><Icon name="arrow" size={19} /> العودة إلى المنتجات</button><TicketPanel ticket={ticket} editable lastTouchedLineId={lastTouchedLineId} onEditLine={openLineEditor} /><div className="ticket-actions"><button type="button" onClick={onSaveTicket} disabled={itemCount === 0 || busy === "save-ticket"}>حفظ</button><button type="button" onClick={onCheckout} disabled={itemCount === 0 || busy === "checkout"}>السداد</button></div></section> : null}
+      {mobileTicketOpen ? <section className="mobile-ticket-surface" aria-label="التذكرة الحالية على الهاتف"><button className="mobile-ticket-close" type="button" onClick={() => setMobileTicketOpen(false)}><Icon name="arrow" size={19} /> العودة إلى المنتجات</button><TicketPanel ticket={ticket} editable lastTouchedLineId={lastTouchedLineId} onEditLine={openLineEditor} />{renderOrderTypeSelector()}<div className="ticket-actions"><button type="button" onClick={onSaveTicket} disabled={itemCount === 0 || orderTypeRequired || busy === "save-ticket"}>حفظ</button><button type="button" onClick={onCheckout} disabled={itemCount === 0 || orderTypeRequired || busy === "checkout"}>دفع</button></div></section> : null}
 
       {menuOpen ? <div className="pos-drawer-backdrop" role="presentation" onClick={() => setMenuOpen(false)}><aside className="pos-drawer" aria-label="قائمة نقطة البيع" onClick={(event) => event.stopPropagation()}><header><strong>{employee?.employeeName ?? "موظف رفاد"}</strong><span>{employee?.roleName ?? "أمين صندوق"}</span></header><button type="button" className="active"><Icon name="receipt" />المبيعات</button><button type="button" disabled>الإيصالات</button><button type="button" disabled>الوردية</button><button type="button" disabled>العناصر</button><button type="button" onClick={() => { setMenuOpen(false); setSettingsOpen(true); }}><Icon name="settings" />الإعدادات</button></aside></div> : null}
 
-      {settingsOpen ? <div className="dialog-backdrop" role="presentation" onClick={() => setSettingsOpen(false)}><section className="layout-dialog pos-device-settings" role="dialog" aria-modal="true" aria-labelledby="pos-settings-title" onClick={(event) => event.stopPropagation()}><header><button type="button" onClick={() => setSettingsOpen(false)} aria-label="إغلاق">×</button><h2 id="pos-settings-title">إعدادات نقطة البيع</h2></header><div className="device-settings-section"><div className="device-settings-copy"><strong>نمط شاشة البيع</strong><span>هذا الإعداد خاص بهذا الجهاز ويمكن أن يختلف بين أجهزة نفس المنشأة.</span></div><div className="screen-mode-options"><button type="button" className={screenMode === "touch" ? "active" : ""} onClick={() => { setScreenMode("touch"); onQueryChange(""); }}><span className="screen-mode-icon"><Icon name="grid" size={24} /></span><strong>شاشة لمس</strong><small>شبكة أصناف وصفحات سريعة للمس.</small></button><button type="button" className={screenMode === "basic" ? "active" : ""} onClick={() => { setScreenMode("basic"); onQueryChange(""); }}><span className="screen-mode-icon"><Icon name="search" size={24} /></span><strong>شاشة أساسية</strong><small>بحث وباركود أولًا للبيع بالتجزئة.</small></button></div></div><div className="device-settings-section device-settings-section--order-types"><div className="device-settings-copy"><strong>أنواع الطلب في شاشة اللمس</strong><span>اختر الأنواع التي تريد إظهارها للكاشير. اتركها كلها غير مفعلة لإخفاء الشريط بالكامل. اختيار نوع الطلب اختياري ولا يمنع السداد.</span></div><div className="order-type-settings">{ORDER_TYPE_OPTIONS.map((option) => { const enabled = visibleOrderTypes.includes(option.id); return <button type="button" key={option.id} className={enabled ? "active" : ""} aria-pressed={enabled} onClick={() => toggleVisibleOrderType(option.id)}><span>{enabled ? <Icon name="check" size={18} /> : null}</span><strong>{option.label}</strong></button>; })}</div></div><button className="primary-button settings-done" type="button" onClick={() => setSettingsOpen(false)}>تم</button></section></div> : null}
+      {settingsOpen ? <div className="dialog-backdrop" role="presentation" onClick={() => setSettingsOpen(false)}><section className="layout-dialog pos-device-settings" role="dialog" aria-modal="true" aria-labelledby="pos-settings-title" onClick={(event) => event.stopPropagation()}><header><button type="button" onClick={() => setSettingsOpen(false)} aria-label="إغلاق">×</button><h2 id="pos-settings-title">إعدادات نقطة البيع</h2></header><div className="device-settings-section"><div className="device-settings-copy"><strong>نمط شاشة البيع</strong><span>هذا الإعداد خاص بهذا الجهاز ويمكن أن يختلف بين أجهزة نفس المنشأة.</span></div><div className="screen-mode-options"><button type="button" className={screenMode === "touch" ? "active" : ""} onClick={() => { setScreenMode("touch"); onQueryChange(""); }}><span className="screen-mode-icon"><Icon name="grid" size={24} /></span><strong>شاشة لمس</strong><small>شبكة أصناف وصفحات سريعة للمس.</small></button><button type="button" className={screenMode === "basic" ? "active" : ""} onClick={() => { setScreenMode("basic"); onQueryChange(""); }}><span className="screen-mode-icon"><Icon name="search" size={24} /></span><strong>شاشة أساسية</strong><small>بحث وباركود أولًا للبيع بالتجزئة.</small></button></div></div><div className="device-settings-section device-settings-section--order-types"><div className="device-settings-copy"><strong>أنواع الطلب في شاشة اللمس</strong><span>اختر الأنواع التي تريد إظهارها للكاشير. إذا فعّلت أكثر من نوع يجب اختيار أحدها بعد إضافة أول صنف. إذا فعّلت نوعًا واحدًا يُحدد تلقائيًا. اتركها كلها غير مفعلة لإخفاء الخيار.</span></div><div className="order-type-settings">{ORDER_TYPE_OPTIONS.map((option) => { const enabled = visibleOrderTypes.includes(option.id); return <button type="button" key={option.id} className={enabled ? "active" : ""} aria-pressed={enabled} onClick={() => toggleVisibleOrderType(option.id)}><span>{enabled ? <Icon name="check" size={18} /> : null}</span><strong>{option.label}</strong></button>; })}</div></div><button className="primary-button settings-done" type="button" onClick={() => setSettingsOpen(false)}>تم</button></section></div> : null}
 
       {pageMenu ? <div className="dialog-backdrop page-menu-backdrop" role="presentation" onClick={() => setPageMenu(null)}><section className="page-action-menu" role="dialog" aria-modal="true" aria-label={`إعدادات صفحة ${pageMenu.name}`} onClick={(event) => event.stopPropagation()}><header><strong>{pageMenu.name}</strong><button type="button" onClick={() => setPageMenu(null)} aria-label="إغلاق">×</button></header><button type="button" onClick={() => { setEditMode(true); setPageMenu(null); }}><Icon name="grid" size={19} />تعديل محتوى الصفحة</button><button type="button" onClick={() => { setRenameName(pageMenu.name); setRenamingPage(pageMenu); setPageMenu(null); }}><span className="page-action-glyph">✎</span>إعادة تسمية</button><button type="button" onClick={() => void onMovePage(pageMenu.id, "previous")}><span className="page-action-glyph">→</span>التحريك إلى اليمين</button><button type="button" onClick={() => void onMovePage(pageMenu.id, "next")}><span className="page-action-glyph">←</span>التحريك إلى اليسار</button><button type="button" className="danger-action" onClick={async () => { if (await onDeletePage(pageMenu.id)) setPageMenu(null); }}><Icon name="trash" size={18} />حذف الصفحة</button></section></div> : null}
 
