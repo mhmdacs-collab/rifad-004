@@ -1,5 +1,6 @@
 import type {
   Customer,
+  CustomerDetails,
   DebtLedgerEntry,
   DeviceSession,
   EmployeeSession,
@@ -73,13 +74,18 @@ export interface SaleLayoutContract {
 
 export interface CustomerCreditContract {
   search(input: { query: string }): Promise<readonly Customer[]>;
-  create(input: { commandId: string; name: string; mobile: string }): Promise<Customer>;
+  create(input: {
+    commandId: string;
+    name: string;
+    mobile: string;
+    details: CustomerDetails;
+  }): Promise<Customer>;
   ledger(input: { customerId: string }): Promise<readonly DebtLedgerEntry[]>;
   chargeTicket(input: {
     commandId: string;
     customerId: string;
     ticketId: string;
-  }): Promise<{ customer: Customer; nextTicket: Ticket }>;
+  }): Promise<{ customer: Customer; receipt: Receipt }>;
   settle(input: {
     commandId: string;
     customerId: string;
