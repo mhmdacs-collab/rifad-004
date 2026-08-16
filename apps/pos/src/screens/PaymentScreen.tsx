@@ -1,8 +1,8 @@
 import { Brand } from "../components/Brand";
 import { Icon } from "../components/Icon";
 import { InlineNotice } from "../components/InlineNotice";
+import { MoneyAmount } from "../components/MoneyAmount";
 import { TicketPanel } from "../components/TicketPanel";
-import { formatMoney } from "../domain/money";
 import type { Ticket } from "../domain/models";
 
 type PaymentScreenProps = {
@@ -25,9 +25,9 @@ export function PaymentScreen({ ticket, busy, errorMessage, onDismissError, onBa
         </header>
 
         <div className="payment-content payment-content--rich">
-          <div className="payment-amount-block">
+          <div className="payment-amount-block payment-amount-block--centered">
             <span className="eyebrow">المبلغ المطلوب</span>
-            <h1 dir="ltr">{formatMoney(ticket.total)}</h1>
+            <h1><MoneyAmount value={ticket.total} /></h1>
             <p>اختر طريقة الدفع المناسبة لإتمام عملية البيع.</p>
           </div>
 
@@ -38,7 +38,7 @@ export function PaymentScreen({ ticket, busy, errorMessage, onDismissError, onBa
             <span>اختر طريقة واحدة للمتابعة</span>
           </div>
 
-          <div className="payment-methods payment-methods--cards">
+          <div className="payment-methods payment-methods--cards payment-methods--two">
             <button type="button" className="payment-method payment-method--cash" onClick={onCash} disabled={busy}>
               <span className="payment-icon payment-icon--cash"><Icon name="cash" size={30} /></span>
               <span className="payment-method-copy"><strong>نقدًا</strong><small>جاهز للعمل دون اتصال</small></span>
@@ -46,15 +46,9 @@ export function PaymentScreen({ ticket, busy, errorMessage, onDismissError, onBa
               <Icon name="chevron" />
             </button>
 
-            <button type="button" className="payment-method payment-method--brand" disabled aria-describedby="mada-disabled">
+            <button type="button" className="payment-method payment-method--brand payment-method--mada" disabled aria-describedby="mada-disabled">
               <span className="payment-brand-mark payment-brand-mark--mada" aria-hidden="true">mada</span>
-              <span className="payment-method-copy"><strong>شبكة / مدى</strong><small id="mada-disabled">يتطلب ربط جهاز الدفع</small></span>
-              <span className="soon-badge">قريبًا</span>
-            </button>
-
-            <button type="button" className="payment-method payment-method--brand" disabled aria-describedby="apple-disabled">
-              <span className="payment-brand-mark payment-brand-mark--apple" aria-hidden="true"><b></b><span>Pay</span></span>
-              <span className="payment-method-copy"><strong>Apple Pay</strong><small id="apple-disabled">متاح بعد ربط جهاز الدفع</small></span>
+              <span className="payment-method-copy"><strong>شبكة / مدى</strong><small id="mada-disabled">يشمل المدفوعات عبر جهاز الشبكة بعد الربط</small></span>
               <span className="soon-badge">قريبًا</span>
             </button>
           </div>
