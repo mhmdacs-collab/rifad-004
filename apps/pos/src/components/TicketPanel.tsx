@@ -8,6 +8,7 @@ type TicketPanelProps = {
   editable?: boolean;
   lastTouchedLineId?: string | null;
   onEditLine?: (line: TicketLine) => void;
+  variant?: "sale" | "checkout";
 };
 
 export function TicketPanel({
@@ -15,6 +16,7 @@ export function TicketPanel({
   editable = false,
   lastTouchedLineId = null,
   onEditLine,
+  variant = "sale",
 }: TicketPanelProps) {
   const linesRef = useRef<HTMLDivElement | null>(null);
 
@@ -29,7 +31,7 @@ export function TicketPanel({
   }, [lastTouchedLineId, ticket.updatedAt]);
 
   return (
-    <aside className="ticket-panel" aria-label="التذكرة الحالية">
+    <aside className={`ticket-panel ticket-panel--${variant}`} aria-label="التذكرة الحالية">
       <header className="ticket-header">
         <div className="ticket-title-block">
           <h2>تذكرة</h2>
