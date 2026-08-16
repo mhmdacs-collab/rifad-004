@@ -61,6 +61,10 @@ export default function App() {
         onSaveTicket={() => void flow.saveOpenTicket()}
         onCheckout={() => void flow.beginCheckout()}
         onOpenReceipts={() => void flow.openReceipts()}
+        onSearchCustomers={flow.searchCustomers}
+        onCreateCustomer={flow.createCustomer}
+        onChargeCredit={flow.chargeTicketToCustomer}
+        onSettleDebt={flow.settleCustomerDebt}
       />
     );
   }
