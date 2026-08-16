@@ -50,7 +50,7 @@ describe("POS-FLOW-006", () => {
 
     fireEvent.contextMenu(screen.getByRole("button", { name: "المشاوي" }));
     expect(await screen.findByRole("button", { name: "حذف الصفحة" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "إعادة تسمية" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /إعادة تسمية/ })).toBeInTheDocument();
   });
 
   it("creates a custom sale page and places a product through the layout contract", async () => {
