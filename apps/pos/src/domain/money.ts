@@ -55,7 +55,6 @@ export const suggestedCashHalalas = (totalHalalas: number): readonly number[] =>
   }
 
   // 120 is useful only when the sale itself is already close to 120 (e.g. 108).
-  // Do not leak it into unrelated low totals such as 54 SAR.
   if (riyals >= 100 && riyals < 120) {
     suggestions.add(12000);
   }
@@ -63,6 +62,12 @@ export const suggestedCashHalalas = (totalHalalas: number): readonly number[] =>
   // Strong cash checkpoints.
   suggestions.add(roundStrictlyUp(totalHalalas, 5000));
   suggestions.add(roundStrictlyUp(totalHalalas, 10000));
+
+  // 200 SAR is a core Saudi cash checkpoint for any sale below 200.
+  if (totalHalalas < 20000) {
+    suggestions.add(20000);
+  }
+
   suggestions.add(roundStrictlyUp(totalHalalas, 50000));
 
   return [...suggestions]
