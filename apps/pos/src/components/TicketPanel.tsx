@@ -58,13 +58,15 @@ export function TicketPanel({
                 <div className="checkout-ticket-row" data-testid="checkout-ticket-row">
                   <div className="checkout-ticket-row-copy">
                     <strong className="checkout-ticket-row-name">{line.name}</strong>
+                  </div>
+                  <div className="checkout-ticket-row-values">
+                    <strong className="checkout-ticket-row-total"><MoneyAmount value={lineTotal} /></strong>
                     <div className="checkout-ticket-row-meta" dir="ltr">
                       <b>{line.quantity}</b>
                       <span>×</span>
                       <MoneyAmount value={line.unitPrice} />
                     </div>
                   </div>
-                  <strong className="checkout-ticket-row-total"><MoneyAmount value={lineTotal} /></strong>
                 </div>
               ) : (
                 <button
