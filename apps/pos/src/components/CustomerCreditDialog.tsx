@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { MoneyAmount } from "./MoneyAmount";
 import type { Customer, Money } from "../domain/models";
 
@@ -14,6 +14,8 @@ type CustomerCreditDialogProps = {
   onChargeCredit: (customerId: string) => Promise<Customer | null>;
   onSettleDebt: (customerId: string) => Promise<Customer | null>;
 };
+
+const digitsOnly = (value: string) => value.replace(/\D/g, "");
 
 export function CustomerCreditDialog({
   mode,
@@ -38,7 +40,17 @@ export function CustomerCreditDialog({
     setSearching(true);
     setMessage(null);
     try {
-      setResults(await onSearch(value));
+      const items = await onSearch(value);
+      const text = value.trim().toLocaleLowerCase("ar");
+      const mobile = digitsOnly(value);
+      if (!text) {
+        setResults(items);
+        return;
+      }
+      setResults(items.filter((customer) =>
+        customer.name.toLocaleLowerCase("ar").includes(text)
+        || (mobile.length > 0 && digitsOnly(customer.mobile).includes(mobile)),
+      ));
     } finally {
       setSearching(false);
     }
@@ -54,7 +66,7 @@ export function CustomerCreditDialog({
     setMessage(null);
   };
 
-  const submitCreate = async (event: React.FormEvent) => {
+  const submitCreate = async (event: FormEvent) => {
     event.preventDefault();
     const created = await onCreateCustomer(newName, newMobile);
     if (!created) {
