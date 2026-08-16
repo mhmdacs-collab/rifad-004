@@ -8,6 +8,7 @@ type TicketPanelProps = {
   editable?: boolean;
   lastTouchedLineId?: string | null;
   onEditLine?: (line: TicketLine) => void;
+  onCustomerClick?: () => void;
   variant?: "sale" | "checkout";
 };
 
@@ -16,6 +17,7 @@ export function TicketPanel({
   editable = false,
   lastTouchedLineId = null,
   onEditLine,
+  onCustomerClick,
   variant = "sale",
 }: TicketPanelProps) {
   const linesRef = useRef<HTMLDivElement | null>(null);
@@ -37,9 +39,21 @@ export function TicketPanel({
           <h2>تذكرة</h2>
           <span dir="ltr">#{ticket.sequence}</span>
         </div>
-        <div className="ticket-header-tools" aria-hidden="true">
-          <span className="ticket-more">⋮</span>
-          <span className="ticket-customer"><Icon name="user" size={20} /><Icon name="plus" size={12} /></span>
+        <div className="ticket-header-tools">
+          <span className="ticket-more" aria-hidden="true">⋮</span>
+          {variant === "sale" && onCustomerClick ? (
+            <button
+              type="button"
+              className={`ticket-customer ticket-customer-button ${ticket.customer ? "ticket-customer-button--linked" : ""}`}
+              onClick={onCustomerClick}
+              aria-label={ticket.customer ? `العميل ${ticket.customer.name}` : "إضافة عميل إلى التذكرة"}
+            >
+              <Icon name="user" size={20} />
+              {ticket.customer ? <span className="ticket-customer-name">{ticket.customer.name}</span> : <Icon name="plus" size={12} />}
+            </button>
+          ) : ticket.customer ? (
+            <span className="ticket-customer ticket-customer--read-only"><Icon name="user" size={18} /><span className="ticket-customer-name">{ticket.customer.name}</span></span>
+          ) : null}
         </div>
       </header>
 
