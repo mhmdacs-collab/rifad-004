@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import App from "./App";
@@ -194,7 +194,8 @@ describe("basic screen customer debt workflow", () => {
     const amountInput = screen.getByRole("textbox", { name: "مبلغ السداد" });
     await user.clear(amountInput);
     await user.type(amountInput, "50.00");
-    await user.click(screen.getByRole("button", { name: "سداد" }));
+    const customerDialog = screen.getByRole("dialog", { name: "سداد دين عميل" });
+    await user.click(within(customerDialog).getByRole("button", { name: "سداد" }));
 
     expect(await screen.findByText("تم تسجيل السداد الجزئي. الرصيد المتبقي موضح أعلاه.")).toBeInTheDocument();
 
