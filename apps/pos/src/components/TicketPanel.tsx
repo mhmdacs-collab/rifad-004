@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
-import { formatMoney } from "../domain/money";
 import type { Ticket, TicketLine } from "../domain/models";
 import { Icon } from "./Icon";
+import { MoneyAmount } from "./MoneyAmount";
 
 type TicketPanelProps = {
   ticket: Ticket;
@@ -60,12 +60,12 @@ export function TicketPanel({
               >
                 <span className="ticket-line-main">
                   <strong className="ticket-product-name">{line.name}</strong>
-                  <strong className="line-total" dir="ltr">{formatMoney(lineTotal)}</strong>
+                  <strong className="line-total"><MoneyAmount value={lineTotal} /></strong>
                 </span>
                 <span className="ticket-line-meta" dir="ltr">
                   <b>{line.quantity}</b>
                   <span>×</span>
-                  <span>{formatMoney(line.unitPrice)}</span>
+                  <MoneyAmount value={line.unitPrice} />
                 </span>
               </button>
             </article>
@@ -74,8 +74,8 @@ export function TicketPanel({
       </div>
 
       <footer className="ticket-totals">
-        <div><span>الضريبة (مضمنة)</span><span dir="ltr">{formatMoney(ticket.taxIncluded)}</span></div>
-        <div className="ticket-grand-total"><strong>الإجمالي</strong><strong dir="ltr">{formatMoney(ticket.total)}</strong></div>
+        <div><span>الضريبة (مضمنة)</span><MoneyAmount value={ticket.taxIncluded} /></div>
+        <div className="ticket-grand-total"><strong>الإجمالي</strong><strong><MoneyAmount value={ticket.total} /></strong></div>
       </footer>
     </aside>
   );
