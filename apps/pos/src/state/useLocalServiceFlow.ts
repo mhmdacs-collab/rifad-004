@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { createMockRestaurantService, DEMO_SERVICE_AREAS, readRestaurantServiceSnapshot } from "../adapters/mockRestaurantService";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { RestaurantServiceContract } from "../contracts/restaurantService";
 import { PosContractError } from "../contracts/pos";
-import type { OpenLocalOrder, RestaurantServiceConfig, ServiceArea } from "../domain/restaurantService";
-import type { Ticket } from "../domain/models";
+import type { OpenLocalOrder, PlaceGroup, RestaurantServiceConfig } from "../domain/restaurantService";
 import type { usePosFlow } from "./usePosFlow";
 
 type PosFlow = ReturnType<typeof usePosFlow>;
@@ -14,31 +13,40 @@ type CheckoutServiceContext = Readonly<{
 const commandId = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
 const localMessage = (error: unknown) => error instanceof PosContractError ? error.message : "تعذر تنفيذ العملية المحلية. حاول مرة أخرى.";
 
-export const useLocalServiceFlow = (flow: PosFlow) => {
-  const [service] = useState(createMockRestaurantService);
-  const [initial] = useState(readRestaurantServiceSnapshot);
-  const [config, setConfig] = useState<RestaurantServiceConfig>(initial.config);
-  const [serviceAreas, setServiceAreas] = useState<readonly ServiceArea[]>(DEMO_SERVICE_AREAS);
-  const [openLocalOrders, setOpenLocalOrders] = useState<readonly OpenLocalOrder[]>(initial.openOrders);
+const INITIAL_CONFIG: RestaurantServiceConfig = {
+  restaurantServiceEnabled: true,
+  placeManagementEnabled: true,
+};
+
+/**
+ * Restaurant/local orchestration depends only on the Rifad contract supplied by
+ * the application composition root. It must not know which concrete adapter is active.
+ */
+export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceContract) => {
+  const [config, setConfig] = useState<RestaurantServiceConfig>(INITIAL_CONFIG);
+  const [placeGroups, setPlaceGroups] = useState<readonly PlaceGroup[]>([]);
+  const [openLocalOrders, setOpenLocalOrders] = useState<readonly OpenLocalOrder[]>([]);
   const [activeOpenOrder, setActiveOpenOrder] = useState<OpenLocalOrder | null>(null);
   const [checkoutServiceContext, setCheckoutServiceContext] = useState<CheckoutServiceContext>(null);
+  const [pendingSettlementSequence, setPendingSettlementSequence] = useState<number | null>(null);
+  const settlementClosing = useRef(false);
   const [localBusy, setLocalBusy] = useState<string | null>(null);
   const [localNotice, setLocalNotice] = useState<string | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const [nextConfig, areas, orders] = await Promise.all([
+    const [nextConfig, groups, orders] = await Promise.all([
       service.getConfig(),
-      service.listAreas(),
+      service.listPlaceGroups(),
       service.listOpenOrders(),
     ]);
     setConfig(nextConfig);
-    setServiceAreas(areas);
+    setPlaceGroups(groups);
     setOpenLocalOrders(orders);
   }, [service]);
 
   useEffect(() => {
-    void refresh();
+    void refresh().catch((error: unknown) => setLocalError(localMessage(error)));
   }, [refresh]);
 
   useEffect(() => {
@@ -164,29 +172,46 @@ export const useLocalServiceFlow = (flow: PosFlow) => {
     }
   }, [activeOpenOrder, flow, service]);
 
-  const settleActiveOrderIfCompleted = useCallback(async (ticketSequence: number) => {
-    if (!activeOpenOrder) return false;
-    try {
-      const raw = window.localStorage.getItem("rifad.pos.mock.v1");
-      if (!raw) return false;
-      const persisted = JSON.parse(raw) as { receipt?: { number?: string } | null; receipts?: { number?: string }[] };
-      const expected = `R-${String(ticketSequence).padStart(5, "0")}`;
-      const completed = persisted.receipt?.number === expected || persisted.receipts?.some((receipt) => receipt.number === expected);
-      if (!completed) return false;
-      const placeName = activeOpenOrder.servicePlaceName;
-      await service.closeOpenOrder({ openOrderId: activeOpenOrder.id });
-      setOpenLocalOrders(await service.listOpenOrders());
-      setActiveOpenOrder(null);
-      setLocalNotice(`تم إغلاق ${placeName}`);
-      return true;
-    } catch {
-      return false;
-    }
-  }, [activeOpenOrder, service]);
+  /**
+   * Called immediately before final local-order payment. Completion is observed
+   * through Rifad POS state, never by reading a mock adapter's persistence.
+   */
+  const markSettlementPending = useCallback((ticketSequence: number) => {
+    if (!activeOpenOrder) return;
+    setPendingSettlementSequence(ticketSequence);
+  }, [activeOpenOrder]);
+
+  useEffect(() => {
+    if (pendingSettlementSequence === null || !activeOpenOrder || settlementClosing.current) return;
+    const expectedReceipt = `R-${String(pendingSettlementSequence).padStart(5, "0")}`;
+    const completedWithReceipt = flow.receipt?.number === expectedReceipt;
+    const completedIntoFreshSale = flow.stage === "sales"
+      && Boolean(flow.ticket)
+      && flow.ticket!.sequence !== pendingSettlementSequence;
+    if (!completedWithReceipt && !completedIntoFreshSale) return;
+
+    settlementClosing.current = true;
+    const closingOrder = activeOpenOrder;
+    void service.closeOpenOrder({ openOrderId: closingOrder.id })
+      .then(async () => {
+        setOpenLocalOrders(await service.listOpenOrders());
+        setActiveOpenOrder(null);
+        setCheckoutServiceContext(null);
+        setPendingSettlementSequence(null);
+        setLocalNotice(`تم إغلاق ${closingOrder.servicePlaceName}`);
+      })
+      .catch((error: unknown) => {
+        setLocalError(localMessage(error));
+      })
+      .finally(() => {
+        settlementClosing.current = false;
+      });
+  }, [activeOpenOrder, flow.receipt?.number, flow.stage, flow.ticket, pendingSettlementSequence, service]);
 
   const abandonActiveResume = useCallback(() => {
     setActiveOpenOrder(null);
     setCheckoutServiceContext(null);
+    setPendingSettlementSequence(null);
   }, []);
 
   const clearCheckoutContext = useCallback(() => {
@@ -197,8 +222,9 @@ export const useLocalServiceFlow = (flow: PosFlow) => {
   const activeServiceLabel = activeOpenOrder ? `محلي · ${activeOpenOrder.servicePlaceName}` : null;
 
   return {
+    adapterInfo: service.adapterInfo,
     config,
-    serviceAreas,
+    placeGroups,
     openLocalOrders,
     occupiedPlaceIds,
     activeOpenOrder,
@@ -214,7 +240,7 @@ export const useLocalServiceFlow = (flow: PosFlow) => {
     assignToPlace,
     resumeOpenOrder,
     sendOpenOrderUpdate,
-    settleActiveOrderIfCompleted,
+    markSettlementPending,
     abandonActiveResume,
     clearCheckoutContext,
     refresh,
