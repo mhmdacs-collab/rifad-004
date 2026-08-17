@@ -45,6 +45,13 @@ export default function App() {
   }
 
   if ((flow.stage === "sales" || inlineCheckoutStage) && saleTicket) {
+    // The original basket is covered by the checkout rail. After completion we
+    // keep the catalog visible but clear hidden ticket text so the success rail
+    // is the single semantic source for customer/payment summary information.
+    const backgroundTicket = inlineCheckoutStage === "success"
+      ? { ...saleTicket, lines: [], customer: null }
+      : saleTicket;
+
     return (
       <CustomerFlowProvider value={{
         ticket: saleTicket,
@@ -57,7 +64,7 @@ export default function App() {
         <div className={`sale-flow-shell ${inlineCheckoutStage ? "sale-flow-shell--checkout" : ""}`}>
           <SalesScreen
             employee={flow.employee}
-            ticket={saleTicket}
+            ticket={backgroundTicket}
             products={flow.products}
             allProducts={flow.allProducts}
             salePages={flow.salePages}
