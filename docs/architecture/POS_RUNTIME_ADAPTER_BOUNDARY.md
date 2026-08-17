@@ -1,6 +1,6 @@
 # POS Runtime Adapter Boundary
 
-Last updated: 2026-08-17
+Last updated: 2026-08-18
 
 ## Purpose
 
@@ -20,13 +20,19 @@ Concrete POS runtime selection is isolated in:
 
 Current selection:
 
-`createPosRuntimeAdapter() → createMockPosRuntime()`
+`createPosRuntimeAdapter() → current POS runtime → local persistence journal decorator`
 
 `App.tsx` creates the runtime once and injects it into:
 
 `usePosFlow(posRuntime)`
 
 `usePosFlow` no longer imports or constructs the mock runtime.
+
+The local persistence/outbox implementation is selected separately through:
+
+`apps/pos/src/runtime/localPersistenceAdapter.ts`
+
+See `docs/architecture/LOCAL_PERSISTENCE_AND_OUTBOX_BOUNDARY.md`.
 
 ## Public Rifad boundary
 
@@ -46,6 +52,8 @@ It composes the current Rifad-owned capability contracts:
 - `PrintingContract`
 
 The older `MockPosRuntime` name remains only as a compatibility type alias for the current mock implementation. New product/runtime code must depend on `PosRuntimeContract`.
+
+Local durable state/outbox has its own Rifad-owned `LocalPersistenceContract`; it is not part of any donor/provider runtime schema.
 
 ## Adapter implementation shapes
 
@@ -72,6 +80,16 @@ Examples:
 - donor-specific errors are translated to `PosContractError` or a future versioned Rifad error family;
 - provider credentials/auth tokens never become cashier UI state.
 
+## Local persistence/outbox relationship
+
+The POS runtime does not call LAN, cloud sync, accounting or fiscal endpoints in order to finalize an ordinary offline-capable local sale.
+
+Instead, durable cross-boundary facts are journaled through the Rifad local persistence/outbox boundary. Future LAN, cloud sync, branch coordination and ZATCA/Fatoora adapters consume appropriate Rifad events through their own contracts.
+
+Current staging journals include a stable `sale.completed.v1` event for cash/card/credit completion. Stable event identity is derived from the durable command where applicable so replay does not create duplicate downstream sale/fiscal/sync work.
+
+This does **not** yet mean the current mock operational snapshot has been migrated into the new persistence contract. That migration/restart proof is the next local-first slice.
+
 ## Current conformance evidence
 
 `apps/pos/src/testing/posRuntimeConformance.ts` contains a reusable behavioral probe for any future `PosRuntimeContract` implementation.
@@ -85,6 +103,10 @@ Adapter-specific setup/authentication may be supplied before the common probe.
 `apps/pos/src/pos-runtime-adapter.test.tsx` additionally proves that `usePosFlow` consumes an injected runtime by replacing catalog behavior with a test runtime and observing the injected data in React state.
 
 This protects against accidentally reintroducing a hidden `createMockPosRuntime()` inside UI/state code.
+
+Local persistence tests additionally cover installation identity, branch/device binding, snapshot+outbox commit semantics, event deduplication, retry bookkeeping, acknowledgement and corruption handling.
+
+Runtime journaling tests verify sale and local-order events use the same branch/device node context.
 
 ## Replacement requirements
 
@@ -105,11 +127,12 @@ Before a production runtime/capability adapter is accepted:
 
 Still separate work includes:
 
-- durable authoritative local/cloud data model;
-- offline/restart behavior;
+- migration of private operational POS/restaurant snapshots behind `LocalPersistenceContract`;
+- production local-store selection and restart/migration/crash evidence;
 - sync and conflict handling;
+- branch-local LAN transport and multi-device coordination;
 - production payments and terminal integration;
-- ZATCA fiscal implementation;
+- ZATCA/Fatoora fiscal implementation;
 - real printing/KDS transport;
 - delivery-platform connectors;
 - Back Office configuration and permissions;
