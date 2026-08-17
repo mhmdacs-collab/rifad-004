@@ -1,4 +1,4 @@
-# VISUAL-DECISION-005 — Primary Action Spatial Continuity
+# VISUAL-DECISION-005 — Transaction Operation Card Continuity
 
 Status: **current owner-directed POS interaction rule; final visual review pending**
 
@@ -6,55 +6,62 @@ Date: 2026-08-17
 
 ## Decision
 
-Rifad POS minimizes cashier finger travel between consecutive transaction steps.
+Rifad POS minimizes cashier finger travel by keeping the **same two-slot operation card** in the same lower transaction zone as the sale advances.
 
-A repeated primary completion action should occupy the **same physical footer slot** when the operational surface changes, whenever the composition allows it.
+The important rule is not to move whichever action happens to be called "سداد" into a different slot. The rule is to preserve the physical card and the meaning of its two positions.
 
 For the current RTL POS composition:
 
-- the right footer slot is secondary;
-- the left footer slot is the primary completion slot;
-- the primary slot should remain spatially stable across the normal transaction sequence.
+- the right slot is the secondary / alternative / cancel slot;
+- the left slot is the main transaction-completion slot;
+- the card remains visually and spatially stable across the sale, payment and success stages.
 
-Examples of actions that should inherit the same primary slot:
+Current intended sequence:
 
-- **دفع**;
-- **سداد**;
-- **تم الدفع**;
-- **إنشاء** / final **حفظ**;
-- **بيع جديد**;
-- final **تم** after a completed settlement.
+- normal sale: **حفظ | دفع**;
+- Quick Sale empty ticket: **سداد | دفع** (Pay remains visible but disabled until a sale exists);
+- cash checkout: **إلغاء الفاتورة | سداد**;
+- card/mock checkout: **إلغاء الفاتورة | تم الدفع**;
+- completed sale: **طباعة | بيع جديد**.
 
-When a secondary action exists, such as **حفظ**, **إلغاء** or **طباعة الإيصال**, it occupies the secondary slot rather than displacing the primary action.
+`إلغاء الفاتورة` is intentionally red but calm, because it abandons the unpaid transaction and starts a fresh sale without creating a receipt.
 
-If a screen has only one final action, the action should still prefer the established primary zone instead of expanding/repositioning in a way that forces unnecessary finger travel.
+## Why this is different from the previous interpretation
+
+The previous pass incorrectly moved Quick Sale debt **سداد** into the Pay slot and hid the disabled Pay control. That changed the established sale-footer relationship instead of preserving it.
+
+The corrected rule preserves **سداد + دفع** on the sale screen and applies continuity to the operation card itself as the transaction progresses.
 
 ## Scroll relationship
 
 This decision extends D-021:
 
 - repeated content and optional fields absorb scrolling first;
-- the footer/action zone remains reachable;
-- dynamic validation must not move the keypad or final action;
-- advancing from one transaction state to the next should not move the main completion target without a strong ergonomic reason.
+- the transaction operation card stays outside or at the stable edge of scrolling content;
+- dynamic validation must not move the keypad or action card;
+- shorter screens reclaim spacing before shrinking the action targets.
 
 ## Customer-form density
 
-The same touch-first principle allows density to change by device class before controls are shrunk:
+Customer entry follows the same layout-before-shrink principle:
 
-- desktop/wide customer **additional information** uses three columns to reduce vertical scrolling;
-- narrow/mobile customer entry uses one column for easier sequential touch entry;
-- the mobile layout must not preserve desktop columns by shrinking fields.
+- quick information: three columns on desktop/wide POS surfaces;
+- additional information: **three real grid columns** on desktop/wide POS surfaces;
+- narrow/mobile: one column for both groups;
+- helper text that repeats an already-enforced obvious constraint should not consume vertical space in the normal entry path.
 
 ## Affected current POS surfaces
 
 - basket footer: **حفظ / دفع**;
-- Quick Sale empty-ticket debt action: **سداد** uses the normal primary slot rather than the secondary slot;
-- cash/card completion;
-- debt settlement and settlement-success confirmation;
-- customer create/save actions;
-- sale success: **طباعة / بيع جديد**.
+- Quick Sale empty-ticket footer: **سداد / دفع**;
+- cash/card completion: **إلغاء الفاتورة / سداد أو تم الدفع**;
+- sale success: **طباعة / بيع جديد**;
+- customer creation additional information density.
+
+Debt-book settlement remains its own operational dialog and follows D-021 for stable footer reachability; it is not used to redefine the sale-screen **سداد + دفع** relationship.
 
 ## Data consequence
 
-None. Footer position, column count and action-slot placement are UI-only interaction/layout state and do not create durable business fields.
+The operation-card position and column count are UI-only layout decisions.
+
+`إلغاء الفاتورة` currently uses the prototype new-sale/reset path before payment completion. Production cancellation/audit semantics must be defined by the sale/checkout domain before this behavior is treated as a fiscal or accounting cancellation record.
