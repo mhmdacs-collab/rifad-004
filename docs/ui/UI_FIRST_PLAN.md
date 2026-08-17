@@ -10,9 +10,7 @@ The UI phase builds primary Rifad surfaces using Rifad-owned contracts and mock 
 
 ## Live execution status
 
-This file defines the plan. The actual implementation state, owner-review status, known gaps and exact current checkpoint are maintained in [`UI_PROGRESS.md`](./UI_PROGRESS.md).
-
-Canonical cashier-facing names and UI-to-data field traceability are maintained in [`POS_UI_NAMING_AND_FIELD_REGISTER.md`](./POS_UI_NAMING_AND_FIELD_REGISTER.md).
+This file defines the plan. Actual implementation/review/gap status lives in [`UI_PROGRESS.md`](./UI_PROGRESS.md). Canonical cashier-facing names and UI-to-data traceability live in [`POS_UI_NAMING_AND_FIELD_REGISTER.md`](./POS_UI_NAMING_AND_FIELD_REGISTER.md).
 
 Do not infer completion from this plan alone.
 
@@ -24,7 +22,7 @@ Do not infer completion from this plan alone.
 4. KDS
 5. Customer Display
 
-The detailed Loyverse behavior/reference material stored in `docs/research/loyverse/` remains the primary functional/workflow baseline. Cross-market research may refine a bounded pattern when documented explicitly; current restaurant-service evidence is in `docs/research/restaurant-pos/`.
+Loyverse research remains the primary workflow baseline. Cross-market evidence may refine bounded patterns; current restaurant/delivery research is under `docs/research/restaurant-pos/`.
 
 `UI_EXECUTION_MANIFEST.json` converts approved evidence into stable IDs and ready scopes.
 
@@ -33,95 +31,83 @@ The detailed Loyverse behavior/reference material stored in `docs/research/loyve
 - React
 - TypeScript
 - Vite
-- PWA for tablet/mobile installation
-- Windows desktop application shell around the same UI
+- PWA for tablet/mobile
+- Windows desktop shell around the same UI
 
-Technology exists to serve the interaction model; it must not force the UI to look like a generic web dashboard.
+Technology serves the interaction model; it must not force a generic web-dashboard experience.
 
 ## UX acceptance rule
 
-> If the installed POS experience feels like a website instead of a cashier application, it fails.
+> If the installed POS feels like a website instead of a cashier application, it fails.
 
-The current binding POS priority is:
+Binding priority:
 
 > **Touch first, then human visual clarity, then beauty.**
 
-Required qualities:
-
-- standalone/full-screen installed experience where supported;
-- no browser-style page-layout assumptions;
-- tablet/POS-first dimensions and density;
-- immediate pressed/selected/disabled states;
-- frequent touch targets sized for human fingers, not mouse precision;
-- layout changes before important controls are shrunk on smaller/shorter screens;
-- swipe/drag/long-press only where the product workflow benefits from them;
-- dialogs, sheets, drawers and navigation that behave as application surfaces;
-- RTL and LTR from the beginning;
-- responsive phone/tablet/desktop layouts without turning POS into a generic responsive website;
-- offline-loadable application shell;
-- keyboard/mouse support on Windows without degrading touch interaction;
-- important money and next actions readable from normal cashier viewing distance.
+Required qualities include application-like installed behavior, tablet/POS-first density, immediate states, human finger targets, layout changes before shrinking key controls, RTL/LTR, responsive phone/tablet/desktop composition, offline-loadable shell, Windows keyboard/mouse support without degrading touch, and glance-readable money/next actions.
 
 ## Authority model
 
-- Loyverse research is the primary functional/workflow reference: hierarchy, density baseline, ticket/product relationships, navigation, modal flows, states and KDS/CDS operational behavior.
-- Rifad's design system is the visual/interaction authority: identity, tokens, typography, icons, assets, touch ergonomics, accessibility and final component styling.
-- Other interfaces may influence a narrow visual/operational pattern only through explicit documented research and an approved/current decision under `visual-decisions/`.
-- Visual improvement may not silently change workflow, action meaning, contract, permissions, offline behavior or fiscal/payment state.
+- Loyverse = primary functional/workflow baseline.
+- Rifad design system = visual/interaction authority.
+- Other products may influence narrow patterns only through documented research/decision.
+- Visual improvement may not silently change workflow/action meaning/contracts/permissions/offline/fiscal/payment/integration semantics.
 
 See `DESIGN_AUTHORITY.md`.
 
 ## Manifest implementation gate
 
-Screen-family lists below are discovery scope, not permission to invent screens. A coding task must name a `ready` screen or flow from `UI_EXECUTION_MANIFEST.json` and may implement only its declared actions/states.
+Screen-family lists below are discovery scope, not permission to invent screens. Coding requires a `ready` screen/flow in `UI_EXECUTION_MANIFEST.json` and may implement only its declared actions/states.
 
-If required behavior is missing or only `mapped`, update evidence and manifest before the behavior is promoted as approved implementation scope.
-
-A branch-level product experiment or owner-directed design direction may exist for validation, but it must remain clearly labeled until manifest/product scope is reconciled. The current mock card UX and the newer restaurant local/open-order direction are examples of different maturity levels.
+Branch-level experiments or owner-directed directions may exist for validation, but remain clearly labeled until manifest/product scope is reconciled. Current mock card UX and restaurant/delivery directions have different maturity levels.
 
 ## Contract-driven mocks
 
-Every durable business action calls a Rifad contract from day one.
-
-Example:
-
-```text
-UI button: Add branch
-        ↓
-BranchContract.create(input)
-        ↓
-MockBranchAdapter (UI phase)
-        ↓
-Real Branch adapter (later)
-```
-
-The visible workflow should not need to be rebuilt merely because the adapter changes.
+Every durable business action calls a Rifad contract from day one. Mock adapters prove UI behavior; later adapters replace them without rebuilding the workflow.
 
 ## UI-to-data discovery rule
 
-A UI-first phase is also a data-discovery phase.
+When UI/product direction introduces durable meaning, update `POS_UI_NAMING_AND_FIELD_REGISTER.md` immediately. Do not wait until SQL design to discover fulfillment, restaurant settings, service places, sales channels, external-order IDs, channel pricing, payment references, barcode/SKU, settlement or kitchen-dispatch needs.
 
-When the interface introduces or implies a durable field, update `POS_UI_NAMING_AND_FIELD_REGISTER.md` immediately and classify it as current, required gap, reserved integration, derived, or UI-only.
-
-Do not wait until SQL/database design to discover that the UI already depends on fields such as fulfillment mode, service area/place, open-order lifecycle, sales channel, channel-specific pricing, barcode, SKU, payment references or print/kitchen-dispatch state.
-
-Conversely, do not persist presentation-only state just because it exists in a component.
+Presentation-only state should not be persisted without a real recovery/product requirement.
 
 ## Restaurant workflow discovery rule
 
-Restaurant UX must not collapse different business meanings into one convenient button/data field.
-
 Before implementation, model separately:
 
-- kitchen fulfillment (`سفري / محلي / توصيل`);
-- sales channel (direct / delivery platform / future channels);
-- payment/settlement method;
-- service area/place for local orders;
-- open-order lifecycle;
+- `restaurantServiceEnabled` — whether restaurant fulfillment semantics are used at all;
+- `servicePlaceManagementEnabled` — whether local orders require exact area/place tracking;
+- fulfillment (`سفري / محلي / توصيل`);
+- sales channel (direct/platform/etc.);
+- payment/collection/settlement;
+- service area/place and open-order lifecycle when advanced mode is on;
 - kitchen dispatch/revisions;
-- price context / channel overrides.
+- channel pricing/effective-price evidence.
 
-The UI may combine choices to reduce taps, but the contracts must keep the meanings separate.
+This produces three legitimate cashier configurations from one product:
+
+1. retail/direct: no restaurant terminology;
+2. simple restaurant: **محلي | دفع**, with local checkout but no table selector;
+3. advanced restaurant: **محلي | دفع**, where local opens area/place assignment and open orders.
+
+Direct restaurant **دفع** defaults to **سفري** without another tap.
+
+## Delivery integration discovery rule
+
+Delivery platform UX should not require the cashier to understand connector architecture.
+
+Rifad target:
+
+> **One online-orders experience, many adapters behind it.**
+
+Adapters may be:
+
+- direct platform connectors when official partner access is practical;
+- aggregator connectors when they provide better coverage/onboarding economics.
+
+The Rifad contract is capability-based; not every connector must support menu sync, availability, accept/reject, ready/dispatch, refund and reconciliation equally.
+
+API-connected orders should arrive with channel/reference/prices/payment-collection state and should not be retyped or have the platform selected again. Manual platform tiles remain a fallback/unconnected path.
 
 ## Phase 1 screen families
 
@@ -134,13 +120,13 @@ The UI may combine choices to reduce taps, but the contracts must keep the meani
 - modifiers/variants
 - customer selection
 - discounts/taxes
-- open orders/tickets
-- restaurant service-area/place/floor flows
-- payment and split payment surfaces
-- delivery-channel completion where authorized
+- simple local-service checkout
+- advanced service-area/place/open-order flows
+- unified online-orders queue/manual delivery fallback
+- payment/split-payment surfaces
 - receipts/refunds
 - shifts/cash movements
-- item management shortcuts
+- item-management shortcuts
 - device settings
 
 ### Back Office
@@ -148,8 +134,11 @@ The UI may combine choices to reduce taps, but the contracts must keep the meani
 - stores/branches
 - POS devices
 - items/categories/modifiers
-- price lists / sales-channel price overrides
-- restaurant service areas/places and table-service enablement
+- pricelists/channel price overrides
+- restaurant-service enablement
+- advanced service areas/places
+- delivery connector authorization/store mapping
+- online-order automation policy
 - inventory/purchasing/transfers/counts
 - customers/loyalty
 - employees/roles/permissions
@@ -159,22 +148,20 @@ The UI may combine choices to reduce taps, but the contracts must keep the meani
 
 ### Dashboard
 
-- sales summary
-- comparison periods
+- sales summary/comparison
 - inventory alerts
 - branch summary
-- owner-level operational indicators
-- channel/fulfillment analysis when those domains are implemented
+- owner operational indicators
+- fulfillment/channel/settlement analysis when implemented
 
 ### KDS
 
 - incoming tickets
-- category/station routing presentation
+- station routing
 - fulfillment/service-place/channel context
-- item/order completion
-- recall
-- elapsed time and status
-- offline/LAN state presentation
+- item/order completion/recall
+- elapsed time/status
+- offline/LAN state
 
 ### CDS
 
@@ -186,28 +173,15 @@ The UI may combine choices to reduce taps, but the contracts must keep the meani
 
 ## Definition of UI phase complete
 
-UI phase is complete only when:
+UI phase is complete only when primary screens have stable manifest IDs/verified states, principal flows run end to end with mocks, durable actions cross Rifad contracts, domain logic stays outside views, RTL/LTR works, touch targets remain human-usable across target sizes, PWA/Windows shell feel app-like, major states have regression evidence, adapters are replaceable without UI restructuring, adopted donor patterns are documented, and every visible durable field is registered/closed/deferred.
 
-1. every documented primary screen has a stable manifest ID and reaches the required verified state;
-2. principal manifest flows can be completed end-to-end with mock data;
-3. every durable business action crosses a Rifad contract;
-4. no domain logic is buried in view components;
-5. RTL/LTR work on target layouts;
-6. touch targets remain human-usable across large POS, 1366×768, tablet, short displays and mobile compositions;
-7. installed PWA presentation feels app-like;
-8. Windows shell can host the same application UI;
-9. visual regression coverage exists for major screens/states;
-10. mock adapters can be individually replaced without restructuring the UI;
-11. every visual donor pattern in use has an approved decision and linked regression evidence;
-12. every visible durable field has an entry in the UI naming/field register and known data gaps are closed or explicitly deferred.
+## Explicit non-goals of UI phase
 
-## What is explicitly not part of UI phase
+- repairing donor apps;
+- binding Rifad to Odoo/FloCafe/platform internals;
+- premature final synchronization/cloud infrastructure;
+- duplicate native UIs just for appearance;
+- claiming real payment-terminal support from mock card UX;
+- claiming delivery-platform production integration merely because public API documentation exists.
 
-- repairing donor applications;
-- binding Rifad to Odoo/FloCafe internals;
-- implementing final synchronization before its contract is known from the UI/product workflows;
-- premature cloud infrastructure;
-- creating duplicate native UIs merely to obtain a native appearance;
-- claiming a real payment-terminal integration from a mock card UX.
-
-The UI phase produces a complete interactive Rifad product shell **and** a concrete, traceable shopping list of backend/domain fields and contracts.
+The UI phase produces a complete interactive Rifad shell **and** a concrete, traceable shopping list of backend/domain fields/contracts/integration capabilities.
