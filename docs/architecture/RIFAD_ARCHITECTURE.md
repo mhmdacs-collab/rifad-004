@@ -50,7 +50,7 @@ Apps never bind directly to donor/platform internals.
 - `core/fulfillment`
 - `core/sales-channels`
 - `core/restaurant-service`
-- `core/tables` / service areas and places
+- `core/places` / place groups and service places
 - `core/kitchen` / preparation-order state
 - `core/shifts`
 - `core/inventory`
@@ -79,17 +79,29 @@ Names may evolve before contract freeze; separation of responsibilities is the i
 
 A UI action talks to a Rifad contract, not an implementation.
 
-Examples:
+Current executable POS composition follows this rule in two places:
 
 ```text
-POS local-service action
-        │
-        ▼
-Restaurant/Orders contract
-        │
-        ▼
-Current local adapter
+App.tsx
+  │
+  ├─ createPosRuntimeAdapter()
+  │      │
+  │      ▼
+  │   PosRuntimeContract
+  │      │
+  │      └─ current: mock POS runtime
+  │
+  └─ createRestaurantServiceAdapter()
+         │
+         ▼
+      RestaurantServiceContract
+         │
+         └─ current: mock restaurant service
 ```
+
+`usePosFlow` and `useLocalServiceFlow` receive those contracts by dependency injection and do not instantiate concrete adapters.
+
+Future examples:
 
 ```text
 Incoming Keeta/HungerStation order
@@ -106,7 +118,12 @@ If an adapter changes, the cashier flow and unrelated modules remain unchanged.
 
 The same rule applies to checkout, assigning a service place, sending preparation deltas, resolving channel prices, incoming online orders, closing shifts, printing, KDS completion, inventory and sync.
 
-Exact method names remain contract-design work.
+Current boundary details:
+
+- `docs/architecture/POS_RUNTIME_ADAPTER_BOUNDARY.md`
+- `docs/architecture/RESTAURANT_SERVICE_ADAPTER_BOUNDARY.md`
+
+Exact future method names remain contract-design work.
 
 ## 4. Restaurant/order meaning separation
 
@@ -164,23 +181,23 @@ When enabled:
 
 ### Layer B — service-place management
 
-`servicePlaceManagementEnabled` is an optional sub-capability.
+`placeManagementEnabled` is an optional sub-capability.
 
 When false:
 
 `basket → محلي → checkout/complete as dine-in`
 
-The kitchen receives **محلي**, but no table/room/session selection is required.
+The kitchen receives **محلي**, but no exact place selection is required.
 
 When true:
 
-`basket → محلي → choose service area/place → send kitchen → clear working basket → keep open local order`
+`basket → محلي → choose PlaceGroup/ServicePlace → send kitchen → clear working basket → keep open local order`
 
-Service areas may be الصالة/الدور الأول/الغرف/الجلسات الخارجية. Service places may be a table, room or session.
+The cashier-facing structure is generic **مجموعة → أماكن**. The prototype defaults to one **الطاولات** group containing six tables. Back Office may later add arbitrary groups such as الغرف / الجلسات / الخارجية / VIP and arbitrary place names within them.
 
 Payment may happen before or after dining. Later additions/voids require preparation deltas rather than blind full reprints.
 
-Persistent service/place layout configuration belongs primarily in Back Office; POS-side configuration is temporary staging during UI-first proof.
+Persistent group/place configuration belongs primarily in Back Office; POS-side configuration is temporary staging during UI-first proof.
 
 ## 6. Pricing context
 
@@ -302,6 +319,8 @@ The mandatory capability workflow is in `docs/adoption/CAPABILITY_ADOPTION_WORKF
 - React + TypeScript + Vite for primary UI.
 - Windows desktop wraps the same product UI; tablet/mobile uses installable PWA behavior.
 - Loyverse is the primary functional/workflow/ergonomic baseline; Rifad owns final visual authority.
+- General POS runtime selection is isolated behind `PosRuntimeContract` and a composition root.
+- Restaurant local-service selection is isolated behind `RestaurantServiceContract` and a composition root.
 - Restaurant semantics and advanced place management are separate configuration layers.
 - Fulfillment, channel and payment/collection/settlement are distinct domain meanings.
 - Delivery integrations use a capability-based Rifad boundary and may be direct or aggregator-backed.
