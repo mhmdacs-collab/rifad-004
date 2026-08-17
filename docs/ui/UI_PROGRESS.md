@@ -105,7 +105,7 @@ Two device-local modes exist:
 - **شاشة لمس** — touch/page grid;
 - **البيع السريع** — search/barcode-first retail mode.
 
-⚠️ **Naming cleanup required:** older JSX/settings text still contains the legacy label **شاشة أساسية** in parts of `SalesScreen.tsx`. The canonical cashier-facing label is now **البيع السريع** and code/tests/settings should be normalized before visual lock.
+The legacy cashier-facing label **شاشة أساسية** has now been removed from the semantic `SalesScreen.tsx` UI. The internal persisted mode value remains `basic` for compatibility with existing device preferences; that internal value is not cashier-facing terminology.
 
 ## Quick Sale focus
 
@@ -115,7 +115,7 @@ Status: ✅
 - focus returns after item operations/dialog closure;
 - scanner-first keyboard behavior is preserved.
 
-⚠️ **Catalog data gap:** the UI promises barcode/SKU search, but the current Product model lacks `sku` and barcode fields and the mock catalog search matches name only. This is now formally recorded in `POS_UI_NAMING_AND_FIELD_REGISTER.md`.
+⚠️ **Catalog data gap:** the UI promises barcode/SKU search, but the current Product model lacks `sku` and barcode fields and the mock catalog search matches name only. This is formally recorded in `POS_UI_NAMING_AND_FIELD_REGISTER.md`.
 
 ---
 
@@ -201,7 +201,7 @@ Status: ✅ mock UX / ⚠️ production integration
 
 `شبكة / مدى` is no longer shown as `قريبًا` or `غير متاح` in the current UX prototype.
 
-The branch now contains a testable **mock card payment path** so product interaction can be validated end-to-end and the receipt can record `paymentMethod: "card"`.
+The branch contains a testable **mock card payment path** so product interaction can be validated end-to-end and the receipt can record `paymentMethod: "card"`.
 
 However:
 
@@ -215,18 +215,33 @@ The original `POS-FLOW-001` remains the cash-sale slice. The current card path i
 
 # 6. Cash payment
 
-Status: ✅ 👁
+Status: ✅ 👁 🟡
 
 Implemented:
 
 - ticket total prefilled as received amount;
 - manual amount entry;
-- large quick-cash touch targets;
-- 3×4 keypad;
+- four large predictable quick-cash touch targets;
+- 3×4 POS-style keypad;
 - under-tender blocked;
 - large change result;
 - dominant **سداد** action;
 - completed cash receipt persisted in mock runtime.
+
+## Final touch pass — implemented, owner visual review pending
+
+The latest cash pass applies the touch-first hierarchy directly to the tender screen:
+
+1. **المبلغ المستلم** is now the largest editable number on the screen and visually outranks the already-known ticket total;
+2. the ticket total remains prominent but uses less vertical/typographic weight than the cashier input;
+3. the four quick amounts are full touch targets rather than small chips;
+4. keypad keys are larger, more separated and provide stronger press feedback;
+5. **الباقي للعميل** is treated as the cashier's result and becomes a strong green result card once the received amount is valid;
+6. **سداد** remains directly after the result as the dominant completion target;
+7. tall screens receive more finger room, while 1366×768/short screens reduce spacing before reducing important target size;
+8. mobile/narrow layouts preserve large quick amounts and keypad targets.
+
+This final cash presentation is implemented but still requires owner visual review before being called visually frozen.
 
 ## Current quick-cash rule
 
@@ -245,7 +260,7 @@ Examples:
 
 The exact total is already prefilled.
 
-⚠️ **Structural cleanup:** the old `بالضبط` shortcut is currently hidden by CSS in the visual implementation. It should eventually be removed from the component markup instead of remaining as a hidden control.
+The obsolete **بالضبط** shortcut has been removed from the component markup; it is no longer retained as a hidden control.
 
 ---
 
@@ -253,7 +268,7 @@ The exact total is already prefilled.
 
 Status: ✅ mock behavior-tested / ⚠️ production terminal absent
 
-The mock path now supports:
+The mock path supports:
 
 1. choose **شبكة / مدى**;
 2. enter a card-payment confirmation surface;
@@ -273,7 +288,7 @@ No claim is made yet for:
 - card refund;
 - production PCI/payment security scope.
 
-Those fields are reserved in the new UI field register so the production data model does not forget them.
+Those fields are reserved in the UI field register so the production data model does not forget them.
 
 ---
 
@@ -314,7 +329,7 @@ Implemented:
 
 Historical print-delivery state is not yet persisted as durable print-job history per receipt.
 
-This is now listed as a required production data field family in `POS_UI_NAMING_AND_FIELD_REGISTER.md`.
+This is listed as a required production data field family in `POS_UI_NAMING_AND_FIELD_REGISTER.md`.
 
 ---
 
@@ -341,7 +356,7 @@ Current model and UI support:
 - purchase history direction;
 - customer email receipt path.
 
-The field register now makes these fields explicit so future DB work cannot drop optional customer information merely because it is not visible on every transaction.
+The field register makes these fields explicit so future DB work cannot drop optional customer information merely because it is not visible on every transaction.
 
 ---
 
@@ -450,23 +465,22 @@ The current branch has behavior coverage for major implemented slices including:
 - quick-cash suggestion logic including the corrected 102/108 behavior;
 - mock **شبكة / مدى** completion path recording a card receipt.
 
-Before this documentation round, the current payment/card implementation head passed TypeScript, Vitest, production build and UI-manifest CI.
-
-Documentation commits must receive a fresh CI run before this checkpoint is declared clean.
-
-CI proves code/document integrity, not visual correctness.
+Every new branch head must pass TypeScript, Vitest, production build and UI-manifest integrity before it is called technically clean. CI proves code/document integrity, not visual correctness.
 
 ---
 
-# 16. Known naming / structural cleanup
+# 16. Naming / structural state
 
-Before visual freeze:
+Completed before visual freeze:
 
-- replace remaining semantic/UI occurrences of **شاشة أساسية** with **البيع السريع**;
-- remove the hidden `بالضبط` quick-cash button from markup rather than CSS-hiding it;
-- keep **دفع** as general sales checkout terminology;
-- keep **سداد** for cash completion and debt-settlement contexts;
-- ensure payment-method labels remain **نقدًا** and **شبكة / مدى** in the current product direction.
+- cashier-facing **شاشة أساسية** has been normalized to **البيع السريع** in `SalesScreen.tsx`;
+- the obsolete hidden **بالضبط** quick-cash control has been removed from the component markup.
+
+Terminology that remains binding:
+
+- **دفع** = general sales checkout entry;
+- **سداد** = cash completion and debt-settlement contexts;
+- payment-method labels = **نقدًا** and **شبكة / مدى** in the current product direction.
 
 ---
 
@@ -474,7 +488,7 @@ Before visual freeze:
 
 The binding manifest still defines `POS-FLOW-001` as cash-only and maps integrated payment as not production-authorized.
 
-The current owner-directed branch now includes a **mock card UX extension** for validation.
+The current owner-directed branch includes a **mock card UX extension** for validation.
 
 Therefore one explicit documentation/product task remains before any production claim for integrated payments:
 
@@ -504,6 +518,6 @@ Rifad is **not UI-complete** and not production-backend-complete.
 
 Current checkpoint:
 
-> **A substantial touch-first POS product prototype with Rifad-owned contracts and mock-local persistence, an owner-reviewed sales/payment interaction language, inline basket checkout, corrected cash shortcuts, and a testable mock Mada/card path — now documented with explicit UI-to-data traceability before continuing feature expansion.**
+> **A substantial touch-first POS product prototype with Rifad-owned contracts and mock-local persistence, an owner-reviewed sales/payment interaction language, inline basket checkout, corrected cash shortcuts, a final cash-tender touch pass pending owner visual review, and a testable mock Mada/card path — documented with explicit UI-to-data traceability before further feature expansion.**
 
-Immediate next work after this documentation checkpoint should preserve the field register and naming rules rather than adding UI fields without corresponding data decisions.
+Immediate next step is owner visual review of the final cash-tender pass. If accepted, continue to the quantity editor/ticket-line interaction audit without weakening the field register or naming rules.
