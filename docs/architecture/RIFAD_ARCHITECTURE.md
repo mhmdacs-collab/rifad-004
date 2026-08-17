@@ -1,6 +1,6 @@
 # Rifad Architecture
 
-Last updated: 2026-08-17
+Last updated: 2026-08-18
 
 ## 1. Core principle
 
@@ -79,7 +79,7 @@ Names may evolve before contract freeze; separation of responsibilities is the i
 
 A UI action talks to a Rifad contract, not an implementation.
 
-Current executable POS composition follows this rule in two places:
+Current executable POS composition follows this rule:
 
 ```text
 App.tsx
@@ -89,17 +89,26 @@ App.tsx
   │      ▼
   │   PosRuntimeContract
   │      │
-  │      └─ current: mock POS runtime
+  │      └─ current: mock POS behavior + local persistence journal
   │
   └─ createRestaurantServiceAdapter()
          │
          ▼
       RestaurantServiceContract
          │
-         └─ current: mock restaurant service
+         └─ current: mock restaurant service + local persistence journal
+
+Local persistence composition
+  │
+  └─ createLocalPersistenceAdapter()
+         │
+         ▼
+      LocalPersistenceContract
+         │
+         └─ current staging transport: browser storage
 ```
 
-`usePosFlow` and `useLocalServiceFlow` receive those contracts by dependency injection and do not instantiate concrete adapters.
+`usePosFlow` and `useLocalServiceFlow` receive their business contracts by dependency injection and do not instantiate concrete adapters.
 
 Future examples:
 
@@ -116,12 +125,13 @@ Direct adapter   Aggregator adapter
 
 If an adapter changes, the cashier flow and unrelated modules remain unchanged.
 
-The same rule applies to checkout, assigning a service place, sending preparation deltas, resolving channel prices, incoming online orders, closing shifts, printing, KDS completion, inventory and sync.
+The same rule applies to checkout, assigning a service place, sending preparation deltas, resolving channel prices, incoming online orders, closing shifts, printing, KDS completion, inventory, local persistence, LAN, sync and fiscal work.
 
 Current boundary details:
 
 - `docs/architecture/POS_RUNTIME_ADAPTER_BOUNDARY.md`
 - `docs/architecture/RESTAURANT_SERVICE_ADAPTER_BOUNDARY.md`
+- `docs/architecture/LOCAL_PERSISTENCE_AND_OUTBOX_BOUNDARY.md`
 
 Exact future method names remain contract-design work.
 
@@ -255,21 +265,25 @@ Cross-module interaction is allowed through:
 2. versioned domain events for state propagation;
 3. published read models for shared presentation needs.
 
+The local persistence layer stores private module state but does not make those private namespaces a shared integration API.
+
 ## 9. Offline and LAN
 
 Offline and LAN are separate concerns.
 
 - **Local persistence:** keeps POS operational without internet.
-- **LAN:** supports branch-local KDS/CDS/printers where appropriate.
+- **LAN:** supports branch-local KDS/CDS/printers and multi-device coordination where appropriate.
 - **Cloud sync:** moves durable changes between branch/local state and Rifad cloud.
 
 A loss of internet must not imply loss of branch-local operation for workflows designed to work offline.
 
 Restaurant/delivery implications include preserving open local orders, preventing duplicate kitchen dispatch, and applying idempotent external webhook/retry handling.
 
-## 10. Data direction
+LAN does not gain authority by reading private Sales/Restaurant persistence tables. It consumes Rifad contracts/events/read models through a separate LAN adapter boundary.
 
-Initial target:
+## 10. Data direction and executable persistence foundation
+
+Target direction:
 
 ```text
 Rifad UI
@@ -280,14 +294,38 @@ Local persistent store
    │
 Transactional outbox
    │
-Rifad Sync
+Rifad Sync / LAN / Fiscal consumers through separate contracts
    │
-Cloud PostgreSQL
+Cloud PostgreSQL / external endpoints as applicable
 ```
 
-Exact storage libraries are implementation decisions. Contracts/product behavior must not depend on donor schemas.
+The first executable foundation now exists as `LocalPersistenceContract` V1 plus a replaceable `localPersistenceAdapter` composition point.
 
-## 11. Donor translation modes
+Current staging evidence provides:
+
+- stable local installation identity;
+- branch/device binding;
+- module-private versioned snapshot contract;
+- local snapshot + outbox commit semantics;
+- stable outbox event identity/deduplication;
+- retry/failure metadata and acknowledgement;
+- sale/open-local-order journaling carrying branch/device context.
+
+Current browser storage is staging only. Exact production storage remains proof-driven and replaceable; candidates may include IndexedDB/OPFS for supported browser/PWA environments or SQLite/another local database for the Windows host.
+
+Important limitation: current mock operational POS and restaurant snapshots have not yet been migrated from their legacy localStorage keys into `LocalPersistenceContract`. That migration, schema-versioning and cold-restart evidence are the next local-first slice.
+
+## 11. Fiscal / Fatoora principle
+
+ZATCA/Fatoora is a first-class fiscal domain, not a side effect embedded in Sales persistence.
+
+An offline-capable finalized sale is first made durable as a Rifad sale fact. A fiscal adapter then manages the applicable Saudi fiscal lifecycle, including identifiers/evidence, retries, acknowledgement/rejection and audit status.
+
+Fiscal submission/retry must never create a second sale. The fiscal adapter consumes stable Rifad identity and must not own or mutate Sales private storage directly.
+
+Exact online/offline reporting requirements remain subject to the applicable ZATCA phase/rules and dedicated fiscal proof; they are not inferred merely from local persistence.
+
+## 12. Donor translation modes
 
 ### A. Direct permissive reuse
 Use a small isolated library/module when license/API/maintenance profile are acceptable.
@@ -298,7 +336,7 @@ Extract state machine, invariants, algorithms and test vectors, then implement t
 ### C. Behavioral reference only
 For proprietary/copyleft/poorly isolated code, use documented/observable behavior as specification and write a clean Rifad implementation.
 
-## 12. Anti-Frankenstein rule
+## 13. Anti-Frankenstein rule
 
 Puzzle architecture does **not** mean running unrelated applications together.
 
@@ -312,7 +350,7 @@ Donor B proven slice ─┘
 
 The mandatory capability workflow is in `docs/adoption/CAPABILITY_ADOPTION_WORKFLOW.md`.
 
-## 13. Architecture decisions currently fixed
+## 14. Architecture decisions currently fixed
 
 - Rifad owns its Core/contracts.
 - UI first, with mock adapters until implementations arrive.
@@ -321,11 +359,14 @@ The mandatory capability workflow is in `docs/adoption/CAPABILITY_ADOPTION_WORKF
 - Loyverse is the primary functional/workflow/ergonomic baseline; Rifad owns final visual authority.
 - General POS runtime selection is isolated behind `PosRuntimeContract` and a composition root.
 - Restaurant local-service selection is isolated behind `RestaurantServiceContract` and a composition root.
+- Local persistence/outbox selection is isolated behind `LocalPersistenceContract` and a composition root.
 - Restaurant semantics and advanced place management are separate configuration layers.
 - Fulfillment, channel and payment/collection/settlement are distinct domain meanings.
 - Delivery integrations use a capability-based Rifad boundary and may be direct or aggregator-backed.
 - Pricing supports channel-specific effective prices without treating channel as only payment.
 - Kitchen preparation/dispatch is distinct from final payment timing.
+- Local persistence, LAN, cloud sync and fiscal submission are distinct capabilities.
+- Stable local installation/branch/device identity must support later branch linking and replay-safe synchronization.
 - ZATCA is core.
 - Accounting engines remain replaceable integrations.
 - No Odoo/FloCafe/ERPNext/platform schema is the Rifad public data contract.
