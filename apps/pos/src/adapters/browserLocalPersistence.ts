@@ -122,9 +122,14 @@ export class BrowserLocalPersistence implements LocalPersistenceContract {
   private withEvents(root: StoredRoot, events: readonly LocalDomainEventDraft[]): StoredRoot {
     if (events.length === 0) return root;
     const known = new Set(root.outbox.map((event) => event.id));
-    const additions = events
-      .filter((event) => !known.has(event.id))
-      .map((event) => toOutboxRecord(root, event));
+    const additions: LocalOutboxRecord[] = [];
+
+    for (const event of events) {
+      if (known.has(event.id)) continue;
+      known.add(event.id);
+      additions.push(toOutboxRecord(root, event));
+    }
+
     return additions.length === 0 ? root : { ...root, outbox: [...root.outbox, ...additions] };
   }
 
