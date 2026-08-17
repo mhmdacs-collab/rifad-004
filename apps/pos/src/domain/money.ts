@@ -44,31 +44,15 @@ export const suggestedCashHalalas = (totalHalalas: number): readonly number[] =>
     throw new Error("Cash total must be a non-negative safe integer halala amount.");
   }
 
-  // Exact payment is already prefilled. Shortcuts should model likely cash handed
-  // to a cashier, not arbitrary mathematical steps.
+  // Exact payment is already prefilled. Cash shortcuts must be predictable at a
+  // glance: progressively round upward to familiar cashier checkpoints rather
+  // than injecting special-case amounts for particular totals.
+  const checkpoints = [500, 1000, 5000, 10000, 50000] as const;
   const suggestions = new Set<number>();
-  const riyals = totalHalalas / 100;
 
-  // Nearest higher 10-riyal amount when the total is not already on a ten.
-  if (totalHalalas % 1000 !== 0) {
-    suggestions.add(Math.ceil(totalHalalas / 1000) * 1000);
+  for (const checkpoint of checkpoints) {
+    suggestions.add(roundStrictlyUp(totalHalalas, checkpoint));
   }
-
-  // 120 is useful only when the sale itself is already close to 120 (e.g. 108).
-  if (riyals >= 100 && riyals < 120) {
-    suggestions.add(12000);
-  }
-
-  // Strong cash checkpoints.
-  suggestions.add(roundStrictlyUp(totalHalalas, 5000));
-  suggestions.add(roundStrictlyUp(totalHalalas, 10000));
-
-  // 200 SAR is a core Saudi cash checkpoint for any sale below 200.
-  if (totalHalalas < 20000) {
-    suggestions.add(20000);
-  }
-
-  suggestions.add(roundStrictlyUp(totalHalalas, 50000));
 
   return [...suggestions]
     .filter((value) => value > totalHalalas)
