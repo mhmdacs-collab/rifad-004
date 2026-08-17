@@ -1,0 +1,236 @@
+/*
+ * Rifad POS — Visual Pass 49
+ * Finger-travel continuity: repeated primary completion actions keep the same
+ * physical slot across transaction steps. Desktop customer extra fields use
+ * three columns to reduce scrolling; narrow/mobile entry remains one column.
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Customer entry density: desktop 3 columns, mobile 1 column                  */
+/* -------------------------------------------------------------------------- */
+
+@media (min-width: 821px) {
+  .customer-picker-dialog .customer-extra-fields {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 9px 11px;
+  }
+
+  .customer-picker-dialog .customer-extra-fields .customer-extra-note {
+    grid-column: 1 / -1;
+  }
+
+  .customer-picker-dialog .customer-extra-fields textarea {
+    min-height: 60px;
+  }
+}
+
+@media (max-width: 820px) {
+  .customer-picker-dialog .customer-extra-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-picker-dialog .customer-extra-fields .customer-extra-note {
+    grid-column: auto;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Primary-action slot                                                        */
+/*                                                                            */
+/* In RTL, column 1 is the right/secondary slot and column 2 is the left/main */
+/* slot. The cashier's frequent completion action therefore stays under the   */
+/* same finger as the flow advances.                                          */
+/* -------------------------------------------------------------------------- */
+
+.ticket-actions,
+.customer-picker-dialog .customer-create-actions,
+.inline-success-actions,
+.debt-book-success-footer {
+  display: grid;
+  grid-template-columns: minmax(110px, .72fr) minmax(180px, 1.28fr);
+  gap: 9px;
+  direction: rtl;
+}
+
+.ticket-actions > button:first-child,
+.customer-picker-dialog .customer-create-actions > button:first-child,
+.inline-success-actions > button:first-child {
+  grid-column: 1;
+}
+
+.ticket-actions > button:last-child,
+.customer-picker-dialog .customer-create-actions > button:last-child,
+.inline-success-actions > button:last-child,
+.debt-book-success-footer > .primary-button {
+  grid-column: 2;
+}
+
+/* Sale basket footer: keep Save/credit secondary and Pay in the main slot. */
+.ticket-actions {
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 3;
+  margin: 0;
+  padding: 10px 12px 12px;
+  border-top: 1px solid #dfe6e2;
+  background: #fff;
+  box-shadow: 0 -5px 15px rgb(25 55 43 / 4%);
+}
+
+.ticket-actions > button {
+  min-width: 0;
+  min-height: 58px;
+  margin: 0;
+  border-radius: 11px;
+}
+
+/* Quick Sale with an empty ticket: debt settlement is the primary action.
+   Hide the irrelevant disabled Pay button and place سداد exactly where Pay is
+   located once a ticket contains items. */
+.sale-screen-basic .ticket-column:has(.empty-ticket) .ticket-actions > button:last-child {
+  display: none;
+}
+
+.sale-screen-basic .ticket-column:has(.empty-ticket) .ticket-actions > .basic-credit-action {
+  grid-column: 2;
+}
+
+/* Customer create already owns a sticky footer; only normalize the slots. */
+.customer-picker-dialog .customer-create-actions {
+  grid-template-columns: minmax(110px, .72fr) minmax(180px, 1.28fr);
+}
+
+/* Single final Save actions still occupy the same left/main physical zone. */
+.customer-profile-edit-form > .customer-touch-primary,
+.page-name-dialog > .primary-button {
+  width: min(64%, 390px);
+  margin-inline-start: auto;
+  margin-inline-end: 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Checkout: Settle / card completion remain at the same bottom main slot      */
+/* -------------------------------------------------------------------------- */
+
+.inline-checkout-rail--cash .inline-checkout-body,
+.inline-checkout-rail--card .inline-checkout-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.inline-checkout-rail--cash .inline-complete-sale,
+.inline-checkout-rail--card .inline-complete-sale {
+  position: sticky;
+  z-index: 5;
+  bottom: 0;
+  width: min(64%, 390px);
+  margin-inline-start: auto;
+  margin-inline-end: 0;
+  box-shadow: 0 0 0 8px #fff, 0 -8px 18px rgb(25 55 43 / 5%);
+}
+
+/* Success: Print stays secondary, New Sale takes the exact main slot. */
+.inline-checkout-rail--success .inline-success-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.inline-success-actions {
+  position: sticky;
+  z-index: 6;
+  bottom: 0;
+  margin: 0;
+  padding: 10px 0 2px;
+  border-top: 1px solid #dfe6e2;
+  background: #fff;
+  box-shadow: 0 -5px 15px rgb(25 55 43 / 4%);
+}
+
+.inline-success-actions > button {
+  min-width: 0;
+  min-height: 60px;
+  margin: 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Debt settlement: both confirmation and final Done share the main slot       */
+/* -------------------------------------------------------------------------- */
+
+.debt-book-dialog .debt-settlement-submit {
+  position: sticky;
+  z-index: 4;
+  bottom: 0;
+  width: min(64%, 390px);
+  margin: 8px 0 0;
+  margin-inline-start: auto;
+  margin-inline-end: 0;
+  box-shadow: 0 0 0 7px #fafcfb;
+}
+
+.debt-book-success-footer {
+  grid-template-columns: minmax(110px, .72fr) minmax(180px, 1.28fr);
+}
+
+.debt-book-success-footer > .primary-button {
+  width: auto;
+  min-width: 0;
+  margin: 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Short screens: reclaim spacing, not the main touch target                   */
+/* -------------------------------------------------------------------------- */
+
+@media (min-width: 821px) and (max-height: 800px) {
+  .ticket-actions,
+  .customer-picker-dialog .customer-create-actions,
+  .inline-success-actions,
+  .debt-book-success-footer {
+    gap: 7px;
+  }
+
+  .ticket-actions {
+    padding-block: 8px 9px;
+  }
+
+  .ticket-actions > button,
+  .inline-success-actions > button {
+    min-height: 52px;
+  }
+
+  .customer-picker-dialog .customer-extra-fields {
+    gap: 7px 9px;
+    padding-block: 9px;
+  }
+}
+
+/* Mobile: one-column data entry stays easy to read, while final actions keep
+   the same two-slot footer relationship so the primary action does not jump. */
+@media (max-width: 820px) {
+  .ticket-actions,
+  .customer-picker-dialog .customer-create-actions,
+  .inline-success-actions,
+  .debt-book-success-footer {
+    grid-template-columns: minmax(88px, .7fr) minmax(150px, 1.3fr);
+    gap: 8px;
+  }
+
+  .customer-profile-edit-form > .customer-touch-primary,
+  .page-name-dialog > .primary-button,
+  .inline-checkout-rail--cash .inline-complete-sale,
+  .inline-checkout-rail--card .inline-complete-sale,
+  .debt-book-dialog .debt-settlement-submit {
+    width: min(65%, 390px);
+  }
+}
+
+@media (max-width: 420px) {
+  .ticket-actions,
+  .customer-picker-dialog .customer-create-actions,
+  .inline-success-actions,
+  .debt-book-success-footer {
+    grid-template-columns: minmax(82px, .68fr) minmax(138px, 1.32fr);
+  }
+}
