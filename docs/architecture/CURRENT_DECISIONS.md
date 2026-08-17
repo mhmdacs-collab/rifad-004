@@ -1,6 +1,6 @@
 # Current Rifad Decisions
 
-Last updated: 2026-08-17
+Last updated: 2026-08-18
 
 These decisions supersede earlier architecture proposals under `docs/research/historical-proposals/` when they conflict.
 
@@ -251,3 +251,29 @@ Current executable boundary:
 A future POS may compose catalog, sales, customers, checkout, printing or other capabilities from different external/local implementations. External schemas, SDK types, IDs, credentials and errors stop at their adapters and do not become Rifad public product contracts.
 
 See `docs/architecture/POS_RUNTIME_ADAPTER_BOUNDARY.md`.
+
+## D-029 — Local persistence and transactional outbox are Rifad-owned and separate from LAN, Sync and fiscal
+
+Local persistence is its own Rifad capability and is not an implementation detail of LAN, cloud synchronization, accounting or ZATCA/Fatoora.
+
+The current Rifad boundary is `LocalPersistenceContract` V1 with:
+
+- stable `installationId`;
+- branch/device binding when available;
+- module-private versioned snapshots;
+- snapshot revision metadata;
+- local snapshot + outbox-event commit semantics;
+- stable event identity and deduplication;
+- retry/failure bookkeeping and explicit acknowledgement.
+
+A completed offline-capable local sale becomes a durable Rifad fact before downstream LAN/cloud/accounting/fiscal work. Downstream retry must reuse stable identity and must never create a second sale.
+
+LAN remains a separate branch-local transport/capability for KDS/CDS/printers/multi-device coordination where applicable. Cloud Sync remains a separate capability for branch/cloud propagation and conflict resolution. ZATCA/Fatoora remains a separate fiscal adapter/state machine with its own retries and audit evidence.
+
+No downstream adapter may integrate by directly reading or mutating another domain's private persistence namespace.
+
+The current `BrowserLocalPersistence` transport is **staging evidence**, not the final Windows/PWA production database. The contract is asynchronous/replaceable so IndexedDB, OPFS, SQLite or another proven local store can replace it after restart/crash/migration/performance proof.
+
+Current limitation: the legacy POS mock and restaurant mock still keep their operational prototype snapshots in their existing localStorage keys. Migrating those private snapshots behind `LocalPersistenceContract`, adding schema migrations, and proving cold restart behavior are the next local-first implementation slice.
+
+See `docs/architecture/LOCAL_PERSISTENCE_AND_OUTBOX_BOUNDARY.md`.
