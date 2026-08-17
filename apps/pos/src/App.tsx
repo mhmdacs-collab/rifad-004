@@ -22,7 +22,7 @@ export default function App() {
     printButton?.setAttribute("aria-label", "طباعة الإيصال");
   }, [flow.stage, flow.printStatus]);
 
-  const inlineCheckoutStage = flow.stage === "payment" || flow.stage === "cash" || flow.stage === "success"
+  const inlineCheckoutStage = flow.stage === "payment" || flow.stage === "cash" || flow.stage === "card" || flow.stage === "success"
     ? flow.stage
     : null;
   const saleTicket = flow.ticket ?? (flow.stage === "success" ? lastSaleTicket.current : null);
@@ -114,7 +114,9 @@ export default function App() {
               onBackToSales={flow.returnToSales}
               onBackToPayment={flow.returnToPayment}
               onCash={() => void flow.selectCash()}
+              onCard={() => void flow.selectCard()}
               onCompleteCash={(value) => void flow.completeCash(value)}
+              onCompleteCard={() => void flow.completeCard()}
               onPrint={() => void flow.printReceipt()}
               onEmailReceipt={flow.emailReceipt}
               onNewSale={() => void flow.newSale()}
