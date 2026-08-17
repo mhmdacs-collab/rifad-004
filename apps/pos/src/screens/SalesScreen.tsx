@@ -106,7 +106,7 @@ export function SalesScreen(props: SalesScreenProps) {
   const [renamingPage, setRenamingPage] = useState<SalePage | null>(null);
   const [renameName, setRenameName] = useState("");
   const [editingLine, setEditingLine] = useState<TicketLine | null>(null);
-  const [draftQuantity, setDraftQuantity] = useState(1);
+  const [draftQuantityInput, setDraftQuantityInput] = useState("1");
   const pagePressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressTriggered = useRef(false);
   const basicSearchRef = useRef<HTMLInputElement | null>(null);
@@ -153,6 +153,8 @@ export function SalesScreen(props: SalesScreenProps) {
   const effectiveOrderType = visibleOrderTypes.length === 1 ? visibleOrderTypes[0] : selectedOrderType;
   const showTicketOrderType = !isBasicMode && itemCount > 0 && visibleOrderTypes.length > 0;
   const orderTypeRequired = showTicketOrderType && visibleOrderTypes.length > 1 && !effectiveOrderType;
+  const draftQuantity = Number(draftQuantityInput);
+  const validDraftQuantity = Number.isSafeInteger(draftQuantity) && draftQuantity >= 1;
 
   useEffect(() => {
     if (!isBasicMode) return;
@@ -175,7 +177,25 @@ export function SalesScreen(props: SalesScreenProps) {
 
   const openLineEditor = (line: TicketLine) => {
     setEditingLine(line);
-    setDraftQuantity(line.quantity);
+    setDraftQuantityInput(String(line.quantity));
+  };
+
+  const setDirectQuantity = (rawValue: string) => {
+    const digits = rawValue.replace(/\D/g, "");
+    if (digits === "") {
+      setDraftQuantityInput("");
+      return;
+    }
+    const normalized = digits.replace(/^0+(?=\d)/, "");
+    const value = Number(normalized);
+    if (Number.isSafeInteger(value)) setDraftQuantityInput(normalized);
+  };
+
+  const adjustDraftQuantity = (delta: number) => {
+    const current = Number(draftQuantityInput);
+    const base = Number.isSafeInteger(current) && current >= 1 ? current : 1;
+    const next = Math.max(1, base + delta);
+    if (Number.isSafeInteger(next)) setDraftQuantityInput(String(next));
   };
 
   const selectPage = (page: SalePage) => {
@@ -501,9 +521,27 @@ export function SalesScreen(props: SalesScreenProps) {
         <div className="dialog-backdrop" role="presentation">
           <section className="layout-dialog line-editor" role="dialog" aria-modal="true" aria-labelledby="line-editor-title">
             <header><button type="button" onClick={() => setEditingLine(null)} aria-label="إغلاق">×</button><h2 id="line-editor-title">{editingLine.name} · {formatMoney(editingLine.unitPrice)}</h2></header>
-            <label>الكمية</label>
-            <div className="line-quantity-editor"><button type="button" aria-label="تقليل الكمية" onClick={() => setDraftQuantity((value) => Math.max(1, value - 1))}><Icon name="minus" /></button><strong>{draftQuantity}</strong><button type="button" aria-label="زيادة الكمية" onClick={() => setDraftQuantity((value) => value + 1)}><Icon name="plus" /></button></div>
-            <div className="line-editor-actions"><button type="button" className="delete-line" onClick={() => { onRemoveLine(editingLine.id); setEditingLine(null); }}><Icon name="trash" size={18} />حذف</button><button type="button" className="primary-button" onClick={() => { onSetQuantity(editingLine.id, draftQuantity); setEditingLine(null); }}>حفظ</button></div>
+            <label htmlFor="line-quantity-input">الكمية</label>
+            <div className="line-quantity-editor">
+              <button type="button" aria-label="تقليل الكمية" onClick={() => adjustDraftQuantity(-1)}><Icon name="minus" /></button>
+              <input
+                id="line-quantity-input"
+                className="line-quantity-input"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                dir="ltr"
+                aria-label="الكمية"
+                value={draftQuantityInput}
+                onFocus={(event) => event.currentTarget.select()}
+                onChange={(event) => setDirectQuantity(event.target.value)}
+              />
+              <button type="button" aria-label="زيادة الكمية" onClick={() => adjustDraftQuantity(1)}><Icon name="plus" /></button>
+            </div>
+            <div className="line-editor-actions">
+              <button type="button" className="delete-line" onClick={() => { onRemoveLine(editingLine.id); setEditingLine(null); }}><Icon name="trash" size={18} />حذف</button>
+              <button type="button" className="primary-button" disabled={!validDraftQuantity} onClick={() => { if (!validDraftQuantity) return; onSetQuantity(editingLine.id, draftQuantity); setEditingLine(null); }}>حفظ</button>
+            </div>
           </section>
         </div>
       ) : null}
