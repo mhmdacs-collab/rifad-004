@@ -127,7 +127,14 @@ export interface PrintingContract {
   submit(input: { commandId: string; receiptId: string }): Promise<PrintDeliveryStatus>;
 }
 
-export interface MockPosRuntime {
+/**
+ * Rifad-owned POS runtime boundary.
+ *
+ * Concrete catalog/sales/customer/checkout/printing implementations may come
+ * from local code, an external API, an embedded donor, or a future Rifad
+ * backend. UI/state code depends only on this contract.
+ */
+export interface PosRuntimeContract {
   restore(): RestoredPosState;
   deviceSession: DeviceSessionContract;
   employeeSession: EmployeeSessionContract;
@@ -140,3 +147,9 @@ export interface MockPosRuntime {
   receipts: ReceiptsContract;
   printing: PrintingContract;
 }
+
+/**
+ * Temporary compatibility alias for the existing mock implementation.
+ * New product/runtime code must depend on PosRuntimeContract instead.
+ */
+export type MockPosRuntime = PosRuntimeContract;
