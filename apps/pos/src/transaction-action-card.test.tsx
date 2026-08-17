@@ -58,7 +58,7 @@ describe("transaction operation card", () => {
     expect(screen.getByRole("button", { name: "دفع" })).toBeDisabled();
   });
 
-  it("shows Clear Cart above the basket without entering or moving the operation card", async () => {
+  it("shows Clear Cart inside the basket body without changing the header or operation footer", async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -69,9 +69,12 @@ describe("transaction operation card", () => {
     expect(clearCart).toBeEnabled();
 
     const clearSlot = clearCart.closest(".ticket-clear-cart-slot");
+    const ticketPanel = clearSlot?.parentElement;
     const actionCard = document.querySelector(".ticket-actions");
     expect(clearSlot).not.toBeNull();
-    expect(clearSlot?.nextElementSibling).toHaveClass("ticket-panel");
+    expect(ticketPanel).toHaveClass("ticket-panel");
+    expect(clearSlot?.previousElementSibling).toHaveClass("ticket-header");
+    expect(clearSlot?.nextElementSibling).toHaveClass("ticket-lines");
     expect(actionCard).not.toContainElement(clearCart);
     expect(actionCard?.children).toHaveLength(2);
 
