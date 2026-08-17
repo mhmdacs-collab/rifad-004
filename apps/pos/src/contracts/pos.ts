@@ -110,7 +110,7 @@ export interface CheckoutContract {
     checkoutId: string;
     tendered: Money;
   }): Promise<Receipt>;
-  completeCardSale?(input: {
+  completeCardSale(input: {
     commandId: string;
     checkoutId: string;
   }): Promise<Receipt>;
