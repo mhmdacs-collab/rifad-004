@@ -1,0 +1,176 @@
+/*
+ * Rifad POS — Visual Pass 51
+ * Exact operation-card geometry: checkout and success reuse the basket action
+ * card dimensions/slots exactly. Clear Cart expands the sale card upward only,
+ * so Save/Credit + Pay keep the same bottom-row coordinates.
+ */
+
+/* -------------------------------------------------------------------------- */
+/* One exact transaction operation card                                      */
+/* -------------------------------------------------------------------------- */
+
+.transaction-operation-card {
+  flex: 0 0 auto;
+  width: 100%;
+  display: grid !important;
+  grid-template-columns: minmax(110px, .72fr) minmax(180px, 1.28fr) !important;
+  grid-template-rows: auto auto;
+  column-gap: 9px !important;
+  row-gap: 0 !important;
+  align-items: center;
+  direction: rtl;
+  box-sizing: border-box;
+  margin: 0 !important;
+  padding: 10px 12px 12px !important;
+  border-top: 1px solid #dfe6e2 !important;
+  background: #fff !important;
+  box-shadow: 0 -5px 15px rgb(25 55 43 / 4%) !important;
+}
+
+.transaction-operation-card > button:not(.ticket-clear-cart) {
+  grid-row: 2 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 58px !important;
+  height: 58px !important;
+  margin: 0 !important;
+  border-radius: 11px !important;
+  box-sizing: border-box;
+}
+
+.transaction-operation-card > button:not(.ticket-clear-cart):first-of-type {
+  grid-column: 1 !important;
+}
+
+.transaction-operation-card > button:not(.ticket-clear-cart):nth-of-type(2) {
+  grid-column: 2 !important;
+}
+
+/* The checkout rail now owns the footer as a sibling of its scrollable body.
+   This makes the footer's bottom edge and horizontal inset identical to the
+   original basket .ticket-actions card instead of inheriting body padding. */
+.inline-checkout-rail--cash,
+.inline-checkout-rail--card,
+.inline-checkout-rail--success {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0;
+}
+
+.inline-checkout-rail--cash .inline-checkout-body,
+.inline-checkout-rail--card .inline-checkout-body,
+.inline-checkout-rail--success .inline-success-body {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.inline-checkout-rail--cash .inline-operation-footer,
+.inline-checkout-rail--card .inline-operation-footer,
+.inline-checkout-rail--success .inline-operation-footer {
+  position: static !important;
+  inset: auto !important;
+  bottom: auto !important;
+  margin-top: 0 !important;
+}
+
+.inline-operation-footer .inline-complete-sale,
+.inline-success-actions > button {
+  flex-basis: auto !important;
+  box-shadow: none;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Clear cart: one touch, visible from the first item, without moving Pay      */
+/* -------------------------------------------------------------------------- */
+
+.transaction-operation-card > .ticket-clear-cart {
+  grid-column: 1 / -1 !important;
+  grid-row: 1 !important;
+  width: 100%;
+  min-height: 44px !important;
+  height: 44px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 8px !important;
+  padding: 0 14px;
+  color: #95453b;
+  border: 1px solid #dfc1bb;
+  border-radius: 10px;
+  background: #fff9f7;
+  font: inherit;
+  font-size: .76rem;
+  font-weight: 850;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.transaction-operation-card > .ticket-clear-cart:hover:not(:disabled),
+.transaction-operation-card > .ticket-clear-cart:focus-visible {
+  border-color: #ca8e83;
+  background: #fdf3f0;
+}
+
+.transaction-operation-card > .ticket-clear-cart:disabled {
+  opacity: .55;
+  cursor: default;
+}
+
+/* The clear row is added above the original pair. The bottom action row keeps
+   exactly the same distance from the bottom edge whether Clear Cart exists or not. */
+.ticket-actions.transaction-operation-card {
+  align-self: stretch;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Responsive: every state changes together, preserving 1:1 slot geometry     */
+/* -------------------------------------------------------------------------- */
+
+@media (min-width: 821px) and (max-height: 800px) {
+  .transaction-operation-card {
+    grid-template-columns: minmax(110px, .72fr) minmax(180px, 1.28fr) !important;
+    column-gap: 7px !important;
+    padding: 8px 10px 9px !important;
+  }
+
+  .transaction-operation-card > button:not(.ticket-clear-cart) {
+    min-height: 52px !important;
+    height: 52px !important;
+  }
+
+  .transaction-operation-card > .ticket-clear-cart {
+    min-height: 44px !important;
+    height: 44px !important;
+    margin-bottom: 6px !important;
+  }
+}
+
+@media (max-width: 820px) {
+  .transaction-operation-card {
+    grid-template-columns: minmax(88px, .7fr) minmax(150px, 1.3fr) !important;
+    column-gap: 8px !important;
+  }
+
+  .transaction-operation-card > button:not(.ticket-clear-cart) {
+    min-height: 54px !important;
+    height: 54px !important;
+  }
+
+  .transaction-operation-card > .ticket-clear-cart {
+    min-height: 46px !important;
+    height: 46px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .transaction-operation-card {
+    grid-template-columns: minmax(82px, .68fr) minmax(138px, 1.32fr) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .transaction-operation-card > .ticket-clear-cart {
+    transition: none !important;
+  }
+}

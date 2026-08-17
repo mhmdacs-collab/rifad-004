@@ -37,10 +37,7 @@ describe("transaction operation card", () => {
 
     expect(await screen.findByText("التذكرة فارغة")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "تمت عملية البيع بنجاح" })).not.toBeInTheDocument();
-    await waitFor(() => {
-      const persisted = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}") as { receipt?: unknown };
-      expect(persisted.receipt ?? null).toBeNull();
-    });
+    await waitFor(() => expect(window.localStorage.getItem(STORAGE_KEY)).not.toContain('"receipt"'));
   });
 
   it("keeps both debt settlement and Pay visible on an empty Quick Sale ticket", async () => {
@@ -53,5 +50,42 @@ describe("transaction operation card", () => {
 
     expect(screen.getByRole("button", { name: "سداد" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "دفع" })).toBeDisabled();
+  });
+
+  it("shows Clear Cart from the first item and clears multiple basket lines in one touch", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await unlockPos(user);
+    await user.click(await screen.findByRole("button", { name: /قهوة سعودية/ }));
+    expect(await screen.findByRole("button", { name: "مسح السلة" })).toBeEnabled();
+
+    await user.click(screen.getByRole("button", { name: /لاتيه/ }));
+    await user.click(screen.getByRole("button", { name: /شاي كرك/ }));
+    expect(screen.getByRole("button", { name: "دفع" })).toBeEnabled();
+
+    await user.click(screen.getByRole("button", { name: "مسح السلة" }));
+
+    expect(await screen.findByText("التذكرة فارغة")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "مسح السلة" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "دفع" })).toBeDisabled();
+  });
+
+  it("uses the same operation-card class and direct rail footer across sale and cash stages", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await unlockPos(user);
+    await user.click(await screen.findByRole("button", { name: /قهوة سعودية/ }));
+
+    await waitFor(() => expect(document.querySelector(".ticket-actions")).toHaveClass("transaction-operation-card"));
+    await user.click(screen.getByRole("button", { name: "دفع" }));
+    await user.click(await screen.findByRole("button", { name: /نقدًا/ }));
+
+    await waitFor(() => {
+      const checkoutCard = document.querySelector(".inline-operation-footer");
+      expect(checkoutCard).toHaveClass("transaction-operation-card");
+      expect(checkoutCard?.parentElement).toHaveClass("inline-checkout-rail--cash");
+    });
   });
 });

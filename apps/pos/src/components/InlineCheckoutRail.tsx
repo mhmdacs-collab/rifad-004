@@ -246,17 +246,17 @@ export function InlineCheckoutRail({
           </section>
 
           {!validCash && cashInput.length > 0 ? <div className="inline-cash-validation">المبلغ المستلم أقل من إجمالي البيع.</div> : null}
-
-          <footer className="inline-operation-footer" aria-label="إجراءات العملية">
-            <button type="button" className="inline-cancel-sale" disabled={busy !== null} onClick={onNewSale}>
-              إلغاء الفاتورة
-            </button>
-            <button type="button" className="inline-complete-sale" disabled={!validCash || busy === "complete-cash"} onClick={() => tendered !== null && onCompleteCash(tendered)}>
-              <Icon name="check" size={21} />
-              <span>{busy === "complete-cash" ? "جارٍ السداد…" : "سداد"}</span>
-            </button>
-          </footer>
         </div>
+
+        <footer className="inline-operation-footer transaction-operation-card" aria-label="إجراءات العملية">
+          <button type="button" className="inline-cancel-sale" disabled={busy !== null} onClick={onNewSale}>
+            إلغاء الفاتورة
+          </button>
+          <button type="button" className="inline-complete-sale" disabled={!validCash || busy === "complete-cash"} onClick={() => tendered !== null && onCompleteCash(tendered)}>
+            <Icon name="check" size={21} />
+            <span>{busy === "complete-cash" ? "جارٍ السداد…" : "سداد"}</span>
+          </button>
+        </footer>
       </aside>
     );
   }
@@ -286,17 +286,17 @@ export function InlineCheckoutRail({
             </div>
             <div className="inline-card-status"><i /><span>جهاز الدفع جاهز</span></div>
           </section>
-
-          <footer className="inline-operation-footer" aria-label="إجراءات العملية">
-            <button type="button" className="inline-cancel-sale" disabled={busy !== null} onClick={onNewSale}>
-              إلغاء الفاتورة
-            </button>
-            <button type="button" className="inline-complete-sale inline-complete-card" disabled={busy === "complete-card"} onClick={onCompleteCard}>
-              <Icon name="check" size={21} />
-              <span>{busy === "complete-card" ? "جارٍ تأكيد الدفع…" : "تم الدفع"}</span>
-            </button>
-          </footer>
         </div>
+
+        <footer className="inline-operation-footer transaction-operation-card" aria-label="إجراءات العملية">
+          <button type="button" className="inline-cancel-sale" disabled={busy !== null} onClick={onNewSale}>
+            إلغاء الفاتورة
+          </button>
+          <button type="button" className="inline-complete-sale inline-complete-card" disabled={busy === "complete-card"} onClick={onCompleteCard}>
+            <Icon name="check" size={21} />
+            <span>{busy === "complete-card" ? "جارٍ تأكيد الدفع…" : "تم الدفع"}</span>
+          </button>
+        </footer>
       </aside>
     );
   }
@@ -356,12 +356,12 @@ export function InlineCheckoutRail({
           <span className="inline-print-always-icon" aria-hidden="true"><Icon name="printer" size={22} /></span>
           <span className="inline-print-always-copy"><strong>طباعة الإيصال دائمًا</strong><small>في العمليات القادمة</small></span>
         </label>
-
-        <footer className="inline-success-actions inline-operation-footer" aria-label="إجراءات العملية">
-          <button type="button" className="inline-success-print" onClick={onPrint} disabled={busy !== null}><Icon name="printer" size={19} />{printStatus === "failed" ? "إعادة الطباعة" : "طباعة"}</button>
-          <button type="button" className="inline-new-sale" onClick={onNewSale} disabled={busy !== null}><Icon name="plus" size={20} />بيع جديد</button>
-        </footer>
       </div>
+
+      <footer className="inline-success-actions inline-operation-footer transaction-operation-card" aria-label="إجراءات العملية">
+        <button type="button" className="inline-success-print" onClick={onPrint} disabled={busy !== null}><Icon name="printer" size={19} />{printStatus === "failed" ? "إعادة الطباعة" : "طباعة"}</button>
+        <button type="button" className="inline-new-sale" onClick={onNewSale} disabled={busy !== null}><Icon name="plus" size={20} />بيع جديد</button>
+      </footer>
     </aside>
   );
 }

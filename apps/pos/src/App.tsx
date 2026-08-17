@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { InlineCheckoutRail } from "./components/InlineCheckoutRail";
+import { TransactionOperationEnhancer } from "./components/TransactionOperationEnhancer";
 import { installQuantityKeypad } from "./quantity-keypad";
 import { PinScreen } from "./screens/PinScreen";
 import { ReceiptsScreen } from "./screens/ReceiptsScreen";
@@ -103,6 +104,13 @@ export default function App() {
             onLoadCustomerLedger={flow.loadCustomerLedger}
             onChargeCredit={flow.chargeTicketToCustomer}
             onSettleDebt={flow.settleCustomerDebt}
+          />
+
+          <TransactionOperationEnhancer
+            showClearCart={flow.stage === "sales" && saleTicket.lines.length > 0}
+            onClearCart={async () => {
+              await Promise.all(saleTicket.lines.map((line) => flow.removeLine(line.id)));
+            }}
           />
 
           {inlineCheckoutStage ? (
