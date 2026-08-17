@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   BROWSER_LOCAL_PERSISTENCE_KEY,
   BrowserLocalPersistence,
-  LocalPersistenceError,
 } from "./adapters/browserLocalPersistence";
 
 const event = (id: string) => ({
@@ -81,7 +80,7 @@ describe("Rifad local persistence boundary", () => {
     window.localStorage.setItem(BROWSER_LOCAL_PERSISTENCE_KEY, "{not-json");
     const persistence = new BrowserLocalPersistence();
 
-    await expect(persistence.getNodeContext()).rejects.toMatchObject<Partial<LocalPersistenceError>>({
+    await expect(persistence.getNodeContext()).rejects.toMatchObject({
       code: "LOCAL_STORE_READ_FAILED",
     });
   });
