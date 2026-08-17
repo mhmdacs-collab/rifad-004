@@ -137,7 +137,7 @@ export function InlineCheckoutRail({
       <aside className="inline-checkout-rail inline-checkout-rail--payment" aria-label="الدفع">
         <header className="inline-checkout-head">
           <button type="button" className="inline-checkout-back" onClick={onBackToSales} aria-label="العودة إلى السلة"><Icon name="arrow" size={20} /></button>
-          <div><strong>الدفع</strong><span>تذكرة #{ticket.sequence}</span></div>
+          <div><strong>اختيار طريقة الدفع</strong><span>تذكرة #{ticket.sequence}</span></div>
         </header>
 
         <div className="inline-checkout-body">
