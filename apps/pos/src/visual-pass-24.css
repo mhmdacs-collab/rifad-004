@@ -1,0 +1,96 @@
+/*
+ * Rifad POS — Visual Pass 24
+ * Final Arabic sale-page label clearance and wider navigation targets.
+ * The tab itself, not only the strip, gets enough horizontal/vertical room.
+ */
+
+@media (min-width: 1366px) {
+  .sale-screen-touch .sale-page-tabs {
+    height: 78px;
+    min-height: 78px;
+    padding-block: 7px;
+  }
+
+  .sale-screen-touch .sale-page-tabs button:not(.grid-page):not(.add-sale-page) {
+    min-width: 170px !important;
+    width: auto;
+    height: 64px;
+    min-height: 64px;
+    flex: 0 0 auto;
+    box-sizing: border-box;
+    padding: 8px 24px 10px !important;
+    overflow: visible !important;
+    white-space: nowrap;
+    line-height: 1.9 !important;
+    font-size: clamp(.8rem, .72vw, .88rem);
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1365px) {
+  .sale-screen-touch .sale-page-tabs {
+    height: 72px;
+    min-height: 72px;
+    padding-block: 6px;
+  }
+
+  .sale-screen-touch .sale-page-tabs button:not(.grid-page):not(.add-sale-page) {
+    min-width: 148px !important;
+    height: 60px;
+    min-height: 60px;
+    flex: 0 0 auto;
+    box-sizing: border-box;
+    padding: 7px 20px 9px !important;
+    overflow: visible !important;
+    white-space: nowrap;
+    line-height: 1.85 !important;
+    font-size: .8rem;
+  }
+}
+
+@media (min-width: 781px) and (max-width: 1023px) {
+  .sale-screen-touch .sale-page-tabs {
+    height: 68px;
+    min-height: 68px;
+    padding-block: 5px;
+  }
+
+  .sale-screen-touch .sale-page-tabs button:not(.grid-page):not(.add-sale-page) {
+    min-width: 132px !important;
+    height: 58px;
+    min-height: 58px;
+    flex: 0 0 auto;
+    box-sizing: border-box;
+    padding: 7px 16px 9px !important;
+    overflow: visible !important;
+    white-space: nowrap;
+    line-height: 1.8 !important;
+    font-size: .76rem;
+  }
+}
+
+@media (max-width: 780px) {
+  .sale-screen-touch .sale-page-tabs button:not(.grid-page):not(.add-sale-page) {
+    min-width: 120px !important;
+    padding: 6px 14px 8px !important;
+    overflow: visible !important;
+    white-space: nowrap;
+    line-height: 1.8 !important;
+  }
+}
+
+/* The basic retail-oriented surface is a sale screen, so use the user-facing name
+   "شاشة البيع" without changing the stored per-device mode key. */
+.sale-screen-basic .current-page-title {
+  font-size: 0 !important;
+  line-height: 1;
+}
+
+.sale-screen-basic .current-page-title::after {
+  content: "شاشة البيع";
+  display: inline-block;
+  color: inherit;
+  font-size: clamp(.9rem, .84vw, 1.03rem);
+  font-weight: 760;
+  line-height: 1.5;
+  white-space: nowrap;
+}
