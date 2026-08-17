@@ -59,9 +59,9 @@ export function LocalServiceDialog({ mode, areas, openOrders, busy, onClose, onA
         </header>
 
         <div className="local-service-summary" aria-label="حالة أماكن الخدمة">
-          <div><strong>{openOrders.length}</strong><span>مفتوحة</span></div>
+          <div><strong>{openOrders.length}</strong><span>طلبات مفتوحة</span></div>
           <i />
-          <div><strong>{availablePlaces}</strong><span>متاحة</span></div>
+          <div><strong>{availablePlaces}</strong><span>أماكن متاحة</span></div>
         </div>
 
         <nav className="local-area-tabs" aria-label="مجموعات الأماكن">
@@ -88,8 +88,11 @@ export function LocalServiceDialog({ mode, areas, openOrders, busy, onClose, onA
                 </span>
                 <strong>{place.name}</strong>
                 {order ? (
-                  <span className="local-place-order-meta"><span>{elapsedLabel(order.openedAt)}</span><b>{formatMoney(order.ticket.total)}</b></span>
-                ) : <span className="local-place-free-hint">جاهز لاستقبال طلب</span>}
+                  <span className="local-place-order-meta">
+                    <b className="local-place-total">{formatMoney(order.ticket.total)}</b>
+                    <span className="local-place-elapsed">{elapsedLabel(order.openedAt)}</span>
+                  </span>
+                ) : <span className="local-place-free-hint">اضغط لبدء طلب</span>}
               </button>
             );
           })}
