@@ -6,7 +6,7 @@ Last updated: 2026-08-18
 
 Rifad requires local-first POS operation without making LAN, cloud synchronization, accounting, or ZATCA/Fatoora the owner of a finalized local sale.
 
-The architectural direction remains:
+The architectural direction is:
 
 ```text
 Rifad UI / Core
@@ -27,7 +27,7 @@ These are separate capabilities. The local persistence boundary exists so they c
 
 ## Current Rifad-owned contract
 
-The POS now exposes `LocalPersistenceContract` V1 in:
+The POS exposes `LocalPersistenceContract` V1 in:
 
 `apps/pos/src/contracts/localPersistence.ts`
 
@@ -63,6 +63,38 @@ A locally generated durable event carries:
 This allows future branch/cloud synchronization to route and reconcile records without replacing Rifad local identity with a provider/donor identifier.
 
 `installationId`, `branchId`, and `deviceId` have different meanings and must not be collapsed into one identifier.
+
+## Current private snapshot namespaces
+
+The current staging runtime now persists operational state behind two Rifad-owned namespaces:
+
+- `pos.runtime`, schema version `1` — current POS device/employee/ticket/receipt history, sale pages, customers and credit/debt prototype state;
+- `restaurant.service`, schema version `1` — current restaurant-service configuration and open local orders.
+
+Namespace ownership is private. LAN, Sync, Fiscal, Accounting or another module must not read these physical snapshots as an integration API.
+
+The authoritative integration surfaces remain Rifad contracts, versioned domain events and published read models.
+
+## Legacy mock migration bridge
+
+The current mock implementations were originally written directly against:
+
+- `rifad.pos.mock.v1`;
+- `rifad.pos.restaurant-service.v1`.
+
+They are intentionally not being rewritten merely to prove persistence. Instead, the composition roots use a temporary adapter-only compatibility bridge:
+
+`apps/pos/src/runtime/legacySnapshotBridge.ts`
+
+Behavior:
+
+1. if a Rifad namespace snapshot already exists, it is treated as the restart source and copied into the legacy mock key **before the mock is constructed**;
+2. if no namespace exists but a legacy snapshot exists, that value is imported into `LocalPersistenceContract` as the initial schema-v1 snapshot;
+3. after each durable mock mutation, the runtime decorator mirrors the resulting operational snapshot back through `LocalPersistenceContract`;
+4. any domain events produced by that same action are committed with the snapshot in the same local persistence operation;
+5. the legacy key remains a compatibility implementation detail until the mock store is retired.
+
+This bridge must not become a permanent product dependency. A native persistence-aware POS/restaurant implementation should write through the Rifad persistence boundary directly and remove it.
 
 ## Transactional outbox rule
 
@@ -144,7 +176,7 @@ Accounting, ERP, delivery platforms, notifications and other external systems fo
 - they keep their external IDs/mapping/private credentials behind adapters;
 - they do not become the owner of the finalized local POS sale by merely receiving or acknowledging it.
 
-## Current staging implementation
+## Current staging storage implementation
 
 Current composition selects:
 
@@ -160,9 +192,9 @@ The current browser-storage transport is **staging evidence only**. It is not cl
 
 For the current adapter, snapshot + queued events are written as one root value to demonstrate one local commit boundary. A production store must provide equivalent or stronger atomicity.
 
-Corrupt persistence fails closed rather than silently resetting durable state.
+Corrupt Rifad persistence fails closed rather than silently resetting durable state.
 
-## Current runtime journaling
+## Current runtime persistence decorators
 
 The general POS runtime is decorated by:
 
@@ -172,33 +204,56 @@ The restaurant-service runtime is decorated by:
 
 `apps/pos/src/runtime/journaledRestaurantService.ts`
 
-The decorators publish Rifad durable facts without forcing the current mock implementations to know about LAN/cloud/fiscal transports.
+For the current legacy mocks, these decorators now do two jobs:
 
-A completed cash/card/credit sale publishes a stable `sale.completed.v1` record carrying the completed receipt snapshot and local collection context. Replaying the same completion command produces one pending event identity rather than duplicate downstream sale work.
+1. mirror durable operational snapshots through `LocalPersistenceContract` after state-changing operations;
+2. commit cross-boundary Rifad domain events with the resulting snapshot when the action produces an event.
+
+A completed cash/card/credit sale publishes a stable `sale.completed.v1` record carrying the completed receipt snapshot and local collection context.
 
 Open-local-order lifecycle events use the same local node identity so future branch-local coordination can be added behind separate adapters.
 
-## Important current limitation
+## Cold restart evidence — current PASS for staging transport
 
-This change establishes the **persistence/outbox boundary**, not the final production local database migration.
+`apps/pos/src/cold-restart-persistence.test.ts` proves the current browser staging path at runtime level rather than only testing storage helpers.
 
-The current POS mock still keeps its operational prototype snapshot in its legacy `rifad.pos.mock.v1` storage key, and the restaurant mock still keeps its current open-order/config staging snapshot in `rifad.pos.restaurant-service.v1`.
+The proof intentionally removes the old compatibility keys before constructing fresh adapters.
 
-Therefore the next local-first implementation slice is:
+Verified behavior:
 
-1. move private POS operational snapshots behind `LocalPersistenceContract` namespaces;
-2. move restaurant/open-order snapshots behind the same contract boundary;
-3. define explicit snapshot schema versions/migrations;
-4. prove cold restart restoration and migration behavior;
-5. then select/prove the production storage engine appropriate for Windows/PWA requirements.
+- linked branch/device returns from the `pos.runtime` namespace;
+- employee session returns;
+- current working ticket and its line return;
+- attached customer identity and persisted customer record return;
+- the restored ticket can continue through checkout;
+- completed receipt and receipt history return after another cold reconstruction;
+- an advanced local order survives reconstruction from `restaurant.service`;
+- its service place remains `طاولة 1` and the kitchen revision survives.
 
-No LAN server, Branch Hub, cloud sync engine, or fiscal client is introduced merely to complete that migration.
+This proves **application reconstruction from Rifad namespace state in the current browser staging transport**.
+
+It does not yet prove OS-process crash atomicity, disk durability guarantees, Windows installer behavior, database-lock behavior, multi-process writers or large-volume performance.
+
+## What remains before production storage freeze
+
+The next persistence work is no longer “move the mock snapshots behind the contract”; that bounded migration is now implemented and tested.
+
+Remaining work is:
+
+1. choose and prove the production local storage engine appropriate for Windows and supported PWA behavior;
+2. define real forward schema-migration functions as schemas evolve beyond v1, including rollback/recovery policy;
+3. prove interrupted/crash-write recovery, not only clean runtime reconstruction;
+4. prove realistic transaction-volume/capacity/performance behavior;
+5. remove the legacy mock bridge when a persistence-aware runtime replaces the current mocks;
+6. prove offline start/restart in the packaged Windows application, not only JSDOM/runtime reconstruction.
+
+No LAN server, Branch Hub, cloud sync engine, or fiscal client is introduced merely to complete local storage proof.
 
 ## Module data ownership
 
 Persistence namespaces remain private to their owning capability.
 
-Examples of the target rule:
+Examples of the rule:
 
 - Sales does not read Restaurant private state;
 - LAN does not query Sales private tables;
@@ -210,20 +265,20 @@ Cross-module behavior uses Rifad contracts, versioned domain events, or publishe
 
 ## Acceptance before production storage freeze
 
-Before the production local persistence implementation is accepted, evidence must cover at least:
+Evidence must cover at least:
 
-- restart/cold-start restoration;
-- schema migration forward compatibility;
-- interrupted/crash write behavior;
-- stable command/event identity;
-- duplicate replay protection;
-- storage corruption/error handling;
-- offline completed sale survival;
-- open local order survival;
-- outbox retry and acknowledgement;
-- branch/device identity preservation;
-- storage capacity/performance under realistic transaction volume;
-- Windows packaging behavior;
-- browser/PWA behavior where supported.
+- restart/cold-start restoration — **staging runtime proof PASS; packaged Windows proof still pending**;
+- schema migration forward compatibility — **v1 import/version guard exists; future-version migration proof pending**;
+- interrupted/crash write behavior — pending;
+- stable command/event identity — staging evidence present;
+- duplicate replay protection — staging evidence present;
+- storage corruption/error handling — staging evidence present;
+- offline completed sale survival — staging reconstruction evidence present; packaged runtime proof pending;
+- open local order survival — staging reconstruction evidence present;
+- outbox retry and acknowledgement — staging evidence present;
+- branch/device identity preservation — staging evidence present;
+- storage capacity/performance under realistic transaction volume — pending;
+- Windows packaging behavior — pending;
+- browser/PWA behavior where supported — pending production-engine proof.
 
-LAN, cloud sync and ZATCA/Fatoora then receive their own separate proof matrices rather than being inferred from local persistence alone.
+LAN, cloud sync and ZATCA/Fatoora receive their own separate proof matrices rather than being inferred from local persistence alone.
