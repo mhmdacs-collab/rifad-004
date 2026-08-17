@@ -4,526 +4,272 @@ Last updated: 2026-08-17
 
 ## Purpose
 
-Canonical register for POS-facing labels, durable product data requirements and known persistence/integration gaps. It is not a frozen SQL schema.
+Canonical register for POS-facing terminology, executable fields, mock-only proof fields, durable production requirements, integration reservations, derived values and UI-only state.
 
-Use with:
+This is **not** a frozen SQL schema. It is the traceability bridge between visible product behavior and future Rifad-owned persistence/contracts.
 
-- `UI_EXECUTION_MANIFEST.json` — implementation scope/readiness;
-- `DESIGN_AUTHORITY.md` — interaction/visual authority;
-- `UI_PROGRESS.md` — implementation status;
-- `apps/pos/src/domain/models.ts` — current executable model;
-- `docs/research/restaurant-pos/RESTAURANT_SERVICE_AND_CHANNEL_BENCHMARK_2026-08-17.md`;
-- `docs/research/restaurant-pos/DELIVERY_PLATFORM_INTEGRATION_BENCHMARK_2026-08-17.md`.
+Use with `UI_EXECUTION_MANIFEST.json`, `DESIGN_AUTHORITY.md`, `UI_PROGRESS.md`, current domain/contracts under `apps/pos/src/`, and restaurant/delivery research under `docs/research/restaurant-pos/`.
 
 ## Status legend
 
-- **CURRENT** — exists now in executable Rifad model/contract.
-- **REQUIRED-GAP** — approved/required product data not yet durable.
-- **RESERVED-INTEGRATION** — must be accounted for before named production integration is claimed.
-- **DERIVED** — calculated from authoritative data.
-- **UI-ONLY** — presentation state; do not persist merely because it is visible.
+- **CURRENT** — exists in the current executable Rifad model/contract and established mock runtime.
+- **CURRENT-MOCK** — exists specifically in the executable UI-proof/mock contract or local staging storage; proves interaction but is not yet the production durable model.
+- **REQUIRED-GAP** — approved durable product data still missing from the production-target contract/model.
+- **RESERVED-INTEGRATION** — required before a named real integration is claimed.
+- **DERIVED** — calculated from authoritative facts.
+- **UI-ONLY** — presentation state that should not become durable truth merely because it appears in UI.
 
 ---
 
-# 1. Human interaction authority
+# 1. Canonical cashier terminology
 
-> **Touch first, then human visual clarity, then beauty.**
-
-- frequent targets are human/finger sized;
-- constrained screens change layout/density before shrinking key actions;
-- primary completion actions stay outside repeatable scrolling content when practical;
-- transaction action slots stay physically stable across adjacent states;
-- dynamic keypad validation reserves stable geometry;
-- responsive QA covers large POS, 1366×768, tablet landscape, short-height and mobile/narrow layouts.
-
----
-
-# 2. Canonical cashier-facing terminology
-
-## Sales modes
-
-| Concept | Arabic |
-| --- | --- |
-| Touch/product-page mode | **شاشة لمس** |
-| Search/barcode-first mode | **البيع السريع** |
-
-Internal persisted value `basic` may remain for compatibility; cashier-facing **شاشة أساسية** is deprecated.
-
-## Main actions
-
-| Concept | Canonical label | Meaning |
+| Concept | Label | Status / meaning |
 | --- | --- | --- |
-| General checkout | **دفع** | Current/target checkout entry. |
-| Prototype generic save | **حفظ** | Current prototype only; not permanent restaurant meaning. |
-| Restaurant local service | **محلي** | Target restaurant-service action. Behavior depends on place-management configuration. |
-| Resume advanced local orders | **طلبات مفتوحة** | Target when place-managed local orders exist; optional `· N` count. |
-| Credit sale | **آجل** | Current customer-credit path. |
-| Debt settlement | **سداد** | Current debt/cash-completion context. |
-| Clear current basket | **مسح السلة** | Current minimal destructive label. |
+| Touch/page grid | **شاشة لمس** | CURRENT |
+| Search/barcode-first | **البيع السريع** | CURRENT; internal `basic` compatibility may remain |
+| General checkout | **دفع** | CURRENT |
+| Restaurant local alternative | **محلي** | CURRENT-MOCK in POS-FLOW-002; simple → checkout, advanced → place selector |
+| Advanced open local orders | **طلبات مفتوحة** | CURRENT-MOCK; may display `طلبات مفتوحة · N` |
+| Update reopened advanced local order | **إرسال** | CURRENT-MOCK; mock kitchen revision/update only |
+| Credit sale | **آجل** | CURRENT |
+| Cash/debt completion | **سداد** | CURRENT |
+| Attach customer | **إضافة عميل إلى التذكرة** | CURRENT |
+| Clear basket | **مسح السلة** | CURRENT |
+| Legacy generic ticket save | **حفظ** | legacy/prototype; not target restaurant meaning |
 
-`سداد` is not the general Sales-screen checkout label; general checkout is **دفع**.
+Do not use **سداد** as the general sales-screen checkout label.
 
-## Restaurant fulfillment
+## Fulfillment / kitchen-service meaning
 
-Target durable `fulfillmentMode`:
+Target durable field: `fulfillmentMode`.
 
-| Value | Arabic | Meaning |
+| Durable value | Arabic | Production status |
 | --- | --- | --- |
-| `takeaway` | **سفري** | Default restaurant direct-sale preparation. |
-| `dine_in` | **محلي** | Local/dine-in preparation, with or without exact place. |
-| `delivery` | **توصيل** | Delivery/online fulfillment. |
+| `takeaway` | **سفري** | REQUIRED-GAP; currently inferred/presented by restaurant prototype |
+| `dine_in` | **محلي** | REQUIRED-GAP; current proof keeps local context in mock service state |
+| `delivery` | **توصيل** | REQUIRED-GAP; future delivery-channel flow |
 
-The current visible prototype selector **محلي / سفري / توصيل** is staging UI and must not become the permanent interaction merely because it exists now.
-
-## Sales channels
-
-Target durable `salesChannelId` examples:
-
-- direct POS;
-- Keeta;
-- HungerStation;
-- Jahez;
-- Ninja;
-- future marketplace/online channels.
-
-## Payment / collection / settlement
-
-These are separate from channel and fulfillment:
-
-- **نقدًا** — current cash path;
-- **شبكة / مدى** — current mock card UX;
-- **آجل** — customer credit;
-- prepaid by platform — REQUIRED-GAP/RESERVED-INTEGRATION;
-- cash/card due on delivery/pickup — REQUIRED-GAP;
-- platform settlement — REQUIRED-GAP/RESERVED-INTEGRATION.
-
-A cashier may see a platform tile beside payment/completion choices, but channel identity must not be stored only as `paymentMethod`.
+The old visible **محلي / سفري / توصيل** selector is superseded and hidden in the normal current local-service UI. Do not promote its old `orderType` shape into production schema.
 
 ---
 
-# 3. Product/catalog/pricing fields
+# 2. Product / catalog / pricing
 
 ## Product
 
 | Field | Status | Reason |
 | --- | --- | --- |
-| `id` | CURRENT | Stable identity. |
-| `name` | CURRENT | Catalog/ticket/search. |
-| `categoryId`, `categoryName` | CURRENT | Grouping. |
-| base `price` | CURRENT | Direct/base price. |
-| `abbreviation` | CURRENT | Compact visual. |
-| `sku` | **REQUIRED-GAP** | Quick Sale scanner/search promise. |
-| `barcodes[]` | **REQUIRED-GAP** | Real barcode lookup. |
-| channel pricelist/product override | **REQUIRED-GAP** | Different selling price by platform/channel. |
-| `tone` | UI-ONLY | Prototype styling. |
+| `id` | CURRENT | stable identity |
+| `name` | CURRENT | tile/ticket/search |
+| `categoryId` / `categoryName` | CURRENT | catalog organization |
+| base `price` (`Money`) | CURRENT | direct-price authority |
+| `abbreviation` | CURRENT | compact visual use |
+| `sku` | REQUIRED-GAP | Quick Sale/scanner promise |
+| barcode identity / `barcodes[]` | REQUIRED-GAP | exact scanner lookup |
+| channel pricelist/product override | REQUIRED-GAP | delivery-platform selling prices |
+| `tone` | UI-ONLY | prototype visual treatment |
 
-Production channel pricing should use normalized pricelist/override records rather than permanent columns such as `keetaPrice` and `hungerStationPrice` on every product.
+Completed receipts must preserve historical product name/effective selling price snapshots.
 
-Required pricing evidence:
-
-- base price;
-- price-context/pricelist identity;
-- optional product override;
-- effective sold price;
-- effective price snapshot on ticket/receipt/external order;
-- version/effective dates when history matters.
-
-Platform commission/fee is not customer-facing product price.
+Production pricing needs base price, price-context/pricelist identity, optional product override, resolved effective price, sold-price snapshot and version/effective-date rules where required. Platform commission/settlement fee is separate from customer-facing product price.
 
 ---
 
-# 4. Sale-page layout
+# 3. Ticket / working sale
 
-Current `SalePage`:
+CURRENT: `id`, `sequence`, `lines`, customer concept, subtotal, loyalty redemption, tax included, total, updatedAt.
 
-- `id` — CURRENT;
-- `name` — CURRENT;
-- `isDefault` — CURRENT;
-- `productSlots[]` — CURRENT mock representation.
+Restaurant/channel production additions:
 
-Production normalization should preserve page identity/order/slot/product relation/configuration scope explicitly.
-
----
-
-# 5. Ticket and open-order fields
-
-## Ticket
-
-| Field | Status | Notes |
+| Field | Status | Reason |
 | --- | --- | --- |
-| `id`, `sequence`, `lines` | CURRENT | Current sale identity/content. |
-| customer reference/snapshot | CURRENT concept | Mock currently carries customer. |
-| `subtotal`, `loyaltyRedemption`, `taxIncluded`, `total` | CURRENT | Money evidence. |
-| `updatedAt` | CURRENT | Current update time. |
-| `fulfillmentMode` | **REQUIRED-GAP** | Takeaway/dine-in/delivery. |
-| `salesChannelId` | **REQUIRED-GAP** | Direct/platform source. |
-| `priceContextId` / pricelist snapshot | **REQUIRED-GAP** | Channel pricing traceability. |
-| `serviceAreaId` | **REQUIRED-GAP** | Advanced local only. |
-| `servicePlaceId` | **REQUIRED-GAP** | Advanced local table/room/session/place. |
-| open-order lifecycle/status | **REQUIRED-GAP** | Working/open/paid/cancelled etc. |
-| created timestamp | **REQUIRED-GAP** | Audit/elapsed time. |
-| stable branch/device/employee refs | **REQUIRED-GAP** | Multi-device audit. |
-| kitchen/preparation revision evidence | **REQUIRED-GAP** | Delta/idempotency. |
-| external-order link | **RESERVED-INTEGRATION** | Platform order identity when connected. |
+| `fulfillmentMode` | REQUIRED-GAP | authoritative takeaway/dine-in/delivery |
+| `salesChannelId` | REQUIRED-GAP | direct vs platform source |
+| `priceContextId` / pricelist evidence | REQUIRED-GAP | channel pricing |
+| `serviceAreaId` | REQUIRED-GAP | advanced local location |
+| `servicePlaceId` | REQUIRED-GAP | table/room/session |
+| durable open-order ID/status | REQUIRED-GAP | production lifecycle |
+| created timestamp | REQUIRED-GAP | audit/elapsed time |
+| stable branch/device/employee refs | REQUIRED-GAP | multi-device/audit |
+| kitchen sent quantities/revisions | REQUIRED-GAP | preparation deltas/retry safety |
 
-Do not promote temporary prototype `orderType` UI state into permanent schema. Target meaning belongs in `fulfillmentMode` plus configuration/channel fields.
-
-## TicketLine
-
-CURRENT: `id`, `productId`, `name`, `unitPrice`, `quantity`.
-
-Additional requirements:
-
-- line total — DERIVED;
-- effective price source/channel context — REQUIRED-GAP;
-- external item/SKU/modifier mapping — RESERVED-INTEGRATION;
-- preparation sent-quantity/revision relation — REQUIRED-GAP when kitchen deltas are implemented.
+TicketLine current fields: `id`, `productId`, `name`, `unitPrice`, `quantity`; line total is DERIVED. Effective price source/channel and kitchen sent-quantity/revision are REQUIRED-GAP. Visual tone is UI-ONLY.
 
 ---
 
-# 6. Restaurant-service configuration
+# 4. Restaurant service configuration / open orders
 
-Restaurant semantics and place management are **two layers**.
+`POS-FLOW-002` introduced executable UI-proof types in `apps/pos/src/domain/restaurantService.ts`, `RestaurantServiceContract`, and local mock adapter/storage.
 
-## Branch/POS configuration
+These are **CURRENT-MOCK**: intentional testable product evidence, not final production persistence.
+
+## RestaurantServiceConfig
 
 | Field | Status | Meaning |
 | --- | --- | --- |
-| `restaurantServiceEnabled` | **REQUIRED-GAP** | Enables restaurant local/takeaway semantics. OFF keeps retail/direct POS clean. |
-| `servicePlaceManagementEnabled` | **REQUIRED-GAP** | Optional sub-capability; requires restaurant service. Enables areas/places/open local orders. |
+| `restaurantServiceEnabled` | CURRENT-MOCK / production REQUIRED-GAP | enables restaurant semantics |
+| `placeManagementEnabled` | CURRENT-MOCK / production REQUIRED-GAP | enables exact place workflow |
 
-Target behavior:
+## ServiceArea
 
-- restaurant service OFF → no forced **محلي/سفري** workflow;
-- restaurant service ON + place management OFF → **محلي** marks local then checkout; direct **دفع** = سفري;
-- restaurant service ON + place management ON → **محلي** requires place selection and produces an open local order.
+`id`, `name`, `places[]` are CURRENT-MOCK. Production still needs normalized branch/POS scope, display order, active state and later Back Office layout ownership. Current demo areas: **الصالة / الغرف / الجلسات**.
 
-Production ownership is expected in Back Office. POS-side configuration may exist temporarily during UI-first proof but should not become ordinary-cashier authority.
+## ServicePlace
 
-## ServiceArea — advanced mode
+`id`, `serviceAreaId`, `name`, `kind: table | room | session` are CURRENT-MOCK. Production active state is REQUIRED-GAP; capacity/seats and x/y/shape remain future scope.
 
-REQUIRED-GAP:
+## OpenLocalOrder
 
-- `id`;
-- `name`;
-- branch/config scope;
-- display order;
-- active flag;
-- optional layout metadata later.
+CURRENT-MOCK:
 
-Examples: الصالة، الدور الأول، الغرف، الجلسات الخارجية.
+- `id`, `commandId`;
+- stored Ticket snapshot;
+- area/place IDs + names;
+- `openedAt`, `updatedAt`;
+- `kitchenRevision`.
 
-## ServicePlace — advanced mode
+Production must replace/normalize this proof shape with authoritative open-order lifecycle, local persistence/sync and real kitchen dispatch/outbox semantics. Do not freeze the mock snapshot as database schema.
 
-REQUIRED-GAP:
-
-- `id`;
-- `serviceAreaId`;
-- cashier-facing name/code;
-- active flag;
-- capacity/seats when later approved;
-- x/y/size/shape only when Back Office floor-layout editing is approved.
-
-Examples: طاولة 12، غرفة 3، جلسة 8.
-
-Current area tab, selection, card colors and responsive map/list mode are UI-ONLY.
+Occupied/free colors, selected area, modal state, responsive map/list mode, toast visibility, action emphasis and scroll position are UI-ONLY.
 
 ---
 
-# 7. Checkout/payment/collection fields
+# 5. Checkout / payment / settlement
 
-Current checkout concepts include checkout identity, ticket identity, method selection and command/idempotency identity. Production restart requires durable status/timestamps and command evidence.
+Current checkout includes checkout identity, ticket link, selected method and command/idempotency identity.
 
-Future normalized payment records must support more than one record per receipt and should include:
+Current methods:
 
-- payment ID;
-- ticket/checkout/receipt relation;
-- method;
-- authoritative amount;
-- status;
-- command/idempotency key;
-- timestamps;
-- external provider/reference when applicable.
+- `cash` → **نقدًا** — CURRENT mock flow;
+- `card` → **شبكة / مدى** — CURRENT mock UX only;
+- `credit` → **آجل** — CURRENT customer-credit path.
 
-Cash current evidence:
+Cash receipt evidence: `tendered` CURRENT; `change` CURRENT/preserved derived fact.
 
-- `tendered` — CURRENT;
-- `change` — CURRENT/preserved derived result.
+Future normalized payment records need identity, ticket/checkout/receipt links, method, authoritative amount, status, command key and timestamps. Production Mada reserves provider/acquirer, terminal ID, external reference, approval/auth reference, RRN when supplied, allowed masked-card reference, scheme/status/provider timestamps.
 
-Production Mada/card reserve legitimate terminal/acquirer facts, but never full PAN, PIN, CVV or track data.
+Never store full PAN, PIN, CVV or track data.
 
 ---
 
-# 8. External delivery-channel integration fields
+# 6. Delivery sales channels / online orders
 
-A connected external order needs normalized Rifad fields plus raw external references for support/reconciliation.
+Target durable concept: `salesChannelId`; examples direct POS, Keeta, HungerStation, Jahez, Ninja and future channels.
 
-## Channel connection/configuration
+Real delivery adapters reserve:
 
-| Field/concept | Status |
-| --- | --- |
-| channel adapter/provider identity | **REQUIRED-GAP** |
-| integration mode: direct / aggregator | **REQUIRED-GAP** |
-| authorization/connection status | **RESERVED-INTEGRATION** |
-| external merchant/chain/store IDs | **RESERVED-INTEGRATION** |
-| Rifad branch ↔ external store mapping | **RESERVED-INTEGRATION** |
-| enabled adapter capabilities | **RESERVED-INTEGRATION** |
-| auto-accept policy | **REQUIRED-GAP** when online-order flow is authorized |
-| auto-send-to-kitchen policy | **REQUIRED-GAP** |
-| online-order receiving device/branch policy | **REQUIRED-GAP** |
+- external order/reference and connector identity;
+- external store/location mapping;
+- webhook/event identity + idempotency;
+- external status/timestamps;
+- external sold-price snapshots;
+- item/option mapping evidence;
+- payment/collection state;
+- settlement status/reference;
+- commission/fee evidence;
+- customer/address data only within approved privacy scope.
 
-Secrets/tokens must use secure configuration storage, not ordinary cashier-editable fields or receipt/ticket data.
-
-## ExternalOrder
-
-RESERVED-INTEGRATION / REQUIRED-GAP before production delivery integration:
-
-- external order ID;
-- external display/order/rider handoff code;
-- external event/webhook ID;
-- channel/store identity;
-- fulfillment type;
-- external item/SKU/modifier IDs and mapping;
-- external sold unit/line totals;
-- customer-facing discount/fee snapshots;
-- payment collection state (`prepaid`, `due_on_delivery`, `due_on_pickup`, etc.);
-- external payment/reference facts when supplied;
-- order status and timestamps;
-- cancellation/refund state;
-- source payload/version/hash or safe audit evidence as required;
-- webhook idempotency/acknowledgment state.
-
-For API-connected external orders, external sold prices are historical order evidence. Do not overwrite them silently with the current local base price.
-
-## Platform settlement/reconciliation
-
-Separate from the sale itself:
-
-- platform receivable/clearing identity — REQUIRED-GAP for accounting integration;
-- settlement batch/reference — RESERVED-INTEGRATION;
-- gross sale amount — REQUIRED-GAP/snapshot;
-- platform commission/fee components — RESERVED-INTEGRATION;
-- promotion contribution/other deductions — RESERVED-INTEGRATION;
-- net payable/paid amount — RESERVED-INTEGRATION;
-- settlement status/date — RESERVED-INTEGRATION.
-
-Some platform settlement fields may arrive later than the order event; order acceptance/kitchen processing must not depend on all financial settlement details already being complete.
-
-## Adapter capabilities
-
-Rifad should query connector capabilities rather than hard-code platform-specific UI branches. Potential capabilities:
-
-- authorization;
-- store mapping;
-- menu/pricelist sync;
-- item availability sync;
-- order webhook/polling;
-- accept/reject;
-- prepare/ready;
-- dispatch/delivered;
-- cancel/refund;
-- payment detail;
-- settlement/reconciliation.
-
-Adapters may be direct platform adapters or approved aggregator adapters.
+These remain RESERVED-INTEGRATION / REQUIRED-GAP until a real connector is authorized. Channel identity must never be inferred solely from payment method.
 
 ---
 
-# 9. Receipt fields
+# 7. Receipt fields
 
-Current executable receipt includes:
+CURRENT receipt includes ID/number/payment method, item snapshots, subtotal/redemption/tax/total, tendered/change/loyalty earned, completion time, employee/branch name snapshots and customer snapshot.
 
-- `id`, `number`, `paymentMethod`;
-- product/item snapshots;
-- subtotal/redemption/tax/total;
-- tendered/change;
-- loyalty earned;
-- completion timestamp;
-- employee/branch name snapshots;
-- customer snapshot when attached.
-
-Required before restaurant/channel production completeness:
-
-- `fulfillmentMode` — REQUIRED-GAP;
-- `salesChannelId` + safe channel snapshot — REQUIRED-GAP;
-- service area/place relation/snapshot when advanced local — REQUIRED-GAP;
-- price-context evidence — REQUIRED-GAP;
-- external order reference when platform-sourced — RESERVED-INTEGRATION;
-- collection/payment records — REQUIRED-GAP;
-- stable employee/branch/device IDs — REQUIRED-GAP;
-- fiscal/ZATCA and refund/cancellation evidence when implemented.
+Restaurant/channel production additions remain REQUIRED-GAP: fulfillment, channel snapshot, place/area relation or historical snapshot, price-context evidence, stable employee/branch/device IDs, durable payment links, and future fiscal/refund/cancellation evidence.
 
 ---
 
-# 10. Customer fields
+# 8. Customer / debt
 
-CURRENT executable/mock persistence:
+Customer CURRENT: `id`, `name`, `mobile`, email, address, city, region, postalCode, country, customerCode, taxNumber, note and current debt convenience balance.
 
-- `id`;
-- `name`;
-- `mobile` — exactly `05XXXXXXXX` in current local Saudi UX;
-- `email`;
-- `address`;
-- `city`;
-- `region`;
-- `postalCode`;
-- `country`;
-- `customerCode`;
-- `taxNumber` — presence does not imply complete ZATCA compliance;
-- `note`;
-- convenience debt balance.
+Create/edit enforces local Saudi `05XXXXXXXX` (10 digits). Tax-number presence alone is not ZATCA-compliance evidence.
 
-Production needs normal audit timestamps and final fiscal validation rules.
+DebtLedgerEntry CURRENT: ID/customer, kind `opening | credit-sale | payment`, direction `debit | credit`, amount, createdAt and related ticket sequence when applicable.
 
-## Debt ledger
-
-CURRENT:
-
-- `id`;
-- `customerId`;
-- kind: `opening | credit-sale | payment`;
-- direction: `debit | credit`;
-- amount;
-- `createdAt`;
-- related ticket sequence when applicable.
-
-Debt-dialog keypad/feedback/result display state remains UI-ONLY.
+Future debt permissions/due dates/aging/limits/settlement methods/statement export remain unscoped.
 
 ---
 
-# 11. Loyalty
+# 9. Loyalty
 
-Current concepts include program config, balance/status, redemption quote, applied redemption, earned value and purchase history.
-
-Production should use durable loyalty transaction evidence rather than mutable balance snapshots alone.
+CURRENT contract/model concepts include program configuration, customer status/balance, qualifying purchases, rewards, redemption quote/applied redemption, loyalty earned and purchase history. Production should eventually use durable loyalty transaction evidence.
 
 ---
 
-# 12. Device/employee/preferences/configuration
+# 10. Device / employee / configuration
 
-## CURRENT session data
+DeviceSession CURRENT: device ID/name, branch ID/name, linked email.
 
-Device:
+EmployeeSession CURRENT: employee ID/name, role name.
 
-- `deviceId`, `deviceName`, `branchId`, `branchName`, `linkedEmail`.
+Executable local preferences/configuration:
 
-Employee:
+- sale mode `touch | basic` — CURRENT;
+- `printReceiptAlways` — CURRENT;
+- restaurant service ON/OFF — CURRENT-MOCK staging;
+- place management ON/OFF — CURRENT-MOCK staging.
 
-- `employeeId`, `employeeName`, `roleName`.
+The legacy generic visible-order-type setting is superseded/hidden in normal current UI.
 
-## Current device-local preferences
-
-- sale mode `touch | basic`;
-- temporary visible order-type selector preference;
-- `printReceiptAlways`.
-
-The generic visible order-type preference is staging behavior and should be superseded by structured restaurant-service/channel configuration.
-
-## Required structured configuration
-
-- `restaurantServiceEnabled` — REQUIRED-GAP;
-- `servicePlaceManagementEnabled` — REQUIRED-GAP;
-- service areas/places — REQUIRED-GAP when advanced mode is enabled;
-- allowed sales channels — REQUIRED-GAP;
-- channel pricelist mapping — REQUIRED-GAP;
-- online-order auto-accept/kitchen policy — REQUIRED-GAP when authorized;
-- external connector mappings/credentials — RESERVED-INTEGRATION and Back Office/security owned.
+Production Back Office should own persistent restaurant areas/places, channels/pricelists, connector mappings/credentials and online-order policies where appropriate.
 
 ---
 
-# 13. Printing and kitchen/preparation dispatch
+# 11. Printing / kitchen dispatch
 
-Receipt print delivery UI currently exposes:
+Receipt-print UI states CURRENT: `idle`, `queued`, `printed`, `failed`, `delivery-unknown`.
 
-`idle / queued / printed / failed / delivery-unknown`.
+Production print history needs durable job/receipt/printer/device links, status, command identity, timestamps, attempts and safe unknown-delivery evidence. `delivery-unknown` must not cause blind duplicate print.
 
-Historical receipt print jobs are not durable yet.
+`POS-FLOW-002` has a **CURRENT-MOCK `kitchenRevision`** proving that an advanced local order can be sent, reopened and updated without creating a second open place. It is not real kitchen transport.
 
-Production receipt print jobs require ID, receipt, target printer/device, status, command/idempotency identity, timestamps, attempts and safe unknown-delivery evidence. Never blindly duplicate `delivery-unknown` jobs.
-
-## Kitchen/preparation dispatch — REQUIRED-GAP
-
-Future dispatch evidence:
-
-- dispatch ID;
-- order/ticket ID;
-- fulfillment mode;
-- service place when advanced local;
-- sales channel when useful;
-- target station/printer/KDS;
-- revision/version;
-- line quantity additions/void deltas;
-- idempotency identity;
-- queued/sent/acknowledged/unknown/failure state;
-- timestamps.
-
-API-connected delivery orders may be auto-accepted/sent according to policy, but retry/reconnect must not duplicate kitchen work.
+Production kitchen REQUIRED-GAP: dispatch ID, order/ticket ID, fulfillment, place when local, channel when relevant, routed printer/KDS/station, revision/version, line/void deltas, idempotency/outbox identity, delivery state and timestamps.
 
 ---
 
-# 14. Search/barcode gap
+# 12. Search/barcode gap
 
-Current Quick Sale visually promises scanner/SKU selling while current Product has no durable SKU/barcode identity and mock search matches name only.
+Quick Sale promises scanner/SKU-oriented use but Product has no real SKU/barcode identity and mock search remains name-only.
 
-Before production Quick Sale acceptance:
-
-- add SKU/barcode fields;
-- define uniqueness/scope;
-- route scanner input through catalog contract;
-- add exact lookup tests;
-- preserve scanner-first focus behavior.
+> **Barcode/SKU is a documented data gap, not a completed backend capability.**
 
 ---
 
-# 15. UI-only state that must not become database truth
+# 13. UI-only state
 
-Examples:
-
-- open dialogs/menus;
-- hover/pressed/animation state;
-- keypad freshness/digits before command;
-- scroll position;
-- responsive breakpoint/layout mode;
-- visual `tone`;
-- validation presentation classes;
-- current service-area tab;
-- map/list responsive representation;
-- green/silver action emphasis;
-- online-order badge animation/pulse.
-
-Persist only when a real recovery/product requirement explicitly demands it.
+Do not persist merely because visible: dialog/menu state, hover/pressed/animation, keypad digits/freshness, temporary numeric input, responsive mode, decorative tone, scroll position, validation CSS state, selected service area, map/list presentation, green/silver emphasis, local-service toast or modal state.
 
 ---
 
-# 16. Current high-priority gaps
+# 14. Highest-priority production gaps
 
-Before POS data can be considered complete for visible/approved direction, close or explicitly defer:
-
-1. replace temporary `orderType` UI with durable `fulfillmentMode` semantics;
-2. add **two-level** restaurant configuration: service semantics + optional place management;
-3. add service areas/places and open-order lifecycle for advanced local mode;
-4. add `salesChannelId` and normalized channel configuration;
-5. add channel-aware pricelist/product overrides and effective price snapshots;
-6. define delivery-channel adapter capability contract supporting direct and aggregator implementations;
-7. add external-order IDs/mappings/payment-collection/webhook-idempotency records;
-8. add platform settlement/reconciliation records separately from sales/payment-at-till;
-9. add kitchen dispatch revision/delta/idempotency records;
-10. add real SKU/barcode catalog identity;
-11. normalize durable checkout/payment records for restart/idempotency/split payment;
-12. persist stable branch/device/employee IDs on receipts;
-13. persist receipt print-job history;
-14. migrate temporary browser/device settings to structured local/Back Office configuration;
-15. keep Mada/card production fields reserved until a real terminal adapter is proven.
+1. authoritative `fulfillmentMode`;
+2. production restaurant configuration;
+3. authoritative service areas/places/open-order lifecycle + multi-device sync;
+4. durable kitchen delta/idempotency/outbox;
+5. `salesChannelId` and channel configuration;
+6. channel-aware pricing/effective sold-price evidence;
+7. direct/aggregator delivery adapter contract + external IDs/mappings/webhook idempotency;
+8. platform payment-collection + settlement/reconciliation;
+9. SKU/barcode identity/search;
+10. durable checkout/payment records;
+11. stable employee/branch/device IDs on receipts;
+12. print-job history;
+13. structured business/device configuration;
+14. legitimate Mada references without prohibited sensitive data.
 
 ---
 
-# 17. Change-control rule
+# 15. Change-control rule
 
-When product/UI introduces a new visible or durable field, fulfillment mode, service setting, sales channel, integration mapping, price context, payment/collection state, customer attribute, receipt fact, kitchen state or status:
+When visible product work introduces a field/label/option/fulfillment/channel/price/payment fact/restaurant setting/kitchen state:
 
 1. update this register in the same PR;
-2. classify it CURRENT / REQUIRED-GAP / RESERVED-INTEGRATION / DERIVED / UI-ONLY;
-3. update Rifad contracts/model when it becomes durable business data;
-4. update UI Execution Manifest before implementation when behavior/screen scope changes;
-5. add persistence/restart/idempotency tests where failure recovery matters;
-6. do not wait for database implementation to discover the requirement.
+2. classify CURRENT / CURRENT-MOCK / REQUIRED-GAP / RESERVED-INTEGRATION / DERIVED / UI-ONLY;
+3. update Rifad contracts/models when it becomes authoritative durable business data;
+4. update the UI Execution Manifest before behavior implementation where required;
+5. add restart/idempotency tests for state that must survive failure/restart;
+6. do not wait for SQL design to discover visible business requirements.
