@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it } from "vitest";
 import App from "./App";
@@ -23,12 +23,13 @@ it("accepts a large quantity directly from the keyboard", async () => {
   await waitFor(() => expect(document.querySelector(".ticket-line-button")).not.toBeNull());
 
   await user.click(document.querySelector<HTMLButtonElement>(".ticket-line-button")!);
-  const quantity = await screen.findByRole("textbox", { name: "الكمية" });
+  const editor = await screen.findByRole("dialog");
+  const quantity = within(editor).getByRole("textbox", { name: "الكمية" });
   await user.clear(quantity);
   await user.type(quantity, "1000");
   expect(quantity).toHaveValue("1000");
 
-  await user.click(screen.getByRole("button", { name: "حفظ" }));
+  await user.click(within(editor).getByRole("button", { name: "حفظ" }));
 
   await waitFor(() => {
     const persisted = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}") as {
