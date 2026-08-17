@@ -66,6 +66,8 @@ This is not a slogan; it is an implementation rule.
 - Whole rows/cards should be tappable when the entire row/card represents one action.
 - Primary actions such as Pay, Complete payment and New sale receive more touch/visual weight than secondary actions such as Save or Print.
 - If space becomes constrained, alter layout, column count, wrapping, scrolling, or secondary information before shrinking the main touch targets.
+- A frequent completion action must not require vertical scrolling merely because the viewport is shorter. Prefer making only the repeatable content list scroll while totals, required context and the primary completion action remain reachable.
+- When a dedicated POS surface has room for repeated numeric entry, prefer an embedded numeric keypad over forcing a touch device to open its system soft keyboard. Hardware-keyboard entry may remain available as an additional path.
 
 ## Human visual clarity second
 
@@ -74,6 +76,7 @@ This is not a slogan; it is an implementation rule.
 - The next required action must be visually obvious without reading every helper sentence.
 - Payment methods should use both text and strong visual recognition, not tiny icons or text-only rows when a better visual cue is available.
 - Whitespace is useful only when it helps scanning and reachability; it must not make important information look undersized or lost.
+- Status/results should not use the same filled-color treatment as the primary action when that makes them look equally actionable. Prefer calmer borders/backgrounds for read-only results.
 
 ## Beauty third
 
@@ -97,6 +100,13 @@ When the viewport changes, **layout may change before touch size changes**.
 
 Phone is allowed to use a different composition from tablet/desktop. Do not compress a split-screen desktop/tablet surface into unusably small columns merely to preserve geometry.
 
+For transaction rails and baskets, the preferred fallback is:
+
+- keep totals and primary completion actions outside the scrolling content region;
+- let long item/content lists absorb the scroll;
+- reduce decorative spacing before reducing key hit targets;
+- avoid introducing an extra navigation or reveal step solely because the display is smaller.
+
 ---
 
 # Current accepted POS interaction direction
@@ -106,9 +116,13 @@ The active POS branch has established these interaction decisions:
 - product tiles are large touch targets;
 - the product card is the primary source for unit price while basket rows emphasize quantity × item and row total;
 - repeated item addition should emphasize quantity feedback rather than animate the whole basket row unnecessarily;
+- long baskets scroll only their item list while ticket totals, required order context and **دفع** stay outside that scrolling region;
+- tapping a ticket line opens a touch-first quantity editor with large `+ / −`, direct numeric entry, an embedded POS keypad including `00` and backspace, and one safe confirmation write;
 - checkout does not navigate away from the sale context; the basket rail transforms through payment stages while the product catalog remains visible as frozen context;
 - checkout progression is conceptually `basket → payment methods → cash/card → success`;
+- the cash rail keeps the change result visually distinct from the filled **سداد** action and keeps the completion action reachable without scrolling in the normal path;
 - success emphasizes the result the cashier needs next, especially cash change, and makes **بيع جديد** the dominant next action;
+- the always-print preference is presented as a quickly scannable printer row rather than a long undifferentiated sentence;
 - payment-method cards use strong visual recognition in addition to their Arabic labels;
 - card/شبكة/مدى UX may be mocked for product validation, but production terminal support is not claimed until the terminal/provider adapter is proven.
 
