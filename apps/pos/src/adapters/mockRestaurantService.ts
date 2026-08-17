@@ -19,44 +19,28 @@ const defaultConfig: RestaurantServiceConfig = {
   placeManagementEnabled: true,
 };
 
-const place = (serviceAreaId: string, id: string, name: string, kind: ServicePlace["kind"]): ServicePlace => ({
+const place = (serviceAreaId: string, id: string, name: string): ServicePlace => ({
   id,
   serviceAreaId,
   name,
-  kind,
 });
 
+/**
+ * Owner-review default: one generic group named "الطاولات" with six places.
+ * Rooms, sessions, VIP groups, extra tables, or any other labels are not seeded
+ * by the POS. They will be created later from Back Office configuration.
+ */
 export const DEMO_SERVICE_AREAS: readonly ServiceArea[] = [
   {
-    id: "area-hall",
-    name: "الصالة",
+    id: "group-tables",
+    name: "الطاولات",
     places: [
-      place("area-hall", "table-01", "طاولة 1", "table"),
-      place("area-hall", "table-02", "طاولة 2", "table"),
-      place("area-hall", "table-03", "طاولة 3", "table"),
-      place("area-hall", "table-04", "طاولة 4", "table"),
-      place("area-hall", "table-05", "طاولة 5", "table"),
-      place("area-hall", "table-06", "طاولة 6", "table"),
-    ],
-  },
-  {
-    id: "area-rooms",
-    name: "الغرف",
-    places: [
-      place("area-rooms", "room-01", "غرفة 1", "room"),
-      place("area-rooms", "room-02", "غرفة 2", "room"),
-      place("area-rooms", "room-03", "غرفة 3", "room"),
-      place("area-rooms", "room-04", "غرفة 4", "room"),
-    ],
-  },
-  {
-    id: "area-sessions",
-    name: "الجلسات",
-    places: [
-      place("area-sessions", "session-01", "جلسة 1", "session"),
-      place("area-sessions", "session-02", "جلسة 2", "session"),
-      place("area-sessions", "session-03", "جلسة 3", "session"),
-      place("area-sessions", "session-04", "جلسة 4", "session"),
+      place("group-tables", "table-01", "طاولة 1"),
+      place("group-tables", "table-02", "طاولة 2"),
+      place("group-tables", "table-03", "طاولة 3"),
+      place("group-tables", "table-04", "طاولة 4"),
+      place("group-tables", "table-05", "طاولة 5"),
+      place("group-tables", "table-06", "طاولة 6"),
     ],
   },
 ];
