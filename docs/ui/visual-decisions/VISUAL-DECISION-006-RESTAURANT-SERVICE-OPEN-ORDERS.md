@@ -1,6 +1,6 @@
 # VISUAL-DECISION-006 — Restaurant Service, Places and Online Orders
 
-Status: **owner-directed product/interaction direction; market-researched; local-service mock subset implemented for owner visual review; online-order implementation still pending**
+Status: **owner-directed product/interaction direction; market-researched; local-service mock subset implemented and iterating under owner visual review; online-order implementation still pending**
 
 Date: 2026-08-17
 
@@ -21,7 +21,7 @@ The UI distinguishes:
 
 1. retail/direct sale with no restaurant-service terminology;
 2. restaurant service that only needs **محلي / سفري** preparation identity;
-3. advanced restaurant service that additionally needs service areas/places and open local orders;
+3. advanced restaurant service that additionally needs configurable place groups/places and open local orders;
 4. delivery-platform orders, which may arrive automatically through integrations rather than being recreated by the cashier.
 
 ## Configuration hierarchy
@@ -43,8 +43,8 @@ Target state with a non-empty basket:
 > **محلي | دفع**
 
 - pressing **دفع** follows the normal direct restaurant sale and is prepared as **سفري**;
-- pressing **محلي** proceeds through checkout without asking for a table, room or session;
-- no floor/open-place workflow is imposed on a restaurant that does not need exact seating.
+- pressing **محلي** proceeds through checkout without asking for a table or any other place;
+- no open-place workflow is imposed on a restaurant that does not need exact seating.
 
 ### Restaurant service ON + place management ON
 
@@ -55,9 +55,34 @@ Target state with a non-empty basket:
 > **محلي | دفع**
 
 - **دفع** remains direct **سفري** sale;
-- **محلي** opens service-area/place selection;
+- **محلي** opens group/place selection;
 - selecting a place assigns and opens the order, records the current mock kitchen revision and clears the main working basket;
 - payment may happen later by reopening the local order.
+
+## Place-group model
+
+The cashier-facing structure is:
+
+> **مجموعة → أماكن**
+
+The product must not hard-code restaurant venue vocabulary into the place record.
+
+Current default advanced configuration is deliberately minimal:
+
+- one group: **الطاولات**;
+- six places: **طاولة 1** through **طاولة 6**;
+- no default **الغرف** or **الجلسات** tabs.
+
+Future Back Office configuration may add places to an existing group or create any new group. Examples:
+
+- group **الغرف** containing **غرفة 1 / غرفة 2**;
+- group **الجلسات** containing **جلسة 1 / جلسة 2**;
+- group **الخارجية** or **VIP**;
+- a place with any owner-defined cashier-facing name.
+
+A place is therefore not required to carry a `table | room | session` enum. Its operational identity is stable ID + configured group + configured place name.
+
+The current internal contract name `ServiceArea` represents this generic grouping layer; it does not imply that groups must correspond to physical floors or rooms.
 
 ## Open local orders
 
@@ -84,19 +109,20 @@ When an occupied place is reopened, the first slot becomes:
 
 **إرسال** means update the stored local order/preparation revision and return to a fresh working basket. It is not a real KDS/printer transport claim in the current prototype.
 
-## Service-area/place selector
+## Group/place selector
 
-Rifad uses a hybrid semantic floor view:
+Rifad uses a simple semantic place view:
 
-- service-area tabs such as **الصالة / الغرف / الجلسات**;
-- large touch targets for places such as **طاولة 1 / غرفة 2 / جلسة 3**;
-- wide screens use a readable spatial grid;
+- large group tabs using configured names;
+- large touch targets for configured places;
+- place cards show the configured place name directly and do not repeat a hard-coded kind label;
+- wide screens use a readable place grid;
 - decorative furniture is intentionally avoided when it would reduce touch/readability;
 - narrow/mobile layouts change to larger stacked cards;
 - free/occupied states use text plus color, not color alone;
 - red remains reserved for destructive/error/urgent states.
 
-Back Office should eventually own persistent service configuration and place layout. The current POS settings are staging controls for UI-first validation, not the intended ordinary-cashier production ownership model.
+Back Office should eventually own persistent group/place configuration and optional layout. The current POS settings are staging controls for UI-first validation, not the intended ordinary-cashier production ownership model.
 
 ## Current executable local-service subset
 
@@ -105,7 +131,8 @@ Back Office should eventually own persistent service configuration and place lay
 - Restaurant service ON/OFF;
 - place management ON/OFF;
 - one-touch simple **محلي** checkout;
-- advanced area/place selection;
+- advanced group/place selection;
+- default **الطاولات** group with six places only;
 - local open-order snapshots;
 - **طلبات مفتوحة** state on an empty basket;
 - reopening an occupied place into the working ticket;
@@ -114,7 +141,7 @@ Back Office should eventually own persistent service configuration and place lay
 
 The implementation deliberately composes the existing Sales/Checkout contracts with a new `RestaurantServiceContract`. It does not alter the production sales schema merely to prove the visual flow.
 
-Known boundary: fulfillment/place identity is not yet a durable authoritative field on the production-target Ticket/Receipt model. The mock local-service adapter preserves the UI proof separately. Production restaurant persistence, sync and kitchen dispatch remain required gaps.
+Known boundary: fulfillment/place identity is not yet a durable authoritative field on the production-target Ticket/Receipt model. The mock local-service adapter preserves the UI proof separately. Production restaurant persistence, Back Office configuration, sync and kitchen dispatch remain required gaps.
 
 ## Fulfillment, channel and payment/collection
 
@@ -173,7 +200,7 @@ Target production behavior remains:
 
 - direct restaurant **دفع**: **سفري**;
 - simple **محلي**: local kitchen output without a required place;
-- advanced **محلي**: output when assigned/sent to a service place;
+- advanced **محلي**: output when assigned/sent to a configured place;
 - later advanced-local additions/voids: preparation deltas/revisions rather than blind full duplicates;
 - delivery: **توصيل** plus channel identity where useful;
 - API-connected delivery may auto-send after integration acceptance according to branch policy.
