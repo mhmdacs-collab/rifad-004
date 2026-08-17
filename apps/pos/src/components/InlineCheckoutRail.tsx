@@ -131,11 +131,6 @@ export function InlineCheckoutRail({
     setKeypadFresh(false);
   };
 
-  const clearCash = () => {
-    setCashInput("0");
-    setKeypadFresh(false);
-  };
-
   const chooseSuggestion = (halalas: number) => {
     setCashInput((halalas / 100).toFixed(2));
     setKeypadFresh(true);
@@ -215,8 +210,7 @@ export function InlineCheckoutRail({
 
           <section className="inline-cash-entry" aria-labelledby="cash-entry-label">
             <div className="inline-section-heading inline-cash-entry-heading">
-              <div><strong id="cash-entry-label">المبلغ المستلم</strong><span>اكتب المبلغ أو استخدم لوحة الأرقام</span></div>
-              <button type="button" onClick={clearCash}>مسح</button>
+              <div><strong id="cash-entry-label">المبلغ المستلم</strong></div>
             </div>
             <label className="inline-cash-input">
               <input
