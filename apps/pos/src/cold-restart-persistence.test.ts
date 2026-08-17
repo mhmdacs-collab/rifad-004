@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { createMockPosRuntime } from "./adapters/mockPos";
 import { money } from "./domain/money";
 import type { CustomerDetails } from "./domain/models";
+import { createLegacySnapshotBridge } from "./runtime/legacySnapshotBridge";
 import { createLocalPersistenceAdapter } from "./runtime/localPersistenceAdapter";
 import {
   createPosRuntimeAdapter,
@@ -39,6 +41,43 @@ const linkAndUnlock = async () => {
 };
 
 describe("local-first cold restart persistence", () => {
+  it("imports an existing legacy POS snapshot into the Rifad namespace before retiring the old key", async () => {
+    const legacy = createMockPosRuntime();
+    await legacy.deviceSession.linkWithCredentials({
+      commandId: "legacy-device",
+      email: "legacy@rifad.test",
+      password: "1234",
+    });
+    await legacy.employeeSession.unlock({ pin: "1234" });
+    let legacyTicket = await legacy.sales.startTicket({ commandId: "legacy-ticket" });
+    legacyTicket = await legacy.sales.addItem({
+      commandId: "legacy-add",
+      ticketId: legacyTicket.id,
+      productId: "p-002",
+    });
+
+    const persistence = createLocalPersistenceAdapter();
+    expect(await persistence.readSnapshot(POS_RUNTIME_SNAPSHOT_NAMESPACE)).toBeNull();
+
+    const bridge = createLegacySnapshotBridge({
+      persistence,
+      namespace: POS_RUNTIME_SNAPSHOT_NAMESPACE,
+      schemaVersion: POS_RUNTIME_SNAPSHOT_SCHEMA_VERSION,
+      legacyStorageKey: LEGACY_POS_RUNTIME_STORAGE_KEY,
+    });
+    await bridge.ready;
+
+    const imported = await persistence.readSnapshot<unknown>(POS_RUNTIME_SNAPSHOT_NAMESPACE);
+    expect(imported?.schemaVersion).toBe(POS_RUNTIME_SNAPSHOT_SCHEMA_VERSION);
+    expect(imported?.revision).toBe(1);
+
+    window.localStorage.removeItem(LEGACY_POS_RUNTIME_STORAGE_KEY);
+    const reopened = createPosRuntimeAdapter();
+    const restored = reopened.restore();
+    expect(restored.ticket?.id).toBe(legacyTicket.id);
+    expect(restored.ticket?.lines[0]?.productId).toBe("p-002");
+  });
+
   it("restores the working sale, customer and completed receipt from the Rifad POS namespace", async () => {
     const first = await linkAndUnlock();
     let ticket = await first.sales.startTicket({ commandId: "restart-ticket" });
