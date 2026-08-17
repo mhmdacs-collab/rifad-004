@@ -10,260 +10,321 @@ Rifad separates product/workflow evidence from visual design authority. This let
 
 ### 1. Rifad product decisions
 
-`PROJECT_RULES.md`, current architecture decisions and approved product requirements are the final authority when any source conflicts.
+`PROJECT_RULES.md`, current architecture decisions and approved product requirements are final when sources conflict.
 
 ### 2. Loyverse functional/workflow reference
 
-The research under `docs/research/loyverse/` is the primary evidence for:
+Research under `docs/research/loyverse/` remains the primary baseline for screen/workflow inventory, navigation, visible actions, states, prerequisites, offline-visible behavior, POS/KDS/CDS relationships and ergonomic density.
 
-- screen and workflow inventory;
-- navigation and information hierarchy;
-- visible actions and their meaning;
-- state transitions;
-- permissions and prerequisite settings;
-- offline-visible behavior;
-- POS/KDS/CDS operational relationships;
-- density and ergonomic baseline.
+Loyverse is not a code dependency and does not own Rifad identity, contracts or data model.
 
-Loyverse is not a code dependency and does not own Rifad's identity, contracts or data model.
+Cross-market research may refine bounded workflows when Loyverse is too generic. Current restaurant/delivery research:
 
-Cross-market research may refine a bounded workflow when Loyverse is too generic for the target operation. The current restaurant-service comparison is documented in `docs/research/restaurant-pos/RESTAURANT_SERVICE_AND_CHANNEL_BENCHMARK_2026-08-17.md`.
+- `docs/research/restaurant-pos/RESTAURANT_SERVICE_AND_CHANNEL_BENCHMARK_2026-08-17.md`
+- `docs/research/restaurant-pos/DELIVERY_PLATFORM_INTEGRATION_BENCHMARK_2026-08-17.md`
 
 ### 3. Rifad visual and interaction authority
 
-Rifad's design system is the authority for:
+Rifad owns:
 
-- brand colors and tokens;
+- colors/tokens;
 - typography;
-- icons and original assets;
-- spacing, radius, elevation and component styling;
-- touch-target geometry and cashier ergonomics;
-- accessibility treatment;
-- animation values;
+- icons/assets;
+- spacing/radius/elevation;
+- touch geometry and cashier ergonomics;
+- accessibility;
+- animation;
 - final responsive composition while preserving approved behavior.
 
-The provisional executable baseline is stored in `RIFAD_DESIGN_TOKENS.json`. It is approved only for the current UI work and must be promoted or changed through a visual decision before production design freeze. A developer must not invent a generic dashboard theme or unrecorded tokens to fill a gap.
+`RIFAD_DESIGN_TOKENS.json` is provisional for current UI work until promoted/changed through explicit design decisions.
 
 ### 4. Optional visual/operational donors
 
-Other products or open-source interfaces may be proposed as narrow visual or operational donors. They are not approved merely because they look better or are mentioned in discussion. Each adoption requires an explicit decision record that identifies the exact pattern, affected Rifad screens and evidence.
+Other products may influence narrow patterns only through recorded evidence/decision. Square, Lightspeed, Odoo, Toast, Foodics, Deliverect, UrbanPiper or others do not receive blanket authority.
 
-Square, Lightspeed, Odoo or Toast may influence a bounded restaurant pattern only through recorded evidence/decision. Observable proprietary behavior may be used as inspiration/specification, but protected code, assets, branding or distinctive trade dress must not be copied. Direct code reuse requires license and dependency verification.
+Observable behavior may be used as inspiration/specification; proprietary code/assets/branding/trade dress must not be copied. Direct code reuse requires license/dependency verification.
 
 ---
 
 # Human-first interaction rule
 
-The current binding POS design priority is:
-
 > **Touch first, then human visual clarity, then beauty.**
-
-This is not a slogan; it is an implementation rule.
 
 ## Touch first
 
-- Frequent cashier actions should normally provide about 48 px or more of usable hit area when the display allows it.
-- On short-height devices, important controls should remain around 44–48 px rather than collapsing into desktop-sized buttons.
-- The visual icon may remain smaller than its hit area.
-- Whole rows/cards should be tappable when the entire row/card represents one action.
-- Primary actions such as Pay, Complete payment and New sale receive more touch/visual weight than secondary actions such as print or non-active alternatives.
-- If space becomes constrained, alter layout, column count, wrapping, scrolling, or secondary information before shrinking the main touch targets.
-- A frequent completion action must not require vertical scrolling merely because the viewport is shorter. Prefer making only the repeatable content list scroll while totals, required context and the primary completion action remain reachable.
-- When a dedicated POS surface has room for repeated numeric entry, prefer an embedded numeric keypad over forcing a touch device to open its system soft keyboard. Hardware-keyboard entry may remain available as an additional path.
-- **Reduce finger travel between consecutive transaction steps by preserving one two-slot transaction operation card.** The stable reference is the physical card/slots, not one permanently fixed green side.
-- In the current ordinary RTL sale/payment sequence, the right slot is secondary/alternative/cancel and the left slot is the main completion slot.
-- Current executable sequence is **حفظ | دفع → إلغاء الفاتورة | سداد/تم الدفع → طباعة | بيع جديد**. In Quick Sale with an empty ticket, **سداد | دفع** remains visible; disabled Pay is not hidden and debt settlement is not moved into the Pay slot.
-- When the working basket is empty and open local orders exist, visual priority may swap without moving geometry: **طلبات مفتوحة · N** in the right slot becomes green/primary while the left-slot **دفع** remains disabled/neutral.
-- Dynamic validation near a repeated keypad must reserve stable geometry so messages do not move the keypad or completion card between taps.
+- Frequent cashier actions should normally provide about 48px+ usable hit area when possible.
+- Short-height devices should keep important controls around 44–48px instead of collapsing to desktop-sized buttons.
+- Visual icons may be smaller than hit areas.
+- Whole rows/cards should be tappable when the entire surface represents one action.
+- Active completion actions receive more visual/touch weight than secondary or inactive alternatives.
+- If space is constrained, alter layout/columns/wrapping/scrolling/secondary information before shrinking main targets.
+- Frequent completion actions must not require vertical scrolling merely because viewport height is shorter.
+- Dedicated repeated numeric entry should prefer embedded POS keypads while retaining hardware keyboard support.
+- **Reduce finger travel by preserving one two-slot transaction operation card.** The stable reference is physical geometry, not one permanently fixed green side.
+- Ordinary RTL flow currently uses right slot for secondary/alternative/cancel and left slot for main completion.
+- Executable sequence: **حفظ | دفع → إلغاء الفاتورة | سداد/تم الدفع → طباعة | بيع جديد**. Quick Sale empty keeps **سداد | دفع** with disabled Pay visible.
+- Advanced restaurant empty-basket/open-order state may swap visual priority without moving geometry: **طلبات مفتوحة · N** becomes green in right slot while left-slot **دفع** stays disabled/neutral.
+- Dynamic validation near a repeated keypad must reserve stable geometry.
 
 ## Human visual clarity second
 
-- Judge type size and contrast from a cashier's normal standing/seated viewing distance, not from a design-tool zoom level.
-- Important money values must be readable at a glance.
-- The next required action must be visually obvious without reading every helper sentence.
-- Payment methods should use both text and strong visual recognition, not tiny icons or text-only rows when a better visual cue is available.
-- Whitespace is useful only when it helps scanning and reachability; it must not make important information look undersized or lost.
-- Status/results should not use the same filled-color treatment as the primary action when that makes them look equally actionable. Prefer calmer borders/backgrounds for read-only results.
-- Helper text that only repeats an obvious, already-enforced field constraint should not consume normal-path vertical space unless it materially prevents errors.
-- Kitchen/service status must not rely on color alone; text/label/state identity remains visible.
+- Judge type/contrast from normal cashier viewing distance.
+- Important money values must read at a glance.
+- Next required action must be obvious without reading every helper sentence.
+- Payment/collection methods should use text plus strong visual recognition.
+- Whitespace must help scanning/reachability, not make key information look tiny or lost.
+- Read-only results should not look as actionable as primary filled buttons.
+- Repetitive helper text should not consume normal-path space unless it materially prevents errors.
+- Kitchen/service/online-order status must not rely on color alone.
 
 ## Beauty third
 
-Polish is important, but decorative density, symmetry, subtlety, photorealistic floor furniture, or visual novelty may not reduce touch reliability or glance readability.
+Decorative density, symmetry, subtlety, photorealistic floor furniture or novelty may not reduce touch reliability or glance readability.
 
 ---
 
 # Responsive rule
 
-Rifad POS is not designed for one screenshot size.
+Important passes consider:
 
-Every important visual pass must consider at least:
-
-1. large cashier/desktop POS display;
-2. 1366×768-class device;
+1. large desktop/POS;
+2. 1366×768;
 3. tablet landscape;
-4. short-height POS display;
-5. mobile/narrow composition.
+4. short-height POS;
+5. mobile/narrow.
 
-When the viewport changes, **layout may change before touch size changes**.
+**Layout may change before touch size changes.** Phone may use a different composition from desktop/tablet.
 
-Phone is allowed to use a different composition from tablet/desktop. Do not compress a split-screen desktop/tablet surface into unusably small columns merely to preserve geometry.
+Transaction/basket fallback:
 
-For transaction rails and baskets, the preferred fallback is:
+- totals and two-slot operation card stay outside scrolling content;
+- long repeatable lists absorb scrolling;
+- decorative spacing reduces before hit targets;
+- do not add navigation/reveal steps solely because the display is smaller;
+- preserve operation-slot coordinates across adjacent states where usable;
+- sale basket and checkout/success rail use one physical desktop/tablet width so **بيع جديد** creates no horizontal jump.
 
-- keep totals and the two-slot operation card outside the scrolling content region;
-- let long item/content lists absorb the scroll;
-- reduce decorative spacing before reducing key hit targets;
-- avoid introducing an extra navigation or reveal step solely because the display is smaller;
-- preserve operation-card slot coordinates across adjacent transaction states when doing so does not harm touch or readability;
-- sale basket and checkout/success rail use the same physical width on desktop/tablet so **بيع جديد** does not create a horizontal jump.
+Customer-entry density:
 
-For data-entry forms, responsive density may intentionally differ by device class. The current customer-entry rule is:
-
-- desktop/wide quick customer information uses three columns;
-- desktop/wide additional customer information uses **three real grid columns** to reduce vertical scrolling;
-- narrow/mobile quick and additional information use one column for easier sequential touch entry;
-- do not preserve desktop columns on a phone by shrinking fields.
+- desktop/wide quick information = three columns;
+- desktop/wide additional information = three real grid columns;
+- narrow/mobile = one column;
+- never preserve desktop columns by shrinking phone fields.
 
 ---
 
 # Restaurant operational interaction rule
 
-This section records product/interaction direction; the full restaurant flow is **not yet implementation-authorized**.
+This is product/interaction direction; full restaurant flow is not implementation-authorized yet.
 
-## Do not ask the cashier an unnecessary order-type question
+## Restaurant semantics are optional
 
-**محلي / سفري / توصيل** is primarily fulfillment/kitchen context.
+Rifad must not ask retail/grocery/direct-sale users restaurant questions they do not need.
 
-- direct POS sale defaults to **سفري** operationally;
-- do not force a `سفري` selection on every direct sale;
-- **محلي** is explicit because it requires assigning a service place/open order;
-- **توصيل** is usually established by a delivery sales channel/order workflow.
+### Restaurant service OFF
 
-## Local action replaces generic Save in table-service mode
+- no permanent **محلي / سفري** workflow;
+- normal sale simply uses **دفع**;
+- suitable for retail/direct POS.
 
-When table/local service is enabled and the working basket has items, the target operation card is:
+### Restaurant service ON
+
+- direct **دفع** means restaurant direct sale and is operationally **سفري** without an extra tap;
+- **محلي** becomes available as the local-service alternative;
+- delivery platforms may establish **توصيل** through their own order/channel flow.
+
+## Place management is a separate optional layer
+
+Do not equate restaurant service with mandatory tables.
+
+### Simple restaurant: place management OFF
+
+Target with basket items:
 
 > **محلي | دفع**
 
-`محلي` opens place assignment. It is not a prettier label for the old generic Save command.
+- **دفع** = direct **سفري** checkout;
+- **محلي** = mark dine-in/local and proceed to checkout;
+- no table/room/session selector;
+- kitchen receives **محلي**.
 
-When the table/local-service setting is disabled, do not show an irrelevant local-management action merely to fill space.
+This supports restaurants with only a few tables or no operational need to identify exact seating.
 
-## Open-order state
+### Advanced restaurant: place management ON
 
-When the basket is empty and local orders exist:
+Target with basket items:
+
+> **محلي | دفع**
+
+- **دفع** = direct **سفري** checkout;
+- **محلي** opens service-area/place selection;
+- selecting a place assigns an open local order, sends kitchen work and clears the main working basket;
+- payment may happen before or after dining.
+
+## Advanced open-order state
+
+Only place-managed mode needs this shortcut.
+
+Empty basket + open local orders:
 
 > **طلبات مفتوحة · N | دفع**
 
-- physical card geometry stays fixed;
-- **طلبات مفتوحة** becomes the green priority action in its existing right slot;
-- **دفع** remains in its existing left slot but is silver/neutral and disabled;
-- once the cashier starts a new basket, the card returns to **محلي | دفع** and Pay regains green priority.
+- physical card stays fixed;
+- **طلبات مفتوحة** becomes green/primary in right slot;
+- **دفع** stays left but silver/neutral and disabled;
+- adding a new item returns to **محلي | دفع**, with Pay primary again.
 
-Recommended wording is **طلبات مفتوحة**, not `التذاكر المفتوحة`, because it matches the operational task.
+Recommended wording: **طلبات مفتوحة**, not `التذاكر المفتوحة`.
 
 ## Service-area/place view
 
-The target is a semantic spatial view, not a decorative floor-plan screenshot clone.
-
 Wide/tablet:
 
-- area tabs such as **الصالة / الغرف / الجلسات الخارجية**;
-- large place targets such as **طاولة 12 / غرفة 3 / جلسة 8**;
-- approximate the real physical arrangement enough to build staff spatial memory;
-- a place can expose status, elapsed time and amount when these facts are useful;
-- normal occupied state should not be red; red is reserved for destructive/error/urgent attention.
+- area tabs such as **الصالة / الدور الأول / الغرف / الجلسات الخارجية**;
+- large places such as **طاولة 12 / غرفة 3 / جلسة 8**;
+- approximate real arrangement enough to aid spatial memory;
+- show useful status/elapsed time/amount when relevant;
+- normal occupied state is not red.
 
 Mobile/narrow:
 
-- convert the place map to readable cards/list by area;
-- do not shrink a desktop floor plan until touch targets become tiny.
+- use readable cards/list grouped by area;
+- do not shrink a desktop floor plan into tiny targets.
 
-Persistent editing of areas/place positions belongs in Back Office later. Temporary POS settings are acceptable only as staging configuration during UI-first work.
-
-## Delivery/platform channel interaction
-
-A tile/button for Keeta/HungerStation/Ninja may be a one-touch cashier shortcut, but the UI must not imply that channel, fulfillment and payment are the same business field.
-
-If selecting the platform changes product prices:
-
-1. apply the channel pricing context;
-2. recalculate the ticket;
-3. show the updated total;
-4. only then allow final completion.
+Persistent area/place editing belongs in Back Office later. Temporary POS settings are staging only.
 
 ---
 
-# Current accepted POS interaction direction
+# Delivery / online-order interaction rule
 
-The active POS branch has established these interaction decisions:
+## One cashier experience, many adapters
+
+Do not create a separate cashier workflow for every delivery platform.
+
+Target principle:
+
+> **One online-orders experience for the cashier, many direct or aggregator adapters behind it.**
+
+Platform identity stays visible on each order, but connector mechanics stay out of the normal cashier flow.
+
+## API-connected order
+
+When an order arrives through an integration:
+
+- cashier does **not** select Keeta/HungerStation/Jahez again;
+- cashier does **not** retype products/prices;
+- order already carries channel, external reference, sold prices and payment/collection state when supplied;
+- branch policy may auto-accept and auto-send to kitchen;
+- if manual acceptance is required, use one large obvious accept/decline action rather than platform-specific navigation.
+
+Compact labels may read:
+
+- **كيتا · مدفوع**;
+- **هنقرستيشن · نقد عند الاستلام**;
+- **جاهز · مدفوع**.
+
+## Prepaid versus due-on-delivery
+
+- prepaid platform order must not ask cashier to collect cash/Mada again;
+- cash/card due on delivery/pickup remains unpaid until actual collection;
+- a future collection promise must never render as completed payment;
+- platform settlement later must not create a duplicate sale.
+
+## Manual/fallback platform entry
+
+A platform tile may appear beside payment/completion choices when:
+
+- platform is not API-connected;
+- integration is temporarily unavailable and fallback is allowed;
+- staff are authorized to record an external order manually.
+
+The tile can feel like a payment option for speed, but internally it sets separate channel + delivery fulfillment + channel pricing + collection state.
+
+## Pricing
+
+Manual platform entry:
+
+1. apply channel pricelist/override;
+2. recalculate ticket;
+3. visibly show changed total;
+4. only then permit final completion.
+
+API-connected order:
+
+- preserve external sold price snapshots;
+- validate/map product identities;
+- do not overwrite platform order with current direct-POS base prices.
+
+Platform commission/settlement fees remain separate from customer-facing product price.
+
+## Kitchen
+
+- direct restaurant Pay → **سفري**;
+- simple local → **محلي** without required place;
+- advanced local → **محلي + place** when assigned/sent;
+- advanced local additions/voids → preparation deltas/revisions;
+- delivery → **توصيل + channel** where useful;
+- API-connected delivery may auto-send to kitchen after acceptance according to branch policy.
+
+---
+
+# Current accepted executable POS direction
 
 - product tiles are large touch targets;
-- the product card is the primary source for unit price while basket rows emphasize quantity × item and row total;
-- repeated item addition should emphasize quantity feedback rather than animate the whole basket row unnecessarily;
-- long baskets scroll only their item list while ticket totals, required order context and **دفع** stay outside that scrolling region;
-- **مسح السلة** appears from the first item as a lighter-red one-touch row inside the basket body, after the ticket header and before item lines; its visible copy is only **مسح السلة** and it never changes header/footer geometry;
-- tapping a ticket line opens a touch-first quantity editor with large `+ / −`, direct numeric entry, an embedded POS keypad including `00` and backspace, and one safe confirmation write;
-- checkout does not navigate away from the sale context; the basket rail transforms through payment stages while the product catalog remains visible as frozen context;
-- checkout progression is conceptually `basket → payment methods → cash/card → success`;
-- the cash rail keeps the change result visually distinct from the filled **سداد** action and keeps the completion action reachable without scrolling in the normal path;
-- the transaction operation card keeps the same two physical slots through sale, payment completion and sale success;
-- sale/payment/success share one rail width on desktop/tablet to eliminate the visual jump after **بيع جديد**;
-- before payment completion, **إلغاء الفاتورة** occupies the secondary red slot and returns to a fresh sale without creating a receipt in the current prototype;
-- success emphasizes the result the cashier needs next, especially cash change, and keeps **طباعة | بيع جديد** in the same operation-card geometry;
-- the always-print preference is presented as a quickly scannable printer row rather than a long undifferentiated sentence;
-- payment-method cards use strong visual recognition in addition to their Arabic labels;
-- card/شبكة/مدى UX may be mocked for product validation, but production terminal support is not claimed until the terminal/provider adapter is proven.
+- product card owns unit-price visibility; basket emphasizes quantity × item and row total;
+- repeated item addition emphasizes quantity feedback;
+- long baskets scroll only item list while totals/context/**دفع** stay reachable;
+- **مسح السلة** appears from first item as lighter-red one-touch row after ticket header/before lines, with only the label **مسح السلة**;
+- tapping ticket line opens touch-first quantity editor with large `+ / −`, direct numeric entry, keypad `00`/backspace and one safe confirmation;
+- checkout transforms basket rail while catalog remains visible/frozen;
+- progression = `basket → payment methods → cash/card → success`;
+- cash change remains visually distinct from **سداد**;
+- transaction card uses same physical slots across sale/payment/success;
+- sale/payment/success share one rail width desktop/tablet;
+- **إلغاء الفاتورة** is calm-red pre-settlement destructive action and resets unpaid prototype without receipt;
+- success keeps **طباعة | بيع جديد** in same geometry;
+- always-print preference is a scannable printer row;
+- payment-method cards use strong visual recognition;
+- mock card UX does not imply production terminal support.
 
-Canonical cashier-facing labels and UI-to-data fields are maintained in `POS_UI_NAMING_AND_FIELD_REGISTER.md`.
+Canonical labels/data fields live in `POS_UI_NAMING_AND_FIELD_REGISTER.md`.
 
 ---
 
 ## What visual improvement may change
 
-With an approved visual decision, Rifad may improve:
+With an approved decision, Rifad may improve:
 
-- color, typography and icon treatment;
-- spacing and component polish;
-- information legibility and accessibility;
-- touch-target geometry;
+- color/typography/icons;
+- spacing/component polish;
+- legibility/accessibility;
+- touch geometry;
 - responsive composition;
-- feedback animation and transition quality;
+- feedback/animation;
 - empty/loading/error presentation.
 
 ## What visual improvement may not change silently
 
 Visual work may not silently change:
 
-- workflow steps or action meaning;
-- contract calls or durable state transitions;
-- permissions and authorization prompts;
-- offline availability or synchronization semantics;
-- fiscal, money or payment behavior;
-- KDS/CDS operational propagation;
-- required information or audit evidence;
-- fulfillment, sales-channel or price authority.
+- workflow/action meaning;
+- contract/durable state transitions;
+- permissions;
+- offline/sync semantics;
+- fiscal/money/payment behavior;
+- KDS/CDS propagation;
+- required audit evidence;
+- fulfillment/channel/price authority;
+- external-order payment/collection meaning.
 
-Changing any item above requires a product/architecture decision and, where applicable, a manifest update before the behavior is considered production-approved.
+Changing these requires product/architecture decision and, where applicable, manifest update.
 
 ## Visual reference decision record
 
-Create one record per adopted pattern under `docs/ui/visual-decisions/` with:
-
-- decision ID and status;
-- source product/repository and exact URL/version/date inspected;
-- affected screen/flow IDs when available;
-- pattern being adopted;
-- functional behavior that must remain unchanged;
-- reuse mode: inspiration / behavioral reference / direct licensed reuse;
-- license, asset and attribution review where applicable;
-- RTL, accessibility and device-size consequences;
-- screenshots/test fixtures used as acceptance evidence;
-- approver and decision date.
+One record per adopted pattern under `docs/ui/visual-decisions/`, including status, source/date, affected flow/screen, pattern, preserved behavior, reuse mode, license/asset review, RTL/accessibility/device consequences, evidence and approval.
 
 ## Implementation rule
 
-The UI Execution Manifest names the required behavior. The Rifad design system decides its final appearance. An approved visual donor may influence styling only within that boundary.
+UI Execution Manifest names permitted behavior. Rifad design system decides appearance. Approved donors may influence styling/interaction only within that boundary.
 
-For every new visible POS field or label, also update `POS_UI_NAMING_AND_FIELD_REGISTER.md` so later database work cannot forget UI-required data.
+Every new visible durable POS field/label must also update `POS_UI_NAMING_AND_FIELD_REGISTER.md`.
