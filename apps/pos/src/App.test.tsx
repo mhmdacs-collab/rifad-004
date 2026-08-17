@@ -190,11 +190,14 @@ describe("unified ticket customer", () => {
     await user.click(within(picker).getByRole("button", { name: "+ إضافة عميل جديد" }));
 
     await user.type(within(picker).getByLabelText("اسم العميل"), "ليان سعد");
-    await user.type(within(picker).getByLabelText("رقم الجوال"), "0561112233");
+    const mobileInput = within(picker).getByLabelText("رقم الجوال");
+    await user.type(mobileInput, "05611122334");
+    expect(mobileInput).toHaveValue("0561112233");
+    await user.type(within(picker).getByLabelText("العنوان (اختياري)"), "طريق الملك فهد");
     await user.click(within(picker).getByRole("checkbox", { name: /معلومات إضافية/ }));
     await user.type(within(picker).getByLabelText("البريد الإلكتروني"), "layan@example.com");
+    await user.type(within(picker).getByLabelText("الرقم الضريبي"), "310123456700003");
     await user.type(within(picker).getByLabelText("رمز العميل"), "C-100");
-    await user.type(within(picker).getByLabelText("العنوان"), "طريق الملك فهد");
     await user.type(within(picker).getByLabelText("المدينة"), "الرياض");
     await user.type(within(picker).getByLabelText("المنطقة"), "الرياض");
     await user.type(within(picker).getByLabelText("الرمز البريدي"), "12345");
@@ -216,6 +219,7 @@ describe("unified ticket customer", () => {
           postalCode: string;
           country: string;
           customerCode: string;
+          taxNumber: string;
           note: string;
         };
       }>;
@@ -229,6 +233,7 @@ describe("unified ticket customer", () => {
       postalCode: "12345",
       country: "السعودية",
       customerCode: "C-100",
+      taxNumber: "310123456700003",
       note: "عميلة ولاء",
     });
   });
@@ -271,13 +276,26 @@ describe("basic screen customer debt workflow", () => {
     await user.click(within(debtBook).getByRole("button", { name: "تعديل المبلغ" }));
     const amountInput = within(debtBook).getByRole("textbox", { name: "مبلغ السداد" });
     await user.clear(amountInput);
+    await user.type(amountInput, "0");
+
+    const feedback = within(debtBook).getByRole("status");
+    expect(within(feedback).getByText("المتبقي بعد السداد")).toBeInTheDocument();
+    expect(within(feedback).getByText("أدخل مبلغًا أكبر من صفر ولا يتجاوز الرصيد الحالي.")).toBeInTheDocument();
+    expect(within(feedback).getByLabelText("120.00 ريال سعودي")).toBeInTheDocument();
+
+    await user.clear(amountInput);
     await user.type(amountInput, "50.00");
+    expect(within(feedback).getByLabelText("70.00 ريال سعودي")).toBeInTheDocument();
 
     const confirmButton = within(debtBook).getByRole("button", { name: "تأكيد سداد 50.00 ر.س" });
     fireEvent.click(confirmButton);
     fireEvent.click(confirmButton);
 
-    expect(await screen.findByText("تم سداد 50.00 ر.س")).toBeInTheDocument();
+    expect(await within(debtBook).findByText("تم تسجيل السداد")).toBeInTheDocument();
+    expect(within(debtBook).getByText("الرصيد قبل السداد")).toBeInTheDocument();
+    expect(within(debtBook).getByText("المبلغ المسدد")).toBeInTheDocument();
+    expect(within(debtBook).getByText("المتبقي على العميل")).toBeInTheDocument();
+    expect(within(debtBook).getByLabelText("70.00 ريال سعودي")).toBeInTheDocument();
 
     const persisted = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}") as {
       customers?: { id: string; debt: { halalas: number } }[];
@@ -289,6 +307,7 @@ describe("basic screen customer debt workflow", () => {
     expect(persisted.debtPayments?.[0]?.amount.halalas).toBe(5000);
     expect(persisted.debtLedger?.filter((entry) => entry.kind === "payment" && entry.customerId === "customer-001")).toHaveLength(1);
 
+    await user.click(within(debtBook).getByRole("button", { name: "تم" }));
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "دفتر الديون" })).not.toBeInTheDocument());
     await waitFor(() => expect(productSearch).toHaveFocus());
   });
