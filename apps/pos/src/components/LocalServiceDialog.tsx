@@ -22,12 +22,6 @@ const elapsedLabel = (iso: string) => {
   return remainder ? `${hours} س ${remainder} د` : `${hours} س`;
 };
 
-const kindLabel: Record<ServicePlace["kind"], string> = {
-  table: "طاولة",
-  room: "غرفة",
-  session: "جلسة",
-};
-
 export function LocalServiceDialog({ mode, areas, openOrders, busy, onClose, onAssign, onOpen }: LocalServiceDialogProps) {
   const [activeAreaId, setActiveAreaId] = useState(areas[0]?.id ?? "");
 
@@ -70,7 +64,7 @@ export function LocalServiceDialog({ mode, areas, openOrders, busy, onClose, onA
           <div><strong>{availablePlaces}</strong><span>متاحة</span></div>
         </div>
 
-        <nav className="local-area-tabs" aria-label="مناطق الخدمة">
+        <nav className="local-area-tabs" aria-label="مجموعات الأماكن">
           {areas.map((area) => {
             const areaOpenCount = openOrders.filter((order) => order.serviceAreaId === area.id).length;
             return (
@@ -90,7 +84,6 @@ export function LocalServiceDialog({ mode, areas, openOrders, busy, onClose, onA
             return (
               <button type="button" key={place.id} className={`local-place-card ${occupied ? "local-place-card--occupied" : "local-place-card--free"}`} disabled={!selectable || busy} onClick={() => void choosePlace(place)} aria-label={occupied ? `${place.name}، طلب مفتوح` : `${place.name}، متاح`}>
                 <span className="local-place-card-top">
-                  <span className="local-place-kind">{kindLabel[place.kind]}</span>
                   <span className={`local-place-status ${occupied ? "occupied" : "free"}`}>{occupied ? "مفتوح" : "متاح"}</span>
                 </span>
                 <strong>{place.name}</strong>
