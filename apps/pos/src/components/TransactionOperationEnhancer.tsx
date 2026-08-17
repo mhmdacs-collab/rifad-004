@@ -10,17 +10,17 @@ type TransactionOperationEnhancerProps = {
 const sameTargets = (left: readonly HTMLElement[], right: readonly HTMLElement[]) =>
   left.length === right.length && left.every((item, index) => item === right[index]);
 
-const ensureClearCartSlot = (container: HTMLElement) => {
-  const existing = Array.from(container.children).find((child) => child.classList.contains("ticket-clear-cart-slot"));
+const ensureClearCartSlot = (ticketPanel: HTMLElement) => {
+  const existing = Array.from(ticketPanel.children).find((child) => child.classList.contains("ticket-clear-cart-slot"));
   if (existing instanceof HTMLElement) return existing;
 
   const slot = document.createElement("div");
   slot.className = "ticket-clear-cart-slot";
   slot.setAttribute("data-clear-cart-slot", "true");
 
-  const ticketPanel = Array.from(container.children).find((child) => child.classList.contains("ticket-panel"));
-  if (ticketPanel) container.insertBefore(slot, ticketPanel);
-  else container.prepend(slot);
+  const ticketLines = Array.from(ticketPanel.children).find((child) => child.classList.contains("ticket-lines"));
+  if (ticketLines) ticketPanel.insertBefore(slot, ticketLines);
+  else ticketPanel.append(slot);
 
   return slot;
 };
@@ -34,8 +34,8 @@ export function TransactionOperationEnhancer({ showClearCart, onClearCart }: Tra
       const operationCards = Array.from(document.querySelectorAll<HTMLElement>(".ticket-actions, .inline-operation-footer"));
       for (const card of operationCards) card.classList.add("transaction-operation-card");
 
-      const ticketSurfaces = Array.from(document.querySelectorAll<HTMLElement>(".ticket-column, .mobile-ticket-surface"));
-      const slots = ticketSurfaces.map(ensureClearCartSlot);
+      const ticketPanels = Array.from(document.querySelectorAll<HTMLElement>(".ticket-panel--sale"));
+      const slots = ticketPanels.map(ensureClearCartSlot);
       setClearCartTargets((current) => sameTargets(current, slots) ? current : slots);
     };
 
@@ -72,7 +72,7 @@ export function TransactionOperationEnhancer({ showClearCart, onClearCart }: Tra
           disabled={clearing}
           aria-label="مسح السلة"
         >
-          <span className="ticket-clear-cart-icon" aria-hidden="true"><Icon name="trash" size={19} /></span>
+          <span className="ticket-clear-cart-icon" aria-hidden="true"><Icon name="trash" size={20} /></span>
           <span className="ticket-clear-cart-copy">
             <strong>{clearing ? "جارٍ مسح السلة…" : "مسح السلة"}</strong>
             <small>إزالة جميع الأصناف</small>
