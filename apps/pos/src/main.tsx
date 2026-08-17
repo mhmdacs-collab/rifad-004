@@ -20,6 +20,7 @@ import "./customer-system.css";
 import "./customer-loyalty.css";
 import "./visual-pass-13.css";
 import "./visual-pass-14.css";
+import "./visual-pass-15.css";
 
 createRoot(document.getElementById("root")!).render(<StrictMode><App /></StrictMode>);
 
