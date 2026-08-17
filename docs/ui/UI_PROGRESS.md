@@ -51,7 +51,9 @@ Current touch audit rules:
 - icons may stay visually small while their hit area grows;
 - primary cashier actions receive more weight than secondary actions;
 - money and next-action hierarchy are judged from real cashier viewing distance;
-- responsive QA considers large POS, 1366×768, tablet landscape, short-height POS and narrow/mobile layouts.
+- responsive QA considers large POS, 1366×768, tablet landscape, short-height POS and narrow/mobile layouts;
+- frequent transaction-completion actions must not be hidden behind normal-path vertical scrolling;
+- when a dedicated numeric-entry surface has room, use an embedded POS keypad for touch while retaining hardware-keyboard support.
 
 See `DESIGN_AUTHORITY.md` for the binding interaction rule.
 
@@ -121,9 +123,9 @@ Status: ✅
 
 # 3. Ticket and order type
 
-## Ticket
+## Ticket / basket
 
-Status: ✅ 👁 🟡
+Status: ✅ 👁
 
 Current ticket presentation includes:
 
@@ -136,7 +138,38 @@ Current ticket presentation includes:
 - last-touched line behavior;
 - whole-row touch target for editing.
 
+The latest owner-accepted basket touch pass establishes:
+
+- unit price is not repeated as competing information inside the normal sale basket row;
+- quantity is visually readable even for large values such as `1000×`;
+- long product names can use a second line without shrinking into unreadable text;
+- only the **item list** scrolls when the basket becomes long;
+- ticket totals, required order context and the **دفع** action stay outside the item-list scrolling region;
+- 1366×768 and short displays compact spacing before they reduce important touch target size;
+- the mobile ticket follows the same rule: content may scroll, the transaction action area remains reachable.
+
 The earlier line-visibility/clipping problem was visually verified fixed.
+
+## Quantity editor
+
+Status: ✅ 👁
+
+The quantity editor is now a purpose-built touch surface rather than a small desktop form.
+
+Current behavior:
+
+- tapping the whole basket row opens quantity editing;
+- large `+ / −` targets remain for small changes;
+- quantity supports direct numeric entry for large values;
+- an embedded POS keypad provides `1–9`, `0`, `00` and backspace;
+- touch use does not require opening the device/system soft keyboard;
+- a hardware keyboard remains supported for desktop/cashier-keyboard use;
+- destructive **حذف** is visually separated from the primary confirmation action;
+- one **حفظ** confirmation performs the durable/mock-runtime quantity write after editing rather than writing once per keypad tap.
+
+Automated evidence includes entering and persisting a quantity of **1000** through the embedded keypad.
+
+The embedded keypad, focus state and pressed-key state are UI interaction state, not new database fields. The durable business value remains the ticket-line `quantity`.
 
 ## Order type
 
@@ -215,33 +248,33 @@ The original `POS-FLOW-001` remains the cash-sale slice. The current card path i
 
 # 6. Cash payment
 
-Status: ✅ 👁 🟡
+Status: ✅ 👁
 
-Implemented:
+Implemented and owner-reviewed:
 
 - ticket total prefilled as received amount;
 - manual amount entry;
 - four large predictable quick-cash touch targets;
 - 3×4 POS-style keypad;
 - under-tender blocked;
-- large change result;
 - dominant **سداد** action;
-- completed cash receipt persisted in mock runtime.
+- completed cash receipt persisted in mock runtime;
+- normal payment path keeps **سداد** reachable without requiring a downward scroll.
 
-## Final touch pass — implemented, owner visual review pending
+## Accepted cash touch direction
 
-The latest cash pass applies the touch-first hierarchy directly to the tender screen:
+The current cash pass applies the touch-first hierarchy directly to the tender screen:
 
-1. **المبلغ المستلم** is now the largest editable number on the screen and visually outranks the already-known ticket total;
-2. the ticket total remains prominent but uses less vertical/typographic weight than the cashier input;
-3. the four quick amounts are full touch targets rather than small chips;
-4. keypad keys are larger, more separated and provide stronger press feedback;
-5. **الباقي للعميل** is treated as the cashier's result and becomes a strong green result card once the received amount is valid;
-6. **سداد** remains directly after the result as the dominant completion target;
-7. tall screens receive more finger room, while 1366×768/short screens reduce spacing before reducing important target size;
-8. mobile/narrow layouts preserve large quick amounts and keypad targets.
-
-This final cash presentation is implemented but still requires owner visual review before being called visually frozen.
+1. **المبلغ المستلم** is the largest editable number and visually outranks the already-known ticket total;
+2. the ticket total remains readable but visually secondary;
+3. the helper description under the received amount was removed because it slowed scanning without adding necessary meaning;
+4. the redundant separate **مسح** control was removed because deletion already exists on the keypad;
+5. the four quick amounts are full touch targets rather than small chips;
+6. keypad keys are separated and provide clear press feedback;
+7. **الباقي للعميل** is presented as a calm read-only result with green border/text treatment rather than the same filled-green treatment as the action button;
+8. **سداد** is larger and remains the dominant filled action immediately after the result;
+9. tall screens receive more finger room, while 1366×768/short screens reduce spacing before reducing important target size;
+10. mobile/narrow layouts preserve large quick amounts and keypad targets.
 
 ## Current quick-cash rule
 
@@ -294,20 +327,19 @@ Those fields are reserved in the UI field register so the production data model 
 
 # 8. Success rail
 
-Status: ✅ 🟡
+Status: ✅ 👁
 
-Current direction:
+Current owner-reviewed direction:
 
 - success stays in the same basket rail spatial location;
 - success mark/title are larger;
 - receipt facts use clearer rows;
 - money is larger and more scannable;
 - **الباقي** is the hero result for cash sales;
-- print preference is a large touch row;
 - **بيع جديد** is visually/touch-wise dominant over **طباعة** because it is the common next action;
-- vertical space is used rather than leaving a tiny desktop summary floating at the top of a large rail.
-
-The latest enlarged/touch-audited success layout should still receive one final owner screenshot review before design freeze.
+- vertical space is used rather than leaving a tiny desktop summary floating at the top of a large rail;
+- the print preference is now a quickly scannable row with printer icon, main label **طباعة الإيصال دائمًا**, secondary text **في العمليات القادمة**, larger checkbox and a whole-row touch target;
+- the active print preference uses a restrained green cue and does not visually compete with **بيع جديد**.
 
 ---
 
@@ -445,7 +477,9 @@ Highest-priority gaps already exposed by the executable UI:
 7. migrate device preferences into structured local persistence;
 8. reserve legitimate Mada/card transaction references without storing prohibited sensitive card data.
 
-These must be addressed or explicitly deferred before production data-model freeze.
+The latest basket and quantity passes do **not** introduce additional durable data requirements: keypad digits, keypad focus, pressed states and scroll positions remain UI-only; ticket-line `quantity` is already the authoritative business value.
+
+These gaps must be addressed or explicitly deferred before production data-model freeze.
 
 ---
 
@@ -463,7 +497,9 @@ The current branch has behavior coverage for major implemented slices including:
 - debt settlement and duplicate-submit protection;
 - credit sale reuse of attached customer;
 - quick-cash suggestion logic including the corrected 102/108 behavior;
-- mock **شبكة / مدى** completion path recording a card receipt.
+- mock **شبكة / مدى** completion path recording a card receipt;
+- direct large quantity entry;
+- embedded quantity keypad entry of **1000** followed by persisted ticket quantity verification.
 
 Every new branch head must pass TypeScript, Vitest, production build and UI-manifest integrity before it is called technically clean. CI proves code/document integrity, not visual correctness.
 
@@ -518,6 +554,6 @@ Rifad is **not UI-complete** and not production-backend-complete.
 
 Current checkpoint:
 
-> **A substantial touch-first POS product prototype with Rifad-owned contracts and mock-local persistence, an owner-reviewed sales/payment interaction language, inline basket checkout, corrected cash shortcuts, a final cash-tender touch pass pending owner visual review, and a testable mock Mada/card path — documented with explicit UI-to-data traceability before further feature expansion.**
+> **A substantial touch-first POS product prototype with Rifad-owned contracts and mock-local persistence, an owner-reviewed basket/payment interaction language, inline checkout, accepted cash tender and success treatment, a large-quantity editor with embedded POS keypad, long-basket scrolling isolated to item content so transaction actions stay reachable, and a testable mock Mada/card path — documented with explicit UI-to-data traceability before further feature expansion.**
 
-Immediate next step is owner visual review of the final cash-tender pass. If accepted, continue to the quantity editor/ticket-line interaction audit without weakening the field register or naming rules.
+Immediate next visual/product improvement is the **Quick Sale search/scanner surface**: make search results faster to scan and touch, preserve scanner/keyboard focus, and ensure barcode/SKU promises remain clearly separated from the still-open catalog data gap rather than faking backend capability.
