@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { InlineCheckoutRail } from "./components/InlineCheckoutRail";
+import { installQuantityKeypad } from "./quantity-keypad";
 import { PinScreen } from "./screens/PinScreen";
 import { ReceiptsScreen } from "./screens/ReceiptsScreen";
 import { SalesScreen } from "./screens/SalesScreen";
@@ -15,6 +16,8 @@ export default function App() {
   if (flow.ticket) {
     lastSaleTicket.current = flow.ticket;
   }
+
+  useEffect(() => installQuantityKeypad(), []);
 
   useEffect(() => {
     if (flow.stage !== "success") return;
