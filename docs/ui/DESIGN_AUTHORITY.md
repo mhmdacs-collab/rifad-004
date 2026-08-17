@@ -69,6 +69,24 @@ This is not a slogan; it is an implementation rule.
 - A frequent completion action must not require vertical scrolling merely because the viewport is shorter. Prefer making only the repeatable content list scroll while totals, required context and the primary completion action remain reachable.
 - When a dedicated POS surface has room for repeated numeric entry, prefer an embedded numeric keypad over forcing a touch device to open its system soft keyboard. Hardware-keyboard entry may remain available as an additional path.
 
+## Stable primary-action footer rule
+
+For cashier workflows with a clear completion action, the normal pattern is an anchored action band/footer outside the scrolling content region.
+
+- Transaction lists, histories, optional fields and other repeatable content may scroll **above** the action band.
+- The primary completion action keeps a stable touch location whenever practical. Examples include **دفع**, **سداد**, **طباعة الإيصال**, **بيع جديد**, and equivalent confirmation actions.
+- Totals, tax, remaining balance or other facts needed immediately before confirmation may sit in or directly above the same anchored region when that improves decision speed.
+- Do not make a shorter viewport add a normal-path reveal/scroll step merely to reach the main action. Reduce decorative spacing, rearrange columns or let secondary content scroll first.
+- A footer is a layout responsibility, not necessarily `position: fixed`; it should be fixed within the operational surface so it does not overlap content or break responsive layouts.
+
+## Stable touch geometry
+
+Repeated touch controls must not move because nearby validation/result text changes.
+
+- When a keypad is followed by a live result or validation message, reserve one stable feedback container for both valid and invalid states.
+- Prefer changing text, border or calm background treatment inside that container rather than inserting/removing separate blocks that shift the keypad or action button.
+- The cashier should be able to press several digits without needing to visually reacquire keys after every state change.
+
 ## Human visual clarity second
 
 - Judge type size and contrast from a cashier's normal standing/seated viewing distance, not from a design-tool zoom level.
@@ -77,6 +95,7 @@ This is not a slogan; it is an implementation rule.
 - Payment methods should use both text and strong visual recognition, not tiny icons or text-only rows when a better visual cue is available.
 - Whitespace is useful only when it helps scanning and reachability; it must not make important information look undersized or lost.
 - Status/results should not use the same filled-color treatment as the primary action when that makes them look equally actionable. Prefer calmer borders/backgrounds for read-only results.
+- After a financial action, keep enough result information visible for the cashier to communicate the outcome to the customer: what changed, what was paid and what remains. Do not replace this with a tiny transient success message surrounded by unused space.
 
 ## Beauty third
 
@@ -100,12 +119,13 @@ When the viewport changes, **layout may change before touch size changes**.
 
 Phone is allowed to use a different composition from tablet/desktop. Do not compress a split-screen desktop/tablet surface into unusably small columns merely to preserve geometry.
 
-For transaction rails and baskets, the preferred fallback is:
+For transaction rails, baskets and operational dialogs, the preferred fallback is:
 
 - keep totals and primary completion actions outside the scrolling content region;
-- let long item/content lists absorb the scroll;
+- let long item/content/form/history lists absorb the scroll;
 - reduce decorative spacing before reducing key hit targets;
-- avoid introducing an extra navigation or reveal step solely because the display is smaller.
+- avoid introducing an extra navigation or reveal step solely because the display is smaller;
+- convert multi-column optional forms to fewer columns on narrow screens rather than shrinking their text and touch targets.
 
 ---
 
@@ -121,6 +141,9 @@ The active POS branch has established these interaction decisions:
 - checkout does not navigate away from the sale context; the basket rail transforms through payment stages while the product catalog remains visible as frozen context;
 - checkout progression is conceptually `basket → payment methods → cash/card → success`;
 - the cash rail keeps the change result visually distinct from the filled **سداد** action and keeps the completion action reachable without scrolling in the normal path;
+- debt settlement keeps its keypad geometry stable by placing the remaining-balance preview and validation message inside one fixed feedback card;
+- debt-settlement success shows a readable before/paid/remaining summary and waits for an explicit **تم** action rather than disappearing before the cashier can communicate the remaining balance;
+- customer creation prioritizes quick fields first; optional detail fields may use two columns on wider screens and collapse responsively on narrow devices;
 - success emphasizes the result the cashier needs next, especially cash change, and makes **بيع جديد** the dominant next action;
 - the always-print preference is presented as a quickly scannable printer row rather than a long undifferentiated sentence;
 - payment-method cards use strong visual recognition in addition to their Arabic labels;
