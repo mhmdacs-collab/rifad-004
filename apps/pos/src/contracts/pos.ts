@@ -104,11 +104,15 @@ export interface CustomerCreditContract {
 
 export interface CheckoutContract {
   begin(input: { commandId: string; ticketId: string }): Promise<{ checkoutId: string }>;
-  selectPaymentMethod(input: { checkoutId: string; method: "cash" }): Promise<void>;
+  selectPaymentMethod(input: { checkoutId: string; method: "cash" | "card" }): Promise<void>;
   completeCashSale(input: {
     commandId: string;
     checkoutId: string;
     tendered: Money;
+  }): Promise<Receipt>;
+  completeCardSale(input: {
+    commandId: string;
+    checkoutId: string;
   }): Promise<Receipt>;
 }
 
