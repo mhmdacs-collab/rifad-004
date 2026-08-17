@@ -29,6 +29,7 @@ export function SuccessScreen({ receipt, printStatus, busy, onPrint, onEmailRece
   const [emailMessage, setEmailMessage] = useState<string | null>(null);
   const [emailSending, setEmailSending] = useState(false);
   const isCredit = receipt.paymentMethod === "credit";
+  const isCard = receipt.paymentMethod === "card";
 
   const updatePrintAlways = (enabled: boolean) => {
     setPrintAlways(enabled);
@@ -51,7 +52,7 @@ export function SuccessScreen({ receipt, printStatus, busy, onPrint, onEmailRece
         <span className="success-mark"><Icon name="check" size={45} strokeWidth={2.3} /></span>
         <span className="eyebrow">اكتملت العملية</span>
         <h1 id="success-title">{isCredit ? "تم تسجيل البيع الآجل بنجاح" : "تمت عملية البيع بنجاح"}</h1>
-        <p>{isCredit ? "حُفظت الفاتورة على حساب العميل وأضيفت إلى دفتر ديونه." : "حُفظت العملية محليًا وهي جاهزة للمزامنة."}</p>
+        <p>{isCredit ? "حُفظت الفاتورة على حساب العميل وأضيفت إلى دفتر ديونه." : isCard ? "تم تأكيد الدفع عبر شبكة / مدى وحُفظت العملية." : "حُفظت العملية محليًا وهي جاهزة للمزامنة."}</p>
         <div className="receipt-summary">
           <div><span>رقم الإيصال</span><strong dir="ltr">{receipt.number}</strong></div>
           <div><span>الإجمالي</span><strong><MoneyAmount value={receipt.total} /></strong></div>
@@ -60,6 +61,11 @@ export function SuccessScreen({ receipt, printStatus, busy, onPrint, onEmailRece
             <>
               <div><span>طريقة الإنهاء</span><strong>آجل</strong></div>
               <div className="receipt-change"><span>العميل</span><strong>{receipt.customer?.name ?? "—"}</strong></div>
+            </>
+          ) : isCard ? (
+            <>
+              <div><span>طريقة الدفع</span><strong>شبكة / مدى</strong></div>
+              <div className="receipt-change"><span>المبلغ المدفوع</span><strong><MoneyAmount value={receipt.total} /></strong></div>
             </>
           ) : (
             <>
