@@ -1,0 +1,561 @@
+/* Local restaurant service — first owner-reviewable UI pass.
+   This layer intentionally leaves the established ticket header/footer geometry intact. */
+
+.ticket-order-type,
+.device-settings-section--order-types {
+  display: none !important;
+}
+
+.local-service-action {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.local-service-action--hidden {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.local-service-action--open {
+  background: #0a714e !important;
+  border-color: #0a714e !important;
+  color: #fff !important;
+  font-weight: 800 !important;
+}
+
+.local-service-action--send {
+  background: #edf7f2 !important;
+  border-color: #b9dccc !important;
+  color: #075c40 !important;
+  font-weight: 800 !important;
+}
+
+.local-pay--inactive,
+.local-pay--inactive:disabled {
+  background: #eef1ef !important;
+  border-color: #e1e5e3 !important;
+  color: #a4aaa7 !important;
+  box-shadow: none !important;
+}
+
+.local-service-settings-slot {
+  display: contents;
+}
+
+.local-service-settings {
+  gap: 10px;
+}
+
+.local-setting-row {
+  width: 100%;
+  min-height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 12px;
+  border: 1px solid #e2e7e4;
+  border-radius: 12px;
+  background: #fff;
+  color: #26302c;
+  text-align: right;
+}
+
+.local-setting-row > span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.local-setting-row strong {
+  font-size: 15px;
+  font-weight: 750;
+}
+
+.local-setting-row small {
+  color: #747d79;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.local-setting-row--nested {
+  margin-top: -3px;
+  background: #fafcfb;
+}
+
+.local-setting-row.active {
+  border-color: #b9dccc;
+  background: #f6fbf8;
+}
+
+.local-setting-row:disabled {
+  cursor: default;
+  opacity: .62;
+}
+
+.local-setting-switch {
+  position: relative;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 28px;
+  border-radius: 999px;
+  background: #ccd3cf;
+  transition: background .15s ease;
+}
+
+.local-setting-switch b {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,.16);
+  transition: transform .15s ease;
+}
+
+.local-setting-row.active .local-setting-switch {
+  background: #0a714e;
+}
+
+.local-setting-row.active .local-setting-switch b {
+  transform: translateX(-20px);
+}
+
+.local-setting-lock-note {
+  display: block;
+  padding: 1px 4px 0;
+  color: #8a6652;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.local-ticket-context-slot:empty,
+.local-checkout-context-slot:empty {
+  display: none;
+}
+
+.local-ticket-context {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #edf7f2;
+  color: #075c40;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.local-checkout-context-slot {
+  display: inline-flex;
+  width: fit-content;
+}
+
+.local-checkout-context {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 24px;
+  margin-top: 5px;
+  padding: 2px 9px;
+  border: 1px solid #c8e3d7;
+  border-radius: 999px;
+  background: #f4faf7;
+  color: #075c40;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.local-service-backdrop {
+  z-index: 160;
+  padding: 24px;
+  align-items: center;
+  justify-content: center;
+}
+
+.local-service-dialog {
+  width: min(760px, calc(100vw - 48px));
+  max-height: min(760px, calc(100vh - 48px));
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #f7f9f8;
+  box-shadow: 0 26px 70px rgba(23, 36, 30, .24);
+  direction: rtl;
+}
+
+.local-service-head {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e6ebe8;
+  background: #fff;
+}
+
+.local-service-head > div {
+  display: grid;
+  gap: 2px;
+}
+
+.local-service-head span {
+  color: #0a714e;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.local-service-head h2 {
+  margin: 0;
+  color: #202925;
+  font-size: 23px;
+  font-weight: 800;
+}
+
+.local-service-head > button {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e3e8e5;
+  border-radius: 12px;
+  background: #f8faf9;
+  color: #5f6864;
+  font-size: 27px;
+  line-height: 1;
+}
+
+.local-service-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 18px 3px;
+  color: #69736f;
+}
+
+.local-service-summary > div {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.local-service-summary strong {
+  color: #28322e;
+  font-size: 18px;
+}
+
+.local-service-summary span {
+  font-size: 12px;
+}
+
+.local-service-summary i {
+  width: 1px;
+  height: 17px;
+  background: #d9dfdc;
+}
+
+.local-area-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 10px 18px 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.local-area-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.local-area-tabs button {
+  flex: 0 0 auto;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 15px;
+  border: 1px solid #dfe5e2;
+  border-radius: 11px;
+  background: #fff;
+  color: #59635f;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.local-area-tabs button.active {
+  border-color: #9fcdb9;
+  background: #eaf6f0;
+  color: #075c40;
+}
+
+.local-area-tabs small {
+  min-width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #0a714e;
+  color: #fff;
+  font-size: 11px;
+}
+
+.local-place-grid {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-content: start;
+  gap: 11px;
+  padding: 4px 18px 18px;
+  overflow-y: auto;
+}
+
+.local-place-card {
+  min-height: 106px;
+  display: grid;
+  align-content: space-between;
+  gap: 8px;
+  padding: 12px 13px;
+  border: 1px solid #dfe5e2;
+  border-radius: 14px;
+  background: #fff;
+  color: #26302c;
+  text-align: right;
+  box-shadow: 0 2px 7px rgba(25, 42, 34, .035);
+}
+
+.local-place-card:enabled:active {
+  transform: scale(.985);
+}
+
+.local-place-card--free:enabled:hover {
+  border-color: #a9d1bf;
+  background: #fbfefc;
+}
+
+.local-place-card--occupied {
+  border-color: #c9ded4;
+  background: #f2f8f5;
+}
+
+.local-place-card:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.local-place-card--occupied:disabled,
+.local-place-card--free:disabled {
+  filter: saturate(.82);
+}
+
+.local-place-card-top,
+.local-place-order-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.local-place-kind,
+.local-place-status {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.local-place-kind {
+  color: #8a938f;
+}
+
+.local-place-status {
+  min-height: 23px;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.local-place-status.free {
+  background: #f0f3f2;
+  color: #66706b;
+}
+
+.local-place-status.occupied {
+  background: #dcefe6;
+  color: #075c40;
+}
+
+.local-place-card > strong {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.local-place-free-hint,
+.local-place-order-meta {
+  color: #79827e;
+  font-size: 11px;
+}
+
+.local-place-order-meta b {
+  color: #34403a;
+  font-size: 12px;
+}
+
+.local-orders-empty {
+  grid-column: 1 / -1;
+  min-height: 150px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  color: #7d8782;
+}
+
+.local-service-foot {
+  min-height: 66px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 18px;
+  border-top: 1px solid #e5eae7;
+  background: #fff;
+}
+
+.local-service-foot > span {
+  color: #727c77;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.local-service-foot > button {
+  flex: 0 0 auto;
+  min-width: 92px;
+  min-height: 44px;
+  border: 1px solid #dfe5e2;
+  border-radius: 11px;
+  background: #f8faf9;
+  color: #515b56;
+  font-weight: 700;
+}
+
+.local-service-toast {
+  position: fixed;
+  z-index: 190;
+  top: 18px;
+  left: 50%;
+  min-height: 46px;
+  max-width: min(520px, calc(100vw - 32px));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(20, 34, 28, .16);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  text-align: center;
+}
+
+.local-service-toast--success {
+  border: 1px solid #b9dccc;
+  background: #f0f8f4;
+  color: #075c40;
+}
+
+.local-service-toast--error {
+  border: 1px solid #efc5c2;
+  background: #fff5f4;
+  color: #9a3934;
+}
+
+@media (max-width: 900px) {
+  .local-service-backdrop {
+    padding: 16px;
+  }
+
+  .local-service-dialog {
+    width: min(680px, calc(100vw - 32px));
+    max-height: calc(100vh - 32px);
+  }
+
+  .local-place-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .local-service-backdrop {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .local-service-dialog {
+    width: 100vw;
+    max-height: 100dvh;
+    height: 100dvh;
+    border-radius: 0;
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  }
+
+  .local-service-head {
+    min-height: 68px;
+    padding: 10px 13px;
+  }
+
+  .local-service-head h2 {
+    font-size: 20px;
+  }
+
+  .local-service-summary,
+  .local-area-tabs,
+  .local-place-grid,
+  .local-service-foot {
+    padding-left: 13px;
+    padding-right: 13px;
+  }
+
+  .local-place-grid {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .local-place-card {
+    min-height: 88px;
+  }
+
+  .local-service-foot > span {
+    display: none;
+  }
+
+  .local-service-foot > button {
+    width: 100%;
+  }
+
+  .local-service-action {
+    font-size: 13px !important;
+  }
+}
+
+@media (max-height: 700px) and (min-width: 561px) {
+  .local-service-dialog {
+    max-height: calc(100vh - 24px);
+  }
+
+  .local-service-head {
+    min-height: 64px;
+    padding-top: 9px;
+    padding-bottom: 9px;
+  }
+
+  .local-place-card {
+    min-height: 88px;
+  }
+}

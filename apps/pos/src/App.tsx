@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { InlineCheckoutRail } from "./components/InlineCheckoutRail";
+import { LocalServiceEnhancer } from "./components/LocalServiceEnhancer";
 import { TransactionOperationEnhancer } from "./components/TransactionOperationEnhancer";
 import { installQuantityKeypad } from "./quantity-keypad";
 import { PinScreen } from "./screens/PinScreen";
@@ -8,10 +9,12 @@ import { SalesScreen } from "./screens/SalesScreen";
 import { SignInScreen } from "./screens/SignInScreen";
 import { SuccessScreen } from "./screens/SuccessScreen";
 import { CustomerFlowProvider } from "./state/CustomerFlowContext";
+import { useLocalServiceFlow } from "./state/useLocalServiceFlow";
 import { usePosFlow } from "./state/usePosFlow";
 
 export default function App() {
   const flow = usePosFlow();
+  const local = useLocalServiceFlow(flow);
   const lastSaleTicket = useRef(flow.ticket);
 
   if (flow.ticket) {
@@ -55,12 +58,15 @@ export default function App() {
   }
 
   if ((flow.stage === "sales" || inlineCheckoutStage) && saleTicket) {
-    // The original basket is covered by the checkout rail. After completion we
-    // keep the catalog visible but clear hidden ticket text so the success rail
-    // is the single semantic source for customer/payment summary information.
     const backgroundTicket = inlineCheckoutStage === "success"
       ? { ...saleTicket, lines: [], customer: null }
       : saleTicket;
+
+    const startFreshSale = () => {
+      local.abandonActiveResume();
+      local.clearCheckoutContext();
+      void flow.newSale();
+    };
 
     return (
       <CustomerFlowProvider value={{
@@ -113,6 +119,8 @@ export default function App() {
             }}
           />
 
+          <LocalServiceEnhancer ticket={saleTicket} local={local} />
+
           {inlineCheckoutStage ? (
             <InlineCheckoutRail
               stage={inlineCheckoutStage}
@@ -126,11 +134,19 @@ export default function App() {
               onBackToPayment={flow.returnToPayment}
               onCash={() => void flow.selectCash()}
               onCard={() => void flow.selectCard()}
-              onCompleteCash={(value) => void flow.completeCash(value)}
-              onCompleteCard={() => void flow.completeCard()}
+              onCompleteCash={async (value) => {
+                const sequence = saleTicket.sequence;
+                await flow.completeCash(value);
+                await local.settleActiveOrderIfCompleted(sequence);
+              }}
+              onCompleteCard={async () => {
+                const sequence = saleTicket.sequence;
+                await flow.completeCard();
+                await local.settleActiveOrderIfCompleted(sequence);
+              }}
               onPrint={() => void flow.printReceipt()}
               onEmailReceipt={flow.emailReceipt}
-              onNewSale={() => void flow.newSale()}
+              onNewSale={startFreshSale}
             />
           ) : null}
         </div>
@@ -149,8 +165,6 @@ export default function App() {
     );
   }
 
-  // Cold restoration can contain a completed receipt without the previous visual ticket.
-  // Keep the standalone summary as a safe fallback for that recovery-only case.
   if (flow.stage === "success" && flow.receipt) {
     return (
       <SuccessScreen
@@ -159,7 +173,11 @@ export default function App() {
         busy={flow.busy !== null}
         onPrint={() => void flow.printReceipt()}
         onEmailReceipt={flow.emailReceipt}
-        onNewSale={() => void flow.newSale()}
+        onNewSale={() => {
+          local.abandonActiveResume();
+          local.clearCheckoutContext();
+          void flow.newSale();
+        }}
       />
     );
   }

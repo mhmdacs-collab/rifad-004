@@ -1,6 +1,6 @@
 # VISUAL-DECISION-006 — Restaurant Service, Places and Online Orders
 
-Status: **owner-directed product/interaction direction; market-researched; implementation and manifest authorization pending**
+Status: **owner-directed product/interaction direction; market-researched; local-service mock subset implemented for owner visual review; online-order implementation still pending**
 
 Date: 2026-08-17
 
@@ -17,7 +17,7 @@ Official products/platforms inspected include Loyverse, Square for Restaurants, 
 
 Rifad does not force one restaurant model onto every business.
 
-The UI must distinguish:
+The UI distinguishes:
 
 1. retail/direct sale with no restaurant-service terminology;
 2. restaurant service that only needs **محلي / سفري** preparation identity;
@@ -43,9 +43,8 @@ Target state with a non-empty basket:
 > **محلي | دفع**
 
 - pressing **دفع** follows the normal direct restaurant sale and is prepared as **سفري**;
-- pressing **محلي** marks the order as local/dine-in and proceeds through checkout without asking for a table, room or session;
-- the kitchen receives the correct **محلي** identity;
-- no floor map/open-place workflow is imposed on a restaurant with only a few tables or no need to track exact seating.
+- pressing **محلي** proceeds through checkout without asking for a table, room or session;
+- no floor/open-place workflow is imposed on a restaurant that does not need exact seating.
 
 ### Restaurant service ON + place management ON
 
@@ -57,8 +56,8 @@ Target state with a non-empty basket:
 
 - **دفع** remains direct **سفري** sale;
 - **محلي** opens service-area/place selection;
-- selecting a place assigns and opens the order, sends the required kitchen output and clears the main working basket;
-- payment may happen before or after dining by reopening the local order.
+- selecting a place assigns and opens the order, records the current mock kitchen revision and clears the main working basket;
+- payment may happen later by reopening the local order.
 
 ## Open local orders
 
@@ -79,21 +78,43 @@ When a new basket receives items, the action returns to:
 
 > **محلي | دفع**
 
-with **دفع** again visually primary.
+When an occupied place is reopened, the first slot becomes:
+
+> **إرسال | دفع**
+
+**إرسال** means update the stored local order/preparation revision and return to a fresh working basket. It is not a real KDS/printer transport claim in the current prototype.
 
 ## Service-area/place selector
 
-Rifad should use a hybrid semantic floor view:
+Rifad uses a hybrid semantic floor view:
 
-- service-area tabs such as **الصالة / الدور الأول / الغرف / الجلسات الخارجية**;
-- large touch targets for places such as **طاولة 12 / غرفة 3 / جلسة 8**;
-- on wide screens, approximate the physical arrangement enough to aid spatial memory;
-- do not draw decorative furniture if that reduces touch/readability;
-- on narrow/mobile screens, switch to list/cards instead of shrinking a desktop map;
-- free/occupied/attention states use text/status plus color, not color alone;
+- service-area tabs such as **الصالة / الغرف / الجلسات**;
+- large touch targets for places such as **طاولة 1 / غرفة 2 / جلسة 3**;
+- wide screens use a readable spatial grid;
+- decorative furniture is intentionally avoided when it would reduce touch/readability;
+- narrow/mobile layouts change to larger stacked cards;
+- free/occupied states use text plus color, not color alone;
 - red remains reserved for destructive/error/urgent states.
 
-Back Office should eventually own persistent service configuration and place layout. Temporary POS-side settings are allowed only during UI-first product proof and should not become ordinary-cashier controls in production.
+Back Office should eventually own persistent service configuration and place layout. The current POS settings are staging controls for UI-first validation, not the intended ordinary-cashier production ownership model.
+
+## Current executable local-service subset
+
+`POS-FLOW-002` now authorizes a mock/local proof with:
+
+- Restaurant service ON/OFF;
+- place management ON/OFF;
+- one-touch simple **محلي** checkout;
+- advanced area/place selection;
+- local open-order snapshots;
+- **طلبات مفتوحة** state on an empty basket;
+- reopening an occupied place into the working ticket;
+- sending additions as a new mock kitchen revision;
+- releasing the place after successful payment.
+
+The implementation deliberately composes the existing Sales/Checkout contracts with a new `RestaurantServiceContract`. It does not alter the production sales schema merely to prove the visual flow.
+
+Known boundary: fulfillment/place identity is not yet a durable authoritative field on the production-target Ticket/Receipt model. The mock local-service adapter preserves the UI proof separately. Production restaurant persistence, sync and kitchen dispatch remain required gaps.
 
 ## Fulfillment, channel and payment/collection
 
@@ -115,15 +136,9 @@ Preferred behavior:
 
 `incoming platform order → online-orders queue → auto accept or one-tap accept → kitchen → ready/complete`
 
-The order already carries:
+The order already carries channel identity, external order code, fulfillment, sold prices and external payment/collection state where provided.
 
-- channel identity;
-- external order number/code;
-- delivery/pickup fulfillment;
-- sold product/option prices;
-- external payment/collection state where provided.
-
-Examples of compact cashier labels:
+Examples:
 
 - **كيتا · مدفوع**;
 - **هنقرستيشن · نقد عند الاستلام**;
@@ -144,53 +159,31 @@ The tile may feel like a payment/completion choice for cashier simplicity, but i
 - do not mark a promised future collection as a completed local payment;
 - later platform settlement must not create a duplicate sale.
 
-This follows the practical pattern observed in Foodics online-order/payment mapping.
-
 ## Channel pricing
 
-### Manual platform sale
+For manual platform sale, selecting the platform applies configured channel pricing and any changed total is shown before completion.
 
-Selecting the platform applies Rifad's configured channel pricelist/overrides. If the total changes, show the recalculated total before final completion.
+For API-connected external orders, preserve actual external sold prices as order snapshots and validate product mapping rather than silently replacing them with today's direct-POS base price.
 
-### API-connected external order
-
-Preserve the actual external sold prices as order snapshots. Validate product mapping, but do not silently overwrite those prices with today's direct-POS base price.
-
-Platform commission/settlement fee is separate from customer-facing selling price.
+Platform commission/settlement fee remains separate from customer-facing selling price.
 
 ## Kitchen behavior
 
-Kitchen output follows fulfillment/order lifecycle:
+Target production behavior remains:
 
 - direct restaurant **دفع**: **سفري**;
 - simple **محلي**: local kitchen output without a required place;
-- advanced **محلي**: output when the order is assigned/sent to a service place;
-- later advanced-local additions/voids: send preparation deltas/revisions rather than blind full duplicates;
+- advanced **محلي**: output when assigned/sent to a service place;
+- later advanced-local additions/voids: preparation deltas/revisions rather than blind full duplicates;
 - delivery: **توصيل** plus channel identity where useful;
-- API-connected delivery: may auto-send to kitchen after integration acceptance according to branch policy.
+- API-connected delivery may auto-send after integration acceptance according to branch policy.
+
+The current executable local prototype proves only the local revision/state transition. It does **not** provide real kitchen transport.
 
 ## One online-orders experience
 
-Rifad should not create a separate cashier screen/workflow for Keeta, HungerStation, Jahez and every future platform.
-
-Target principle:
+Rifad should not create a separate cashier workflow for every platform.
 
 > **One online-orders experience for the cashier, many direct or aggregator adapters behind it.**
 
-The cashier sees platform identity on each order, while connection credentials, menu/channel-price mapping, branch mapping, automation policy and reconciliation configuration move to Back Office later.
-
-## Relationship to current implementation
-
-The current active branch still contains:
-
-- prototype **حفظ**;
-- temporary UI-local **محلي / سفري / توصيل** selector;
-- no durable restaurant-service configuration;
-- no simple-vs-place-managed local flow;
-- no durable open-place model;
-- no delivery-channel adapter or online-order queue;
-- no channel-price model.
-
-Those are not evidence that the target restaurant/delivery workflow is implemented.
-
-Do not change `UI_EXECUTION_MANIFEST.json` or begin this implementation from this decision alone. A bounded manifest/contract update is required first.
+The online-orders implementation remains pending and is not authorized by `POS-FLOW-002`.
