@@ -2,7 +2,7 @@
 
 Last updated: 2026-08-17
 
-This is the living execution record for the current Rifad interface phase. It records what is executable now, what the owner has visually accepted, what is still under visual review, and which production/data gaps remain.
+This is the living execution record for the current Rifad interface phase. It records what is executable now, what the owner has visually accepted, what is still under visual review, and which production/data/integration gaps remain.
 
 Use with:
 
@@ -121,11 +121,11 @@ Quantity editor includes large `+ / −`, direct numeric entry, embedded `1–9 
 
 # 4. Restaurant local service — POS-FLOW-002
 
-Status: ✅ behavior-tested mock / 🟡 owner visual review open / ⚠️ production persistence + kitchen transport
+Status: ✅ behavior-tested mock / 🟡 iterative owner visual review / ⚠️ production persistence + kitchen transport
 
 The old visible **محلي / سفري / توصيل** selector is no longer the target interaction. Its legacy implementation remains only for compatibility tests and is hidden/migrated in the current local-service UI.
 
-Rifad now has two independent restaurant configuration layers in the executable mock:
+Rifad has two independent restaurant configuration layers in the executable mock:
 
 ## Restaurant service OFF
 
@@ -140,18 +140,22 @@ Simple restaurant:
 - non-empty basket: **محلي | دفع**;
 - direct **دفع** is operationally **سفري** without an extra tap;
 - **محلي** enters the existing checkout in one touch;
-- no table/room/session selector.
+- no place selector.
 
 ## Restaurant service ON + place management ON
 
 Advanced restaurant:
 
 - non-empty basket: **محلي | دفع**;
-- **محلي** opens a service-area/place selector;
-- current demo areas: **الصالة / الغرف / الجلسات**;
-- current demo places include tables, rooms and sessions;
-- selecting a free place stores a mock local open order, records mock kitchen revision 1, shows kitchen-send feedback, and clears the working basket;
+- **محلي** opens **مجموعة → مكان**;
+- default prototype has exactly one group: **الطاولات**;
+- default places are **طاولة 1** through **طاولة 6**;
+- **الغرف** and **الجلسات** are not seeded by default;
+- future Back Office configuration may create arbitrary groups and place names;
+- selecting an available place stores a mock local open order, records mock kitchen revision 1, shows kitchen-send feedback, and clears the working basket;
 - payment may happen later by reopening the place.
+
+The Rifad place domain is generic: `PlaceGroup → ServicePlace`. There is no required `table | room | session` enum.
 
 ## Open-order state
 
@@ -163,18 +167,36 @@ Empty basket + advanced open orders:
 - Pay remains in the fixed left slot, neutral/disabled;
 - footer geometry does not move.
 
-Reopening an occupied place reconstructs its stored order into the current working ticket and exposes:
+Reopening a **محجوزة** place reconstructs its stored order into the current working ticket and exposes:
 
 > **إرسال | دفع**
 
 - **إرسال** updates the stored open order, increments the mock kitchen revision, and clears the working basket;
 - **دفع** uses the existing checkout; successful payment releases the stored place.
 
+Place cards now use cashier-facing states **متاحة / محجوزة**. A reserved card uses a very light warm-red treatment; the order total is large/bold/green, place name is clear, elapsed time is secondary, and item count is intentionally omitted.
+
 Open local orders prevent disabling restaurant service/place management until those orders are closed.
+
+### Restaurant adapter readiness
+
+The local-service path now uses a replaceable Rifad-owned `RestaurantServiceContract` V1:
+
+- `useLocalServiceFlow` receives the contract through dependency injection;
+- concrete adapter selection is isolated in `apps/pos/src/runtime/restaurantServiceAdapter.ts`;
+- components/state do not instantiate or import the concrete restaurant adapter;
+- domain terminology is `PlaceGroup / ServicePlace / OpenLocalOrder` rather than donor schema names;
+- mock-specific legacy preference migration is isolated at the composition root;
+- payment completion no longer depends on reading mock POS/restaurant storage from the restaurant flow;
+- earlier mock snapshots using `serviceAreaId/serviceAreaName` are normalized on read.
+
+This means a future external restaurant/table implementation can be connected by writing an adapter that conforms to the Rifad contract instead of rewriting the local-service UI.
+
+See `docs/architecture/RESTAURANT_SERVICE_ADAPTER_BOUNDARY.md`.
 
 ### Explicit prototype boundary
 
-The new `RestaurantServiceContract` / mock adapter currently owns staging configuration, demo places, open-order snapshots, and mock kitchen revision state. It is not real KDS/printer transport and is not the final production order/table persistence model.
+The current concrete restaurant adapter is still mock/local. This does not prove a production open-order database, multi-device synchronization, conflict resolution, real KDS/printer transport or an external donor/API integration.
 
 Persistent restaurant/place configuration is expected to move to Back Office later.
 
@@ -298,27 +320,48 @@ Executable staging preferences/config now include:
 
 The old generic visible-order-type preference is superseded by the restaurant model and hidden in the normal current UI.
 
-Future structured Back Office configuration should own persistent restaurant areas/places, channels/pricelists, connector/store mapping, credentials, and online-order policies. Ordinary cashiers should not control sensitive production configuration.
+Future structured Back Office configuration should own persistent restaurant groups/places, channels/pricelists, connector/store mapping, credentials, and online-order policies. Ordinary cashiers should not control sensitive production configuration.
 
 ---
 
-# 13. Highest-priority production/data gaps
+# 13. Adapter readiness and highest-priority production/data gaps
 
-1. durable authoritative `fulfillmentMode` on sale/order/receipt;
-2. production restaurant-service + place-management configuration persistence;
-3. production service-area/place/open-order lifecycle and multi-device sync;
-4. durable kitchen dispatch/revision/delta/idempotency/outbox semantics;
-5. `salesChannelId` and channel configuration;
-6. channel-aware pricelist/product overrides + effective sold-price evidence;
-7. capability-based delivery adapter contract and connector onboarding;
-8. external order IDs/mappings/payment-collection/webhook idempotency;
-9. platform settlement/reconciliation separate from till payment;
-10. real SKU/barcode identity/search;
-11. durable checkout/payment records and idempotency;
-12. stable employee/branch/device IDs on receipts;
-13. print-job history;
-14. structured business/device configuration;
-15. legitimate Mada/card references without prohibited sensitive card data.
+## A. Architecture gap before saying “the whole POS is adapter-ready”
+
+The restaurant/local capability is now injected cleanly, but `usePosFlow` still creates `createMockPosRuntime()` internally. Therefore catalog/sales/customer/checkout/printing runtime replacement is **not yet as clean as the restaurant boundary**.
+
+Mandatory next architecture hardening before real donor/platform integration:
+
+1. rename/generalize the current `MockPosRuntime` public type to a Rifad-owned `PosRuntimeContract`;
+2. move concrete POS runtime selection to a composition root, parallel to `restaurantServiceAdapter.ts`;
+3. inject that runtime into `usePosFlow` instead of importing `createMockPosRuntime` there;
+4. add reusable conformance tests for any replacement POS runtime/adapter;
+5. keep donor SDK/schema/auth/persistence details behind those runtime adapters.
+
+## B. Restaurant production gaps
+
+1. choose/prove the first production restaurant-service implementation or donor adapter behind `RestaurantServiceContract` V1;
+2. durable authoritative order model with `fulfillmentMode` and place snapshots;
+3. production group/place/open-order persistence;
+4. Back Office group/place CRUD and permissions;
+5. multi-device reservation/open-order synchronization and conflict policy;
+6. offline/restart behavior for open local orders;
+7. durable kitchen dispatch/revision/delta/idempotency/outbox semantics;
+8. real KDS/printer transport.
+
+## C. Other high-priority product/data/integration gaps
+
+1. `salesChannelId` and channel configuration;
+2. channel-aware pricelist/product overrides + effective sold-price evidence;
+3. delivery adapter contract implementation + connector onboarding;
+4. external order IDs/mappings/payment-collection/webhook idempotency;
+5. platform settlement/reconciliation separate from till payment;
+6. real SKU/barcode identity/search;
+7. durable checkout/payment records and idempotency;
+8. stable employee/branch/device IDs on receipts;
+9. print-job history;
+10. structured business/device configuration;
+11. legitimate Mada/card references without prohibited sensitive card data.
 
 ---
 
@@ -340,11 +383,12 @@ Current branch coverage includes:
 - unpaid checkout cancellation;
 - stable transaction geometry;
 - **POS-FLOW-002 simple local: one-touch Local checkout without place selection**;
-- **POS-FLOW-002 advanced local: place selection → open order → clear working basket**;
-- **advanced Open Orders → reopen place → Send or Pay**;
+- **POS-FLOW-002 advanced local: one default Tables group / six tables → place selection → open order → clear working basket**;
+- **advanced Open Orders → reserved place → reopen → Send or Pay**;
 - **sending additions increments mock kitchen revision while retaining one open place**;
 - **successful payment releases the open place**;
-- **retail/off mode hides restaurant language**.
+- **retail/off mode hides restaurant language**;
+- **restaurant flow compiles against injected `RestaurantServiceContract` rather than constructing its concrete adapter in state/UI code**.
 
 Every new branch head must pass UI-manifest integrity, TypeScript, Vitest and production build before being called technically clean. CI does not prove visual correctness.
 
@@ -353,14 +397,15 @@ Every new branch head must pass UI-manifest integrity, TypeScript, Vitest and pr
 # 15. Manifest status
 
 - `POS-FLOW-001` — original retail cash slice: implemented.
-- `POS-FLOW-002` — Restaurant Local Service Prototype: **implemented mock/local; owner visual review pending**.
+- `POS-FLOW-002` — Restaurant Local Service Prototype: **implemented mock/local; iterative owner review**.
 - `POS-FLOW-006` — tablet sale-page layout: implemented.
 
 Still pending separate authorization/production proof:
 
 1. real integrated-card/Mada capability;
 2. production restaurant persistence/KDS/printer/multi-device semantics beyond POS-FLOW-002 mock scope;
-3. incoming online-order/manual-delivery fallback flow and delivery connector contract.
+3. incoming online-order/manual-delivery fallback flow and delivery connector contract;
+4. general POS runtime dependency injection/conformance before donor-backed core POS services are selected.
 
 ---
 
@@ -379,6 +424,4 @@ Rifad is **not UI-complete** and not production-backend-complete.
 
 Current checkpoint:
 
-> **A substantial touch-first POS prototype with owner-accepted sales/basket/payment spatial continuity, Clear Cart, customer/debt workflows and mock card validation, plus the first executable Restaurant Local Service prototype: retail/off, simple Local checkout, advanced area/place selection, Open Orders, reopen/send-update, and place release after payment. The local flow is behavior-tested but still awaiting owner visual evaluation; production restaurant persistence/kitchen transport and online-delivery integration remain separate gaps.**
-
-Immediate work is owner evaluation/refinement of the new local-service UI, not final UI closeout.
+> **A substantial touch-first POS prototype with owner-accepted sales/basket/payment spatial continuity, Clear Cart, customer/debt workflows and mock card validation, plus an executable Restaurant Local Service prototype with retail/off, simple Local checkout, generic PlaceGroup → ServicePlace selection, six default tables, Open Orders, reserved-place reopen/send-update, and place release after payment. The restaurant/local state layer is now dependency-injected behind RestaurantServiceContract V1 and isolated from the concrete mock adapter. The next architecture hardening is to apply the same composition-root/injection rule to the general POS runtime before real donor-backed catalog/sales/payment/customer implementations are selected.**
