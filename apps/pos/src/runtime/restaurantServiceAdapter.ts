@@ -1,4 +1,4 @@
-import { createMockRestaurantService } from "../adapters/mockRestaurantService";
+import { createMockRestaurantService, migrateLegacyOrderTypePreference } from "../adapters/mockRestaurantService";
 import type { RestaurantServiceContract } from "../contracts/restaurantService";
 
 /**
@@ -8,4 +8,9 @@ import type { RestaurantServiceContract } from "../contracts/restaurantService";
  */
 export const createRestaurantServiceAdapter = (): RestaurantServiceContract => {
   return createMockRestaurantService();
+};
+
+/** Adapter-specific/legacy bootstrap also stops at the composition root. */
+export const prepareRestaurantServiceCompatibility = () => {
+  migrateLegacyOrderTypePreference();
 };
