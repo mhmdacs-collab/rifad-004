@@ -1,6 +1,6 @@
 # Rifad Documentation Map
 
-Last updated: 2026-08-17
+Last updated: 2026-08-18
 
 This directory separates binding Rifad decisions from historical/research evidence.
 
@@ -24,6 +24,7 @@ A product/visual discussion can be documented before implementation while still 
 - `architecture/` — binding architecture direction and current decisions.
 - `architecture/POS_RUNTIME_ADAPTER_BOUNDARY.md` — current general POS runtime composition/injection boundary and replacement rules.
 - `architecture/RESTAURANT_SERVICE_ADAPTER_BOUNDARY.md` — current restaurant/place adapter boundary and external-system translation rules.
+- `architecture/LOCAL_PERSISTENCE_AND_OUTBOX_BOUNDARY.md` — local-first persistence identity, module-private snapshots, transactional outbox, retry/ack semantics, and the separation from LAN, branch/cloud sync and ZATCA/Fatoora.
 - `adoption/` — how Rifad evaluates and incorporates proven external logic.
 - `donors/` — donor policy and evidence record template.
 - `ui/UI_EXECUTION_MANIFEST.json` — binding screen/action/state/flow inventory and readiness status.
@@ -42,6 +43,8 @@ Do not postpone UI/product field discovery until database design.
 If the interface/product direction introduces a new field, option, fulfillment mode, payment/collection fact, sales channel, integration mapping, customer attribute, setting or status, update `ui/POS_UI_NAMING_AND_FIELD_REGISTER.md` in the same change and classify it as current, required gap, reserved integration, derived or UI-only.
 
 This explicitly includes restaurant/delivery concepts such as fulfillment mode, restaurant-service configuration, optional place-group/place management, open-order lifecycle, sales channels, channel-specific pricing, external-order/payment-collection state, settlement/reconciliation and kitchen-dispatch evidence.
+
+Invisible infrastructure facts such as installation identity, branch/device routing context, local snapshot schema versions, outbox event identity and delivery-attempt metadata are architecture/persistence concerns. They are documented in `architecture/LOCAL_PERSISTENCE_AND_OUTBOX_BOUNDARY.md`; they should not be exposed as cashier fields merely because they are durable.
 
 ## Research
 
