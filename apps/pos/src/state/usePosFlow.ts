@@ -17,7 +17,7 @@ import type {
   Ticket,
 } from "../domain/models";
 
-export type FlowStage = "sign-in" | "pin" | "sales" | "payment" | "cash" | "success" | "receipts";
+export type FlowStage = "sign-in" | "pin" | "sales" | "payment" | "cash" | "card" | "success" | "receipts";
 
 const commandId = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
 const messageFrom = (error: unknown) => error instanceof PosContractError ? error.message : "حدث خطأ غير متوقع. حاول مرة أخرى.";
@@ -59,6 +59,7 @@ export const usePosFlow = () => {
   const [categoryId, setCategoryId] = useState("all");
   const [checkoutId, setCheckoutId] = useState<string | null>(null);
   const [cashCommandId, setCashCommandId] = useState<string | null>(null);
+  const [cardCommandId, setCardCommandId] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [printStatus, setPrintStatus] = useState<PrintDeliveryStatus>("idle");
@@ -322,6 +323,7 @@ export const usePosFlow = () => {
     setLastTouchedLineId(null);
     setCheckoutId(null);
     setCashCommandId(null);
+    setCardCommandId(null);
     setQuery("");
     setCategoryId("all");
     setPrintStatus("idle");
@@ -499,6 +501,21 @@ export const usePosFlow = () => {
     }
   }, [checkoutId, runtime]);
 
+  const selectCard = useCallback(async () => {
+    if (!checkoutId) return;
+    setBusy("card-method");
+    setErrorMessage(null);
+    try {
+      await runtime.checkout.selectPaymentMethod({ checkoutId, method: "card" });
+      setCardCommandId((current) => current ?? commandId("card-sale"));
+      setStage("card");
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+    } finally {
+      setBusy(null);
+    }
+  }, [checkoutId, runtime]);
+
   const completeCash = useCallback(async (tenderedHalalas: number) => {
     if (!checkoutId || !cashCommandId) return;
     setBusy("complete-cash");
@@ -513,6 +530,21 @@ export const usePosFlow = () => {
       setBusy(null);
     }
   }, [cashCommandId, checkoutId, completeCustomerLoyalty, finalizeCompletedReceipt, runtime]);
+
+  const completeCard = useCallback(async () => {
+    if (!checkoutId || !cardCommandId) return;
+    setBusy("complete-card");
+    setErrorMessage(null);
+    try {
+      const completedReceipt = await runtime.checkout.completeCardSale({ commandId: cardCommandId, checkoutId });
+      const completed = await completeCustomerLoyalty(completedReceipt);
+      await finalizeCompletedReceipt(completed);
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+    } finally {
+      setBusy(null);
+    }
+  }, [cardCommandId, checkoutId, completeCustomerLoyalty, finalizeCompletedReceipt, runtime]);
 
   const printReceipt = useCallback(async () => {
     if (!receipt) return;
@@ -575,6 +607,7 @@ export const usePosFlow = () => {
       setReceipt(null);
       setCheckoutId(null);
       setCashCommandId(null);
+      setCardCommandId(null);
       setPrintStatus("idle");
       setLastTouchedLineId(null);
       setQuery("");
@@ -634,7 +667,9 @@ export const usePosFlow = () => {
     removeSalePageProduct,
     beginCheckout,
     selectCash,
+    selectCard,
     completeCash,
+    completeCard,
     printReceipt,
     emailReceipt,
     printArchivedReceipt,
