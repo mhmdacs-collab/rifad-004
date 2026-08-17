@@ -247,10 +247,15 @@ export function InlineCheckoutRail({
 
           {!validCash && cashInput.length > 0 ? <div className="inline-cash-validation">المبلغ المستلم أقل من إجمالي البيع.</div> : null}
 
-          <button type="button" className="inline-complete-sale" disabled={!validCash || busy === "complete-cash"} onClick={() => tendered !== null && onCompleteCash(tendered)}>
-            <Icon name="check" size={21} />
-            <span>{busy === "complete-cash" ? "جارٍ السداد…" : "سداد"}</span>
-          </button>
+          <footer className="inline-operation-footer" aria-label="إجراءات العملية">
+            <button type="button" className="inline-cancel-sale" disabled={busy !== null} onClick={onNewSale}>
+              إلغاء الفاتورة
+            </button>
+            <button type="button" className="inline-complete-sale" disabled={!validCash || busy === "complete-cash"} onClick={() => tendered !== null && onCompleteCash(tendered)}>
+              <Icon name="check" size={21} />
+              <span>{busy === "complete-cash" ? "جارٍ السداد…" : "سداد"}</span>
+            </button>
+          </footer>
         </div>
       </aside>
     );
@@ -282,10 +287,15 @@ export function InlineCheckoutRail({
             <div className="inline-card-status"><i /><span>جهاز الدفع جاهز</span></div>
           </section>
 
-          <button type="button" className="inline-complete-sale inline-complete-card" disabled={busy === "complete-card"} onClick={onCompleteCard}>
-            <Icon name="check" size={21} />
-            <span>{busy === "complete-card" ? "جارٍ تأكيد الدفع…" : "تم الدفع"}</span>
-          </button>
+          <footer className="inline-operation-footer" aria-label="إجراءات العملية">
+            <button type="button" className="inline-cancel-sale" disabled={busy !== null} onClick={onNewSale}>
+              إلغاء الفاتورة
+            </button>
+            <button type="button" className="inline-complete-sale inline-complete-card" disabled={busy === "complete-card"} onClick={onCompleteCard}>
+              <Icon name="check" size={21} />
+              <span>{busy === "complete-card" ? "جارٍ تأكيد الدفع…" : "تم الدفع"}</span>
+            </button>
+          </footer>
         </div>
       </aside>
     );
@@ -347,10 +357,10 @@ export function InlineCheckoutRail({
           <span className="inline-print-always-copy"><strong>طباعة الإيصال دائمًا</strong><small>في العمليات القادمة</small></span>
         </label>
 
-        <div className="inline-success-actions">
+        <footer className="inline-success-actions inline-operation-footer" aria-label="إجراءات العملية">
           <button type="button" className="inline-success-print" onClick={onPrint} disabled={busy !== null}><Icon name="printer" size={19} />{printStatus === "failed" ? "إعادة الطباعة" : "طباعة"}</button>
           <button type="button" className="inline-new-sale" onClick={onNewSale} disabled={busy !== null}><Icon name="plus" size={20} />بيع جديد</button>
-        </div>
+        </footer>
       </div>
     </aside>
   );
