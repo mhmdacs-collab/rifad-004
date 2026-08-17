@@ -1,5 +1,7 @@
 # Rifad Documentation Map
 
+Last updated: 2026-08-17
+
 This directory separates binding Rifad decisions from historical evidence.
 
 ## Authority order
@@ -10,8 +12,10 @@ When documents conflict, use this order:
 2. `architecture/CURRENT_DECISIONS.md`.
 3. `architecture/RIFAD_ARCHITECTURE.md`, current capability/adoption policy and UI authority policy.
 4. `ui/UI_EXECUTION_MANIFEST.json` for implementation identity/readiness/scope.
-5. Current UI/product plans.
-6. Research and historical proposals as evidence only.
+5. `ui/DESIGN_AUTHORITY.md` for POS interaction/visual authority.
+6. `ui/POS_UI_NAMING_AND_FIELD_REGISTER.md` for canonical POS labels and UI-to-data field traceability.
+7. `ui/UI_PROGRESS.md` and current UI/product plans for living implementation status.
+8. Research and historical proposals as evidence only.
 
 ## Current implementation documents
 
@@ -20,9 +24,25 @@ When documents conflict, use this order:
 - `donors/` — donor policy and evidence record template.
 - `ui/UI_EXECUTION_MANIFEST.json` — binding screen/action/state/flow inventory and readiness status.
 - `ui/UI_EXECUTION_MANIFEST_SCHEMA.md` — implementation gate and required evidence.
-- `ui/DESIGN_AUTHORITY.md` — functional versus visual authority and visual-donor approval policy.
+- `ui/DESIGN_AUTHORITY.md` — functional versus visual authority, the touch-first/human-scale rule, responsive policy and visual-donor approval policy.
+- `ui/POS_UI_NAMING_AND_FIELD_REGISTER.md` — **canonical POS terminology plus every current/missing/reserved/derived/UI-only field exposed by the interface. Update this whenever a new visible durable field is introduced.**
+- `ui/UI_PROGRESS.md` — living record of implemented, owner-reviewed, pending and known-gap POS work.
 - `ui/flows/` — bounded vertical slices authorized for implementation.
 - `ui/` — UI-first product-surface plan, provisional tokens and first executable target.
+
+## Data-model guardrail
+
+Do not postpone UI field discovery until database design.
+
+If the interface introduces a new field, option, payment fact, customer attribute, setting or status, update `ui/POS_UI_NAMING_AND_FIELD_REGISTER.md` in the same product/implementation change and classify it as:
+
+- current durable data;
+- required data gap;
+- reserved integration data;
+- derived value;
+- UI-only presentation state.
+
+This prevents both missing database fields and accidental persistence of purely visual state.
 
 ## Research
 
