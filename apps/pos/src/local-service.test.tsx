@@ -66,7 +66,7 @@ describe("POS-FLOW-002 local restaurant service", () => {
     expect(within(groups).queryByRole("button", { name: "الجلسات" })).not.toBeInTheDocument();
 
     for (let index = 1; index <= 6; index += 1) {
-      expect(within(dialog).getByRole("button", { name: `طاولة ${index}، متاح` })).toBeInTheDocument();
+      expect(within(dialog).getByRole("button", { name: `طاولة ${index}، الحالة: متاحة` })).toBeInTheDocument();
     }
     expect(within(dialog).queryByRole("button", { name: /غرفة/ })).not.toBeInTheDocument();
     expect(within(dialog).queryByRole("button", { name: /جلسة/ })).not.toBeInTheDocument();
@@ -82,14 +82,14 @@ describe("POS-FLOW-002 local restaurant service", () => {
     await user.click(await screen.findByRole("button", { name: "محلي، اختيار مكان" }));
 
     expect(await screen.findByRole("heading", { name: "اختر المكان" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "طاولة 1، متاح" }));
+    await user.click(screen.getByRole("button", { name: "طاولة 1، الحالة: متاحة" }));
 
     expect(await screen.findByText("التذكرة فارغة")).toBeInTheDocument();
     expect(await screen.findByRole("button", { name: "الطلبات المفتوحة، 1" })).toBeEnabled();
 
     await user.click(screen.getByRole("button", { name: "الطلبات المفتوحة، 1" }));
     expect(await screen.findByRole("heading", { name: "الطلبات المفتوحة" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "طاولة 1، طلب مفتوح" }));
+    await user.click(screen.getByRole("button", { name: "طاولة 1، الحالة: محجوزة" }));
 
     expect(await screen.findByText("محلي · طاولة 1")).toBeInTheDocument();
     expect(await screen.findByRole("button", { name: "إرسال تحديث طاولة 1 للمطبخ" })).toBeEnabled();
@@ -115,11 +115,11 @@ describe("POS-FLOW-002 local restaurant service", () => {
 
     await user.click(screen.getByRole("button", { name: /قهوة سعودية/ }));
     await user.click(await screen.findByRole("button", { name: "محلي، اختيار مكان" }));
-    await user.click(await screen.findByRole("button", { name: "طاولة 2، متاح" }));
+    await user.click(await screen.findByRole("button", { name: "طاولة 2، الحالة: متاحة" }));
     await screen.findByText("التذكرة فارغة");
 
     await user.click(await screen.findByRole("button", { name: "الطلبات المفتوحة، 1" }));
-    await user.click(await screen.findByRole("button", { name: "طاولة 2، طلب مفتوح" }));
+    await user.click(await screen.findByRole("button", { name: "طاولة 2، الحالة: محجوزة" }));
     await user.click(screen.getByRole("button", { name: /لاتيه/ }));
     await user.click(await screen.findByRole("button", { name: "إرسال تحديث طاولة 2 للمطبخ" }));
 
