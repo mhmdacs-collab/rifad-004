@@ -5,15 +5,21 @@ export type RestaurantServiceConfig = Readonly<{
   placeManagementEnabled: boolean;
 }>;
 
-export type ServicePlaceKind = "table" | "room" | "session";
-
+/**
+ * A service place is intentionally generic.
+ * The cashier-facing identity comes from its group + name, not a hard-coded
+ * table/room/session enum. Back Office can therefore model any venue language.
+ */
 export type ServicePlace = Readonly<{
   id: string;
   serviceAreaId: string;
   name: string;
-  kind: ServicePlaceKind;
 }>;
 
+/**
+ * ServiceArea is the current contract name for a cashier-facing place group.
+ * Examples: الطاولات، الغرف، الجلسات، VIP, or any owner-defined grouping.
+ */
 export type ServiceArea = Readonly<{
   id: string;
   name: string;
