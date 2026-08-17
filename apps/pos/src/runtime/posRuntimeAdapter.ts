@@ -1,5 +1,7 @@
 import { createMockPosRuntime } from "../adapters/mockPos";
 import type { PosRuntimeContract } from "../contracts/pos";
+import { withLocalPersistenceJournal } from "./journaledPosRuntime";
+import { createLocalPersistenceAdapter } from "./localPersistenceAdapter";
 
 export type PosRuntimeAdapterInfo = Readonly<{
   id: string;
@@ -22,5 +24,6 @@ export const POS_RUNTIME_ADAPTER_INFO: PosRuntimeAdapterInfo = {
 };
 
 export const createPosRuntimeAdapter = (): PosRuntimeContract => {
-  return createMockPosRuntime();
+  const runtime = createMockPosRuntime();
+  return withLocalPersistenceJournal(runtime, createLocalPersistenceAdapter());
 };
