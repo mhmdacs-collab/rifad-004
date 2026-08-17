@@ -3,10 +3,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SOURCE_COMMIT = "17d93df48cf49fa2e46a9009461f5565e4fced4e";
-const SOURCE_ROOTS = [
-  `https://raw.githubusercontent.com/fontsource/font-files/${SOURCE_COMMIT}/fonts/google/cairo`,
-  `https://cdn.jsdelivr.net/gh/fontsource/font-files@${SOURCE_COMMIT}/fonts/google/cairo`,
-];
+const RAW_SOURCE_ROOT = `https://raw.githubusercontent.com/fontsource/font-files/${SOURCE_COMMIT}/fonts/google/cairo`;
+const API_SOURCE_ROOT = "https://api.github.com/repos/fontsource/font-files/contents/fonts/google/cairo";
 const outputDir = fileURLToPath(new URL("../public/fonts/cairo/", import.meta.url));
 
 const weights = [400, 500, 600, 700, 800];
@@ -35,12 +33,12 @@ const retryDelayMs = (attempt, response) => {
   return Math.min(4_000, 600 * (2 ** (attempt - 1)));
 };
 
-const fetchWithRetry = async (sourceUrl) => {
+const fetchWithRetry = async (sourceUrl, headers) => {
   let lastError = null;
 
   for (let attempt = 1; attempt <= MAX_DOWNLOAD_ATTEMPTS; attempt += 1) {
     try {
-      const response = await fetch(sourceUrl, { headers: { "user-agent": "Rifad-POS-build" } });
+      const response = await fetch(sourceUrl, { headers });
       if (response.ok) return response;
 
       const error = new Error(`Failed to fetch ${sourceUrl}: ${response.status}`);
@@ -57,16 +55,40 @@ const fetchWithRetry = async (sourceUrl) => {
   throw lastError ?? new Error(`Failed to fetch ${sourceUrl}`);
 };
 
+const sourceCandidates = (relativePath) => {
+  const commonHeaders = { "user-agent": "Rifad-POS-build" };
+  const githubToken = process.env.GITHUB_TOKEN?.trim();
+  const candidates = [];
+
+  if (githubToken) {
+    candidates.push({
+      sourceUrl: `${API_SOURCE_ROOT}/${relativePath}?ref=${SOURCE_COMMIT}`,
+      headers: {
+        ...commonHeaders,
+        accept: "application/vnd.github.raw+json",
+        authorization: `Bearer ${githubToken}`,
+        "x-github-api-version": "2022-11-28",
+      },
+    });
+  }
+
+  candidates.push({
+    sourceUrl: `${RAW_SOURCE_ROOT}/${relativePath}`,
+    headers: commonHeaders,
+  });
+
+  return candidates;
+};
+
 const fetchFromSources = async (relativePath) => {
   let lastError = null;
 
-  for (const root of SOURCE_ROOTS) {
-    const sourceUrl = `${root}/${relativePath}`;
+  for (const candidate of sourceCandidates(relativePath)) {
     try {
-      return { response: await fetchWithRetry(sourceUrl), sourceUrl };
+      return { response: await fetchWithRetry(candidate.sourceUrl, candidate.headers), sourceUrl: candidate.sourceUrl };
     } catch (error) {
       lastError = error;
-      console.warn(`Cairo source unavailable, trying mirror: ${sourceUrl}`);
+      console.warn(`Cairo source unavailable, trying fallback: ${candidate.sourceUrl}`);
     }
   }
 
