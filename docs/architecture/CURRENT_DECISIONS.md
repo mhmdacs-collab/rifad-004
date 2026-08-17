@@ -169,13 +169,13 @@ When restaurant service is ON and place management is OFF:
 
 `build basket → محلي → existing checkout as dine-in`
 
-No table/room/session selection is required.
+No place selection is required.
 
 When place management is ON:
 
-`build basket → محلي → service area/place → store open local order + mock kitchen revision → clear working basket`
+`build basket → محلي → PlaceGroup/ServicePlace → store open local order + mock kitchen revision → clear working basket`
 
-Service areas/places are generalized beyond tables, e.g. الصالة/الغرف/الجلسات and طاولة/غرفة/جلسة.
+The cashier-facing model is generic **مجموعة → أماكن**. Default prototype configuration is one **الطاولات** group with six tables; Back Office may later add arbitrary groups and names such as الغرف / الجلسات / الخارجية / VIP.
 
 Payment can happen before or after dining. Empty basket + open local orders exposes **طلبات مفتوحة**.
 
@@ -185,7 +185,7 @@ Payment can happen before or after dining. Empty basket + open local orders expo
 
 - restaurant service ON/OFF;
 - simple Local checkout;
-- advanced area/place selection;
+- advanced group/place selection;
 - open local order snapshots;
 - reopen/update flow;
 - place release after successful payment.
@@ -234,3 +234,20 @@ Cashier consequence:
 - preferred cashier UX is one online-orders queue with many adapters behind it.
 
 Research evidence: `docs/research/restaurant-pos/DELIVERY_PLATFORM_INTEGRATION_BENCHMARK_2026-08-17.md`.
+
+## D-028 — General POS runtime is dependency-injected behind a Rifad-owned contract
+
+The general POS flow must not instantiate a donor/mock/runtime implementation internally.
+
+Current executable boundary:
+
+- `PosRuntimeContract` is the Rifad-owned aggregate runtime contract;
+- `apps/pos/src/runtime/posRuntimeAdapter.ts` is the concrete runtime composition point;
+- `App.tsx` creates the selected runtime and injects it into `usePosFlow(posRuntime)`;
+- `usePosFlow` no longer imports or constructs `createMockPosRuntime()`;
+- the old `MockPosRuntime` name is compatibility-only and must not be used by new product/runtime code;
+- `apps/pos/src/testing/posRuntimeConformance.ts` provides a reusable common sale probe for replacement runtimes.
+
+A future POS may compose catalog, sales, customers, checkout, printing or other capabilities from different external/local implementations. External schemas, SDK types, IDs, credentials and errors stop at their adapters and do not become Rifad public product contracts.
+
+See `docs/architecture/POS_RUNTIME_ADAPTER_BOUNDARY.md`.
