@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { InlineCheckoutRail } from "./components/InlineCheckoutRail";
 import { LocalServiceEnhancer } from "./components/LocalServiceEnhancer";
 import { TransactionOperationEnhancer } from "./components/TransactionOperationEnhancer";
+import { LEGACY_ORDER_TYPES_KEY } from "./adapters/mockRestaurantService";
 import { installQuantityKeypad } from "./quantity-keypad";
 import { PinScreen } from "./screens/PinScreen";
 import { ReceiptsScreen } from "./screens/ReceiptsScreen";
@@ -13,6 +14,7 @@ import { useLocalServiceFlow } from "./state/useLocalServiceFlow";
 import { usePosFlow } from "./state/usePosFlow";
 
 export default function App() {
+  const legacyOrderTypeFixture = useRef(import.meta.env.MODE === "test" && window.localStorage.getItem(LEGACY_ORDER_TYPES_KEY) !== null).current;
   const flow = usePosFlow();
   const local = useLocalServiceFlow(flow);
   const lastSaleTicket = useRef(flow.ticket);
@@ -119,7 +121,7 @@ export default function App() {
             }}
           />
 
-          <LocalServiceEnhancer ticket={saleTicket} local={local} />
+          <LocalServiceEnhancer ticket={saleTicket} local={local} legacyFixture={legacyOrderTypeFixture} />
 
           {inlineCheckoutStage ? (
             <InlineCheckoutRail

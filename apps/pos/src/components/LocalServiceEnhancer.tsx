@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { LEGACY_ORDER_TYPES_KEY, migrateLegacyOrderTypePreference } from "../adapters/mockRestaurantService";
+import { migrateLegacyOrderTypePreference } from "../adapters/mockRestaurantService";
 import type { Ticket } from "../domain/models";
 import type { LocalServiceFlow } from "../state/useLocalServiceFlow";
 import { LocalServiceDialog } from "./LocalServiceDialog";
 
 migrateLegacyOrderTypePreference();
 
-type Props = { ticket: Ticket; local: LocalServiceFlow };
+type Props = { ticket: Ticket; local: LocalServiceFlow; legacyFixture?: boolean };
 
 const sameTargets = (a: readonly HTMLElement[], b: readonly HTMLElement[]) => a.length === b.length && a.every((item, i) => item === b[i]);
 const setText = (button: HTMLButtonElement, text: string) => { if (button.textContent !== text) button.textContent = text; };
@@ -33,10 +33,9 @@ const syncBadge = (parent: HTMLElement, className: string, label: string | null)
   if (badge.textContent !== label) badge.textContent = label;
 };
 
-export function LocalServiceEnhancer({ ticket, local }: Props) {
+export function LocalServiceEnhancer({ ticket, local, legacyFixture = false }: Props) {
   const localRef = useRef(local);
   localRef.current = local;
-  const legacyFixture = import.meta.env.MODE === "test" && window.localStorage.getItem(LEGACY_ORDER_TYPES_KEY) !== null;
   const [dialogMode, setDialogMode] = useState<"assign" | "open" | null>(null);
   const [settingsTargets, setSettingsTargets] = useState<readonly HTMLElement[]>([]);
 
