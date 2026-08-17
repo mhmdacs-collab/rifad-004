@@ -235,29 +235,32 @@
 .local-service-summary {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 10px 18px 3px;
+  gap: 16px;
+  padding: 11px 18px 4px;
   color: #69736f;
 }
 
 .local-service-summary > div {
   display: flex;
   align-items: baseline;
-  gap: 5px;
+  gap: 7px;
 }
 
 .local-service-summary strong {
-  color: #28322e;
-  font-size: 18px;
+  color: #25312c;
+  font-size: 20px;
+  font-weight: 850;
 }
 
 .local-service-summary span {
-  font-size: 12px;
+  color: #69736f;
+  font-size: 13px;
+  font-weight: 650;
 }
 
 .local-service-summary i {
   width: 1px;
-  height: 17px;
+  height: 19px;
   background: #d9dfdc;
 }
 
@@ -311,23 +314,24 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-content: start;
-  gap: 11px;
+  gap: 12px;
   padding: 4px 18px 18px;
   overflow-y: auto;
 }
 
 .local-place-card {
-  min-height: 106px;
+  min-height: 126px;
   display: grid;
   align-content: space-between;
-  gap: 8px;
-  padding: 12px 13px;
+  gap: 9px;
+  padding: 13px 14px;
   border: 1px solid #dfe5e2;
-  border-radius: 14px;
+  border-radius: 15px;
   background: #fff;
   color: #26302c;
   text-align: right;
   box-shadow: 0 2px 7px rgba(25, 42, 34, .035);
+  transition: border-color .14s ease, background .14s ease, box-shadow .14s ease, transform .08s ease;
 }
 
 .local-place-card:enabled:active {
@@ -337,11 +341,19 @@
 .local-place-card--free:enabled:hover {
   border-color: #a9d1bf;
   background: #fbfefc;
+  box-shadow: 0 4px 12px rgba(25, 42, 34, .055);
 }
 
 .local-place-card--occupied {
-  border-color: #c9ded4;
-  background: #f2f8f5;
+  border-color: #efc8c3;
+  background: #fff5f3;
+  box-shadow: 0 3px 11px rgba(134, 60, 52, .055);
+}
+
+.local-place-card--occupied:enabled:hover {
+  border-color: #dda49d;
+  background: #fff0ed;
+  box-shadow: 0 5px 14px rgba(134, 60, 52, .08);
 }
 
 .local-place-card:disabled {
@@ -349,61 +361,66 @@
   cursor: default;
 }
 
-.local-place-card--occupied:disabled,
-.local-place-card--free:disabled {
-  filter: saturate(.82);
-}
-
-.local-place-card-top,
-.local-place-order-meta {
+.local-place-card-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
-.local-place-kind,
 .local-place-status {
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.local-place-kind {
-  color: #8a938f;
-}
-
-.local-place-status {
-  min-height: 23px;
+  min-height: 24px;
   display: inline-flex;
   align-items: center;
-  padding: 2px 8px;
+  padding: 2px 9px;
   border-radius: 999px;
-}
-
-.local-place-status.free {
-  background: #f0f3f2;
-  color: #66706b;
-}
-
-.local-place-status.occupied {
-  background: #dcefe6;
-  color: #075c40;
-}
-
-.local-place-card > strong {
-  font-size: 17px;
+  font-size: 11px;
   font-weight: 800;
 }
 
-.local-place-free-hint,
-.local-place-order-meta {
-  color: #79827e;
-  font-size: 11px;
+.local-place-status.free {
+  background: #eef3f0;
+  color: #5f6c66;
 }
 
-.local-place-order-meta b {
-  color: #34403a;
+.local-place-status.occupied {
+  background: #f6ddd9;
+  color: #9a443d;
+}
+
+.local-place-card > strong {
+  color: #202b26;
+  font-size: 19px;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.local-place-free-hint {
+  color: #79827e;
   font-size: 12px;
+  font-weight: 600;
+}
+
+.local-place-order-meta {
+  display: grid;
+  gap: 4px;
+  align-content: end;
+  text-align: right;
+}
+
+.local-place-total {
+  color: #08724f;
+  font-size: 25px;
+  font-weight: 900;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.2px;
+}
+
+.local-place-elapsed {
+  color: #8a716c;
+  font-size: 11px;
+  font-weight: 650;
 }
 
 .local-orders-empty {
@@ -522,13 +539,25 @@
     padding-right: 13px;
   }
 
+  .local-service-summary {
+    gap: 11px;
+  }
+
+  .local-service-summary span {
+    font-size: 12px;
+  }
+
   .local-place-grid {
     grid-template-columns: 1fr;
     gap: 9px;
   }
 
   .local-place-card {
-    min-height: 88px;
+    min-height: 106px;
+  }
+
+  .local-place-total {
+    font-size: 24px;
   }
 
   .local-service-foot > span {
@@ -556,6 +585,10 @@
   }
 
   .local-place-card {
-    min-height: 88px;
+    min-height: 108px;
+  }
+
+  .local-place-total {
+    font-size: 22px;
   }
 }
