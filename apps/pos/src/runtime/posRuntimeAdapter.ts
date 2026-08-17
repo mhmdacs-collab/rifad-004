@@ -1,7 +1,13 @@
 import { createMockPosRuntime } from "../adapters/mockPos";
 import type { PosRuntimeContract } from "../contracts/pos";
 import { withLocalPersistenceJournal } from "./journaledPosRuntime";
+import { createLegacySnapshotBridge } from "./legacySnapshotBridge";
 import { createLocalPersistenceAdapter } from "./localPersistenceAdapter";
+
+export const POS_RUNTIME_SNAPSHOT_NAMESPACE = "pos.runtime";
+export const POS_RUNTIME_SNAPSHOT_SCHEMA_VERSION = 1;
+/** Compatibility only; new product code must not read this key. */
+export const LEGACY_POS_RUNTIME_STORAGE_KEY = "rifad.pos.mock.v1";
 
 export type PosRuntimeAdapterInfo = Readonly<{
   id: string;
@@ -13,8 +19,11 @@ export type PosRuntimeAdapterInfo = Readonly<{
 /**
  * Single composition point for the general POS runtime.
  *
- * A future production adapter replaces the factory result here. UI/state code
- * must not import concrete POS implementations directly.
+ * The current mock still expects its historical localStorage key internally.
+ * A temporary migration bridge hydrates that key from the Rifad-owned durable
+ * namespace before construction, then journaled mutations mirror the current
+ * snapshot back through LocalPersistenceContract. Replacing the mock removes
+ * this bridge without changing UI/state contracts.
  */
 export const POS_RUNTIME_ADAPTER_INFO: PosRuntimeAdapterInfo = {
   id: "rifad-mock-pos",
@@ -24,6 +33,13 @@ export const POS_RUNTIME_ADAPTER_INFO: PosRuntimeAdapterInfo = {
 };
 
 export const createPosRuntimeAdapter = (): PosRuntimeContract => {
+  const persistence = createLocalPersistenceAdapter();
+  const snapshotBridge = createLegacySnapshotBridge({
+    persistence,
+    namespace: POS_RUNTIME_SNAPSHOT_NAMESPACE,
+    schemaVersion: POS_RUNTIME_SNAPSHOT_SCHEMA_VERSION,
+    legacyStorageKey: LEGACY_POS_RUNTIME_STORAGE_KEY,
+  });
   const runtime = createMockPosRuntime();
-  return withLocalPersistenceJournal(runtime, createLocalPersistenceAdapter());
+  return withLocalPersistenceJournal(runtime, persistence, snapshotBridge);
 };
