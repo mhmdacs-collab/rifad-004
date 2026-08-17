@@ -1,0 +1,372 @@
+/*
+ * Rifad POS — Visual Pass 34
+ * Touch-first checkout polish based on live cashier review.
+ * Preserve the inline checkout flow while prioritizing generous hit targets,
+ * clear spacing and quick one-glance scanning over desktop-style density.
+ */
+
+/* Shared checkout rhythm -------------------------------------------------- */
+.inline-checkout-body,
+.inline-success-body {
+  scrollbar-gutter: stable;
+}
+
+.inline-checkout-body {
+  gap: 12px;
+}
+
+.inline-checkout-total-card {
+  min-height: 106px;
+  height: 106px;
+  flex-basis: 106px;
+  border-radius: 13px;
+}
+
+.inline-checkout-total-card > span {
+  font-size: .76rem;
+}
+
+.inline-checkout-total-card > h1 {
+  font-size: clamp(2rem, 2.35vw, 2.5rem);
+}
+
+/* Payment methods --------------------------------------------------------- */
+.inline-payment-section {
+  gap: 9px;
+}
+
+.inline-payment-methods {
+  gap: 9px;
+}
+
+.inline-payment-method {
+  min-height: 78px;
+  padding: 11px 14px;
+  border-radius: 12px;
+}
+
+.inline-payment-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 11px;
+}
+
+.inline-payment-method > strong {
+  font-size: .88rem;
+}
+
+.inline-payment-method > small {
+  font-size: .65rem;
+}
+
+.inline-checkout-note {
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid #e8ecea;
+  font-size: .62rem;
+}
+
+/* Cash entry -------------------------------------------------------------- */
+.inline-cash-body {
+  gap: 10px;
+}
+
+.inline-cash-entry-heading > button {
+  min-width: 58px;
+  min-height: 44px;
+  height: 44px;
+  padding-inline: 13px;
+  border-radius: 9px;
+  font-size: .67rem;
+  font-weight: 750;
+}
+
+.inline-cash-input {
+  height: 78px;
+  padding-inline: 17px;
+  border-radius: 12px;
+}
+
+.inline-cash-input input {
+  font-size: clamp(1.65rem, 2vw, 2rem);
+}
+
+/* Let three shortcuts become genuinely wide; four still fit comfortably. */
+.inline-cash-suggestions {
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 8px;
+}
+
+.inline-cash-suggestions button {
+  min-height: 52px;
+  height: 52px;
+  padding-inline: 8px;
+  border-radius: 10px;
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.inline-keypad {
+  gap: 8px;
+}
+
+.inline-keypad button {
+  min-height: 60px;
+  height: 60px;
+  border-radius: 10px;
+  font-size: 1.18rem;
+  font-weight: 780;
+}
+
+.inline-keypad .inline-keypad-backspace {
+  color: var(--brand);
+  border-color: #c9ddd5;
+  background: #eef7f3;
+  font-size: 1.25rem;
+}
+
+.inline-change-card {
+  min-height: 88px;
+  padding: 14px 17px;
+  border-radius: 12px;
+}
+
+.inline-change-card > span {
+  font-size: .76rem;
+}
+
+.inline-change-card > strong {
+  font-size: clamp(1.55rem, 1.95vw, 1.95rem);
+}
+
+.inline-complete-sale {
+  min-height: 60px;
+  height: 60px;
+  flex-basis: 60px;
+  border-radius: 11px;
+  font-size: .92rem;
+}
+
+/* Success ---------------------------------------------------------------- */
+.inline-success-body {
+  gap: 12px;
+  padding: 18px;
+}
+
+.inline-success-mark {
+  width: 60px;
+  height: 60px;
+  flex-basis: 60px;
+}
+
+.inline-success-copy {
+  gap: 4px;
+  padding-bottom: 3px;
+}
+
+.inline-success-copy h1 {
+  font-size: 1.1rem;
+}
+
+.inline-success-copy p {
+  font-size: .68rem;
+}
+
+.inline-success-local {
+  justify-self: center;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border: 1px solid #d7e8e1;
+  border-radius: 999px;
+  background: #f3faf7;
+}
+
+.inline-success-summary {
+  gap: 9px;
+}
+
+.inline-success-summary > div {
+  min-height: 60px;
+  padding: 11px 15px;
+  border-radius: 11px;
+}
+
+.inline-success-summary span {
+  font-size: .7rem;
+}
+
+.inline-success-summary strong {
+  font-size: .86rem;
+}
+
+.inline-success-summary .inline-success-highlight {
+  min-height: 78px;
+  padding-inline: 16px;
+  border-width: 1.5px;
+}
+
+.inline-success-summary .inline-success-highlight strong {
+  font-size: 1.34rem;
+}
+
+.inline-success-email {
+  padding: 12px;
+  border-radius: 11px;
+}
+
+.inline-success-email input,
+.inline-success-email > button {
+  min-height: 48px;
+  height: 48px;
+}
+
+.inline-success-email > button {
+  padding-inline: 16px;
+  font-size: .7rem;
+}
+
+.inline-success-loyalty,
+.inline-print-status,
+.inline-print-always {
+  min-height: 50px;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+/* The whole preference row is a touch target, not just the checkbox. */
+.inline-print-always {
+  cursor: pointer;
+  gap: 10px;
+  font-size: .69rem;
+  font-weight: 650;
+}
+
+.inline-print-always input {
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
+}
+
+.inline-success-actions {
+  grid-template-columns: minmax(0, .78fr) minmax(0, 1.22fr);
+  gap: 9px;
+  padding-top: 7px;
+}
+
+.inline-success-actions button {
+  min-height: 60px;
+  border-radius: 11px;
+  font-size: .82rem;
+}
+
+/* Short cashier screens retain 44px+ targets without forcing scroll. ------- */
+@media (min-width: 781px) and (max-height: 820px) {
+  .inline-checkout-body,
+  .inline-success-body {
+    gap: 7px;
+    padding: 10px 13px;
+  }
+
+  .inline-checkout-total-card {
+    min-height: 78px;
+    height: 78px;
+    flex-basis: 78px;
+  }
+
+  .inline-checkout-total-card > h1 {
+    font-size: 1.55rem;
+  }
+
+  .inline-payment-method {
+    min-height: 68px;
+    padding-block: 8px;
+  }
+
+  .inline-payment-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .inline-cash-entry-heading > button {
+    min-height: 40px;
+    height: 40px;
+  }
+
+  .inline-cash-input {
+    height: 56px;
+  }
+
+  .inline-cash-suggestions {
+    gap: 6px;
+  }
+
+  .inline-cash-suggestions button {
+    min-height: 44px;
+    height: 44px;
+  }
+
+  .inline-keypad {
+    gap: 6px;
+  }
+
+  .inline-keypad button {
+    min-height: 46px;
+    height: 46px;
+  }
+
+  .inline-change-card {
+    min-height: 62px;
+    padding-block: 8px;
+  }
+
+  .inline-complete-sale {
+    min-height: 50px;
+    height: 50px;
+    flex-basis: 50px;
+  }
+
+  .inline-success-mark {
+    width: 48px;
+    height: 48px;
+    flex-basis: 48px;
+  }
+
+  .inline-success-summary {
+    gap: 6px;
+  }
+
+  .inline-success-summary > div {
+    min-height: 44px;
+    padding-block: 6px;
+  }
+
+  .inline-success-summary .inline-success-highlight {
+    min-height: 54px;
+  }
+
+  .inline-success-email input,
+  .inline-success-email > button,
+  .inline-success-loyalty,
+  .inline-print-status,
+  .inline-print-always {
+    min-height: 44px;
+    height: auto;
+  }
+
+  .inline-success-actions button {
+    min-height: 50px;
+  }
+}
+
+@media (max-width: 780px) {
+  .inline-payment-method,
+  .inline-cash-suggestions button,
+  .inline-keypad button,
+  .inline-complete-sale,
+  .inline-success-actions button {
+    min-height: 54px;
+  }
+}
