@@ -143,7 +143,7 @@ export function InlineCheckoutRail({
         <div className="inline-checkout-body">
           <section className="inline-checkout-total-card" aria-label="إجمالي البيع">
             <span>إجمالي البيع</span>
-            <strong><MoneyAmount value={ticket.total} /></strong>
+            <h1><MoneyAmount value={ticket.total} /></h1>
           </section>
 
           <InlineNotice message={errorMessage} onDismiss={onDismissError} />
@@ -184,7 +184,7 @@ export function InlineCheckoutRail({
         <div className="inline-checkout-body inline-cash-body">
           <section className="inline-checkout-total-card" aria-label="إجمالي البيع">
             <span>إجمالي البيع</span>
-            <strong><MoneyAmount value={ticket.total} /></strong>
+            <h1><MoneyAmount value={ticket.total} /></h1>
           </section>
 
           <InlineNotice message={errorMessage} onDismiss={onDismissError} />
