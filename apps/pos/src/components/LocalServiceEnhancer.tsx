@@ -7,213 +7,136 @@ import { LocalServiceDialog } from "./LocalServiceDialog";
 
 migrateLegacyOrderTypePreference();
 
-type LocalServiceEnhancerProps = {
-  ticket: Ticket;
-  local: LocalServiceFlow;
+type Props = { ticket: Ticket; local: LocalServiceFlow };
+
+const sameTargets = (a: readonly HTMLElement[], b: readonly HTMLElement[]) => a.length === b.length && a.every((item, i) => item === b[i]);
+const setText = (button: HTMLButtonElement, text: string) => { if (button.textContent !== text) button.textContent = text; };
+const setDisabled = (button: HTMLButtonElement, value: boolean) => { if (button.disabled !== value) button.disabled = value; };
+const setClass = (element: Element, name: string, value: boolean) => { if (element.classList.contains(name) !== value) element.classList.toggle(name, value); };
+const setAttr = (element: Element, name: string, value: string | null) => {
+  if (value === null) { if (element.hasAttribute(name)) element.removeAttribute(name); }
+  else if (element.getAttribute(name) !== value) element.setAttribute(name, value);
 };
-
-const sameTargets = (left: readonly HTMLElement[], right: readonly HTMLElement[]) =>
-  left.length === right.length && left.every((item, index) => item === right[index]);
-
-const setButtonText = (button: HTMLButtonElement, text: string) => {
-  if (button.textContent !== text) button.textContent = text;
-};
-
-const setDisabled = (button: HTMLButtonElement, disabled: boolean) => {
-  if (button.disabled !== disabled) button.disabled = disabled;
-};
-
-const setClass = (element: Element, className: string, enabled: boolean) => {
-  if (element.classList.contains(className) !== enabled) element.classList.toggle(className, enabled);
-};
-
-const setAttributeValue = (element: Element, name: string, value: string | null) => {
-  if (value === null) {
-    if (element.hasAttribute(name)) element.removeAttribute(name);
-    return;
-  }
-  if (element.getAttribute(name) !== value) element.setAttribute(name, value);
-};
-
-const ownedSlot = (parent: HTMLElement, className: string) => {
-  const current = Array.from(parent.children).find((child): child is HTMLElement => child instanceof HTMLElement && child.classList.contains(className));
+const directChild = (parent: HTMLElement, className: string) => Array.from(parent.children).find((child): child is HTMLElement => child instanceof HTMLElement && child.classList.contains(className));
+const slotFor = (parent: HTMLElement, className: string, tag: "span" | "div" = "span") => {
+  const current = directChild(parent, className);
   if (current) return current;
-  const slot = document.createElement("span");
+  const slot = document.createElement(tag);
   slot.className = className;
   slot.dataset.localServiceSlot = "owned";
   parent.append(slot);
   return slot;
 };
 
-export function LocalServiceEnhancer({ ticket, local }: LocalServiceEnhancerProps) {
+export function LocalServiceEnhancer({ ticket, local }: Props) {
   const localRef = useRef(local);
   localRef.current = local;
   const [dialogMode, setDialogMode] = useState<"assign" | "open" | null>(null);
   const [settingsTargets, setSettingsTargets] = useState<readonly HTMLElement[]>([]);
-  const [ticketContextTargets, setTicketContextTargets] = useState<readonly HTMLElement[]>([]);
-  const [checkoutContextTargets, setCheckoutContextTargets] = useState<readonly HTMLElement[]>([]);
+  const [ticketTargets, setTicketTargets] = useState<readonly HTMLElement[]>([]);
+  const [checkoutTargets, setCheckoutTargets] = useState<readonly HTMLElement[]>([]);
+
   const itemCount = ticket.lines.reduce((sum, line) => sum + line.quantity, 0);
   const serviceEnabled = local.config.restaurantServiceEnabled;
   const advanced = serviceEnabled && local.config.placeManagementEnabled;
-  const hasOpenOrders = local.openLocalOrders.length > 0;
-  const openOrderCount = local.openLocalOrders.length;
-  const activeOpenOrderId = local.activeOpenOrder?.id ?? null;
-  const isBusy = local.localBusy !== null;
+  const openCount = local.openLocalOrders.length;
+  const hasOpen = openCount > 0;
+  const activeId = local.activeOpenOrder?.id ?? null;
+  const busy = local.localBusy !== null;
 
   useEffect(() => {
     const sync = () => {
       const workspace = document.querySelector<HTMLElement>(".pos-workspace");
-      const touchMode = workspace?.classList.contains("sale-screen-touch") ?? false;
-
-      if (touchMode) {
-        const actionCards = Array.from(document.querySelectorAll<HTMLElement>(".ticket-actions"));
-        for (const card of actionCards) {
+      if (workspace?.classList.contains("sale-screen-touch")) {
+        for (const card of document.querySelectorAll<HTMLElement>(".ticket-actions")) {
           const buttons = Array.from(card.children).filter((child): child is HTMLButtonElement => child instanceof HTMLButtonElement);
-          const secondary = buttons[0];
+          const first = buttons[0];
           const pay = buttons[1];
-          if (!secondary || !pay) continue;
-
-          setClass(secondary, "local-service-action", true);
-          setClass(secondary, "local-service-action--open", false);
-          setClass(secondary, "local-service-action--send", false);
-          setClass(secondary, "local-service-action--hidden", false);
+          if (!first || !pay) continue;
+          setClass(first, "local-service-action", true);
+          setClass(first, "local-service-action--open", false);
+          setClass(first, "local-service-action--send", false);
+          setClass(first, "local-service-action--hidden", false);
           setClass(pay, "local-pay--inactive", false);
 
           if (!serviceEnabled) {
-            setButtonText(secondary, "محلي");
-            setDisabled(secondary, true);
-            setClass(secondary, "local-service-action--hidden", true);
-            setAttributeValue(secondary, "aria-hidden", "true");
-          } else if (activeOpenOrderId) {
+            setText(first, "محلي"); setDisabled(first, true); setClass(first, "local-service-action--hidden", true); setAttr(first, "aria-hidden", "true");
+          } else if (activeId) {
             const active = localRef.current.activeOpenOrder;
-            setButtonText(secondary, "إرسال");
-            setDisabled(secondary, itemCount === 0 || isBusy);
-            setClass(secondary, "local-service-action--send", true);
-            setAttributeValue(secondary, "aria-hidden", null);
-            setAttributeValue(secondary, "aria-label", active ? `إرسال تحديث ${active.servicePlaceName} للمطبخ` : "إرسال تحديث الطلب للمطبخ");
-          } else if (advanced && itemCount === 0 && hasOpenOrders) {
-            setButtonText(secondary, `طلبات مفتوحة · ${openOrderCount}`);
-            setDisabled(secondary, isBusy);
-            setClass(secondary, "local-service-action--open", true);
-            setAttributeValue(secondary, "aria-hidden", null);
-            setAttributeValue(secondary, "aria-label", `الطلبات المفتوحة، ${openOrderCount}`);
-            setClass(pay, "local-pay--inactive", true);
+            setText(first, "إرسال"); setDisabled(first, itemCount === 0 || busy); setClass(first, "local-service-action--send", true); setAttr(first, "aria-hidden", null); setAttr(first, "aria-label", active ? `إرسال تحديث ${active.servicePlaceName} للمطبخ` : "إرسال تحديث الطلب للمطبخ");
+          } else if (advanced && itemCount === 0 && hasOpen) {
+            setText(first, `طلبات مفتوحة · ${openCount}`); setDisabled(first, busy); setClass(first, "local-service-action--open", true); setAttr(first, "aria-hidden", null); setAttr(first, "aria-label", `الطلبات المفتوحة، ${openCount}`); setClass(pay, "local-pay--inactive", true);
           } else {
-            setButtonText(secondary, "محلي");
-            setDisabled(secondary, itemCount === 0 || isBusy);
-            setAttributeValue(secondary, "aria-hidden", null);
-            setAttributeValue(secondary, "aria-label", advanced ? "محلي، اختيار مكان" : "محلي");
+            setText(first, "محلي"); setDisabled(first, itemCount === 0 || busy); setAttr(first, "aria-hidden", null); setAttr(first, "aria-label", advanced ? "محلي، اختيار مكان" : "محلي");
           }
         }
       }
 
-      const settings = Array.from(document.querySelectorAll<HTMLElement>(".pos-device-settings"));
-      const nextSettingsTargets = settings.map((panel) => {
-        let slot = panel.querySelector<HTMLElement>(":scope > .local-service-settings-slot");
+      const settingSlots = Array.from(document.querySelectorAll<HTMLElement>(".pos-device-settings")).map((panel) => {
+        let slot = directChild(panel, "local-service-settings-slot");
         if (!slot) {
-          slot = document.createElement("div");
-          slot.className = "local-service-settings-slot";
-          slot.dataset.localServiceSlot = "owned";
-          const done = panel.querySelector(":scope > .settings-done");
-          if (done) panel.insertBefore(slot, done);
-          else panel.append(slot);
+          slot = document.createElement("div"); slot.className = "local-service-settings-slot"; slot.dataset.localServiceSlot = "owned";
+          const done = directChild(panel, "settings-done");
+          if (done) panel.insertBefore(slot, done); else panel.append(slot);
         }
         return slot;
       });
-      setSettingsTargets((current) => sameTargets(current, nextSettingsTargets) ? current : nextSettingsTargets);
+      setSettingsTargets((current) => sameTargets(current, settingSlots) ? current : settingSlots);
 
-      const ticketTitles = Array.from(document.querySelectorAll<HTMLElement>(".ticket-header .ticket-title-block"));
-      const nextTicketTargets = ticketTitles.map((title) => ownedSlot(title, "local-ticket-context-slot"));
-      setTicketContextTargets((current) => sameTargets(current, nextTicketTargets) ? current : nextTicketTargets);
+      const ticketSlots = Array.from(document.querySelectorAll<HTMLElement>(".ticket-header .ticket-title-block")).map((title) => slotFor(title, "local-ticket-context-slot"));
+      setTicketTargets((current) => sameTargets(current, ticketSlots) ? current : ticketSlots);
 
-      const checkoutHeads = Array.from(document.querySelectorAll<HTMLElement>(".inline-checkout-head > div"));
-      const successCopies = Array.from(document.querySelectorAll<HTMLElement>(".inline-success-copy"));
-      const nextCheckoutTargets = [...checkoutHeads, ...successCopies].map((target) => ownedSlot(target, "local-checkout-context-slot"));
-      setCheckoutContextTargets((current) => sameTargets(current, nextCheckoutTargets) ? current : nextCheckoutTargets);
+      const contextParents = [
+        ...Array.from(document.querySelectorAll<HTMLElement>(".inline-checkout-head > div")),
+        ...Array.from(document.querySelectorAll<HTMLElement>(".inline-success-copy")),
+      ];
+      const contextSlots = contextParents.map((parent) => slotFor(parent, "local-checkout-context-slot"));
+      setCheckoutTargets((current) => sameTargets(current, contextSlots) ? current : contextSlots);
     };
 
     sync();
     const observer = new MutationObserver(sync);
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["disabled", "class"] });
+    observer.observe(document.body, { childList: true, subtree: true });
 
-    const captureActions = (event: MouseEvent) => {
+    const capture = (event: MouseEvent) => {
       const target = event.target instanceof Element ? event.target.closest<HTMLButtonElement>(".ticket-actions > button") : null;
       if (!target) return;
       const workspace = target.closest<HTMLElement>(".pos-workspace");
       if (!workspace?.classList.contains("sale-screen-touch")) return;
-      const card = target.parentElement;
-      if (!card) return;
-      const buttons = Array.from(card.children).filter((child): child is HTMLButtonElement => child instanceof HTMLButtonElement);
+      const buttons = target.parentElement ? Array.from(target.parentElement.children).filter((child): child is HTMLButtonElement => child instanceof HTMLButtonElement) : [];
       const index = buttons.indexOf(target);
-
-      if (index === 1) {
-        localRef.current.prepareDirectCheckout();
-        return;
-      }
+      if (index === 1) { localRef.current.prepareDirectCheckout(); return; }
       if (index !== 0 || target.disabled || !serviceEnabled) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-
+      event.preventDefault(); event.stopPropagation();
       const current = localRef.current;
-      if (current.activeOpenOrder) {
-        void current.sendOpenOrderUpdate();
-      } else if (advanced && itemCount === 0 && hasOpenOrders) {
-        setDialogMode("open");
-      } else if (advanced) {
-        setDialogMode("assign");
-      } else if (itemCount > 0) {
-        void current.beginSimpleLocalCheckout();
-      }
+      if (current.activeOpenOrder) void current.sendOpenOrderUpdate();
+      else if (advanced && itemCount === 0 && hasOpen) setDialogMode("open");
+      else if (advanced) setDialogMode("assign");
+      else if (itemCount > 0) void current.beginSimpleLocalCheckout();
     };
-
-    document.addEventListener("click", captureActions, true);
+    document.addEventListener("click", capture, true);
     return () => {
-      observer.disconnect();
-      document.removeEventListener("click", captureActions, true);
+      observer.disconnect(); document.removeEventListener("click", capture, true);
       document.querySelectorAll<HTMLElement>("[data-local-service-slot=\"owned\"]").forEach((slot) => slot.remove());
     };
-  }, [activeOpenOrderId, advanced, hasOpenOrders, isBusy, itemCount, openOrderCount, serviceEnabled]);
+  }, [activeId, advanced, busy, hasOpen, itemCount, openCount, serviceEnabled]);
 
-  const toggleRestaurantService = async () => {
-    await local.updateConfig({ restaurantServiceEnabled: !serviceEnabled, placeManagementEnabled: false });
-  };
+  const toggleRestaurant = async () => { await local.updateConfig({ restaurantServiceEnabled: !serviceEnabled, placeManagementEnabled: false }); };
+  const togglePlaces = async () => { if (serviceEnabled) await local.updateConfig({ restaurantServiceEnabled: true, placeManagementEnabled: !local.config.placeManagementEnabled }); };
+  const checkoutLabel = local.checkoutServiceContext?.mode === "dine_in" ? local.checkoutServiceContext.label : null;
 
-  const togglePlaceManagement = async () => {
-    if (!serviceEnabled) return;
-    await local.updateConfig({ restaurantServiceEnabled: true, placeManagementEnabled: !local.config.placeManagementEnabled });
-  };
-
-  const ticketContext = local.activeServiceLabel;
-  const checkoutContext = local.checkoutServiceContext?.mode === "dine_in" ? local.checkoutServiceContext.label : null;
-
-  return (
-    <>
-      {settingsTargets.map((target, index) => createPortal(
-        <section className="device-settings-section local-service-settings" key={`local-settings-${index}`}>
-          <div className="device-settings-copy">
-            <strong>خدمة المطعم</strong>
-            <span>فعّلها لتمييز البيع المباشر كسفري وإظهار خيار المحلي. إعداد مؤقت هنا وسيُنقل للباك أوفس لاحقًا.</span>
-          </div>
-          <button type="button" className={`local-setting-row ${serviceEnabled ? "active" : ""}`} onClick={() => void toggleRestaurantService()} disabled={isBusy || (hasOpenOrders && serviceEnabled)} aria-pressed={serviceEnabled}>
-            <span><strong>تفعيل خدمة المطعم</strong><small>{serviceEnabled ? "المحلي والسفري مفعّلان" : "وضع بيع مباشر / تجزئة"}</small></span>
-            <i className="local-setting-switch" aria-hidden="true"><b /></i>
-          </button>
-          <button type="button" className={`local-setting-row local-setting-row--nested ${local.config.placeManagementEnabled ? "active" : ""}`} onClick={() => void togglePlaceManagement()} disabled={!serviceEnabled || isBusy || (hasOpenOrders && local.config.placeManagementEnabled)} aria-pressed={local.config.placeManagementEnabled}>
-            <span><strong>تحديد الطاولات والجلسات</strong><small>{local.config.placeManagementEnabled ? "محلي متقدم · اختيار مكان وطلبات مفتوحة" : "محلي بسيط · بدون اختيار مكان"}</small></span>
-            <i className="local-setting-switch" aria-hidden="true"><b /></i>
-          </button>
-          {hasOpenOrders ? <small className="local-setting-lock-note">يوجد {openOrderCount} طلب محلي مفتوح؛ أغلقها قبل إيقاف الإعدادات.</small> : null}
-        </section>,
-        target,
-      ))}
-
-      {ticketContextTargets.map((target, index) => createPortal(ticketContext ? <span className="local-ticket-context" key={`ticket-context-${index}`}>{ticketContext}</span> : null, target))}
-      {checkoutContextTargets.map((target, index) => createPortal(checkoutContext ? <span className="local-checkout-context" key={`checkout-context-${index}`}>{checkoutContext}</span> : null, target))}
-
-      {dialogMode ? <LocalServiceDialog mode={dialogMode} areas={local.serviceAreas} openOrders={local.openLocalOrders} busy={isBusy} onClose={() => setDialogMode(null)} onAssign={local.assignToPlace} onOpen={local.resumeOpenOrder} /> : null}
-      {local.localNotice ? <div className="local-service-toast local-service-toast--success" role="status">{local.localNotice}</div> : null}
-      {local.localError ? <button type="button" className="local-service-toast local-service-toast--error" onClick={local.clearLocalError} role="alert">{local.localError}</button> : null}
-    </>
-  );
+  return <>
+    {settingsTargets.map((target, index) => createPortal(
+      <section className="device-settings-section local-service-settings" key={`local-settings-${index}`}>
+        <div className="device-settings-copy"><strong>خدمة المطعم</strong><span>فعّلها لتمييز البيع المباشر كسفري وإظهار خيار المحلي. إعداد مؤقت هنا وسيُنقل للباك أوفس لاحقًا.</span></div>
+        <button type="button" className={`local-setting-row ${serviceEnabled ? "active" : ""}`} onClick={() => void toggleRestaurant()} disabled={busy || (hasOpen && serviceEnabled)} aria-pressed={serviceEnabled}><span><strong>تفعيل خدمة المطعم</strong><small>{serviceEnabled ? "المحلي والسفري مفعّلان" : "وضع بيع مباشر / تجزئة"}</small></span><i className="local-setting-switch" aria-hidden="true"><b /></i></button>
+        <button type="button" className={`local-setting-row local-setting-row--nested ${local.config.placeManagementEnabled ? "active" : ""}`} onClick={() => void togglePlaces()} disabled={!serviceEnabled || busy || (hasOpen && local.config.placeManagementEnabled)} aria-pressed={local.config.placeManagementEnabled}><span><strong>تحديد الطاولات والجلسات</strong><small>{local.config.placeManagementEnabled ? "محلي متقدم · اختيار مكان وطلبات مفتوحة" : "محلي بسيط · بدون اختيار مكان"}</small></span><i className="local-setting-switch" aria-hidden="true"><b /></i></button>
+        {hasOpen ? <small className="local-setting-lock-note">يوجد {openCount} طلب محلي مفتوح؛ أغلقها قبل إيقاف الإعدادات.</small> : null}
+      </section>, target))}
+    {ticketTargets.map((target, index) => createPortal(local.activeServiceLabel ? <span className="local-ticket-context" key={`ticket-context-${index}`}>{local.activeServiceLabel}</span> : null, target))}
+    {checkoutTargets.map((target, index) => createPortal(checkoutLabel ? <span className="local-checkout-context" key={`checkout-context-${index}`}>{checkoutLabel}</span> : null, target))}
+    {dialogMode ? <LocalServiceDialog mode={dialogMode} areas={local.serviceAreas} openOrders={local.openLocalOrders} busy={busy} onClose={() => setDialogMode(null)} onAssign={local.assignToPlace} onOpen={local.resumeOpenOrder} /> : null}
+    {local.localNotice ? <div className="local-service-toast local-service-toast--success" role="status">{local.localNotice}</div> : null}
+    {local.localError ? <button type="button" className="local-service-toast local-service-toast--error" onClick={local.clearLocalError} role="alert">{local.localError}</button> : null}
+  </>;
 }
