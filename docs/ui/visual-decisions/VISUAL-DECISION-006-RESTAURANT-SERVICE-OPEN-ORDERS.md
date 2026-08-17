@@ -119,12 +119,12 @@ Rifad uses a simple semantic place view:
 - wide screens use a readable place grid;
 - decorative furniture is intentionally avoided when it would reduce touch/readability;
 - narrow/mobile layouts change to larger stacked cards;
-- free/occupied states use text plus color, not color alone;
-- occupied/open places may use a **very light warm-red surface and calm red status badge** to make occupancy immediately scannable without presenting the state as a destructive error;
-- the open-order **total is the strongest value inside an occupied place card**, shown large and green; place name is next in hierarchy and elapsed time remains secondary;
-- free places remain visually quiet and show a compact **اضغط لبدء طلب** hint;
+- cashier-facing place-state labels are **متاحة** and **محجوزة**; open-order wording remains **طلبات مفتوحة** at the order-list level;
+- **محجوزة** places may use a **very light warm-red surface and calm red status badge** to make occupancy immediately scannable without presenting the state as a destructive error;
+- the open-order **total is the strongest value inside a محجوزة place card**, shown large and green; place name is next in hierarchy and elapsed time remains secondary;
+- **متاحة** places remain visually quiet and show a compact **اضغط لبدء طلب** hint;
 - item count is intentionally **not** shown on place cards because it does not improve the cashier's place-selection decision;
-- red remains strong/destructive only for actual destructive/error/urgent actions, while the occupied-card red is intentionally pale.
+- red remains strong/destructive only for actual destructive/error/urgent actions, while the reserved-card red is intentionally pale.
 
 Back Office should eventually own persistent group/place configuration and optional layout. The current POS settings are staging controls for UI-first validation, not the intended ordinary-cashier production ownership model.
 
