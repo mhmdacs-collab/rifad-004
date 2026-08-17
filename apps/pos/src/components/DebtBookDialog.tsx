@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { MoneyAmount } from "./MoneyAmount";
 import type { Customer, DebtLedgerEntry, Money } from "../domain/models";
 
@@ -69,6 +69,7 @@ export function DebtBookDialog({
   const [loadingLedger, setLoadingLedger] = useState(false);
   const [editingAmount, setEditingAmount] = useState(false);
   const [amountInput, setAmountInput] = useState("");
+  const [amountFresh, setAmountFresh] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<SettlementSuccess | null>(null);
@@ -104,6 +105,7 @@ export function DebtBookDialog({
     if (actionLocked.current) return;
     setSelected(customer);
     setAmountInput(formatHalalasForInput(customer.debt.halalas));
+    setAmountFresh(true);
     setEditingAmount(false);
     setMessage(null);
     const sequence = ++ledgerSequence.current;
@@ -112,6 +114,62 @@ export function DebtBookDialog({
     if (sequence === ledgerSequence.current) {
       setLedger(entries);
       setLoadingLedger(false);
+    }
+  };
+
+  const clearSelectedCustomer = () => {
+    if (submitting) return;
+    ledgerSequence.current += 1;
+    setSelected(null);
+    setLedger([]);
+    setEditingAmount(false);
+    setAmountInput("");
+    setAmountFresh(true);
+    setMessage(null);
+  };
+
+  const applySettlementKey = (key: string) => {
+    setAmountInput((current) => {
+      if (key === "backspace") {
+        setAmountFresh(false);
+        return amountFresh ? "" : current.slice(0, -1);
+      }
+
+      if (key === "decimal") {
+        setAmountFresh(false);
+        if (amountFresh) return "0.";
+        return current.includes(".") ? current : `${current || "0"}.`;
+      }
+
+      const seed = amountFresh ? "" : current;
+      setAmountFresh(false);
+      const [whole = "", fraction] = seed.split(".");
+      if (fraction !== undefined) {
+        const room = Math.max(0, 2 - fraction.length);
+        if (room === 0) return seed;
+        return `${whole || "0"}.${fraction}${key.slice(0, room)}`;
+      }
+
+      const next = `${seed}${key}`.replace(/^0+(?=\d)/, "").slice(0, 9);
+      return next || "0";
+    });
+    setMessage(null);
+  };
+
+  const handleSettlementKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (/^\d$/.test(event.key)) {
+      event.preventDefault();
+      applySettlementKey(event.key);
+      return;
+    }
+    if (event.key === "." || event.key === ",") {
+      event.preventDefault();
+      applySettlementKey("decimal");
+      return;
+    }
+    if (event.key === "Backspace" || event.key === "Delete") {
+      event.preventDefault();
+      applySettlementKey("backspace");
     }
   };
 
@@ -145,17 +203,17 @@ export function DebtBookDialog({
   };
 
   const confirmationLabel = settlementHalalas !== null && settlementHalalas > 0
-    ? `تأكيد سداد ${formatHalalasForInput(settlementHalalas)} ر.س`
-    : "تأكيد السداد";
+    ? `سداد ${formatHalalasForInput(settlementHalalas)} ر.س`
+    : "سداد";
 
   return (
     <div className="dialog-backdrop customer-credit-backdrop" role="presentation" onClick={() => { if (!submitting) onClose(); }}>
-      <section className="customer-credit-dialog debt-book-dialog" role="dialog" aria-modal="true" aria-labelledby="debt-book-title" onClick={(event) => event.stopPropagation()}>
+      <section className={`customer-credit-dialog debt-book-dialog${selected ? " debt-book-dialog--selected" : ""}`} role="dialog" aria-modal="true" aria-labelledby="debt-book-title" onClick={(event) => event.stopPropagation()}>
         <header>
           <button type="button" onClick={onClose} aria-label="إغلاق" disabled={submitting}>×</button>
           <div>
             <h2 id="debt-book-title">دفتر الديون</h2>
-            <span>العملاء المدينون، سجل الفواتير الآجلة، وحركات السداد في مكان واحد.</span>
+            <span>ابحث عن العميل وسجّل السداد.</span>
           </div>
         </header>
 
@@ -189,7 +247,7 @@ export function DebtBookDialog({
 
             <div className="debt-book-body">
               <div className="debtors-list" aria-label="العملاء المدينون">
-                <div className="debtors-list-title"><strong>المدينون</strong><span>اضغط على العميل لفتح حسابه</span></div>
+                <div className="debtors-list-title"><strong>المدينون</strong><span>اختر العميل</span></div>
                 {results.map((customer) => (
                   <button
                     type="button"
@@ -210,6 +268,7 @@ export function DebtBookDialog({
                   <div className="debt-account-head">
                     <span><strong>{selected.name}</strong><small dir="ltr">{selected.mobile}</small></span>
                     <div><span>الرصيد الحالي</span><strong><MoneyAmount value={selected.debt} /></strong></div>
+                    <button type="button" className="debt-change-customer" onClick={clearSelectedCustomer} disabled={submitting}>تغيير العميل</button>
                   </div>
 
                   <div className="debt-ledger" aria-label="حركات الدين">
@@ -238,10 +297,11 @@ export function DebtBookDialog({
                           <label className="customer-settlement-input">
                             <input
                               autoFocus
+                              readOnly
                               dir="ltr"
-                              inputMode="decimal"
+                              inputMode="none"
                               value={amountInput}
-                              onChange={(event) => setAmountInput(event.target.value)}
+                              onKeyDown={handleSettlementKeyDown}
                               aria-label="مبلغ السداد"
                               disabled={submitting}
                             />
@@ -254,17 +314,32 @@ export function DebtBookDialog({
                         onClick={() => {
                           if (editingAmount) {
                             setAmountInput(formatHalalasForInput(selected.debt.halalas));
+                            setAmountFresh(true);
                             setEditingAmount(false);
                           } else {
+                            setAmountInput(formatHalalasForInput(selected.debt.halalas));
+                            setAmountFresh(true);
                             setEditingAmount(true);
                           }
                           setMessage(null);
                         }}
                         disabled={submitting}
                       >
-                        {editingAmount ? "كامل الدين" : "تعديل المبلغ"}
+                        {editingAmount ? "كامل الدين" : "سداد جزئي"}
                       </button>
                     </div>
+
+                    {editingAmount ? (
+                      <div className="debt-settlement-keypad" aria-label="لوحة مبلغ السداد">
+                        {["1", "2", "3"].map((key) => <button type="button" key={key} onClick={() => applySettlementKey(key)}>{key}</button>)}
+                        <button type="button" className="debt-settlement-key--backspace" aria-label="حذف رقم" onClick={() => applySettlementKey("backspace")}>⌫</button>
+                        {["4", "5", "6"].map((key) => <button type="button" key={key} onClick={() => applySettlementKey(key)}>{key}</button>)}
+                        <button type="button" aria-label="فاصل عشري" onClick={() => applySettlementKey("decimal")}>.</button>
+                        {["7", "8", "9"].map((key) => <button type="button" key={key} onClick={() => applySettlementKey(key)}>{key}</button>)}
+                        <button type="button" className="debt-settlement-key--double-zero" onClick={() => applySettlementKey("00")}>00</button>
+                        <button type="button" className="debt-settlement-key--zero" onClick={() => applySettlementKey("0")}>0</button>
+                      </div>
+                    ) : null}
 
                     {editingAmount && settlementHalalas !== null && settlementHalalas > 0 && settlementHalalas <= selected.debt.halalas ? (
                       <div className="debt-after-payment"><span>المتبقي بعد السداد</span><strong><MoneyAmount value={{ halalas: selected.debt.halalas - settlementHalalas, currency: selected.debt.currency }} /></strong></div>
@@ -283,7 +358,7 @@ export function DebtBookDialog({
               ) : (
                 <div className="debt-book-placeholder">
                   <strong>اختر عميلًا من دفتر الديون</strong>
-                  <span>ستظهر هنا الفواتير الآجلة والسدادات والرصيد الحالي.</span>
+                  <span>سيظهر الرصيد والحركات وإجراء السداد هنا.</span>
                 </div>
               )}
             </div>
