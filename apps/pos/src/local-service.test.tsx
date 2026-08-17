@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import App from "./App";
@@ -47,6 +47,29 @@ describe("POS-FLOW-002 local restaurant service", () => {
     expect(await screen.findByText("اختيار طريقة الدفع")).toBeInTheDocument();
     expect(document.querySelector(".local-checkout-context")).toHaveTextContent("محلي");
     expect(screen.queryByRole("heading", { name: "اختر المكان" })).not.toBeInTheDocument();
+  });
+
+  it("starts advanced local service with one Tables group and exactly six default tables", async () => {
+    setRestaurantConfig(true, true);
+    const user = userEvent.setup();
+    render(<App />);
+    await unlockPos(user);
+
+    await user.click(screen.getByRole("button", { name: /قهوة سعودية/ }));
+    await user.click(await screen.findByRole("button", { name: "محلي، اختيار مكان" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "اختر المكان" });
+    const groups = within(dialog).getByRole("navigation", { name: "مجموعات الأماكن" });
+    expect(within(groups).getAllByRole("button")).toHaveLength(1);
+    expect(within(groups).getByRole("button", { name: "الطاولات" })).toBeInTheDocument();
+    expect(within(groups).queryByRole("button", { name: "الغرف" })).not.toBeInTheDocument();
+    expect(within(groups).queryByRole("button", { name: "الجلسات" })).not.toBeInTheDocument();
+
+    for (let index = 1; index <= 6; index += 1) {
+      expect(within(dialog).getByRole("button", { name: `طاولة ${index}، متاح` })).toBeInTheDocument();
+    }
+    expect(within(dialog).queryByRole("button", { name: /غرفة/ })).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: /جلسة/ })).not.toBeInTheDocument();
   });
 
   it("assigns an advanced local order, reopens it, and frees the place after payment", async () => {
