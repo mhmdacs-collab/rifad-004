@@ -66,8 +66,9 @@ export function TicketPanel({
           </div>
         ) : ticket.lines.map((line) => {
           const lineTotal = { ...line.unitPrice, halalas: line.unitPrice.halalas * line.quantity };
+          const rowKey = variant === "sale" ? `${line.id}:${line.quantity}` : line.id;
           return (
-            <article className={`ticket-line ${lastTouchedLineId === line.id ? "ticket-line--latest" : ""}`} key={line.id} data-line-id={line.id}>
+            <article className={`ticket-line ${lastTouchedLineId === line.id ? "ticket-line--latest" : ""}`} key={rowKey} data-line-id={line.id}>
               {variant === "checkout" ? (
                 <div className="checkout-ticket-row" data-testid="checkout-ticket-row">
                   <div className="checkout-ticket-row-copy">
@@ -90,12 +91,12 @@ export function TicketPanel({
                   disabled={!editable}
                 >
                   <span className="ticket-line-copy">
-                    <strong className="ticket-product-name">{line.name}</strong>
-                    <span className="ticket-line-meta" dir="ltr">
-                      <b>{line.quantity}</b>
-                      <span>×</span>
-                      <MoneyAmount value={line.unitPrice} />
+                    <span className="ticket-line-main">
+                      <span className="ticket-quantity-chip" key={`${line.id}:${line.quantity}`}>{line.quantity}</span>
+                      <span className="ticket-line-times">×</span>
+                      <strong className="ticket-product-name">{line.name}</strong>
                     </span>
+                    <span className="ticket-unit-price" dir="ltr"><MoneyAmount value={line.unitPrice} /></span>
                   </span>
                   <strong className="line-total ticket-line-total"><MoneyAmount value={lineTotal} /></strong>
                 </button>
