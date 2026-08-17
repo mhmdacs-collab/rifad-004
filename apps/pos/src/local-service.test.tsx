@@ -6,6 +6,7 @@ import { RESTAURANT_SERVICE_STORAGE_KEY } from "./adapters/mockRestaurantService
 
 const STORAGE_KEY = "rifad.pos.mock.v1";
 const SALE_SCREEN_MODE_KEY = "rifad.pos.sale-screen-mode.v1";
+const LEGACY_ORDER_TYPES_KEY = "rifad.pos.visible-order-types.v1";
 
 const setRestaurantConfig = (restaurantServiceEnabled: boolean, placeManagementEnabled: boolean) => {
   window.localStorage.setItem(RESTAURANT_SERVICE_STORAGE_KEY, JSON.stringify({
@@ -27,6 +28,7 @@ afterEach(() => {
   window.localStorage.removeItem(RESTAURANT_SERVICE_STORAGE_KEY);
   window.localStorage.removeItem(STORAGE_KEY);
   window.localStorage.removeItem(SALE_SCREEN_MODE_KEY);
+  window.localStorage.removeItem(LEGACY_ORDER_TYPES_KEY);
 });
 
 describe("POS-FLOW-002 local restaurant service", () => {
@@ -43,7 +45,7 @@ describe("POS-FLOW-002 local restaurant service", () => {
     await user.click(localButton);
 
     expect(await screen.findByText("اختيار طريقة الدفع")).toBeInTheDocument();
-    expect(screen.getByText("محلي")).toBeInTheDocument();
+    expect(document.querySelector(".local-checkout-context")).toHaveTextContent("محلي");
     expect(screen.queryByRole("heading", { name: "اختر المكان" })).not.toBeInTheDocument();
   });
 
