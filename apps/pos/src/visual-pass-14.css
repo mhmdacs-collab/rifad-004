@@ -1,0 +1,385 @@
+/*
+ * Rifad POS — Visual Pass 14
+ * Loyverse-inspired interaction refinement without copying donor branding/assets.
+ * Focus: ticket rhythm, quantity feedback, sale-page grid cadence and stage motion.
+ */
+
+:root {
+  font-family: system-ui, "Segoe UI", Tahoma, Arial, sans-serif;
+  --pos-ease: cubic-bezier(.2, .75, .25, 1);
+}
+
+/* Keep motion functional and quick: this is a cashier surface, not a showcase. */
+@keyframes rifad-stage-enter {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes rifad-line-receive {
+  0% { background: #dff2e9; transform: translateX(-4px); }
+  45% { background: #eef8f3; transform: translateX(0); }
+  100% { background: transparent; }
+}
+
+@keyframes rifad-quantity-pop {
+  0% { transform: scale(.72); opacity: .55; }
+  55% { transform: scale(1.18); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes rifad-grid-enter {
+  from { opacity: .72; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.checkout-workspace,
+.success-screen {
+  animation: rifad-stage-enter 180ms var(--pos-ease) both;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Sale workspace: bring the ticket back to a true operational width.         */
+/* -------------------------------------------------------------------------- */
+
+@media (min-width: 781px) {
+  .loyverse-shell,
+  .checkout-workspace {
+    grid-template-columns: minmax(0, 1fr) clamp(430px, 30vw, 525px);
+  }
+
+  .loyverse-shell .workspace-header {
+    height: 62px;
+    min-height: 62px;
+  }
+
+  .current-page-title {
+    font-size: 1rem;
+    font-weight: 760;
+  }
+
+  .loyverse-shell .product-area {
+    padding: 11px 12px;
+    background: #f3f5f4;
+  }
+
+  .loyverse-shell .product-grid {
+    grid-template-columns: repeat(5, minmax(112px, 1fr));
+    grid-auto-rows: clamp(116px, 13vh, 142px);
+    gap: 10px;
+    animation: rifad-grid-enter 150ms var(--pos-ease) both;
+  }
+
+  /* Fixed visual grid: empty custom-page slots remain visible outside edit mode. */
+  .blank-layout-slot {
+    display: block;
+    border: 1px solid #d9dfdc;
+    border-radius: 5px;
+    background: #fafbfa;
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 60%);
+  }
+
+  .catalog-product {
+    border: 1px solid #d6ddda;
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgb(18 50 37 / 5%);
+    transition:
+      transform 90ms var(--pos-ease),
+      box-shadow 120ms var(--pos-ease),
+      border-color 120ms var(--pos-ease),
+      filter 120ms var(--pos-ease);
+    will-change: transform;
+  }
+
+  .catalog-product strong {
+    font-size: .94rem;
+    font-weight: 620;
+    line-height: 1.55;
+  }
+
+  .catalog-product:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: #b3c7be;
+    outline: 0;
+    box-shadow: 0 5px 13px rgb(18 50 37 / 8%);
+  }
+
+  .catalog-product:active:not(:disabled) {
+    transform: scale(.972);
+    filter: brightness(.97);
+    box-shadow: inset 0 1px 2px rgb(18 50 37 / 10%);
+  }
+
+  /* Page strip: calm, stable and tactile. */
+  .sale-page-tabs {
+    min-height: 58px;
+    padding: 0 12px;
+    scroll-snap-type: x proximity;
+    box-shadow: 0 -1px 0 #dfe5e2;
+  }
+
+  .sale-page-tabs button {
+    min-width: 128px;
+    position: relative;
+    border-top: 0 !important;
+    color: #65716c;
+    background: #fff;
+    font-size: .8rem;
+    font-weight: 610;
+    scroll-snap-align: start;
+    transition: color 140ms var(--pos-ease), background 140ms var(--pos-ease);
+  }
+
+  .sale-page-tabs button::after {
+    content: "";
+    position: absolute;
+    inset: 0 18px auto;
+    height: 3px;
+    border-radius: 0 0 4px 4px;
+    background: var(--brand);
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform 170ms var(--pos-ease);
+  }
+
+  .sale-page-tabs button.active {
+    color: var(--brand);
+    background: #fbfdfc;
+    font-weight: 760;
+  }
+
+  .sale-page-tabs button.active::after {
+    transform: scaleX(1);
+  }
+
+  .sale-page-tabs button:active {
+    background: #f0f6f3;
+  }
+
+  /* ------------------------------------------------------------------------ */
+  /* Ticket: clean audit sheet, closer to a native POS basket.                */
+  /* ------------------------------------------------------------------------ */
+
+  .loyverse-shell .ticket-column {
+    background: #fff;
+    border-inline-end: 1px solid #d7ddda;
+    box-shadow: 3px 0 10px rgb(18 50 37 / 6%);
+  }
+
+  .loyverse-shell .ticket-header,
+  .checkout-workspace .ticket-panel--checkout > .ticket-header {
+    height: 62px;
+    min-height: 62px;
+    padding: 0 16px;
+    border-bottom: 1px solid #dfe4e2;
+  }
+
+  .ticket-title-block {
+    gap: 8px;
+  }
+
+  .ticket-header h2 {
+    font-size: 1.08rem;
+    font-weight: 720;
+  }
+
+  .ticket-title-block > span {
+    padding: 2px 7px;
+    background: #eef2f0;
+    font-size: .62rem;
+  }
+
+  .ticket-header-tools {
+    gap: 10px;
+  }
+
+  .loyverse-shell .ticket-lines {
+    padding: 0 16px;
+  }
+
+  .ticket-panel--sale .ticket-line {
+    border-bottom: 1px solid #e2e6e4;
+    animation: rifad-line-receive 330ms var(--pos-ease) both;
+  }
+
+  .ticket-panel--sale .ticket-line-button {
+    min-height: 70px;
+    padding: 10px 2px;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .ticket-panel--sale .ticket-line-button:hover:not(:disabled) {
+    background: #fafcfb;
+  }
+
+  .ticket-panel--sale .ticket-line--latest .ticket-line-button {
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .ticket-panel--sale .ticket-line-copy {
+    gap: 5px;
+  }
+
+  .ticket-line-main {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    direction: rtl;
+  }
+
+  .ticket-panel--sale .ticket-product-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #202824;
+    font-size: .98rem !important;
+    font-weight: 620 !important;
+    line-height: 1.35;
+  }
+
+  .ticket-quantity-chip {
+    flex: 0 0 auto;
+    min-width: 22px;
+    color: var(--brand);
+    font-size: .82rem;
+    font-weight: 850;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    animation: rifad-quantity-pop 220ms var(--pos-ease) both;
+  }
+
+  .ticket-line-times {
+    flex: 0 0 auto;
+    color: #78827d;
+    font-size: .72rem;
+    font-weight: 650;
+  }
+
+  .ticket-unit-price {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #7b8580;
+    direction: ltr;
+    font-size: .63rem;
+    font-weight: 560;
+  }
+
+  .ticket-panel--sale .ticket-line-total {
+    min-width: 92px;
+    color: #121915;
+    font-size: 1.02rem !important;
+    font-weight: 780 !important;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Totals should read like part of the ticket, not a floating dashboard card. */
+  .ticket-panel--sale .ticket-totals {
+    margin: 0 16px 8px;
+    padding: 12px 0 10px;
+    background: #fff;
+    border: 0;
+    border-top: 1px solid #dce2df;
+    border-radius: 0;
+  }
+
+  .ticket-panel--sale .ticket-totals > div {
+    margin: 7px 0;
+    color: #69736e;
+    font-size: .73rem;
+  }
+
+  .ticket-panel--sale .ticket-totals .ticket-grand-total {
+    margin-top: 11px;
+    padding-top: 12px;
+    border-top: 1px solid #dce2df;
+    color: #161d19;
+    font-size: .98rem;
+  }
+
+  .ticket-panel--sale .ticket-totals .ticket-grand-total strong:last-child {
+    font-size: 1.18rem;
+    font-weight: 820;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ticket-actions {
+    min-height: 70px;
+    gap: 8px;
+    padding: 0 16px 12px;
+  }
+
+  .ticket-actions button {
+    min-height: 54px;
+    border-radius: 6px;
+    font-size: .9rem;
+    transition: transform 90ms var(--pos-ease), background 120ms var(--pos-ease), border-color 120ms var(--pos-ease);
+  }
+
+  .ticket-actions button:active:not(:disabled) {
+    transform: scale(.985);
+  }
+
+  /* Checkout keeps the same ticket rhythm so changing stages does not feel like a new website. */
+  .checkout-workspace .ticket-panel--checkout .checkout-ticket-row {
+    min-height: 72px;
+  }
+
+  .checkout-workspace .ticket-panel--checkout .checkout-ticket-row-name {
+    font-size: .98rem;
+    font-weight: 650;
+  }
+
+  .checkout-workspace .ticket-panel--checkout .checkout-ticket-row-total {
+    font-size: 1.05rem !important;
+    font-weight: 780 !important;
+  }
+
+  .payment-content--rich,
+  .cash-content--panel {
+    animation: rifad-stage-enter 190ms var(--pos-ease) both;
+  }
+}
+
+/* Numeric stability makes money changes feel much calmer. */
+.money-amount,
+.cash-input input,
+.cash-total h1,
+.payment-amount-block h1,
+.change-card-value,
+.receipt-summary strong {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 780px) {
+  .ticket-line-main {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ticket-quantity-chip {
+    color: var(--brand);
+    font-weight: 850;
+    animation: rifad-quantity-pop 220ms var(--pos-ease) both;
+  }
+
+  .ticket-line-times,
+  .ticket-unit-price {
+    color: #75807b;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .checkout-workspace,
+  .success-screen,
+  .product-grid,
+  .ticket-panel--sale .ticket-line,
+  .ticket-quantity-chip {
+    animation: none !important;
+  }
+}
