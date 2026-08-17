@@ -15,7 +15,8 @@ For the current RTL POS composition:
 - the right slot is the secondary / alternative / cancel slot;
 - the left slot is the main transaction-completion slot;
 - the bottom two-button row keeps the same physical coordinates relative to the transaction rail;
-- the card remains visually and spatially stable across the sale, payment and success stages.
+- the card remains visually and spatially stable across the sale, payment and success stages;
+- **helper or destructive utilities must not be inserted into this operation card if their appearance changes its height or moves the two primary slots.**
 
 Current intended sequence:
 
@@ -29,24 +30,26 @@ Current intended sequence:
 
 ## Clear Cart without moving the main buttons
 
-From the first basket item, the sale operation card exposes **مسح السلة** so a cashier does not have to open and delete many individual lines.
+From the first basket item, the sale surface exposes **مسح السلة** so a cashier does not have to open and delete many individual lines.
 
 The clear action follows these geometry rules:
 
-- it appears above the normal two-button row inside the same operation card;
-- it spans the card width as a calm destructive action;
-- adding/removing the clear action may grow the card **upward only**;
-- the bottom **حفظ/سداد | دفع** row must not move when Clear Cart appears;
-- the action is one touch in the current unpaid-sale prototype;
+- it is **not part of the transaction operation card**;
+- it appears as a dedicated calm-red utility card **above the basket panel**;
+- its appearance may consume space from the flexible/scrollable basket area only;
+- adding/removing it must not alter the height, bottom inset, columns or position of **حفظ/سداد | دفع**;
+- it remains a large one-touch target with a distinct destructive visual identity;
+- it disappears when the basket is empty;
 - it clears the current basket lines using the existing line-removal behavior and does not create a receipt.
 
 The current UI maps the bulk affordance to the already-authorized line-removal action (`SALES-ACTION-004`) rather than inventing a new durable field or payment command.
 
 ## Why this is different from the previous interpretation
 
-An earlier pass incorrectly moved Quick Sale debt **سداد** into the Pay slot and hid the disabled Pay control. That changed the established sale-footer relationship instead of preserving it.
+Two earlier interpretations were corrected:
 
-The corrected rule preserves **سداد + دفع** on the sale screen and applies continuity to the operation card itself as the transaction progresses.
+1. Quick Sale debt **سداد** was incorrectly moved into the Pay slot and disabled Pay was hidden. The corrected rule preserves **سداد + دفع**.
+2. **مسح السلة** was then placed inside the operation card and allowed the card to grow upward. Even though the bottom row was intended to stay anchored, that still changed the operation card itself and could push the visible actions on real screens. The corrected rule isolates Clear Cart above the basket so the operation card remains structurally unchanged.
 
 ## Scroll relationship
 
@@ -54,6 +57,7 @@ This decision extends D-021:
 
 - repeated content and optional fields absorb scrolling first;
 - the transaction operation card stays outside or at the stable edge of scrolling content;
+- Clear Cart consumes flexible basket space rather than operation-card space;
 - cash/card/success operation footers are structural siblings of their scrollable body so body padding cannot shift their horizontal placement;
 - dynamic validation must not move the keypad or action card;
 - shorter screens reclaim spacing before shrinking the action targets.
@@ -69,7 +73,8 @@ Customer entry follows the same layout-before-shrink principle:
 
 ## Affected current POS surfaces
 
-- basket footer: **حفظ / دفع** plus **مسح السلة** above it when the basket contains items;
+- basket footer: **حفظ / دفع** only as the stable two-slot operation card;
+- basket utility area: independent **مسح السلة** card above the basket when items exist;
 - Quick Sale empty-ticket footer: **سداد / دفع**;
 - cash/card completion: **إلغاء الفاتورة / سداد أو تم الدفع**;
 - sale success: **طباعة / بيع جديد**;
