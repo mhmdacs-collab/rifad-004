@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
+import { installVisualPass18ProductPrices } from "./visual-pass-18";
 import "./styles.css";
 import "./visual-pass.css";
 import "./visual-pass-02.css";
@@ -23,6 +24,9 @@ import "./visual-pass-14.css";
 import "./visual-pass-15.css";
 import "./visual-pass-16.css";
 import "./visual-pass-17.css";
+import "./visual-pass-18.css";
+
+installVisualPass18ProductPrices();
 
 createRoot(document.getElementById("root")!).render(<StrictMode><App /></StrictMode>);
 
