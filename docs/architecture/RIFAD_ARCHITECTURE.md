@@ -305,7 +305,10 @@ Current staging evidence provides:
 
 - stable local installation identity;
 - branch/device binding;
-- module-private versioned snapshot contract;
+- module-private versioned snapshots;
+- private `pos.runtime` and `restaurant.service` schema-v1 namespaces;
+- legacy snapshot import into the Rifad-owned persistence boundary;
+- cold reconstruction of a working ticket/customer, completed receipt/history and open local order after the legacy compatibility keys are removed;
 - local snapshot + outbox commit semantics;
 - stable outbox event identity/deduplication;
 - retry/failure metadata and acknowledgement;
@@ -313,7 +316,9 @@ Current staging evidence provides:
 
 Current browser storage is staging only. Exact production storage remains proof-driven and replaceable; candidates may include IndexedDB/OPFS for supported browser/PWA environments or SQLite/another local database for the Windows host.
 
-Important limitation: current mock operational POS and restaurant snapshots have not yet been migrated from their legacy localStorage keys into `LocalPersistenceContract`. That migration, schema-versioning and cold-restart evidence are the next local-first slice.
+The current mocks still use their historical localStorage keys internally through a temporary composition-root compatibility bridge. The Rifad namespace is the reconstruction source when it exists; the bridge is not a permanent product contract and must disappear when a persistence-aware runtime replaces the mocks.
+
+Cold restart is therefore **PASS for the current staging runtime reconstruction**, while packaged Windows cold start, interrupted/crash-write recovery, real schema evolution and production-engine performance remain pending.
 
 ## 11. Fiscal / Fatoora principle
 
