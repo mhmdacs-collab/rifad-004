@@ -74,12 +74,38 @@ export const migrateLegacyOrderTypePreference = () => {
   }
 };
 
+type StoredOpenLocalOrder = Partial<OpenLocalOrder> & {
+  serviceAreaId?: string;
+  serviceAreaName?: string;
+};
+
+const normalizeStoredOrder = (value: StoredOpenLocalOrder): OpenLocalOrder | null => {
+  if (!value.id || !value.commandId || !value.ticket || !value.servicePlaceId || !value.servicePlaceName || !value.openedAt || !value.updatedAt) {
+    return null;
+  }
+  const placeGroupId = value.placeGroupId ?? value.serviceAreaId;
+  const placeGroupName = value.placeGroupName ?? value.serviceAreaName;
+  if (!placeGroupId || !placeGroupName) return null;
+  return {
+    id: value.id,
+    commandId: value.commandId,
+    ticket: value.ticket,
+    placeGroupId,
+    placeGroupName,
+    servicePlaceId: value.servicePlaceId,
+    servicePlaceName: value.servicePlaceName,
+    openedAt: value.openedAt,
+    updatedAt: value.updatedAt,
+    kitchenRevision: value.kitchenRevision ?? 1,
+  };
+};
+
 export const readRestaurantServiceSnapshot = (): RestaurantServiceSnapshot => {
   if (typeof window === "undefined") return emptySnapshot();
   try {
     const raw = window.localStorage.getItem(RESTAURANT_SERVICE_STORAGE_KEY);
     if (!raw) return emptySnapshot();
-    const parsed = JSON.parse(raw) as Partial<RestaurantServiceSnapshot>;
+    const parsed = JSON.parse(raw) as Partial<RestaurantServiceSnapshot> & { openOrders?: StoredOpenLocalOrder[] };
     const config: RestaurantServiceConfig = {
       restaurantServiceEnabled: parsed.config?.restaurantServiceEnabled ?? true,
       placeManagementEnabled: (parsed.config?.restaurantServiceEnabled ?? true)
@@ -87,7 +113,7 @@ export const readRestaurantServiceSnapshot = (): RestaurantServiceSnapshot => {
         : false,
     };
     const openOrders = Array.isArray(parsed.openOrders)
-      ? parsed.openOrders.filter((order): order is OpenLocalOrder => Boolean(order?.id && order?.ticket && order?.servicePlaceId))
+      ? parsed.openOrders.map(normalizeStoredOrder).filter((order): order is OpenLocalOrder => order !== null)
       : [];
     return { config, openOrders };
   } catch {
