@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "vendor:fonts": "node scripts/vendor-cairo.mjs",
+    "predev": "npm run vendor:fonts",
     "dev": "vite",
+    "prebuild": "npm run vendor:fonts",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run"
