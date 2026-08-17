@@ -1,4 +1,8 @@
-import { createMockRestaurantService, migrateLegacyOrderTypePreference } from "../adapters/mockRestaurantService";
+import {
+  createMockRestaurantService,
+  LEGACY_ORDER_TYPES_KEY,
+  migrateLegacyOrderTypePreference,
+} from "../adapters/mockRestaurantService";
 import type { RestaurantServiceContract } from "../contracts/restaurantService";
 
 /**
@@ -14,3 +18,6 @@ export const createRestaurantServiceAdapter = (): RestaurantServiceContract => {
 export const prepareRestaurantServiceCompatibility = () => {
   migrateLegacyOrderTypePreference();
 };
+
+/** Legacy test compatibility; ordinary product code must not depend on this key. */
+export { LEGACY_ORDER_TYPES_KEY };
