@@ -106,7 +106,7 @@ export type ReceiptItem = Readonly<{
 export type Receipt = Readonly<{
   id: string;
   number: string;
-  paymentMethod: "cash" | "credit";
+  paymentMethod: "cash" | "card" | "credit";
   items: readonly ReceiptItem[];
   subtotal: Money;
   loyaltyRedemption: Money;
