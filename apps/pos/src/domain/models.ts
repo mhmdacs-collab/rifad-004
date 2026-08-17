@@ -41,6 +41,7 @@ export type CustomerDetails = Readonly<{
   postalCode: string;
   country: string;
   customerCode: string;
+  taxNumber?: string;
   note: string;
 }>;
 
