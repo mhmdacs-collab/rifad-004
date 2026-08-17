@@ -96,6 +96,7 @@ const EMPTY_CUSTOMER_DETAILS: CustomerDetails = {
   postalCode: "",
   country: "",
   customerCode: "",
+  taxNumber: "",
   note: "",
 };
 
@@ -162,6 +163,7 @@ const normalizeCustomerDetails = (details: Partial<CustomerDetails> | null | und
   postalCode: details?.postalCode?.trim() ?? "",
   country: details?.country?.trim() ?? "",
   customerCode: details?.customerCode?.trim() ?? "",
+  taxNumber: details?.taxNumber?.trim() ?? "",
   note: details?.note?.trim() ?? "",
 });
 
@@ -511,7 +513,7 @@ class MockStore {
     const createdAt = new Date().toISOString();
     const receipt = this.makeReceipt(chargedTicket, "credit", money(0), createdAt);
     const record: CreditSaleRecord = { id: createId("credit-sale"), commandId, customerId, ticket: chargedTicket, amount: chargedTicket.total, createdAt, receiptId: receipt.id };
-    const ledgerEntry: DebtLedgerEntry = { id: createId("debt-entry"), customerId, kind: "credit-sale", direction: "debit", amount: chargedTicket.total, createdAt, ticketSequence: chargedTicket.sequence };
+    const ledgerEntry: DebtLedgerEntry = { id: createId("debt-entry"), customerId, kind: "credit-sale", direction: "debit", amount: chargedTicket.total, createdAt, ticketSequence: ticket.sequence };
     const updatedCustomer = { ...customer, debt: money(customer.debt.halalas + chargedTicket.total.halalas) };
     this.state = {
       ...this.state,
