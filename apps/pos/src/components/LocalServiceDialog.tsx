@@ -82,9 +82,9 @@ export function LocalServiceDialog({ mode, areas, openOrders, busy, onClose, onA
             const occupied = Boolean(order);
             const selectable = mode === "assign" ? !occupied : occupied;
             return (
-              <button type="button" key={place.id} className={`local-place-card ${occupied ? "local-place-card--occupied" : "local-place-card--free"}`} disabled={!selectable || busy} onClick={() => void choosePlace(place)} aria-label={occupied ? `${place.name}، طلب مفتوح` : `${place.name}، متاح`}>
+              <button type="button" key={place.id} className={`local-place-card ${occupied ? "local-place-card--occupied" : "local-place-card--free"}`} disabled={!selectable || busy} onClick={() => void choosePlace(place)} aria-label={occupied ? `${place.name}، الحالة: محجوزة` : `${place.name}، الحالة: متاحة`}>
                 <span className="local-place-card-top">
-                  <span className={`local-place-status ${occupied ? "occupied" : "free"}`}>{occupied ? "مفتوح" : "متاح"}</span>
+                  <span className={`local-place-status ${occupied ? "occupied" : "free"}`}>{occupied ? "محجوزة" : "متاحة"}</span>
                 </span>
                 <strong>{place.name}</strong>
                 {order ? (
@@ -101,7 +101,7 @@ export function LocalServiceDialog({ mode, areas, openOrders, busy, onClose, onA
         {mode === "open" && openOrders.length === 0 ? <div className="local-orders-empty"><Icon name="receipt" size={30} /><strong>لا توجد طلبات مفتوحة</strong></div> : null}
 
         <footer className="local-service-foot">
-          <span>{mode === "assign" ? "اختيار المكان يرسل الطلب للمطبخ ويُفرغ السلة." : "اضغط على المكان المفتوح لاستعادة طلبه."}</span>
+          <span>{mode === "assign" ? "اختيار المكان يرسل الطلب للمطبخ ويُفرغ السلة." : "اضغط على المكان المحجوز لاستعادة طلبه."}</span>
           <button type="button" onClick={onClose}>إلغاء</button>
         </footer>
       </section>
