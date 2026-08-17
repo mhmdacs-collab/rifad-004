@@ -82,7 +82,7 @@ export function LocalServiceDialog({ mode, groups, openOrders, busy, onClose, on
             const occupied = Boolean(order);
             const selectable = mode === "assign" ? !occupied : occupied;
             return (
-              <button type="button" key={place.id} className={`local-place-card ${occupied ? "local-place-card--occupied" : "local-place-card--free"}`} disabled={!selectable || busy} onClick={() => void choosePlace(place)} aria-label={occupied ? `${place.name}، محجوزة` : `${place.name}، متاحة`}>
+              <button type="button" key={place.id} className={`local-place-card ${occupied ? "local-place-card--occupied" : "local-place-card--free"}`} disabled={!selectable || busy} onClick={() => void choosePlace(place)} aria-label={`${place.name}، الحالة: ${occupied ? "محجوزة" : "متاحة"}`}>
                 <span className="local-place-card-top">
                   <span className={`local-place-status ${occupied ? "occupied" : "free"}`}>{occupied ? "محجوزة" : "متاحة"}</span>
                 </span>
