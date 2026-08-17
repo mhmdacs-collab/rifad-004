@@ -37,7 +37,10 @@ describe("transaction operation card", () => {
 
     expect(await screen.findByText("التذكرة فارغة")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "تمت عملية البيع بنجاح" })).not.toBeInTheDocument();
-    await waitFor(() => expect(window.localStorage.getItem(STORAGE_KEY)).not.toContain('"receipt"'));
+    await waitFor(() => {
+      const persisted = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}") as { receipt?: unknown };
+      expect(persisted.receipt ?? null).toBeNull();
+    });
   });
 
   it("keeps both debt settlement and Pay visible on an empty Quick Sale ticket", async () => {
