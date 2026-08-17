@@ -1,0 +1,78 @@
+/*
+ * Rifad POS — Visual Pass 17
+ * Touch-basket readability pass based on owner review at 1920x1080.
+ * Goal: make quantity × product the single dominant line, remove redundant unit-price
+ * noise from the touch basket, and tighten row rhythm without reducing touchability.
+ */
+
+@media (min-width: 781px) {
+  .sale-screen-touch .ticket-panel--sale .ticket-line-button {
+    min-height: 66px;
+    padding: 8px 2px;
+    gap: 14px;
+  }
+
+  .sale-screen-touch .ticket-panel--sale .ticket-line-main {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 0;
+  }
+
+  .sale-screen-touch .ticket-line-title-row {
+    width: 100%;
+    gap: 9px;
+    align-items: baseline;
+  }
+
+  .sale-screen-touch .ticket-quantity-inline {
+    min-width: 38px;
+    gap: 4px;
+    color: #34413b;
+    font-size: 1.06rem;
+    font-weight: 820;
+    line-height: 1.1;
+  }
+
+  .sale-screen-touch .ticket-quantity-inline b {
+    color: #1f2c26;
+    font-size: 1em;
+    font-weight: 900;
+  }
+
+  .sale-screen-touch .ticket-quantity-inline > span {
+    color: #68736e;
+    font-size: .88em;
+    font-weight: 720;
+  }
+
+  .sale-screen-touch .ticket-panel--sale .ticket-product-name {
+    font-size: 1.04rem !important;
+    font-weight: 680 !important;
+    line-height: 1.3;
+  }
+
+  /* Touch POS should read like a cashier basket: quantity × item + line total.
+     Unit price remains available in basic mode and checkout/audit views. */
+  .sale-screen-touch .ticket-panel--sale .ticket-unit-price {
+    display: none !important;
+  }
+
+  .sale-screen-touch .ticket-panel--sale .ticket-line-total {
+    min-width: 102px;
+    font-size: 1.07rem !important;
+    font-weight: 820 !important;
+  }
+}
+
+@media (max-width: 780px) {
+  .sale-screen-touch .ticket-quantity-inline {
+    font-size: 1rem;
+    font-weight: 820;
+  }
+
+  .sale-screen-touch .ticket-panel--sale .ticket-unit-price {
+    display: none !important;
+  }
+}
