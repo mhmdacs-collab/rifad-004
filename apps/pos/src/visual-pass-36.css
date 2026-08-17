@@ -1,0 +1,366 @@
+/*
+ * Rifad POS — Visual Pass 36
+ * Touch-first responsive audit.
+ * Rule: preserve comfortable human hit targets and glance readability across
+ * cashier desktops, 1366x768, tablets and short displays. Change layout before
+ * shrinking controls below practical touch sizes.
+ */
+
+/* App bar ---------------------------------------------------------------- */
+.sale-screen-touch .appbar-icon {
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  min-height: 52px;
+  border-radius: 10px;
+  touch-action: manipulation;
+}
+
+.sale-screen-touch .appbar-icon:active {
+  background: rgb(255 255 255 / 18%);
+  transform: scale(.96);
+}
+
+.sale-screen-touch .catalog-search button {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  border-radius: 9px;
+}
+
+/* Product cards ---------------------------------------------------------- */
+.sale-screen-touch button.catalog-product {
+  touch-action: manipulation;
+  border-radius: 5px;
+  transition: transform 80ms ease, filter 100ms ease, box-shadow 100ms ease;
+}
+
+.sale-screen-touch button.catalog-product:active:not(:disabled) {
+  transform: scale(.975);
+  filter: brightness(.965);
+  box-shadow: inset 0 0 0 2px rgb(10 113 78 / 25%);
+}
+
+.sale-screen-touch button.catalog-product > strong {
+  font-size: clamp(.92rem, .92vw, 1.06rem);
+  font-weight: 750;
+  line-height: 1.65;
+}
+
+.sale-screen-touch button.catalog-product::after {
+  font-size: clamp(.72rem, .72vw, .84rem);
+  font-weight: 850;
+}
+
+/* Sale page navigation --------------------------------------------------- */
+.sale-screen-touch .sale-page-tabs button {
+  min-height: 58px;
+  padding-inline: 18px;
+  touch-action: manipulation;
+  font-weight: 750;
+}
+
+.sale-screen-touch .sale-page-tabs button:active {
+  background: #edf7f3;
+  transform: scale(.98);
+}
+
+.sale-screen-touch .sale-page-tabs .grid-page,
+.sale-screen-touch .sale-page-tabs .add-sale-page {
+  min-width: 66px;
+}
+
+/* Basket ---------------------------------------------------------------- */
+.sale-screen-touch .ticket-line-button {
+  min-height: 84px;
+  padding-block: 14px;
+  padding-inline: 4px;
+  touch-action: manipulation;
+}
+
+.sale-screen-touch .ticket-line-button:active:not(:disabled) {
+  background: #f4f9f7;
+}
+
+.sale-screen-touch .ticket-line-name strong {
+  font-size: .94rem;
+  font-weight: 750;
+  line-height: 1.65;
+}
+
+.sale-screen-touch .ticket-line-button .line-total {
+  font-size: .88rem;
+  font-weight: 750;
+}
+
+.sale-screen-touch .ticket-totals > div {
+  font-size: .82rem;
+}
+
+.sale-screen-touch .ticket-totals .ticket-grand-total {
+  font-size: 1.08rem;
+  font-weight: 850;
+}
+
+/* Save is secondary; payment is the dominant frequent action. */
+.sale-screen-touch .ticket-actions {
+  min-height: 94px;
+  grid-template-columns: minmax(0, .78fr) minmax(0, 1.22fr);
+  gap: 8px;
+  padding: 8px 14px 14px;
+}
+
+.sale-screen-touch .ticket-actions button {
+  min-height: 64px;
+  border-radius: 10px;
+  font-size: .92rem;
+  font-weight: 850;
+  touch-action: manipulation;
+}
+
+.sale-screen-touch .ticket-actions > button:first-child:not(.basic-credit-action) {
+  color: #34433d;
+  border: 1px solid #ccd7d2;
+  background: #fff;
+}
+
+.sale-screen-touch .ticket-actions > button:last-child {
+  color: #fff;
+  border: 1px solid var(--brand);
+  background: var(--brand);
+  box-shadow: 0 6px 14px rgb(10 113 78 / 12%);
+}
+
+.sale-screen-touch .ticket-actions button:active:not(:disabled) {
+  transform: scale(.985);
+}
+
+/* Checkout rail shared touch targets ------------------------------------ */
+.inline-checkout-back {
+  width: 50px;
+  height: 50px;
+  flex-basis: 50px;
+  touch-action: manipulation;
+}
+
+.inline-payment-method {
+  min-height: 84px;
+  touch-action: manipulation;
+}
+
+.inline-payment-method:active:not(:disabled) {
+  transform: scale(.985);
+}
+
+.inline-cash-suggestions button {
+  min-height: 54px;
+  touch-action: manipulation;
+}
+
+.inline-keypad button {
+  min-height: 62px;
+  touch-action: manipulation;
+}
+
+.inline-complete-sale {
+  min-height: 64px;
+  height: 64px;
+  flex-basis: 64px;
+  touch-action: manipulation;
+}
+
+/* Success: change is the visual result, new sale is the primary next task. */
+.inline-checkout-rail--success .inline-success-actions {
+  grid-template-columns: minmax(0, .62fr) minmax(0, 1.38fr);
+}
+
+.inline-checkout-rail--success .inline-success-actions button {
+  min-height: 68px;
+  touch-action: manipulation;
+}
+
+.inline-checkout-rail--success .inline-new-sale {
+  font-size: .96rem;
+  font-weight: 900;
+}
+
+/* Quantity editor also follows the same touch rule. */
+.line-quantity-editor button {
+  min-width: 56px;
+  min-height: 56px;
+  touch-action: manipulation;
+}
+
+/* 1366-class / laptop cashier displays ---------------------------------- */
+@media (min-width: 1024px) and (max-width: 1599px) {
+  .sale-screen-touch .appbar-icon {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    min-height: 50px;
+  }
+
+  .sale-screen-touch button.catalog-product > strong {
+    font-size: clamp(.88rem, 1vw, 1rem);
+  }
+
+  .sale-screen-touch .ticket-line-button {
+    min-height: 78px;
+    padding-block: 12px;
+  }
+
+  .sale-screen-touch .ticket-actions {
+    min-height: 88px;
+    padding: 7px 12px 12px;
+  }
+
+  .sale-screen-touch .ticket-actions button {
+    min-height: 60px;
+  }
+}
+
+/* Tablet landscape ------------------------------------------------------- */
+@media (min-width: 781px) and (max-width: 1023px) {
+  .sale-screen-touch .appbar-icon,
+  .sale-screen-touch .catalog-search button {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  .sale-screen-touch button.catalog-product > strong {
+    font-size: .86rem;
+  }
+
+  .sale-screen-touch button.catalog-product::after {
+    font-size: .7rem;
+  }
+
+  .sale-screen-touch .sale-page-tabs button {
+    min-height: 56px;
+    min-width: 126px;
+    padding-inline: 14px;
+  }
+
+  .sale-screen-touch .sale-page-tabs .grid-page,
+  .sale-screen-touch .sale-page-tabs .add-sale-page {
+    min-width: 62px;
+  }
+
+  .sale-screen-touch .ticket-line-button {
+    min-height: 72px;
+  }
+
+  .sale-screen-touch .ticket-actions button {
+    min-height: 58px;
+  }
+
+  .inline-keypad button {
+    min-height: 56px;
+  }
+}
+
+/* Short cashier displays: stay compact, never tiny. --------------------- */
+@media (min-width: 781px) and (max-height: 760px) {
+  .sale-screen-touch .appbar-icon {
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    min-height: 46px;
+  }
+
+  .sale-screen-touch .ticket-line-button {
+    min-height: 68px;
+    padding-block: 9px;
+  }
+
+  .sale-screen-touch .ticket-line-name strong {
+    font-size: .84rem;
+  }
+
+  .sale-screen-touch .ticket-actions {
+    min-height: 76px;
+    padding: 5px 10px 10px;
+  }
+
+  .sale-screen-touch .ticket-actions button {
+    min-height: 52px;
+    font-size: .82rem;
+  }
+
+  .sale-screen-touch .sale-page-tabs button {
+    min-height: 52px;
+  }
+
+  .inline-checkout-back {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+  }
+
+  .inline-payment-method,
+  .inline-cash-suggestions button,
+  .inline-keypad button,
+  .inline-complete-sale,
+  .inline-checkout-rail--success .inline-success-actions button {
+    min-height: 48px;
+  }
+
+  .inline-complete-sale {
+    height: 50px;
+    flex-basis: 50px;
+  }
+}
+
+/* Mobile / narrow touch devices ----------------------------------------- */
+@media (max-width: 780px) {
+  .sale-screen-touch .appbar-icon,
+  .sale-screen-touch .catalog-search button {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    min-height: 50px;
+  }
+
+  .sale-screen-touch button.catalog-product > strong {
+    font-size: .88rem;
+  }
+
+  .sale-screen-touch .sale-page-tabs button {
+    min-height: 58px;
+  }
+
+  .mobile-ticket-surface .ticket-line-button {
+    min-height: 78px;
+  }
+
+  .mobile-ticket-surface .ticket-actions {
+    grid-template-columns: minmax(0, .72fr) minmax(0, 1.28fr);
+    min-height: 86px;
+    gap: 8px;
+    padding: 8px 12px 12px;
+  }
+
+  .mobile-ticket-surface .ticket-actions button {
+    min-height: 60px;
+  }
+
+  .inline-payment-method,
+  .inline-cash-suggestions button,
+  .inline-keypad button,
+  .inline-complete-sale,
+  .inline-checkout-rail--success .inline-success-actions button {
+    min-height: 56px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sale-screen-touch button.catalog-product,
+  .sale-screen-touch .ticket-actions button,
+  .sale-screen-touch .sale-page-tabs button,
+  .inline-payment-method {
+    transition: none;
+  }
+}
