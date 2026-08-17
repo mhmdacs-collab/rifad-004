@@ -28,6 +28,7 @@ const EMPTY_DETAILS: CustomerDetails = {
   postalCode: "",
   country: "",
   customerCode: "",
+  taxNumber: "",
   note: "",
 };
 
@@ -46,6 +47,10 @@ const digitsToHalalas = (digits: string) => {
   const value = Number(digits || "0");
   return Number.isSafeInteger(value) ? value : 0;
 };
+
+const cleanMobileDraft = (value: string) => value.replace(/\D/g, "").slice(0, 10);
+const isValidSaudiMobileDraft = (value: string) => /^05\d{8}$/.test(value);
+const cleanTaxNumberDraft = (value: string) => value.replace(/\D/g, "").slice(0, 20);
 
 export function CustomerPickerDialog({
   purpose,
@@ -171,6 +176,10 @@ export function CustomerPickerDialog({
   const submitCreate = async (event: FormEvent) => {
     event.preventDefault();
     if (actionLocked.current) return;
+    if (!isValidSaudiMobileDraft(newMobile)) {
+      setMessage("رقم الجوال يجب أن يكون 10 أرقام ويبدأ بـ05.");
+      return;
+    }
     const created = await onCreateCustomer(newName, newMobile, newDetails);
     if (!created) {
       setMessage("تعذر إضافة العميل. تحقق من الاسم ورقم الجوال.");
@@ -228,7 +237,7 @@ export function CustomerPickerDialog({
     if (!selected) return;
     setEditName(selected.name);
     setEditMobile(selected.mobile);
-    setEditDetails(selected.details);
+    setEditDetails({ ...EMPTY_DETAILS, ...selected.details });
     setProfileMenuOpen(false);
     setView("edit");
   };
@@ -236,6 +245,10 @@ export function CustomerPickerDialog({
   const submitEdit = async (event: FormEvent) => {
     event.preventDefault();
     if (!selected || actionLocked.current) return;
+    if (!isValidSaudiMobileDraft(editMobile)) {
+      setMessage("رقم الجوال يجب أن يكون 10 أرقام ويبدأ بـ05.");
+      return;
+    }
     actionLocked.current = true;
     setSubmitting(true);
     const updated = await onUpdateCustomer(selected.id, editName, editMobile, editDetails);
@@ -348,6 +361,7 @@ export function CustomerPickerDialog({
                 <div className="customer-profile-detail"><span>☎</span><strong dir="ltr">{selected.mobile}</strong></div>
                 {detailAddress(selected.details) ? <div className="customer-profile-detail"><span>⌖</span><strong>{detailAddress(selected.details)}</strong></div> : null}
                 {selected.details.customerCode ? <div className="customer-profile-detail"><span>▣</span><strong dir="ltr">{selected.details.customerCode}</strong></div> : null}
+                {selected.details.taxNumber ? <div className="customer-profile-detail"><span>#</span><strong dir="ltr">{selected.details.taxNumber}</strong></div> : null}
               </section>
 
               <section className="customer-profile-stats" aria-label="ملخص العميل">
@@ -404,9 +418,10 @@ export function CustomerPickerDialog({
           ) : (
             <form className="customer-profile-edit-form" onSubmit={(event) => void submitEdit(event)}>
               <label><span>اسم العميل</span><input value={editName} onChange={(event) => setEditName(event.target.value)} required /></label>
-              <label><span>رقم الجوال</span><input dir="ltr" value={editMobile} onChange={(event) => setEditMobile(event.target.value)} required /></label>
+              <label><span>رقم الجوال</span><input dir="ltr" inputMode="numeric" minLength={10} maxLength={10} pattern="05[0-9]{8}" value={editMobile} onChange={(event) => setEditMobile(cleanMobileDraft(event.target.value))} required /><small className="customer-field-hint">10 أرقام تبدأ بـ05</small></label>
               <label><span>البريد الإلكتروني</span><input dir="ltr" type="email" value={editDetails.email} onChange={(event) => updateEditDetail("email", event.target.value)} /></label>
               <label><span>رمز العميل</span><input dir="ltr" value={editDetails.customerCode} onChange={(event) => updateEditDetail("customerCode", event.target.value)} /></label>
+              <label><span>الرقم الضريبي</span><input dir="ltr" inputMode="numeric" maxLength={20} value={editDetails.taxNumber ?? ""} onChange={(event) => updateEditDetail("taxNumber", cleanTaxNumberDraft(event.target.value))} /></label>
               <label><span>العنوان</span><input value={editDetails.address} onChange={(event) => updateEditDetail("address", event.target.value)} /></label>
               <label><span>المدينة</span><input value={editDetails.city} onChange={(event) => updateEditDetail("city", event.target.value)} /></label>
               <label><span>المنطقة</span><input value={editDetails.region} onChange={(event) => updateEditDetail("region", event.target.value)} /></label>
@@ -466,22 +481,25 @@ export function CustomerPickerDialog({
         </div>
 
         <div className="customer-create-section">
-          {!createOpen ? <button type="button" className="customer-create-toggle customer-touch-create" onClick={() => { setCreateOpen(true); setNewMobile(query); }} disabled={submitting}>+ إضافة عميل جديد</button> : (
+          {!createOpen ? <button type="button" className="customer-create-toggle customer-touch-create" onClick={() => { setCreateOpen(true); setNewMobile(cleanMobileDraft(query)); }} disabled={submitting}>+ إضافة عميل جديد</button> : (
             <form className="customer-create-form customer-create-form--expanded" onSubmit={(event) => void submitCreate(event)}>
               <strong>عميل جديد</strong>
-              <label><span>اسم العميل</span><input value={newName} onChange={(event) => setNewName(event.target.value)} required /></label>
-              <label><span>رقم الجوال</span><input dir="ltr" value={newMobile} onChange={(event) => setNewMobile(event.target.value)} placeholder="05XXXXXXXX" required /></label>
-              <label className="customer-extra-toggle"><input type="checkbox" checked={extraOpen} onChange={(event) => setExtraOpen(event.target.checked)} /><span><strong>معلومات إضافية</strong><small>إظهار البريد والعنوان وبقية بيانات العميل.</small></span></label>
+              <div className="customer-quick-fields">
+                <label><span>اسم العميل</span><input value={newName} onChange={(event) => setNewName(event.target.value)} required /></label>
+                <label><span>رقم الجوال</span><input dir="ltr" inputMode="numeric" minLength={10} maxLength={10} pattern="05[0-9]{8}" value={newMobile} onChange={(event) => setNewMobile(cleanMobileDraft(event.target.value))} placeholder="05XXXXXXXX" required /><small className="customer-field-hint">10 أرقام تبدأ بـ05</small></label>
+                <label className="customer-quick-address"><span>العنوان (اختياري)</span><input value={newDetails.address} onChange={(event) => updateNewDetail("address", event.target.value)} placeholder="مثال: حي العليا، طريق الملك فهد" /></label>
+              </div>
+              <label className="customer-extra-toggle"><input type="checkbox" checked={extraOpen} onChange={(event) => setExtraOpen(event.target.checked)} /><span><strong>معلومات إضافية</strong><small>البريد والرقم الضريبي وبقية بيانات العميل.</small></span></label>
               {extraOpen ? (
                 <div className="customer-extra-fields">
                   <label><span>البريد الإلكتروني</span><input dir="ltr" type="email" value={newDetails.email} onChange={(event) => updateNewDetail("email", event.target.value)} /></label>
+                  <label><span>الرقم الضريبي</span><input dir="ltr" inputMode="numeric" maxLength={20} value={newDetails.taxNumber ?? ""} onChange={(event) => updateNewDetail("taxNumber", cleanTaxNumberDraft(event.target.value))} /></label>
                   <label><span>رمز العميل</span><input dir="ltr" value={newDetails.customerCode} onChange={(event) => updateNewDetail("customerCode", event.target.value)} /></label>
-                  <label><span>العنوان</span><input value={newDetails.address} onChange={(event) => updateNewDetail("address", event.target.value)} /></label>
                   <label><span>المدينة</span><input value={newDetails.city} onChange={(event) => updateNewDetail("city", event.target.value)} /></label>
                   <label><span>المنطقة</span><input value={newDetails.region} onChange={(event) => updateNewDetail("region", event.target.value)} /></label>
                   <label><span>الرمز البريدي</span><input dir="ltr" value={newDetails.postalCode} onChange={(event) => updateNewDetail("postalCode", event.target.value)} /></label>
                   <label><span>الدولة</span><input value={newDetails.country} onChange={(event) => updateNewDetail("country", event.target.value)} placeholder="السعودية" /></label>
-                  <label><span>ملاحظات</span><textarea value={newDetails.note} onChange={(event) => updateNewDetail("note", event.target.value)} /></label>
+                  <label className="customer-extra-note"><span>ملاحظات</span><textarea value={newDetails.note} onChange={(event) => updateNewDetail("note", event.target.value)} /></label>
                 </div>
               ) : null}
               <div className="customer-create-actions"><button type="button" onClick={resetCreate}>إلغاء</button><button type="submit" className="primary-button">إنشاء العميل</button></div>
