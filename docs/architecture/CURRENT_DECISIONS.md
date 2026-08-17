@@ -139,22 +139,110 @@ This is an interaction/layout decision and does not change the underlying busine
 
 A stable footer is not sufficient if the transaction controls are restyled or repositioned as the cashier advances.
 
-Rifad therefore keeps the **same two-slot operation card** in the same lower transaction zone whenever practical. In the current RTL POS composition:
+Rifad therefore keeps the **same two-slot operation card** in the same lower transaction zone whenever practical.
 
-- the right slot is secondary / alternative / cancellation;
-- the left slot is the main transaction-completion slot;
-- the two-slot card remains spatially stable through sale, payment completion and sale success.
+For the current executable RTL sale/payment flow:
 
-The intended current sequence is:
+- the right slot normally holds the secondary / alternative / cancellation action;
+- the left slot normally holds the active sale/payment completion action;
+- the two-slot card remains spatially stable through sale, payment completion and sale success;
+- the sale basket and checkout/success rail share one physical rail width so returning from **بيع جديد** does not create a horizontal target jump.
 
-- sale: **حفظ | دفع**;
+Current executable sequence:
+
+- sale prototype: **حفظ | دفع**;
 - Quick Sale with an empty ticket: **سداد | دفع**; Pay stays visible but disabled until there is a payable ticket;
 - cash checkout: **إلغاء الفاتورة | سداد**;
 - card/mock checkout: **إلغاء الفاتورة | تم الدفع**;
 - success: **طباعة | بيع جديد**.
 
-This means the debt-book **سداد** action on the sale screen is not moved into the Pay slot merely because it is currently the only enabled action. The stable reference is the **operation card and its slot meanings**, not the text label of whichever button is active.
+The current generic **حفظ** label is not a permanent restaurant-product decision. Under the newer optional local-service direction, a non-empty restaurant basket is targeted to use **محلي | دفع** instead.
 
-`إلغاء الفاتورة` before payment completion abandons the unpaid prototype transaction and starts a fresh sale without creating a receipt. Production cancellation/audit/fiscal semantics remain a separate domain requirement and must not be inferred from this UI prototype behavior.
+When the basket is empty and open local orders exist, physical geometry still does not move, but **visual priority may intentionally swap**:
 
-Responsive layouts may compact padding and spacing before shrinking the two touch targets. Detailed visual treatment is recorded in `docs/ui/visual-decisions/VISUAL-DECISION-005-PRIMARY-ACTION-SPATIAL-CONTINUITY.md`.
+- right slot: **طلبات مفتوحة · N** becomes green/primary;
+- left slot: **دفع** remains in place but is neutral/disabled because there is no payable working basket.
+
+This is not a violation of spatial continuity: the targets stay in the same physical slots; only state-appropriate visual emphasis changes.
+
+The debt-book **سداد** action on the sale screen is not moved into the Pay slot merely because it is currently the only enabled action.
+
+`إلغاء الفاتورة` before payment completion abandons the unpaid prototype transaction and starts a fresh sale without creating a receipt. Production cancellation/audit/fiscal semantics remain a separate domain requirement.
+
+Detailed visual treatment is recorded in `docs/ui/visual-decisions/VISUAL-DECISION-005-PRIMARY-ACTION-SPATIAL-CONTINUITY.md` and the restaurant extension in `VISUAL-DECISION-006-RESTAURANT-SERVICE-OPEN-ORDERS.md`.
+
+## D-023 — Fulfillment, sales channel and payment are separate business meanings
+
+Rifad will not store **محلي / سفري / توصيل**, delivery-platform identity and payment method as one overloaded field.
+
+Target separation:
+
+### Kitchen/fulfillment mode
+
+- `takeaway` → **سفري**;
+- `dine_in` → **محلي**;
+- `delivery` → **توصيل**.
+
+This describes how the order is fulfilled/prepared and what the kitchen needs to know.
+
+### Sales channel
+
+Examples: direct POS, Keeta, HungerStation, Ninja and future online/marketplace sources.
+
+### Payment/settlement
+
+Examples: cash, card/Mada, customer credit and platform settlement.
+
+The UI may combine defaults into one touch for speed, but durable records and reporting must retain the separate meanings.
+
+The normal direct-sale path may default to **سفري** without forcing a cashier tap on every transaction.
+
+## D-024 — Table/local service is optional and uses service places plus open orders
+
+Table service is a configurable restaurant capability, not a mandatory requirement for every branch/device.
+
+When enabled, the target restaurant flow is:
+
+`build basket → محلي → choose service area/place → send kitchen order → clear working basket → keep open local order`
+
+Service location is generalized as:
+
+- **service area**: e.g. الصالة، الدور الأول، الغرف، الجلسات الخارجية;
+- **service place**: e.g. طاولة 12، غرفة 3، جلسة 8.
+
+Payment can happen before or after dining. The fulfillment mode does not decide payment timing.
+
+When the main basket is empty and local orders are open, the normal cashier shortcut is **طلبات مفتوحة** rather than a generic Save list.
+
+Persistent place/floor configuration is expected to become Back Office responsibility. POS-side configuration may temporarily exist during UI-first discovery but must not silently become the permanent ownership model.
+
+Implementation is not authorized until the UI Execution Manifest defines the bounded restaurant/open-order flow.
+
+## D-025 — Product pricing can vary by sales channel without making channel a payment method
+
+Rifad pricing must support a base product price plus optional channel/pricelist overrides.
+
+Example intent:
+
+- base Latte price;
+- Keeta-specific effective price;
+- HungerStation-specific effective price.
+
+The production model may use normalized channel-price records or pricelists rather than hard-coded platform columns.
+
+If selecting a channel changes prices, the cashier must see the recalculated total before final completion.
+
+Platform commission/settlement fee is a separate commercial fact from the customer-facing product price and should not be hidden inside the price override.
+
+## D-026 — Kitchen dispatch is order state, not a universal payment side effect
+
+Kitchen/preparation output follows order lifecycle and fulfillment context.
+
+Target behavior:
+
+- direct takeaway: preparation output occurs in the direct-sale completion path;
+- local: preparation output occurs when the order is assigned/sent to its service place, even if payment happens later;
+- later local additions/voids produce preparation deltas/revisions rather than blind duplicate full orders;
+- delivery: preparation output identifies **توصيل** and sales channel where useful.
+
+Production implementation requires durable dispatch identity, revision/delta semantics and idempotency so offline/retry behavior cannot create duplicate kitchen work.

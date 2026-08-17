@@ -6,7 +6,9 @@ Last updated: 2026-08-17
 
 This is the first UI flow authorized for implementation. The machine-readable scope is in `../UI_EXECUTION_MANIFEST.json`; this document explains the execution order for humans and coding agents.
 
-The original authorization remains a **cash-sale** slice. A later owner-directed mock **شبكة / مدى** UX extension now exists on the active visual branch; that extension is documented below and must not be confused with production terminal support or silently redefine POS-FLOW-001.
+The original authorization remains a **cash-sale** slice. A later owner-directed mock **شبكة / مدى** UX extension exists on the active visual branch; that extension must not be confused with production terminal support or silently redefine POS-FLOW-001.
+
+The newer restaurant local/open-order/channel direction is documented separately and **does not expand this manifest authorization**.
 
 ## Evidence
 
@@ -51,6 +53,27 @@ The POS design priority is:
 
 Responsive work changes layout before shrinking important touch controls.
 
+## Restaurant evolution boundary
+
+The early sale shell exposed a generic **حفظ** action because open-ticket/table semantics were outside the original slice.
+
+Current product discussion, supported by official Loyverse/Square/Lightspeed/Odoo/Toast research, now distinguishes:
+
+- direct sale (normally **سفري** for kitchen fulfillment);
+- optional local/table service entered through **محلي**;
+- open local orders / service places;
+- delivery sales channel;
+- payment/settlement;
+- channel-specific pricing;
+- kitchen dispatch independent of final payment timing.
+
+See:
+
+- `../../research/restaurant-pos/RESTAURANT_SERVICE_AND_CHANNEL_BENCHMARK_2026-08-17.md`;
+- `../visual-decisions/VISUAL-DECISION-006-RESTAURANT-SERVICE-OPEN-ORDERS.md`.
+
+None of that is implementation-authorized by POS-FLOW-001. Before restaurant code starts, a new bounded manifest flow must define its actions, states, contracts and persistence requirements.
+
 ## Current card / شبكة / مدى branch extension
 
 After the original cash flow was implemented, the owner requested that **شبكة / مدى** be visually active and testable rather than shown as unavailable.
@@ -92,6 +115,7 @@ The binding manifest still maps integrated payment separately. Before the card p
 - real payment terminal, database, sync, ZATCA or printer transport;
 - split payment;
 - production integrated-card support;
+- table/local-service and production open-order lifecycle;
 - donor application models as Rifad UI authority.
 
 Some customer/loyalty/debt/product experiments have subsequently been implemented on the active UI branch. Their presence does not retroactively expand the original POS-FLOW-001 authorization; current status is recorded in `../UI_PROGRESS.md`.

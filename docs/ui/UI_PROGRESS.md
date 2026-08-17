@@ -7,7 +7,7 @@ This is the living execution record for the current Rifad interface phase. It an
 1. What is actually implemented now?
 2. What visual/product direction has been accepted?
 3. What remains mock, incomplete, or structurally inconsistent?
-4. What data gaps have already been exposed by the UI?
+4. What data gaps have already been exposed by the UI/product discussion?
 
 For canonical cashier-facing terminology and data-field traceability, see `POS_UI_NAMING_AND_FIELD_REGISTER.md`.
 
@@ -15,7 +15,7 @@ For canonical cashier-facing terminology and data-field traceability, see `POS_U
 
 - ✅ **Implemented and behavior-tested**
 - 👁 **Owner visually reviewed/accepted for the stated point**
-- 🟡 **Implemented; final visual review still open**
+- 🟡 **Product/visual direction active; implementation or final visual review still open**
 - ⚠️ **Known contract/data/integration gap**
 - ⬜ **Not implemented in the current executable UI**
 
@@ -31,7 +31,7 @@ For canonical cashier-facing terminology and data-field traceability, see `POS_U
 - `main` remains intentionally untouched while visual/product iteration continues.
 - Do not merge PR #2 until the owner explicitly approves the branch for merge.
 
-The executable POS is a Rifad-owned React/TypeScript/Vite UI using Rifad contracts with a mock/local runtime. Production database, synchronization, fiscal transport, printer transport and real payment-terminal integration are not implied by the visual prototype.
+The executable POS is a Rifad-owned React/TypeScript/Vite UI using Rifad contracts with a mock/local runtime. Production database, synchronization, fiscal transport, printer/KDS transport and real payment-terminal/delivery-platform integration are not implied by the visual prototype.
 
 ---
 
@@ -50,10 +50,12 @@ Current implementation rules:
 - responsive QA considers large POS, 1366×768, tablet landscape, short-height POS and narrow/mobile layouts;
 - frequent transaction-completion actions must not be hidden behind normal-path vertical scrolling;
 - **primary actions use a stable footer/action band outside scrolling content whenever practical**;
+- sale/payment/success use one stable two-slot transaction card and a shared desktop/tablet rail width;
+- physical action slots stay fixed even if the green visual priority intentionally changes for a different state;
 - when a dedicated numeric-entry surface has room, use an embedded POS keypad for touch while retaining hardware-keyboard support;
 - live validation/result text near repeated keys must reserve stable geometry so the keypad/action does not jump while the cashier types.
 
-See `DESIGN_AUTHORITY.md` and architecture decision D-021.
+See `DESIGN_AUTHORITY.md` and architecture decisions D-021/D-022.
 
 ---
 
@@ -88,8 +90,10 @@ Accepted direction:
 - product card carries identity/name plus unit-price footer;
 - basket emphasizes `quantity × product name` and row total rather than repeating unit price;
 - repeated product addition emphasizes quantity feedback;
-- **دفع** is visually stronger than **حفظ**;
+- the active primary transaction action is visually obvious without moving the two-slot footer;
 - density never increases at the cost of reliable finger targeting.
+
+The current executable sale footer still contains a prototype generic **حفظ** action. New restaurant research/product direction says that when table/local service is enabled this is targeted to become **محلي**, not remain a generic Save command.
 
 ## Sales modes
 
@@ -116,7 +120,7 @@ Latest owner-reviewed direction:
 
 ---
 
-# 3. Ticket, quantity and order type
+# 3. Ticket, quantity, clear-cart and fulfillment prototype
 
 ## Basket
 
@@ -131,7 +135,10 @@ Accepted:
 - **only the item list scrolls**;
 - tax/totals, required order context and **دفع** remain outside the item-list scroll;
 - short screens reduce spacing before important target size;
-- mobile follows the same action-reachability rule.
+- mobile follows the same action-reachability rule;
+- **مسح السلة** appears from the first item as a dedicated lighter-red row **inside the basket body after the ticket header and before product lines**;
+- visible Clear Cart copy is only **مسح السلة** beside the delete icon; redundant explanation and `الكل` badge are removed;
+- Clear Cart never changes the ticket header or transaction-footer geometry.
 
 ## Quantity editor
 
@@ -144,22 +151,27 @@ Status: ✅ 👁
 - no system soft keyboard required for touch use;
 - hardware keyboard remains supported;
 - destructive **حذف** separated from confirmation;
-- one **حفظ** performs the write after editing;
+- one **حفظ** performs the quantity write after editing;
 - automated evidence covers quantity **1000** through the embedded keypad.
 
 Keypad/focus/pressed state is UI-only; durable business truth remains TicketLine `quantity`.
 
-## Order type
+## Current order-type prototype
 
-Status: ✅ ⚠️ 🟡
+Status: ✅ prototype / ⚠️ target model superseded / 🟡 replacement design pending implementation
 
-Values: **محلي / سفري / توصيل**.
+Current executable UI can expose **محلي / سفري / توصيل** as an order-type selector and has a temporary device preference controlling visible types.
 
-- zero enabled → selector hidden;
-- one enabled → selected automatically;
-- multiple enabled → must choose before Save/Pay.
+That is **not the target restaurant interaction anymore**.
 
-⚠️ Selected order type is still UI-local and is not durable through ticket → checkout → receipt.
+Current owner-directed product interpretation:
+
+- direct sale defaults to **سفري** for kitchen fulfillment without another cashier tap;
+- **محلي** is an explicit action because it assigns an open order to a service place;
+- **توصيل** is normally established from the delivery sales-channel/order path;
+- durable target field is `fulfillmentMode`, separate from `salesChannelId` and payment/settlement.
+
+⚠️ None of those durable restaurant/channel fields exist in the executable model yet.
 
 ---
 
@@ -173,9 +185,34 @@ Accepted progression:
 
 The basket rail transforms while the catalog remains visible as frozen spatial context. The catalog is intentionally non-interactive during checkout.
 
+The sale basket and checkout/success rail now share the same desktop/tablet width, removing the small horizontal action jump that was visible after **بيع جديد**.
+
 ---
 
-# 5. Payment-method selection
+# 5. Transaction operation card
+
+Status: ✅ 👁
+
+Current executable physical sequence:
+
+- **حفظ | دفع**;
+- cash: **إلغاء الفاتورة | سداد**;
+- mock card: **إلغاء الفاتورة | تم الدفع**;
+- success: **طباعة | بيع جديد**.
+
+Quick Sale empty ticket keeps **سداد | دفع**, with disabled Pay still visible.
+
+Owner visually accepted the requirement that these pairs reuse the same physical columns, width, padding, gap, touch height and bottom placement rather than being merely similar.
+
+Restaurant extension, not implemented yet:
+
+- non-empty restaurant basket with table service enabled: **محلي | دفع**;
+- empty basket with open local orders: **طلبات مفتوحة · N | دفع**;
+- in that empty/open-order state, **طلبات مفتوحة** becomes green/primary in the right slot and disabled **دفع** becomes neutral/silver in the left slot; geometry does not move.
+
+---
+
+# 6. Payment-method selection
 
 Status: ✅ 👁
 
@@ -187,7 +224,7 @@ Each is a large touch surface using text plus method-specific visual recognition
 
 ---
 
-# 6. Cash payment
+# 7. Cash payment
 
 Status: ✅ 👁
 
@@ -207,7 +244,7 @@ Current quick-cash ladder is predictable higher 5 → higher 10 → higher 50 �
 
 ---
 
-# 7. Card / network mock payment
+# 8. Card / network mock payment
 
 Status: ✅ mock behavior-tested / ⚠️ production terminal absent
 
@@ -219,7 +256,7 @@ Manifest reconciliation is still required before any production integrated-payme
 
 ---
 
-# 8. Sale success and printing preference
+# 9. Sale success and printing preference
 
 Status: ✅ 👁
 
@@ -229,12 +266,13 @@ Accepted sale-success direction:
 - success result and receipt facts are readable at cashier distance;
 - cash change is the hero fact when applicable;
 - **بيع جديد** is dominant over print;
+- **طباعة | بيع جديد** shares the exact operation-card geometry/rail width used by the sale footer;
 - print preference is a quickly scannable row with printer icon, **طباعة الإيصال دائمًا** + secondary **في العمليات القادمة**, larger checkbox and whole-row target;
 - active preference gets a restrained green cue.
 
 ---
 
-# 9. Receipts and printing
+# 10. Receipts and printing
 
 Status: ✅ 🟡 ⚠️
 
@@ -244,9 +282,9 @@ Implemented receipt history, mock-local receipt list, newest-first display, prin
 
 ---
 
-# 10. Customer system
+# 11. Customer system
 
-Status: ✅ 🟡
+Status: ✅ 👁
 
 Current behavior/model supports:
 
@@ -254,14 +292,14 @@ Current behavior/model supports:
 - live search by name/mobile;
 - whole-row touch results;
 - create/edit customer;
-- Saudi mobile format enforced in create/edit as exactly **10 local digits starting with 05**;
-- quick-create fields now prioritize:
+- Saudi mobile format enforced in create/edit as exactly **10 local digits starting with 05** without consuming normal-path space with redundant helper copy;
+- quick-create fields prioritize:
   - customer name;
   - mobile;
-  - **optional address**;
-- additional information on wider screens uses **two columns** and collapses to one column on narrow screens;
-- optional customer data includes email, address, city, region, postal code, country, customer code, note and **tax number**;
-- tax number is now preserved by the current model/mock persistence for future invoice/fiscal use;
+  - optional address;
+- additional information on wider screens now uses **three real grid columns**, matching the quick-information density, and collapses to one column on narrow/mobile screens;
+- optional customer data includes email, address, city, region, postal code, country, customer code, note and tax number;
+- tax number is preserved by the current model/mock persistence for future invoice/fiscal use;
 - tax-number presence does not itself mean ZATCA invoice compliance is finished;
 - customer profile/purchase-history/email-receipt directions remain available.
 
@@ -269,7 +307,7 @@ Customer creation actions use a footer-like stable action row within the form so
 
 ---
 
-# 11. Credit / debt
+# 12. Credit / debt
 
 Status: ✅ 🟡
 
@@ -295,25 +333,16 @@ Current behavior:
 - exact halala parsing;
 - zero/invalid/over-balance blocked;
 - duplicate-submit protection;
-- account history scrolls while the settlement region remains anchored below it.
-
-Latest requested refinement implemented, pending final owner visual review:
-
-- **remaining balance + validation now live inside one stable feedback card** while editing a partial payment;
-- the feedback card keeps a fixed geometry across ready/error states so the keypad and **سداد** do not move between digit presses;
-- entering zero keeps the same card and shows the validation message without adding/removing another block;
-- valid input shows the projected remaining debt in the same card;
-- after successful settlement the dialog no longer disappears after a tiny transient message;
-- success now shows a cashier-readable summary: **الرصيد قبل السداد / المبلغ المسدد / المتبقي على العميل**;
-- a clear **تم** state/result is visible;
-- success waits for explicit **تم**, allowing the cashier to tell the customer the remaining balance;
-- the final **تم** action occupies a stable footer band.
+- account history scrolls while the settlement region remains anchored below it;
+- remaining balance + validation live inside one stable feedback card while editing partial payment;
+- the feedback card keeps fixed geometry across ready/error states so keypad/**سداد** do not move;
+- successful settlement remains visible with **الرصيد قبل السداد / المبلغ المسدد / المتبقي على العميل** until explicit **تم**.
 
 Unscoped and not to be invented silently: settlement payment method, due dates/aging, credit limits, debt permissions and statement export.
 
 ---
 
-# 12. Loyalty
+# 13. Loyalty
 
 Status: ✅ contract/model direction / 🟡 visual completeness
 
@@ -323,42 +352,86 @@ Production persistence should use durable loyalty transaction evidence instead o
 
 ---
 
-# 13. Device-local preferences
+# 14. Restaurant local/open-order/channel direction
 
-Current preferences:
+Status: 🟡 owner-directed + market-researched / ⬜ not implemented / ⚠️ manifest and data gaps
+
+Research reviewed official current behavior from Loyverse, Square for Restaurants, Lightspeed Restaurant K-Series, Odoo 19 Restaurant POS and Toast kitchen routing.
+
+See:
+
+- `docs/research/restaurant-pos/RESTAURANT_SERVICE_AND_CHANNEL_BENCHMARK_2026-08-17.md`;
+- `visual-decisions/VISUAL-DECISION-006-RESTAURANT-SERVICE-OPEN-ORDERS.md`.
+
+Current direction:
+
+- table/local service is configurable on/off;
+- direct POS sale defaults to kitchen fulfillment **سفري**;
+- with local service enabled, **محلي** replaces generic **حفظ** for a basket with items;
+- **محلي** opens service-area/place selection;
+- service area examples: الصالة، الدور الأول، الغرف، الجلسات الخارجية;
+- service place examples: طاولة 12، غرفة 3، جلسة 8;
+- assigning the place creates an open local order, sends/prints kitchen output as local, then clears the main working basket;
+- payment can happen before or after dining;
+- later additions to the local order should generate only preparation deltas, not a blind duplicate full ticket;
+- when the main basket is empty and open orders exist, **طلبات مفتوحة · N** becomes the useful green action while Pay remains disabled/neutral in its fixed slot;
+- delivery platform identity is a **sales channel**, not merely a payment method;
+- fulfillment, sales channel and payment/settlement remain separate durable meanings;
+- channel-specific prices/pricelists are required, with the changed total visible before completion;
+- platform commission is separate from customer-facing product price.
+
+Recommended local selector direction is a semantic spatial view: area tabs + large place cards arranged approximately like the physical venue on wide screens, with list/card fallback on mobile. Do not sacrifice touch/readability for decorative furniture graphics.
+
+No restaurant code is authorized by this discussion alone. A new bounded manifest flow is required first.
+
+---
+
+# 15. Device/configuration direction
+
+Current executable preferences:
 
 - sale screen mode;
-- visible order types;
+- temporary visible order-type selector configuration;
 - print receipt always.
 
-When production local persistence is introduced, migrate these to a structured device-preference model rather than scattered browser keys.
+Target restaurant/configuration additions:
+
+- `tableServiceEnabled`;
+- service areas/places;
+- allowed sales channels;
+- channel pricelist mapping.
+
+Persistent business configuration is expected to move to structured Rifad config/Back Office. Temporary POS settings are acceptable during UI-first discovery only when clearly marked as staging.
 
 ---
 
-# 14. Data gaps exposed by UI work
+# 16. Data gaps exposed by UI/product work
 
-Highest-priority open gaps:
+Highest-priority open gaps now include:
 
-1. persist `orderType` through ticket → checkout → receipt;
-2. add real SKU/barcode identity/search to Product/Catalog contracts;
-3. normalize open-ticket lifecycle for Save;
-4. add durable checkout/payment records and idempotency evidence;
-5. persist stable employee/branch/device IDs on completed receipts;
-6. persist print-job history/status;
-7. migrate device preferences into structured local persistence;
-8. reserve legitimate Mada/card transaction references without storing prohibited sensitive card data.
+1. durable `fulfillmentMode` replacing the temporary order-type selector meaning;
+2. `salesChannelId` and channel configuration;
+3. table-service enablement, service-area/place identity and open-order lifecycle;
+4. channel-aware prices/pricelists and effective-price evidence;
+5. kitchen dispatch/revision/delta/idempotency evidence;
+6. real SKU/barcode identity/search;
+7. durable checkout/payment records and idempotency evidence;
+8. stable employee/branch/device IDs on completed receipts;
+9. receipt print-job history/status;
+10. structured local/device/business configuration;
+11. legitimate Mada/card transaction references without prohibited sensitive card data.
 
-The new `taxNumber` customer field is now represented in the executable customer model/mock persistence and therefore is no longer an undocumented UI-only field. Fiscal semantics still require the future fiscal contract.
+The customer `taxNumber` field is represented in the executable customer model/mock persistence; fiscal semantics still require the future fiscal contract.
 
 ---
 
-# 15. Automated evidence
+# 17. Automated evidence
 
 Current branch behavior coverage includes:
 
 - normal cash sale;
 - sale-page editing;
-- order-type gate;
+- current prototype order-type gate;
 - always-print/receipt recovery;
 - customer attachment and receipt carry-through;
 - optional customer details persistence;
@@ -366,48 +439,63 @@ Current branch behavior coverage includes:
 - tax-number persistence;
 - Quick Sale focus behavior;
 - debt settlement and duplicate-submit protection;
-- stable partial-settlement feedback containing both remaining balance and invalid-state messaging;
+- stable partial-settlement feedback containing remaining balance and invalid-state messaging;
 - readable settlement success retained until explicit **تم**;
 - credit sale reuse of attached customer;
 - corrected quick-cash suggestions;
 - mock شبكة/مدى completion recording a card receipt;
-- direct large quantity entry and embedded quantity-keypad entry of **1000**.
+- direct large quantity entry and embedded quantity-keypad entry of **1000**;
+- Clear Cart inside the basket before product lines with minimal copy;
+- Clear Cart outside the transaction operation card;
+- unpaid checkout cancellation returns to a fresh sale without creating a receipt;
+- stable operation-card class/geometry across sale and checkout stages.
+
+The restaurant local/open-order/channel direction has **no executable behavior evidence yet**.
 
 Every new branch head must pass TypeScript, Vitest, production build and UI-manifest integrity before being called technically clean. CI proves code/document integrity, not visual correctness.
 
 ---
 
-# 16. Naming / structural state
+# 18. Naming / structural state
 
-Completed:
+Completed/current:
 
 - cashier-facing **شاشة أساسية** → **البيع السريع**;
-- obsolete **بالضبط** removed;
-- separate cash **مسح** action removed because keypad deletion owns that function.
+- obsolete cash **بالضبط** removed;
+- separate cash **مسح** action removed because keypad deletion owns that function;
+- basket bulk clear = **مسح السلة**;
+- general checkout = **دفع**;
+- cash/debt completion = **سداد**.
 
-Binding terms:
+Restaurant target terminology:
 
-- **دفع** = general checkout entry;
-- **سداد** = cash completion / debt settlement;
-- payment methods = **نقدًا / شبكة / مدى** according to current product direction.
-
----
-
-# 17. Manifest reconciliation required
-
-`POS-FLOW-001` remains cash-only in the binding manifest while the current branch includes an owner-directed mock card UX extension.
-
-Before a production integrated-payment claim, either add an explicitly bounded mock/integrated-payment manifest scope and later promote it through terminal evidence, or keep the card experience categorized as product validation outside the original production authorization.
+- **محلي** = assign current basket to local service place/open order;
+- **طلبات مفتوحة** = reopen local orders/places;
+- **سفري** = default direct-sale kitchen fulfillment;
+- **توصيل** = delivery fulfillment, normally associated with a delivery sales channel.
 
 ---
 
-# 18. Other Rifad surfaces
+# 19. Manifest reconciliation required
+
+`POS-FLOW-001` remains the original cash-only binding slice while the current branch includes additional owner-directed product experiments.
+
+Two separate reconciliations remain:
+
+1. mock/integrated card scope before any production payment claim;
+2. a new restaurant local/open-order/channel flow before implementing the newly documented restaurant direction.
+
+Do not silently edit current components into a table system without manifest/contract scope.
+
+---
+
+# 20. Other Rifad surfaces
 
 Current executable focus remains POS.
 
-- Back Office: ⬜
+- Back Office: ⬜ — will eventually own persistent service-area/place/channel/pricing configuration.
 - Dashboard: ⬜
-- KDS: ⬜
+- KDS: ⬜ — future kitchen dispatch must carry fulfillment/place/channel context.
 - CDS: ⬜
 
 Their evidence remains in research/manifest scope; this branch is stabilizing the POS interaction language first.
@@ -420,6 +508,6 @@ Rifad is **not UI-complete** and not production-backend-complete.
 
 Current checkpoint:
 
-> **A substantial touch-first POS prototype with Rifad-owned contracts and mock-local persistence, owner-reviewed sales/basket/cash/Quick-Sale interaction language, stable action-footer rules, large-quantity numeric editing, readable customer/credit/debt workflows, a stable partial-debt feedback card, explicit debt-settlement result summary, and testable mock card UX — all tracked with UI-to-data traceability.**
+> **A substantial touch-first POS prototype with owner-accepted sales/basket/payment spatial continuity, minimal one-touch Clear Cart, three-column desktop customer entry, stable customer/debt numeric workflows and mock card validation, plus a newly market-researched restaurant model that separates direct takeaway, optional local open orders, delivery sales channels, payment and channel pricing — with the restaurant model documented but not yet implemented or manifest-authorized.**
 
-Immediate work after owner review of this debt/customer refinement is a **cross-screen responsive/footer consistency audit**: verify the stable primary-action rule and human-scale readability on 1920×1080, 1366×768, short-height POS, tablet landscape and narrow/mobile compositions before calling the core POS visual language locked.
+Immediate design work is **not** a final responsive closeout. The next important design problem is the local/open-order experience itself: service-area/place selector, empty-cart/open-order action state, reopening an occupied place, kitchen-send feedback, and the channel-pricing/payment presentation. Only after these major restaurant surfaces are settled should the branch enter a final cross-screen closing audit.

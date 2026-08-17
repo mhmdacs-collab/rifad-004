@@ -24,7 +24,9 @@ Do not infer completion from this plan alone.
 4. KDS
 5. Customer Display
 
-The detailed Loyverse behavior/reference material stored in `docs/research/loyverse/` is the primary functional/workflow evidence. `UI_EXECUTION_MANIFEST.json` converts that evidence into stable IDs and ready scopes.
+The detailed Loyverse behavior/reference material stored in `docs/research/loyverse/` remains the primary functional/workflow baseline. Cross-market research may refine a bounded pattern when documented explicitly; current restaurant-service evidence is in `docs/research/restaurant-pos/`.
+
+`UI_EXECUTION_MANIFEST.json` converts approved evidence into stable IDs and ready scopes.
 
 ## Technology baseline
 
@@ -64,7 +66,7 @@ Required qualities:
 
 - Loyverse research is the primary functional/workflow reference: hierarchy, density baseline, ticket/product relationships, navigation, modal flows, states and KDS/CDS operational behavior.
 - Rifad's design system is the visual/interaction authority: identity, tokens, typography, icons, assets, touch ergonomics, accessibility and final component styling.
-- Other interfaces may influence a narrow visual pattern only through an explicit approved record under `visual-decisions/`.
+- Other interfaces may influence a narrow visual/operational pattern only through explicit documented research and an approved/current decision under `visual-decisions/`.
 - Visual improvement may not silently change workflow, action meaning, contract, permissions, offline behavior or fiscal/payment state.
 
 See `DESIGN_AUTHORITY.md`.
@@ -75,7 +77,7 @@ Screen-family lists below are discovery scope, not permission to invent screens.
 
 If required behavior is missing or only `mapped`, update evidence and manifest before the behavior is promoted as approved implementation scope.
 
-A branch-level product experiment may exist for owner validation, but it must remain clearly labeled as an experiment/mock until manifest/product scope is reconciled. The current card/شبكة/مدى UX is one such case; see `UI_PROGRESS.md`.
+A branch-level product experiment or owner-directed design direction may exist for validation, but it must remain clearly labeled until manifest/product scope is reconciled. The current mock card UX and the newer restaurant local/open-order direction are examples of different maturity levels.
 
 ## Contract-driven mocks
 
@@ -101,9 +103,25 @@ A UI-first phase is also a data-discovery phase.
 
 When the interface introduces or implies a durable field, update `POS_UI_NAMING_AND_FIELD_REGISTER.md` immediately and classify it as current, required gap, reserved integration, derived, or UI-only.
 
-Do not wait until SQL/database design to discover that the UI already depends on fields such as order type, barcode, SKU, payment references or print-job state.
+Do not wait until SQL/database design to discover that the UI already depends on fields such as fulfillment mode, service area/place, open-order lifecycle, sales channel, channel-specific pricing, barcode, SKU, payment references or print/kitchen-dispatch state.
 
 Conversely, do not persist presentation-only state just because it exists in a component.
+
+## Restaurant workflow discovery rule
+
+Restaurant UX must not collapse different business meanings into one convenient button/data field.
+
+Before implementation, model separately:
+
+- kitchen fulfillment (`سفري / محلي / توصيل`);
+- sales channel (direct / delivery platform / future channels);
+- payment/settlement method;
+- service area/place for local orders;
+- open-order lifecycle;
+- kitchen dispatch/revisions;
+- price context / channel overrides.
+
+The UI may combine choices to reduce taps, but the contracts must keep the meanings separate.
 
 ## Phase 1 screen families
 
@@ -116,9 +134,10 @@ Conversely, do not persist presentation-only state just because it exists in a c
 - modifiers/variants
 - customer selection
 - discounts/taxes
-- open tickets
-- restaurant table/floor flows
+- open orders/tickets
+- restaurant service-area/place/floor flows
 - payment and split payment surfaces
+- delivery-channel completion where authorized
 - receipts/refunds
 - shifts/cash movements
 - item management shortcuts
@@ -129,12 +148,14 @@ Conversely, do not persist presentation-only state just because it exists in a c
 - stores/branches
 - POS devices
 - items/categories/modifiers
+- price lists / sales-channel price overrides
+- restaurant service areas/places and table-service enablement
 - inventory/purchasing/transfers/counts
 - customers/loyalty
 - employees/roles/permissions
 - reports
 - taxes/payment types
-- integrations/settings
+- sales channels/integrations/settings
 
 ### Dashboard
 
@@ -143,11 +164,13 @@ Conversely, do not persist presentation-only state just because it exists in a c
 - inventory alerts
 - branch summary
 - owner-level operational indicators
+- channel/fulfillment analysis when those domains are implemented
 
 ### KDS
 
 - incoming tickets
 - category/station routing presentation
+- fulfillment/service-place/channel context
 - item/order completion
 - recall
 - elapsed time and status

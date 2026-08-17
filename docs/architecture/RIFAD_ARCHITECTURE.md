@@ -1,5 +1,7 @@
 # Rifad Architecture
 
+Last updated: 2026-08-17
+
 ## 1. Core principle
 
 Rifad is assembled from replaceable capability modules behind stable Rifad-owned contracts.
@@ -11,14 +13,16 @@ Apps
                      ▼
               Rifad Contracts
                      │
-   ┌─────────────────┼─────────────────┐
-   │                 │                 │
- Sales             Tables           Inventory
- Money             Shifts           Customers
- Payments          Printing         Loyalty
- LAN               Sync             Fiscal
-   │                 │                 │
-   └─────────────────┼─────────────────┘
+   ┌─────────────────┼─────────────────────────┐
+   │                 │                         │
+ Sales             Tables/Places            Inventory
+ Orders            Fulfillment              Customers
+ Money             Sales Channels           Loyalty
+ Pricing           Kitchen/Preparation      Shifts
+ Payments          Printing                 Fiscal
+ LAN               Sync                     Permissions
+   │                 │                         │
+   └─────────────────┼─────────────────────────┘
                      ▼
               Rifad Data Layer
           Local DB ↔ Sync ↔ Cloud DB
@@ -40,9 +44,13 @@ Apps never bind directly to donor project internals.
 
 - `core/catalog`
 - `core/money`
+- `core/pricing`
 - `core/sales`
 - `core/orders`
-- `core/tables`
+- `core/fulfillment`
+- `core/sales-channels`
+- `core/tables` / service areas and places
+- `core/kitchen` / preparation-order state
 - `core/shifts`
 - `core/inventory`
 - `core/customers`
@@ -51,10 +59,13 @@ Apps never bind directly to donor project internals.
 - `core/employees`
 - `core/permissions`
 
+Names may evolve before contract freeze; the separation of responsibilities is the important part.
+
 ### Adapters/integration domains
 
 - `adapters/printing`
 - `adapters/payments`
+- `adapters/delivery-channels`
 - `adapters/lan`
 - `adapters/sync`
 - `adapters/fiscal-zatca`
@@ -69,30 +80,93 @@ A UI action talks to a contract, not an implementation.
 Example:
 
 ```text
-POS "Move table" button
+POS "Move place/order" action
         │
         ▼
-TablesContract.moveOrder(...)
+Tables/Places contract
         │
         ▼
-Current Tables Adapter
+Current local adapter
 ```
 
 If the current adapter is replaced, the button and unrelated modules remain unchanged.
 
-The same rule applies to:
+The same rule applies to concepts such as:
 
-- `SalesContract.checkout()`
-- `ShiftContract.close()`
-- `BranchContract.create()`
-- `PrinterContract.printReceipt()`
-- `KdsContract.completeTicket()`
-- `InventoryContract.transfer()`
-- `SyncContract.flush()`
+- checkout/completion;
+- assign order to service place;
+- send preparation delta;
+- resolve effective channel price;
+- select sales channel;
+- close shift;
+- print receipt;
+- complete KDS item/order;
+- inventory transfer;
+- sync flush.
 
-Names above illustrate the boundary and may evolve before contract freeze.
+Exact method names are contract-design work and are not frozen by this architecture document.
 
-## 4. Ownership
+## 4. Restaurant/order separation
+
+Rifad does not collapse restaurant fulfillment, sales channel and payment into one field.
+
+### Fulfillment
+
+Operational/kitchen meaning:
+
+- takeaway / **سفري**;
+- dine-in / **محلي**;
+- delivery / **توصيل**.
+
+Direct POS sale may default to takeaway without asking the cashier to choose it every time.
+
+### Sales channel
+
+Commercial source of the order, for example:
+
+- direct POS;
+- Keeta;
+- HungerStation;
+- Ninja;
+- future online/marketplace channel.
+
+### Payment / settlement
+
+How money is settled, for example cash, card/Mada, customer credit or platform settlement.
+
+A fast UI may set several defaults from one tap, but durable domain facts remain separate so reporting, pricing, refunds and kitchen behavior are correct.
+
+## 5. Local/table-service model
+
+Table service is an optional capability, not a mandatory shape for every branch/device.
+
+The domain should support:
+
+- service areas such as dining room, floor, patio, rooms or sessions;
+- service places such as a table, room or session;
+- open orders attached to a place;
+- moving/merging where later authorized;
+- payment before or after preparation/dining;
+- kitchen dispatch before final payment;
+- later additions/voids as preparation deltas rather than blind full reprints.
+
+Persistent editing of floor/place layout is expected to become Back Office responsibility. POS may temporarily host configuration during UI-first development but must not become the accidental long-term owner.
+
+## 6. Pricing context
+
+Product price authority must be able to resolve from a pricing context rather than only one scalar base price.
+
+Target capabilities include:
+
+- base product price;
+- branch/pricelist rules when authorized;
+- sales-channel price list or per-product channel override;
+- effective-price snapshot on the ticket/receipt;
+- separate platform commission/settlement terms.
+
+Changing sales channel may change effective prices. The UI must show the resulting total before the final completion command.
+
+## 7. Ownership
 
 Each module owns its private state and schema. Another module may not query its private database tables directly.
 
@@ -102,7 +176,7 @@ Cross-module interaction is allowed through:
 2. versioned domain events for state propagation;
 3. read models explicitly published for shared presentation needs.
 
-## 5. Offline and LAN
+## 8. Offline and LAN
 
 Offline and LAN are separate concerns.
 
@@ -112,7 +186,9 @@ Offline and LAN are separate concerns.
 
 A loss of internet must not imply a loss of branch-local operation for workflows designed to work offline.
 
-## 6. Data direction
+Restaurant implications include preserving open local orders and avoiding duplicate kitchen dispatch when connectivity changes.
+
+## 9. Data direction
 
 Initial target:
 
@@ -132,7 +208,7 @@ Cloud PostgreSQL
 
 Exact storage libraries are implementation decisions. Contracts and product behavior must not depend on a specific donor schema.
 
-## 7. Donor translation modes
+## 10. Donor translation modes
 
 A donor capability may enter Rifad in one of three ways:
 
@@ -145,7 +221,7 @@ Extract state machine, invariants, algorithms and test vectors, then implement t
 ### C. Behavioral reference only
 For copyleft, proprietary, poorly isolated or fragile code, use documented/observable behavior as a specification and write a clean Rifad implementation.
 
-## 8. Anti-Frankenstein rule
+## 11. Anti-Frankenstein rule
 
 Puzzle architecture does **not** mean running ten unrelated applications together.
 
@@ -163,7 +239,7 @@ It does not happen by modifying donor A until it contains donor B. That would le
 
 The mandatory capability workflow is documented in `docs/adoption/CAPABILITY_ADOPTION_WORKFLOW.md`.
 
-## 9. Architecture decisions currently fixed
+## 12. Architecture decisions currently fixed
 
 - Rifad owns its Core and contracts.
 - UI first, with mock adapters until implementations arrive.
@@ -171,6 +247,10 @@ The mandatory capability workflow is documented in `docs/adoption/CAPABILITY_ADO
 - Windows desktop uses an application shell around the same product UI.
 - Tablet/mobile uses an installable PWA with application-like behavior.
 - Loyverse is the primary functional/workflow and ergonomic behavior reference; Rifad owns final visual authority.
+- Restaurant fulfillment, sales channel and payment/settlement are distinct domain meanings.
+- Optional local/table service uses service areas/places and open-order lifecycle rather than generic Save semantics alone.
+- Pricing must be able to resolve channel-specific effective prices without treating channel as payment.
+- Kitchen preparation state/dispatch is distinct from final payment timing.
 - ZATCA is core.
 - Accounting engines remain replaceable integrations.
 - No Odoo/FloCafe/ERPNext schema is the Rifad public data contract.
