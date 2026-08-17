@@ -303,7 +303,7 @@ export function SalesScreen(props: SalesScreenProps) {
           ) : (
             <>
               <button className="appbar-icon" type="button" onClick={() => setMenuOpen(true)} aria-label="فتح القائمة"><Icon name="menu" /></button>
-              <strong className="current-page-title">{isBasicMode ? "شاشة أساسية" : (activePage?.name ?? "المبيعات")}</strong>
+              <strong className="current-page-title">{isBasicMode ? "البيع السريع" : (activePage?.name ?? "المبيعات")}</strong>
               <div className="appbar-spacer" />
               {isBasicMode || searchOpen ? (
                 <label className={`catalog-search ${isBasicMode ? "catalog-search--always" : ""}`}>
@@ -433,7 +433,7 @@ export function SalesScreen(props: SalesScreenProps) {
               <div className="device-settings-copy"><strong>نمط شاشة البيع</strong><span>هذا الإعداد خاص بهذا الجهاز ويمكن أن يختلف بين أجهزة نفس المنشأة.</span></div>
               <div className="screen-mode-options">
                 <button type="button" className={screenMode === "touch" ? "active" : ""} onClick={() => { setScreenMode("touch"); onQueryChange(""); }}><span className="screen-mode-icon"><Icon name="grid" size={24} /></span><strong>شاشة لمس</strong><small>شبكة أصناف وصفحات سريعة للمس.</small></button>
-                <button type="button" className={screenMode === "basic" ? "active" : ""} onClick={() => { setScreenMode("basic"); onQueryChange(""); }}><span className="screen-mode-icon"><Icon name="search" size={24} /></span><strong>شاشة أساسية</strong><small>بحث وباركود أولًا للبيع بالتجزئة.</small></button>
+                <button type="button" className={screenMode === "basic" ? "active" : ""} onClick={() => { setScreenMode("basic"); onQueryChange(""); }}><span className="screen-mode-icon"><Icon name="search" size={24} /></span><strong>البيع السريع</strong><small>بحث وباركود أولًا للبيع بالتجزئة.</small></button>
               </div>
             </div>
             <div className="device-settings-section device-settings-section--order-types">
