@@ -58,19 +58,28 @@ describe("transaction operation card", () => {
     expect(screen.getByRole("button", { name: "دفع" })).toBeDisabled();
   });
 
-  it("shows Clear Cart from the first item and clears multiple basket lines in one touch", async () => {
+  it("shows Clear Cart above the basket without entering or moving the operation card", async () => {
     const user = userEvent.setup();
     render(<App />);
 
     await unlockPos(user);
     await user.click(await screen.findByRole("button", { name: /قهوة سعودية/ }));
-    expect(await screen.findByRole("button", { name: "مسح السلة" })).toBeEnabled();
+
+    const clearCart = await screen.findByRole("button", { name: "مسح السلة" });
+    expect(clearCart).toBeEnabled();
+
+    const clearSlot = clearCart.closest(".ticket-clear-cart-slot");
+    const actionCard = document.querySelector(".ticket-actions");
+    expect(clearSlot).not.toBeNull();
+    expect(clearSlot?.nextElementSibling).toHaveClass("ticket-panel");
+    expect(actionCard).not.toContainElement(clearCart);
+    expect(actionCard?.children).toHaveLength(2);
 
     await user.click(screen.getByRole("button", { name: /لاتيه/ }));
     await user.click(screen.getByRole("button", { name: /شاي كرك/ }));
     expect(screen.getByRole("button", { name: "دفع" })).toBeEnabled();
 
-    await user.click(screen.getByRole("button", { name: "مسح السلة" }));
+    await user.click(clearCart);
 
     expect(await screen.findByText("التذكرة فارغة")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "مسح السلة" })).not.toBeInTheDocument();
