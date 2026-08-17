@@ -1,5 +1,7 @@
 # Current Rifad Decisions
 
+Last updated: 2026-08-17
+
 These decisions supersede earlier architecture proposals stored under `docs/research/historical-proposals/` when they conflict.
 
 ## D-001 — Rifad owns the core
@@ -65,3 +67,50 @@ Rifad's design system owns final visual tokens, assets and component styling. Lo
 ## D-016 — Build vertical flows, not disconnected screen museums
 
 Implementation milestones prove an end-to-end user outcome through mocks. The first authorized milestone is `POS-FLOW-001`, a retail cash sale slice spanning entry, PIN, sales, cash payment, success and a new sale.
+
+## D-017 — POS is touch-first and human-scaled
+
+For cashier-facing POS work, the design priority is:
+
+> **Touch first, then human visual clarity, then beauty.**
+
+This means frequent controls retain practical touch targets across device sizes. When a screen becomes constrained, Rifad changes layout, density, wrapping, scrolling or column count before shrinking important targets into desktop-sized controls.
+
+Visual scale is judged from real human viewing distance and cashier task frequency, not from screenshot symmetry or design-tool neatness.
+
+Detailed rules live in `docs/ui/DESIGN_AUTHORITY.md`.
+
+## D-018 — Every visible durable field must be traceable before database implementation
+
+Rifad will not wait for database implementation to discover what the UI needs to persist.
+
+`docs/ui/POS_UI_NAMING_AND_FIELD_REGISTER.md` is the current POS traceability register for:
+
+- canonical cashier-facing terminology;
+- fields already present in Rifad models/contracts;
+- UI-required fields that are still missing from durable data;
+- reserved integration fields;
+- derived values;
+- presentation-only state that should not become database truth.
+
+When a new durable field, option, status or payment fact becomes visible, the register must be updated in the same product/implementation change.
+
+## D-019 — Checkout preserves cashier spatial context
+
+The accepted POS checkout direction keeps the product catalog visible and transforms the basket rail through checkout rather than navigating the cashier to unrelated full-page surfaces.
+
+The conceptual progression is:
+
+`basket → payment methods → cash/card → success`
+
+The catalog remains visible as frozen context during checkout. This is an interaction decision; the business contracts still own sale/payment state.
+
+## D-020 — Mock payment UX is not production terminal support
+
+Rifad may implement a mock `card` / **شبكة / مدى** path to validate payment-method selection, touch layout, receipt shape and success behavior.
+
+A working mock card flow does **not** mean Rifad supports a real Mada/payment terminal.
+
+Production integrated-payment support requires a proven provider/terminal adapter, durable payment records, failure/decline/recovery behavior, reconciliation/refund requirements, security review and capability evidence.
+
+The current card UX extension must remain distinguishable from certified production terminal support in documentation and product claims.
