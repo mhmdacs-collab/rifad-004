@@ -156,9 +156,9 @@ Current executable sequence:
 - card/mock checkout: **إلغاء الفاتورة | تم الدفع**;
 - success: **طباعة | بيع جديد**.
 
-The current generic **حفظ** label is not a permanent restaurant-product decision. Under the newer optional local-service direction, a non-empty restaurant basket is targeted to use **محلي | دفع** instead.
+The current generic **حفظ** label is not a permanent restaurant-product decision. Under restaurant-service configuration, a non-empty basket is targeted to use **محلي | دفع** instead.
 
-When the basket is empty and open local orders exist, physical geometry still does not move, but **visual priority may intentionally swap**:
+When advanced place management is enabled and the basket is empty with open local orders, physical geometry still does not move, but **visual priority may intentionally swap**:
 
 - right slot: **طلبات مفتوحة · N** becomes green/primary;
 - left slot: **دفع** remains in place but is neutral/disabled because there is no payable working basket.
@@ -171,9 +171,9 @@ The debt-book **سداد** action on the sale screen is not moved into the Pay s
 
 Detailed visual treatment is recorded in `docs/ui/visual-decisions/VISUAL-DECISION-005-PRIMARY-ACTION-SPATIAL-CONTINUITY.md` and the restaurant extension in `VISUAL-DECISION-006-RESTAURANT-SERVICE-OPEN-ORDERS.md`.
 
-## D-023 — Fulfillment, sales channel and payment are separate business meanings
+## D-023 — Fulfillment, sales channel and payment are separate durable meanings
 
-Rifad will not store **محلي / سفري / توصيل**, delivery-platform identity and payment method as one overloaded field.
+Rifad will not store **محلي / سفري / توصيل**, delivery-platform identity and payment/collection state as one overloaded field even when the cashier sees them as one convenient completion choice.
 
 Target separation:
 
@@ -187,21 +187,47 @@ This describes how the order is fulfilled/prepared and what the kitchen needs to
 
 ### Sales channel
 
-Examples: direct POS, Keeta, HungerStation, Ninja and future online/marketplace sources.
+Examples: direct POS, Keeta, HungerStation, Jahez, Ninja and future online/marketplace sources.
 
-### Payment/settlement
+### Payment/collection/settlement
 
-Examples: cash, card/Mada, customer credit and platform settlement.
+Examples: cash collected locally, card/Mada collected locally, customer credit, prepaid by platform, cash/card due on delivery/pickup, and later platform settlement.
 
-The UI may combine defaults into one touch for speed, but durable records and reporting must retain the separate meanings.
+The POS may display a delivery platform alongside payment choices for cashier speed, but durable records and reporting must retain channel, fulfillment and collection/settlement separately.
 
-The normal direct-sale path may default to **سفري** without forcing a cashier tap on every transaction.
+The normal restaurant direct-sale path may default operationally to **سفري** without forcing a separate cashier tap.
 
-## D-024 — Table/local service is optional and uses service places plus open orders
+## D-024 — Restaurant service classification and place management are two different configuration layers
 
-Table service is a configurable restaurant capability, not a mandatory requirement for every branch/device.
+Rifad must not force restaurant terminology or table complexity onto retail/bakery/grocery workflows that only need direct selling.
 
-When enabled, the target restaurant flow is:
+### Layer A — restaurant service classification
+
+A branch/POS configuration enables restaurant service semantics.
+
+When **disabled**:
+
+- the POS behaves as retail/direct sale;
+- no permanent **محلي / سفري** workflow is forced into the cashier path;
+- **دفع** is simply checkout.
+
+When **enabled**:
+
+- direct **دفع** means the restaurant's normal direct sale and is prepared as **سفري** by default;
+- **محلي** becomes available as the alternative local-service action;
+- delivery platforms may establish **توصيل** through their own channel/order flow.
+
+### Layer B — advanced service-place management
+
+Place management is an optional sub-capability for restaurants that need to identify exactly where the guest is seated.
+
+When restaurant service is enabled but place management is **disabled**:
+
+`build basket → محلي → checkout/complete as dine-in`
+
+The kitchen receives **محلي**, but the cashier is not asked to choose a table/room/session.
+
+When place management is **enabled**:
 
 `build basket → محلي → choose service area/place → send kitchen order → clear working basket → keep open local order`
 
@@ -210,15 +236,15 @@ Service location is generalized as:
 - **service area**: e.g. الصالة، الدور الأول، الغرف، الجلسات الخارجية;
 - **service place**: e.g. طاولة 12، غرفة 3، جلسة 8.
 
-Payment can happen before or after dining. The fulfillment mode does not decide payment timing.
+Payment can happen before or after dining. Fulfillment does not decide payment timing.
 
 When the main basket is empty and local orders are open, the normal cashier shortcut is **طلبات مفتوحة** rather than a generic Save list.
 
-Persistent place/floor configuration is expected to become Back Office responsibility. POS-side configuration may temporarily exist during UI-first discovery but must not silently become the permanent ownership model.
+Persistent restaurant-service/place configuration is expected to become Back Office responsibility. POS-side configuration may temporarily exist during UI-first discovery but must not silently become the permanent ownership model or be exposed to ordinary cashiers in production.
 
 Implementation is not authorized until the UI Execution Manifest defines the bounded restaurant/open-order flow.
 
-## D-025 — Product pricing can vary by sales channel without making channel a payment method
+## D-025 — Product pricing can vary by sales channel without making channel only a payment method
 
 Rifad pricing must support a base product price plus optional channel/pricelist overrides.
 
@@ -230,7 +256,9 @@ Example intent:
 
 The production model may use normalized channel-price records or pricelists rather than hard-coded platform columns.
 
-If selecting a channel changes prices, the cashier must see the recalculated total before final completion.
+For a cashier-created/manual platform sale, if selecting a channel changes prices, the cashier must see the recalculated total before final completion.
+
+For an API-connected incoming order, preserve the prices actually sold by the external platform as order snapshots and validate/map them; do not silently replace them with the current direct-POS base price.
 
 Platform commission/settlement fee is a separate commercial fact from the customer-facing product price and should not be hidden inside the price override.
 
@@ -241,8 +269,47 @@ Kitchen/preparation output follows order lifecycle and fulfillment context.
 Target behavior:
 
 - direct takeaway: preparation output occurs in the direct-sale completion path;
-- local: preparation output occurs when the order is assigned/sent to its service place, even if payment happens later;
-- later local additions/voids produce preparation deltas/revisions rather than blind duplicate full orders;
-- delivery: preparation output identifies **توصيل** and sales channel where useful.
+- simple local without place management: preparation output follows the local completion/send flow;
+- advanced local: preparation output occurs when the order is assigned/sent to its service place, even if payment happens later;
+- later advanced-local additions/voids produce preparation deltas/revisions rather than blind duplicate full orders;
+- delivery: preparation output identifies **توصيل** and sales channel where useful;
+- API-connected delivery orders may be auto-accepted and sent to kitchen when branch policy allows, without requiring manual cashier recreation.
 
 Production implementation requires durable dispatch identity, revision/delta semantics and idempotency so offline/retry behavior cannot create duplicate kitchen work.
+
+## D-027 — Delivery integrations are capability-based adapters; Rifad supports direct and aggregator modes
+
+Rifad's cashier/product model must not depend on the API shape of Keeta, HungerStation, Jahez, Ninja or any aggregator.
+
+External delivery integrations implement a Rifad-owned, capability-based adapter boundary. A connector may expose some or all of:
+
+- merchant authorization;
+- branch/store mapping;
+- menu/channel-price synchronization;
+- item availability/status synchronization;
+- incoming-order webhook/polling;
+- order accept/reject;
+- prepare/ready/dispatch/delivered status;
+- cancellation/refund;
+- payment/collection detail;
+- settlement/reconciliation detail.
+
+Not every platform supports every capability, and production API access may require commercial onboarding, credentials or certification even when documentation is public.
+
+Rifad may integrate in either of two ways:
+
+1. **direct platform adapter** when official partner access is practical;
+2. **aggregator adapter** such as a future Deliverect/UrbanPiper/Grubtech-class integration when it provides better platform coverage or onboarding economics.
+
+The public Rifad contract remains the same in both cases.
+
+Cashier consequence:
+
+- an API-connected platform order arrives already carrying its channel, fulfillment, prices and payment/collection state;
+- the cashier must not choose Keeta/HungerStation again or re-enter the sale;
+- prepaid platform orders must not create a second cash/card collection at the till;
+- cash/card-on-delivery remains unpaid until money is actually collected;
+- a manual platform tile remains valid as fallback for an unconnected platform or authorized manual-entry scenario;
+- the preferred cashier experience is **one online-orders queue, many adapters behind it**, with optional auto-accept/send-to-kitchen policy.
+
+Research evidence is recorded in `docs/research/restaurant-pos/DELIVERY_PLATFORM_INTEGRATION_BENCHMARK_2026-08-17.md`.
