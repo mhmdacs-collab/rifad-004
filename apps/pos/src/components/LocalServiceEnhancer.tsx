@@ -23,6 +23,18 @@ const setDisabled = (button: HTMLButtonElement, disabled: boolean) => {
   if (button.disabled !== disabled) button.disabled = disabled;
 };
 
+const setClass = (element: Element, className: string, enabled: boolean) => {
+  if (element.classList.contains(className) !== enabled) element.classList.toggle(className, enabled);
+};
+
+const setAttributeValue = (element: Element, name: string, value: string | null) => {
+  if (value === null) {
+    if (element.hasAttribute(name)) element.removeAttribute(name);
+    return;
+  }
+  if (element.getAttribute(name) !== value) element.setAttribute(name, value);
+};
+
 const ownedSlot = (parent: HTMLElement, className: string) => {
   const current = Array.from(parent.children).find((child): child is HTMLElement => child instanceof HTMLElement && child.classList.contains(className));
   if (current) return current;
@@ -61,34 +73,36 @@ export function LocalServiceEnhancer({ ticket, local }: LocalServiceEnhancerProp
           const pay = buttons[1];
           if (!secondary || !pay) continue;
 
-          secondary.classList.add("local-service-action");
-          secondary.classList.remove("local-service-action--open", "local-service-action--send", "local-service-action--hidden");
-          pay.classList.remove("local-pay--inactive");
+          setClass(secondary, "local-service-action", true);
+          setClass(secondary, "local-service-action--open", false);
+          setClass(secondary, "local-service-action--send", false);
+          setClass(secondary, "local-service-action--hidden", false);
+          setClass(pay, "local-pay--inactive", false);
 
           if (!serviceEnabled) {
             setButtonText(secondary, "محلي");
             setDisabled(secondary, true);
-            secondary.classList.add("local-service-action--hidden");
-            secondary.setAttribute("aria-hidden", "true");
+            setClass(secondary, "local-service-action--hidden", true);
+            setAttributeValue(secondary, "aria-hidden", "true");
           } else if (activeOpenOrderId) {
             const active = localRef.current.activeOpenOrder;
             setButtonText(secondary, "إرسال");
             setDisabled(secondary, itemCount === 0 || isBusy);
-            secondary.classList.add("local-service-action--send");
-            secondary.removeAttribute("aria-hidden");
-            secondary.setAttribute("aria-label", active ? `إرسال تحديث ${active.servicePlaceName} للمطبخ` : "إرسال تحديث الطلب للمطبخ");
+            setClass(secondary, "local-service-action--send", true);
+            setAttributeValue(secondary, "aria-hidden", null);
+            setAttributeValue(secondary, "aria-label", active ? `إرسال تحديث ${active.servicePlaceName} للمطبخ` : "إرسال تحديث الطلب للمطبخ");
           } else if (advanced && itemCount === 0 && hasOpenOrders) {
             setButtonText(secondary, `طلبات مفتوحة · ${openOrderCount}`);
             setDisabled(secondary, isBusy);
-            secondary.classList.add("local-service-action--open");
-            secondary.removeAttribute("aria-hidden");
-            secondary.setAttribute("aria-label", `الطلبات المفتوحة، ${openOrderCount}`);
-            pay.classList.add("local-pay--inactive");
+            setClass(secondary, "local-service-action--open", true);
+            setAttributeValue(secondary, "aria-hidden", null);
+            setAttributeValue(secondary, "aria-label", `الطلبات المفتوحة، ${openOrderCount}`);
+            setClass(pay, "local-pay--inactive", true);
           } else {
             setButtonText(secondary, "محلي");
             setDisabled(secondary, itemCount === 0 || isBusy);
-            secondary.removeAttribute("aria-hidden");
-            secondary.setAttribute("aria-label", advanced ? "محلي، اختيار مكان" : "محلي");
+            setAttributeValue(secondary, "aria-hidden", null);
+            setAttributeValue(secondary, "aria-label", advanced ? "محلي، اختيار مكان" : "محلي");
           }
         }
       }
@@ -162,18 +176,12 @@ export function LocalServiceEnhancer({ ticket, local }: LocalServiceEnhancerProp
   }, [activeOpenOrderId, advanced, hasOpenOrders, isBusy, itemCount, openOrderCount, serviceEnabled]);
 
   const toggleRestaurantService = async () => {
-    await local.updateConfig({
-      restaurantServiceEnabled: !serviceEnabled,
-      placeManagementEnabled: false,
-    });
+    await local.updateConfig({ restaurantServiceEnabled: !serviceEnabled, placeManagementEnabled: false });
   };
 
   const togglePlaceManagement = async () => {
     if (!serviceEnabled) return;
-    await local.updateConfig({
-      restaurantServiceEnabled: true,
-      placeManagementEnabled: !local.config.placeManagementEnabled,
-    });
+    await local.updateConfig({ restaurantServiceEnabled: true, placeManagementEnabled: !local.config.placeManagementEnabled });
   };
 
   const ticketContext = local.activeServiceLabel;
@@ -191,7 +199,6 @@ export function LocalServiceEnhancer({ ticket, local }: LocalServiceEnhancerProp
             <span><strong>تفعيل خدمة المطعم</strong><small>{serviceEnabled ? "المحلي والسفري مفعّلان" : "وضع بيع مباشر / تجزئة"}</small></span>
             <i className="local-setting-switch" aria-hidden="true"><b /></i>
           </button>
-
           <button type="button" className={`local-setting-row local-setting-row--nested ${local.config.placeManagementEnabled ? "active" : ""}`} onClick={() => void togglePlaceManagement()} disabled={!serviceEnabled || isBusy || (hasOpenOrders && local.config.placeManagementEnabled)} aria-pressed={local.config.placeManagementEnabled}>
             <span><strong>تحديد الطاولات والجلسات</strong><small>{local.config.placeManagementEnabled ? "محلي متقدم · اختيار مكان وطلبات مفتوحة" : "محلي بسيط · بدون اختيار مكان"}</small></span>
             <i className="local-setting-switch" aria-hidden="true"><b /></i>
@@ -201,28 +208,10 @@ export function LocalServiceEnhancer({ ticket, local }: LocalServiceEnhancerProp
         target,
       ))}
 
-      {ticketContextTargets.map((target, index) => createPortal(
-        ticketContext ? <span className="local-ticket-context" key={`ticket-context-${index}`}>{ticketContext}</span> : null,
-        target,
-      ))}
+      {ticketContextTargets.map((target, index) => createPortal(ticketContext ? <span className="local-ticket-context" key={`ticket-context-${index}`}>{ticketContext}</span> : null, target))}
+      {checkoutContextTargets.map((target, index) => createPortal(checkoutContext ? <span className="local-checkout-context" key={`checkout-context-${index}`}>{checkoutContext}</span> : null, target))}
 
-      {checkoutContextTargets.map((target, index) => createPortal(
-        checkoutContext ? <span className="local-checkout-context" key={`checkout-context-${index}`}>{checkoutContext}</span> : null,
-        target,
-      ))}
-
-      {dialogMode ? (
-        <LocalServiceDialog
-          mode={dialogMode}
-          areas={local.serviceAreas}
-          openOrders={local.openLocalOrders}
-          busy={isBusy}
-          onClose={() => setDialogMode(null)}
-          onAssign={local.assignToPlace}
-          onOpen={local.resumeOpenOrder}
-        />
-      ) : null}
-
+      {dialogMode ? <LocalServiceDialog mode={dialogMode} areas={local.serviceAreas} openOrders={local.openLocalOrders} busy={isBusy} onClose={() => setDialogMode(null)} onAssign={local.assignToPlace} onOpen={local.resumeOpenOrder} /> : null}
       {local.localNotice ? <div className="local-service-toast local-service-toast--success" role="status">{local.localNotice}</div> : null}
       {local.localError ? <button type="button" className="local-service-toast local-service-toast--error" onClick={local.clearLocalError} role="alert">{local.localError}</button> : null}
     </>
