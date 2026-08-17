@@ -242,7 +242,7 @@ const migrateDebtLedger = (
 
 class MockStore {
   private state: Persisted;
-  private checkout: { id: string; ticket: Ticket; method: "cash" | null } | null = null;
+  private checkout: { id: string; ticket: Ticket; method: "cash" | "card" | null } | null = null;
   private completedCommands = new Map<string, Receipt>();
 
   constructor() {
@@ -346,7 +346,7 @@ class MockStore {
     };
   }
 
-  private makeReceipt(ticket: Ticket, paymentMethod: "cash" | "credit", tendered: Money, completedAt = new Date().toISOString()): Receipt {
+  private makeReceipt(ticket: Ticket, paymentMethod: "cash" | "card" | "credit", tendered: Money, completedAt = new Date().toISOString()): Receipt {
     return {
       id: createId("receipt"),
       number: `R-${String(ticket.sequence).padStart(5, "0")}`,
@@ -679,10 +679,10 @@ class MockStore {
     return { checkoutId: id };
   }
 
-  async selectMethod(checkoutId: string) {
+  async selectMethod(checkoutId: string, method: "cash" | "card") {
     await pause();
     const checkout = this.requireCheckout(checkoutId);
-    this.checkout = { ...checkout, method: "cash" };
+    this.checkout = { ...checkout, method };
   }
 
   async completeCash(commandId: string, checkoutId: string, tenderedHalalas: number): Promise<Receipt> {
@@ -693,6 +693,20 @@ class MockStore {
     if (checkout.method !== "cash") throw new PosContractError("PAYMENT_METHOD_REQUIRED", "اختر طريقة الدفع النقدي أولًا.");
     if (tenderedHalalas < checkout.ticket.total.halalas) throw new PosContractError("UNDER_TENDER", "المبلغ المستلم أقل من الإجمالي.");
     const receipt = this.makeReceipt(checkout.ticket, "cash", money(tenderedHalalas));
+    this.completedCommands.set(commandId, receipt);
+    this.state = { ...this.state, receipt, receipts: [receipt, ...this.state.receipts.filter((item) => item.id !== receipt.id)], ticket: null };
+    this.checkout = null;
+    this.persist();
+    return receipt;
+  }
+
+  async completeCard(commandId: string, checkoutId: string): Promise<Receipt> {
+    await pause();
+    const prior = this.completedCommands.get(commandId);
+    if (prior) return prior;
+    const checkout = this.requireCheckout(checkoutId);
+    if (checkout.method !== "card") throw new PosContractError("PAYMENT_METHOD_REQUIRED", "اختر شبكة / مدى أولًا.");
+    const receipt = this.makeReceipt(checkout.ticket, "card", checkout.ticket.total);
     this.completedCommands.set(commandId, receipt);
     this.state = { ...this.state, receipt, receipts: [receipt, ...this.state.receipts.filter((item) => item.id !== receipt.id)], ticket: null };
     this.checkout = null;
@@ -743,8 +757,9 @@ export const createMockPosRuntime = (): MockPosRuntime => {
   };
   const checkout: CheckoutContract = {
     begin: ({ ticketId }) => store.begin(ticketId),
-    selectPaymentMethod: ({ checkoutId }) => store.selectMethod(checkoutId),
+    selectPaymentMethod: ({ checkoutId, method }) => store.selectMethod(checkoutId, method),
     completeCashSale: ({ commandId, checkoutId, tendered }) => store.completeCash(commandId, checkoutId, tendered.halalas),
+    completeCardSale: ({ commandId, checkoutId }) => store.completeCard(commandId, checkoutId),
   };
   const receipts: ReceiptsContract = {
     list: () => store.listReceipts(),
