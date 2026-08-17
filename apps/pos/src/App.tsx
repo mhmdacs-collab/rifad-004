@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { InlineCheckoutRail } from "./components/InlineCheckoutRail";
 import { PinScreen } from "./screens/PinScreen";
 import { ReceiptsScreen } from "./screens/ReceiptsScreen";
@@ -15,6 +15,12 @@ export default function App() {
   if (flow.ticket) {
     lastSaleTicket.current = flow.ticket;
   }
+
+  useEffect(() => {
+    if (flow.stage !== "success") return;
+    const printButton = document.querySelector<HTMLButtonElement>(".inline-success-print");
+    printButton?.setAttribute("aria-label", "طباعة الإيصال");
+  }, [flow.stage, flow.printStatus]);
 
   const inlineCheckoutStage = flow.stage === "payment" || flow.stage === "cash" || flow.stage === "success"
     ? flow.stage
