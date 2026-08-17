@@ -11,6 +11,8 @@ import { createLocalPersistenceAdapter } from "./localPersistenceAdapter";
 
 export const RESTAURANT_SERVICE_SNAPSHOT_NAMESPACE = "restaurant.service";
 export const RESTAURANT_SERVICE_SNAPSHOT_SCHEMA_VERSION = 1;
+/** Compatibility/testing only; product code must not read this key. */
+export const LEGACY_RESTAURANT_SERVICE_STORAGE_KEY = RESTAURANT_SERVICE_STORAGE_KEY;
 
 /**
  * POS composition root for restaurant/local service.
