@@ -190,7 +190,7 @@ describe("unified ticket customer", () => {
     await user.click(within(picker).getByRole("button", { name: "+ إضافة عميل جديد" }));
 
     await user.type(within(picker).getByLabelText("اسم العميل"), "ليان سعد");
-    const mobileInput = within(picker).getByLabelText("رقم الجوال");
+    const mobileInput = within(picker).getByLabelText(/^رقم الجوال/);
     await user.type(mobileInput, "05611122334");
     expect(mobileInput).toHaveValue("0561112233");
     await user.type(within(picker).getByLabelText("العنوان (اختياري)"), "طريق الملك فهد");
