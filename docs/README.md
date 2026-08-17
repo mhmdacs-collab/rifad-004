@@ -17,11 +17,13 @@ When documents conflict, use this order:
 7. `ui/UI_PROGRESS.md` and current UI/product plans for living implementation status.
 8. Research and historical proposals as evidence only.
 
-A product/visual discussion can be documented before implementation while still remaining explicitly **not manifest-authorized**. The current restaurant service/place/channel/delivery direction is in that state.
+A product/visual discussion can be documented before implementation while still remaining explicitly **not manifest-authorized**. Restaurant local service now has a bounded executable prototype under `POS-FLOW-002`; online-order/delivery connector implementation remains pending separate scope.
 
 ## Current implementation documents
 
 - `architecture/` — binding architecture direction and current decisions.
+- `architecture/POS_RUNTIME_ADAPTER_BOUNDARY.md` — current general POS runtime composition/injection boundary and replacement rules.
+- `architecture/RESTAURANT_SERVICE_ADAPTER_BOUNDARY.md` — current restaurant/place adapter boundary and external-system translation rules.
 - `adoption/` — how Rifad evaluates and incorporates proven external logic.
 - `donors/` — donor policy and evidence record template.
 - `ui/UI_EXECUTION_MANIFEST.json` — binding screen/action/state/flow inventory and readiness status.
@@ -39,7 +41,7 @@ Do not postpone UI/product field discovery until database design.
 
 If the interface/product direction introduces a new field, option, fulfillment mode, payment/collection fact, sales channel, integration mapping, customer attribute, setting or status, update `ui/POS_UI_NAMING_AND_FIELD_REGISTER.md` in the same change and classify it as current, required gap, reserved integration, derived or UI-only.
 
-This explicitly includes restaurant/delivery concepts such as fulfillment mode, restaurant-service configuration, optional service-area/place management, open-order lifecycle, sales channels, channel-specific pricing, external-order/payment-collection state, settlement/reconciliation and kitchen-dispatch evidence.
+This explicitly includes restaurant/delivery concepts such as fulfillment mode, restaurant-service configuration, optional place-group/place management, open-order lifecycle, sales channels, channel-specific pricing, external-order/payment-collection state, settlement/reconciliation and kitchen-dispatch evidence.
 
 ## Research
 
