@@ -29,7 +29,7 @@ Use with:
 - Base: `main`
 - Do not merge until explicit owner approval.
 
-The executable POS is Rifad-owned React/TypeScript/Vite with mock/local adapters. Current UI behavior does not imply a production database, sync engine, fiscal transport, real kitchen/KDS transport, real payment terminal, or delivery-platform connector.
+The executable POS is Rifad-owned React/TypeScript/Vite with mock/local adapters selected behind Rifad-owned composition roots. Current UI behavior does not imply a production database, sync engine, fiscal transport, real kitchen/KDS transport, real payment terminal, or delivery-platform connector.
 
 ---
 
@@ -326,17 +326,23 @@ Future structured Back Office configuration should own persistent restaurant gro
 
 # 13. Adapter readiness and highest-priority production/data gaps
 
-## A. Architecture gap before saying “the whole POS is adapter-ready”
+## A. General POS runtime adapter readiness
 
-The restaurant/local capability is now injected cleanly, but `usePosFlow` still creates `createMockPosRuntime()` internally. Therefore catalog/sales/customer/checkout/printing runtime replacement is **not yet as clean as the restaurant boundary**.
+Status: ✅ architecture boundary implemented / ⚠️ production adapters not selected
 
-Mandatory next architecture hardening before real donor/platform integration:
+The general POS now follows the same composition-root rule as restaurant local service:
 
-1. rename/generalize the current `MockPosRuntime` public type to a Rifad-owned `PosRuntimeContract`;
-2. move concrete POS runtime selection to a composition root, parallel to `restaurantServiceAdapter.ts`;
-3. inject that runtime into `usePosFlow` instead of importing `createMockPosRuntime` there;
-4. add reusable conformance tests for any replacement POS runtime/adapter;
-5. keep donor SDK/schema/auth/persistence details behind those runtime adapters.
+- public aggregate type is `PosRuntimeContract`;
+- `apps/pos/src/runtime/posRuntimeAdapter.ts` is the single current POS runtime composition point;
+- `App.tsx` creates the selected runtime once and injects it into `usePosFlow(posRuntime)`;
+- `usePosFlow` no longer imports or constructs `createMockPosRuntime()`;
+- the old `MockPosRuntime` name remains compatibility-only for existing mock code;
+- `apps/pos/src/testing/posRuntimeConformance.ts` provides a reusable Rifad-owned behavior probe;
+- automated coverage proves that an injected runtime can replace catalog behavior observed by React state.
+
+See `docs/architecture/POS_RUNTIME_ADAPTER_BOUNDARY.md` and D-028.
+
+What remains is no longer “make the POS adapter-ready”; it is **select and prove production implementations behind the boundary**.
 
 ## B. Restaurant production gaps
 
@@ -349,19 +355,25 @@ Mandatory next architecture hardening before real donor/platform integration:
 7. durable kitchen dispatch/revision/delta/idempotency/outbox semantics;
 8. real KDS/printer transport.
 
-## C. Other high-priority product/data/integration gaps
+## C. General POS production adapter/data gaps
+
+1. choose/prove the first production `PosRuntimeContract` implementation strategy: Rifad-native, donor-backed, external API, or hybrid composition;
+2. durable local authoritative sales/order/customer/payment store;
+3. offline/restart and sync semantics behind runtime capabilities;
+4. stable employee/branch/device identity and permissions;
+5. real SKU/barcode identity/search;
+6. durable checkout/payment records and idempotency;
+7. print-job persistence and real printer transport;
+8. legitimate Mada/card references without prohibited sensitive card data;
+9. production migration/rollback and adapter capability matrices.
+
+## D. Delivery/channel production gaps
 
 1. `salesChannelId` and channel configuration;
 2. channel-aware pricelist/product overrides + effective sold-price evidence;
 3. delivery adapter contract implementation + connector onboarding;
 4. external order IDs/mappings/payment-collection/webhook idempotency;
-5. platform settlement/reconciliation separate from till payment;
-6. real SKU/barcode identity/search;
-7. durable checkout/payment records and idempotency;
-8. stable employee/branch/device IDs on receipts;
-9. print-job history;
-10. structured business/device configuration;
-11. legitimate Mada/card references without prohibited sensitive card data.
+5. platform settlement/reconciliation separate from till payment.
 
 ---
 
@@ -388,7 +400,10 @@ Current branch coverage includes:
 - **sending additions increments mock kitchen revision while retaining one open place**;
 - **successful payment releases the open place**;
 - **retail/off mode hides restaurant language**;
-- **restaurant flow compiles against injected `RestaurantServiceContract` rather than constructing its concrete adapter in state/UI code**.
+- **restaurant flow compiles against injected `RestaurantServiceContract` rather than constructing its concrete adapter in state/UI code**;
+- **general POS flow consumes injected `PosRuntimeContract` rather than constructing the concrete mock runtime**;
+- **reusable POS runtime conformance probe exercises catalog → sale → checkout → cash completion → idempotent duplicate completion → receipt listing**;
+- **React-state injection proof observes data supplied by an injected runtime catalog**.
 
 Every new branch head must pass UI-manifest integrity, TypeScript, Vitest and production build before being called technically clean. CI does not prove visual correctness.
 
@@ -405,7 +420,7 @@ Still pending separate authorization/production proof:
 1. real integrated-card/Mada capability;
 2. production restaurant persistence/KDS/printer/multi-device semantics beyond POS-FLOW-002 mock scope;
 3. incoming online-order/manual-delivery fallback flow and delivery connector contract;
-4. general POS runtime dependency injection/conformance before donor-backed core POS services are selected.
+4. first production implementations behind `PosRuntimeContract` and `RestaurantServiceContract`.
 
 ---
 
@@ -424,4 +439,4 @@ Rifad is **not UI-complete** and not production-backend-complete.
 
 Current checkpoint:
 
-> **A substantial touch-first POS prototype with owner-accepted sales/basket/payment spatial continuity, Clear Cart, customer/debt workflows and mock card validation, plus an executable Restaurant Local Service prototype with retail/off, simple Local checkout, generic PlaceGroup → ServicePlace selection, six default tables, Open Orders, reserved-place reopen/send-update, and place release after payment. The restaurant/local state layer is now dependency-injected behind RestaurantServiceContract V1 and isolated from the concrete mock adapter. The next architecture hardening is to apply the same composition-root/injection rule to the general POS runtime before real donor-backed catalog/sales/payment/customer implementations are selected.**
+> **A substantial touch-first POS prototype with owner-accepted sales/basket/payment spatial continuity, Clear Cart, customer/debt workflows and mock card validation, plus an executable Restaurant Local Service prototype with retail/off, simple Local checkout, generic PlaceGroup → ServicePlace selection, six default tables, Open Orders, reserved-place reopen/send-update, and place release after payment. Both restaurant local service and the general POS runtime are now dependency-injected behind Rifad-owned contracts and isolated from concrete mock implementations. The next architecture/product step is no longer adapter separation; it is to select and prove the first production implementations behind those boundaries, beginning with the local-first sales/order persistence and restaurant-service engine.**
