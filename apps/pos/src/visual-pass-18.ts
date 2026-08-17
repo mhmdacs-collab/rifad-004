@@ -5,13 +5,18 @@
  * keeps the visual experiment isolated from sale-domain behavior.
  */
 
+const localizeTouchPrice = (value: string) => value
+  .replace(/\bSAR\b/gi, "ر.س")
+  .replace(/\s+/g, " ")
+  .trim();
+
 const syncTouchProductPrices = (root: ParentNode) => {
   root.querySelectorAll<HTMLElement>(".sale-screen-touch button.catalog-product[aria-label]").forEach((card) => {
     const label = card.getAttribute("aria-label") ?? "";
     const separatorIndex = label.lastIndexOf("،");
     if (separatorIndex < 0) return;
 
-    const price = label.slice(separatorIndex + 1).trim();
+    const price = localizeTouchPrice(label.slice(separatorIndex + 1));
     if (price) card.dataset.price = price;
   });
 };
