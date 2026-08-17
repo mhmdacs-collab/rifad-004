@@ -31,7 +31,7 @@ For canonical cashier-facing terminology and data-field traceability, see `POS_U
 - `main` remains intentionally untouched while visual/product iteration continues.
 - Do not merge PR #2 until the owner explicitly approves the branch for merge.
 
-The executable POS is still a Rifad-owned React/TypeScript/Vite UI using Rifad contracts with a mock/local runtime. Production database, synchronization, fiscal transport, printer transport and real payment-terminal integration are not implied by the visual prototype.
+The executable POS is a Rifad-owned React/TypeScript/Vite UI using Rifad contracts with a mock/local runtime. Production database, synchronization, fiscal transport, printer transport and real payment-terminal integration are not implied by the visual prototype.
 
 ---
 
@@ -41,21 +41,19 @@ The owner-approved priority is:
 
 > **Touch first, then human visual clarity, then beauty.**
 
-This has become an implementation rule, not merely a style preference.
-
-Current touch audit rules:
+Current implementation rules:
 
 - frequent controls target roughly 48 px+ when space permits;
 - short displays retain approximately 44–48 px important targets instead of collapsing to desktop controls;
 - change layout before shrinking touch targets;
-- icons may stay visually small while their hit area grows;
-- primary cashier actions receive more weight than secondary actions;
 - money and next-action hierarchy are judged from real cashier viewing distance;
 - responsive QA considers large POS, 1366×768, tablet landscape, short-height POS and narrow/mobile layouts;
 - frequent transaction-completion actions must not be hidden behind normal-path vertical scrolling;
-- when a dedicated numeric-entry surface has room, use an embedded POS keypad for touch while retaining hardware-keyboard support.
+- **primary actions use a stable footer/action band outside scrolling content whenever practical**;
+- when a dedicated numeric-entry surface has room, use an embedded POS keypad for touch while retaining hardware-keyboard support;
+- live validation/result text near repeated keys must reserve stable geometry so the keypad/action does not jump while the cashier types.
 
-See `DESIGN_AUTHORITY.md` for the binding interaction rule.
+See `DESIGN_AUTHORITY.md` and architecture decision D-021.
 
 ---
 
@@ -63,149 +61,117 @@ See `DESIGN_AUTHORITY.md` for the binding interaction rule.
 
 Status: ✅
 
-Implemented:
-
-- device/account sign-in shell;
-- employee PIN unlock;
-- transition to POS sales session;
-- restoration of mock-local device/employee/ticket/receipt state where currently supported.
-
-No production identity backend is claimed by this mock.
+Implemented device/account sign-in shell, employee PIN unlock, transition to POS sales session, and restoration of currently supported mock-local state. No production identity backend is claimed.
 
 ---
 
 # 2. Sales workspace
 
-Status: ✅ 👁 🟡
+Status: ✅ 👁
 
 Implemented and iterated:
 
 - RTL-first tablet/desktop sales shell;
 - product grid and configurable sale pages;
-- current ticket/basket rail;
+- current basket rail;
 - Saudi-riyal presentation;
-- Cairo typography for the selected Arabic header/tab treatment;
+- Cairo treatment for selected Arabic headers/tabs;
 - whole product cards as touch targets;
 - responsive product-grid behavior;
 - editable ticket lines;
-- sale-page create/place/remove plus current rename/reorder/delete UI work;
+- sale-page create/place/remove/rename/reorder/delete UI;
 - responsive/mobile ticket surface;
-- touch-audit pass for header controls, product cards, tabs, ticket rows and primary sale actions.
+- touch audit for header controls, cards, tabs, ticket rows and primary actions.
 
-Current owner-reviewed direction:
+Accepted direction:
 
-- product card carries product identity/name plus unit-price footer;
-- basket emphasizes `quantity × product name` and row total rather than repeating unit price as competing information;
-- repeated product addition emphasizes quantity feedback rather than moving/animating the whole row;
-- **دفع** is visually stronger than **حفظ** because it is the primary frequent completion action;
-- product density must not increase at the expense of finger targeting.
+- product card carries identity/name plus unit-price footer;
+- basket emphasizes `quantity × product name` and row total rather than repeating unit price;
+- repeated product addition emphasizes quantity feedback;
+- **دفع** is visually stronger than **حفظ**;
+- density never increases at the cost of reliable finger targeting.
 
 ## Sales modes
-
-Two device-local modes exist:
 
 - **شاشة لمس** — touch/page grid;
 - **البيع السريع** — search/barcode-first retail mode.
 
-The legacy cashier-facing label **شاشة أساسية** has now been removed from the semantic `SalesScreen.tsx` UI. The internal persisted mode value remains `basic` for compatibility with existing device preferences; that internal value is not cashier-facing terminology.
+Legacy cashier-facing **شاشة أساسية** is removed from semantic UI; internal persisted `basic` remains for compatibility.
 
-## Quick Sale focus
-
-Status: ✅
-
-- product search owns focus by default;
-- focus returns after item operations/dialog closure;
-- scanner-first keyboard behavior is preserved.
-
-⚠️ **Catalog data gap:** the UI promises barcode/SKU search, but the current Product model lacks `sku` and barcode fields and the mock catalog search matches name only. This is formally recorded in `POS_UI_NAMING_AND_FIELD_REGISTER.md`.
-
----
-
-# 3. Ticket and order type
-
-## Ticket / basket
+## Quick Sale
 
 Status: ✅ 👁
 
-Current ticket presentation includes:
+Latest owner-reviewed direction:
 
-- product name;
-- quantity × product relationship;
-- row total;
-- included tax;
-- grand total;
-- linked customer indicator;
-- last-touched line behavior;
-- whole-row touch target for editing.
+- search is the primary visual task;
+- result rows are whole-row large touch targets;
+- product name and price are faster to scan;
+- names can wrap rather than shrink unreadably;
+- result scrolling is isolated to results;
+- scanner/keyboard focus is preserved and restored;
+- 1366×768, short-height and mobile compositions rearrange/compact spacing before shrinking useful targets.
 
-The latest owner-accepted basket touch pass establishes:
+⚠️ Catalog data gap remains: Product has no real SKU/barcode identity and mock search matches name only. UI polish is not a barcode-backend claim.
 
-- unit price is not repeated as competing information inside the normal sale basket row;
-- quantity is visually readable even for large values such as `1000×`;
-- long product names can use a second line without shrinking into unreadable text;
-- only the **item list** scrolls when the basket becomes long;
-- ticket totals, required order context and the **دفع** action stay outside the item-list scrolling region;
-- 1366×768 and short displays compact spacing before they reduce important touch target size;
-- the mobile ticket follows the same rule: content may scroll, the transaction action area remains reachable.
+---
 
-The earlier line-visibility/clipping problem was visually verified fixed.
+# 3. Ticket, quantity and order type
+
+## Basket
+
+Status: ✅ 👁
+
+Accepted:
+
+- row reads `quantity × product → row total`;
+- unit price is not repeated as competing information;
+- large quantities such as `1000×` remain readable;
+- long names may use a second line;
+- **only the item list scrolls**;
+- tax/totals, required order context and **دفع** remain outside the item-list scroll;
+- short screens reduce spacing before important target size;
+- mobile follows the same action-reachability rule.
 
 ## Quantity editor
 
 Status: ✅ 👁
 
-The quantity editor is now a purpose-built touch surface rather than a small desktop form.
+- whole basket row opens editor;
+- large `+ / −` targets;
+- direct numeric entry;
+- embedded keypad `1–9`, `0`, `00`, backspace;
+- no system soft keyboard required for touch use;
+- hardware keyboard remains supported;
+- destructive **حذف** separated from confirmation;
+- one **حفظ** performs the write after editing;
+- automated evidence covers quantity **1000** through the embedded keypad.
 
-Current behavior:
-
-- tapping the whole basket row opens quantity editing;
-- large `+ / −` targets remain for small changes;
-- quantity supports direct numeric entry for large values;
-- an embedded POS keypad provides `1–9`, `0`, `00` and backspace;
-- touch use does not require opening the device/system soft keyboard;
-- a hardware keyboard remains supported for desktop/cashier-keyboard use;
-- destructive **حذف** is visually separated from the primary confirmation action;
-- one **حفظ** confirmation performs the durable/mock-runtime quantity write after editing rather than writing once per keypad tap.
-
-Automated evidence includes entering and persisting a quantity of **1000** through the embedded keypad.
-
-The embedded keypad, focus state and pressed-key state are UI interaction state, not new database fields. The durable business value remains the ticket-line `quantity`.
+Keypad/focus/pressed state is UI-only; durable business truth remains TicketLine `quantity`.
 
 ## Order type
 
 Status: ✅ ⚠️ 🟡
 
-Visible values:
-
-- **محلي** → `dine-in`
-- **سفري** → `takeaway`
-- **توصيل** → `delivery`
-
-Behavior:
+Values: **محلي / سفري / توصيل**.
 
 - zero enabled → selector hidden;
-- one enabled → automatically selected;
-- multiple enabled → cashier must choose before Save/Pay.
+- one enabled → selected automatically;
+- multiple enabled → must choose before Save/Pay.
 
-⚠️ **High-priority persistence gap:** selected order type remains UI-local. It is not yet a durable Ticket field carried through saved ticket → checkout → receipt.
-
-This must be closed before order type can be called data-complete.
+⚠️ Selected order type is still UI-local and is not durable through ticket → checkout → receipt.
 
 ---
 
-# 4. Inline checkout direction
+# 4. Inline checkout
 
 Status: ✅ 👁
 
-The accepted checkout interaction no longer replaces the entire sales page.
-
-The **basket rail itself transforms** while the product catalog remains visible as frozen spatial context:
+Accepted progression:
 
 > `basket → payment methods → cash/card → success`
 
-This preserves cashier orientation and avoids visual jumps between separate pages.
-
-The product catalog is intentionally non-interactive while checkout is active.
+The basket rail transforms while the catalog remains visible as frozen spatial context. The catalog is intentionally non-interactive during checkout.
 
 ---
 
@@ -213,36 +179,11 @@ The product catalog is intentionally non-interactive while checkout is active.
 
 Status: ✅ 👁
 
-Current payment cards:
+Current cards: **نقدًا** and **شبكة / مدى**.
 
-- **نقدًا**
-- **شبكة / مدى**
+Each is a large touch surface using text plus method-specific visual recognition. The current شبكة/مدى path is a **mock UX/payment path**, not real terminal evidence.
 
-The owner explicitly approved the stronger visual-card direction after the latest pass.
-
-Current visual behavior:
-
-- each payment method is a large touch card;
-- recognition uses text plus strong method-specific artwork/visual container;
-- card background treatment supports recognition without reducing text contrast;
-- one full-width row per method while the method count is small; layout may move to multiple columns only when needed;
-- payment art is presentation state, not database truth.
-
-## شبكة / مدى status
-
-Status: ✅ mock UX / ⚠️ production integration
-
-`شبكة / مدى` is no longer shown as `قريبًا` or `غير متاح` in the current UX prototype.
-
-The branch contains a testable **mock card payment path** so product interaction can be validated end-to-end and the receipt can record `paymentMethod: "card"`.
-
-However:
-
-> **This is not a production Mada/payment-terminal integration claim.**
-
-Real terminal/provider support still requires a proven adapter, provider-specific result handling, reconciliation/refund requirements, durable payment records and security/compliance review.
-
-The original `POS-FLOW-001` remains the cash-sale slice. The current card path is an owner-directed UX/mock extension and must be reconciled with the binding UI manifest before it is promoted as a production-approved integrated-payment flow.
+⚠️ Production Mada requires provider/terminal adapter evidence, durable normalized payment data, failures/recovery, reconciliation/refund scope and security/compliance review.
 
 ---
 
@@ -250,50 +191,19 @@ The original `POS-FLOW-001` remains the cash-sale slice. The current card path i
 
 Status: ✅ 👁
 
-Implemented and owner-reviewed:
+Accepted cash direction:
 
-- ticket total prefilled as received amount;
-- manual amount entry;
-- four large predictable quick-cash touch targets;
-- 3×4 POS-style keypad;
-- under-tender blocked;
-- dominant **سداد** action;
-- completed cash receipt persisted in mock runtime;
-- normal payment path keeps **سداد** reachable without requiring a downward scroll.
+- received amount is the largest editable value;
+- known total remains readable but secondary;
+- redundant helper sentence and separate clear button removed;
+- four large predictable quick tender targets;
+- POS-style keypad;
+- `الباقي للعميل` is a calm read-only result with light/outlined treatment;
+- **سداد** is the dominant filled action;
+- normal path reaches **سداد** without downward scrolling;
+- shorter screens reduce vertical spacing before touch size.
 
-## Accepted cash touch direction
-
-The current cash pass applies the touch-first hierarchy directly to the tender screen:
-
-1. **المبلغ المستلم** is the largest editable number and visually outranks the already-known ticket total;
-2. the ticket total remains readable but visually secondary;
-3. the helper description under the received amount was removed because it slowed scanning without adding necessary meaning;
-4. the redundant separate **مسح** control was removed because deletion already exists on the keypad;
-5. the four quick amounts are full touch targets rather than small chips;
-6. keypad keys are separated and provide clear press feedback;
-7. **الباقي للعميل** is presented as a calm read-only result with green border/text treatment rather than the same filled-green treatment as the action button;
-8. **سداد** is larger and remains the dominant filled action immediately after the result;
-9. tall screens receive more finger room, while 1366×768/short screens reduce spacing before reducing important target size;
-10. mobile/narrow layouts preserve large quick amounts and keypad targets.
-
-## Current quick-cash rule
-
-The old special-case rule that injected **120** near totals around 100–120 was removed.
-
-Current predictable ladder:
-
-> nearest higher 5 → higher 10 → higher 50 → higher 100/500 as needed, de-duplicated.
-
-Examples:
-
-- **102 → 105 / 110 / 150 / 200**
-- **108 → 110 / 150 / 200 / 500**
-- **126 → 130 / 150 / 200 / 500**
-- **54 → 55 / 60 / 100 / 500**
-
-The exact total is already prefilled.
-
-The obsolete **بالضبط** shortcut has been removed from the component markup; it is no longer retained as a hidden control.
+Current quick-cash ladder is predictable higher 5 → higher 10 → higher 50 → higher 100/500 as needed, deduplicated. Obsolete **بالضبط** is removed from component markup.
 
 ---
 
@@ -301,45 +211,26 @@ The obsolete **بالضبط** shortcut has been removed from the component marku
 
 Status: ✅ mock behavior-tested / ⚠️ production terminal absent
 
-The mock path supports:
+The branch can select **شبكة / مدى**, complete the mock transaction and persist `paymentMethod: "card"`.
 
-1. choose **شبكة / مدى**;
-2. enter a card-payment confirmation surface;
-3. complete the mock transaction;
-4. persist a receipt with `paymentMethod: "card"`;
-5. show sale success.
+No claim exists for real terminal discovery, acquiring provider connectivity, authorization/decline transport, RRN/approval references, settlement, reconciliation, refunds or production payment-security scope.
 
-This exists to validate the POS experience and data shape before choosing/implementing a real terminal adapter.
-
-No claim is made yet for:
-
-- real Mada terminal discovery/pairing;
-- acquiring bank/provider connectivity;
-- authorization/decline transport;
-- real terminal references/RRN/approval codes;
-- settlement/reconciliation;
-- card refund;
-- production PCI/payment security scope.
-
-Those fields are reserved in the UI field register so the production data model does not forget them.
+Manifest reconciliation is still required before any production integrated-payment claim.
 
 ---
 
-# 8. Success rail
+# 8. Sale success and printing preference
 
 Status: ✅ 👁
 
-Current owner-reviewed direction:
+Accepted sale-success direction:
 
-- success stays in the same basket rail spatial location;
-- success mark/title are larger;
-- receipt facts use clearer rows;
-- money is larger and more scannable;
-- **الباقي** is the hero result for cash sales;
-- **بيع جديد** is visually/touch-wise dominant over **طباعة** because it is the common next action;
-- vertical space is used rather than leaving a tiny desktop summary floating at the top of a large rail;
-- the print preference is now a quickly scannable row with printer icon, main label **طباعة الإيصال دائمًا**, secondary text **في العمليات القادمة**, larger checkbox and a whole-row touch target;
-- the active print preference uses a restrained green cue and does not visually compete with **بيع جديد**.
+- stays in basket-rail spatial context;
+- success result and receipt facts are readable at cashier distance;
+- cash change is the hero fact when applicable;
+- **بيع جديد** is dominant over print;
+- print preference is a quickly scannable row with printer icon, **طباعة الإيصال دائمًا** + secondary **في العمليات القادمة**, larger checkbox and whole-row target;
+- active preference gets a restrained green cue.
 
 ---
 
@@ -347,85 +238,78 @@ Current owner-reviewed direction:
 
 Status: ✅ 🟡 ⚠️
 
-Implemented:
+Implemented receipt history, mock-local receipt list, newest-first display, print/reprint action, explicit confirmation before retrying `delivery-unknown`, and device-local always-print preference.
 
-- receipt history entry;
-- mock-local persisted receipt list;
-- newest-first display;
-- print/reprint action;
-- explicit confirmation before retrying `delivery-unknown`;
-- device-local **طباعة الإيصال دائمًا** preference;
-- auto-print flow starts a new sale without relying on an effect that might double-submit under React StrictMode.
-
-⚠️ Known gap:
-
-Historical print-delivery state is not yet persisted as durable print-job history per receipt.
-
-This is listed as a required production data field family in `POS_UI_NAMING_AND_FIELD_REGISTER.md`.
+⚠️ Historical print delivery is not persisted as durable per-receipt print-job history.
 
 ---
 
 # 10. Customer system
 
-Status: ✅ / 🟡 depending on surface
+Status: ✅ 🟡
 
-Current model and UI support:
+Current behavior/model supports:
 
 - attach/remove one customer on ticket;
 - live search by name/mobile;
-- create customer;
-- Saudi mobile normalization;
-- optional customer fields:
-  - email;
-  - address;
-  - city;
-  - region;
-  - postal code;
-  - country;
-  - customer code;
-  - note;
-- customer profile direction;
-- purchase history direction;
-- customer email receipt path.
+- whole-row touch results;
+- create/edit customer;
+- Saudi mobile format enforced in create/edit as exactly **10 local digits starting with 05**;
+- quick-create fields now prioritize:
+  - customer name;
+  - mobile;
+  - **optional address**;
+- additional information on wider screens uses **two columns** and collapses to one column on narrow screens;
+- optional customer data includes email, address, city, region, postal code, country, customer code, note and **tax number**;
+- tax number is now preserved by the current model/mock persistence for future invoice/fiscal use;
+- tax-number presence does not itself mean ZATCA invoice compliance is finished;
+- customer profile/purchase-history/email-receipt directions remain available.
 
-The field register makes these fields explicit so future DB work cannot drop optional customer information merely because it is not visible on every transaction.
+Customer creation actions use a footer-like stable action row within the form so optional fields can scroll without losing the creation action.
 
 ---
 
-# 11. Credit/debt
+# 11. Credit / debt
 
 Status: ✅ 🟡
 
 Quick Sale behavior:
 
 - cart has items → **آجل**;
-- cart empty → **سداد** for debt settlement.
+- cart empty → **سداد**.
 
 Credit sale:
 
-- requires customer;
-- can reuse attached customer;
+- requires/reuses customer;
 - creates completed credit receipt;
 - debt ledger receives debit entry;
-- customer debt changes by exact money amount.
+- exact money amount updates customer debt.
 
-Debt settlement:
+## Debt settlement
 
-- customer search;
-- debt balance/history;
-- full settlement default;
-- partial amount edit;
+Current behavior:
+
+- customer search and debt history;
+- full settlement is fastest default;
+- partial settlement uses embedded numeric keypad plus hardware-keyboard support;
 - exact halala parsing;
-- over/zero/invalid blocking;
-- duplicate-submit protection.
+- zero/invalid/over-balance blocked;
+- duplicate-submit protection;
+- account history scrolls while the settlement region remains anchored below it.
 
-Unscoped and not to be invented silently:
+Latest requested refinement implemented, pending final owner visual review:
 
-- settlement payment method;
-- due dates/aging;
-- credit limit;
-- debt permissions;
-- statement export.
+- **remaining balance + validation now live inside one stable feedback card** while editing a partial payment;
+- the feedback card keeps a fixed geometry across ready/error states so the keypad and **سداد** do not move between digit presses;
+- entering zero keeps the same card and shows the validation message without adding/removing another block;
+- valid input shows the projected remaining debt in the same card;
+- after successful settlement the dialog no longer disappears after a tiny transient message;
+- success now shows a cashier-readable summary: **الرصيد قبل السداد / المبلغ المسدد / المتبقي على العميل**;
+- a clear **تم** state/result is visible;
+- success waits for explicit **تم**, allowing the cashier to tell the customer the remaining balance;
+- the final **تم** action occupies a stable footer band.
+
+Unscoped and not to be invented silently: settlement payment method, due dates/aging, credit limits, debt permissions and statement export.
 
 ---
 
@@ -433,59 +317,44 @@ Unscoped and not to be invented silently:
 
 Status: ✅ contract/model direction / 🟡 visual completeness
 
-Current Rifad loyalty concepts include:
+Current concepts include program mode/name/configuration, balance/status, redemption quote, applied ticket redemption, earned value and purchase-history support.
 
-- program enabled/mode/name;
-- cashback earn percentage;
-- purchase-count program shape;
-- customer balance/status;
-- redemption quote;
-- ticket redemption;
-- earned value on receipt;
-- purchase-history support.
-
-Production storage should eventually use durable loyalty transaction evidence rather than only mutable balance snapshots. Exact schema is not frozen in this UI phase.
+Production persistence should use durable loyalty transaction evidence instead of mutable balance snapshots alone.
 
 ---
 
 # 13. Device-local preferences
 
-Current local preferences include:
+Current preferences:
 
 - sale screen mode;
 - visible order types;
 - print receipt always.
 
-These are real product settings even though the prototype currently stores them in localStorage.
-
-⚠️ When production local persistence is introduced, migrate them into a structured device-preference model rather than scattered browser keys.
+When production local persistence is introduced, migrate these to a structured device-preference model rather than scattered browser keys.
 
 ---
 
-# 14. Data gaps discovered by UI work
+# 14. Data gaps exposed by UI work
 
-The dedicated register is `POS_UI_NAMING_AND_FIELD_REGISTER.md`.
-
-Highest-priority gaps already exposed by the executable UI:
+Highest-priority open gaps:
 
 1. persist `orderType` through ticket → checkout → receipt;
-2. add real SKU and barcode identity/search to Product/Catalog contracts;
-3. normalize open-ticket lifecycle for the existing Save action;
+2. add real SKU/barcode identity/search to Product/Catalog contracts;
+3. normalize open-ticket lifecycle for Save;
 4. add durable checkout/payment records and idempotency evidence;
 5. persist stable employee/branch/device IDs on completed receipts;
 6. persist print-job history/status;
 7. migrate device preferences into structured local persistence;
 8. reserve legitimate Mada/card transaction references without storing prohibited sensitive card data.
 
-The latest basket and quantity passes do **not** introduce additional durable data requirements: keypad digits, keypad focus, pressed states and scroll positions remain UI-only; ticket-line `quantity` is already the authoritative business value.
-
-These gaps must be addressed or explicitly deferred before production data-model freeze.
+The new `taxNumber` customer field is now represented in the executable customer model/mock persistence and therefore is no longer an undocumented UI-only field. Fiscal semantics still require the future fiscal contract.
 
 ---
 
 # 15. Automated evidence
 
-The current branch has behavior coverage for major implemented slices including:
+Current branch behavior coverage includes:
 
 - normal cash sale;
 - sale-page editing;
@@ -493,45 +362,42 @@ The current branch has behavior coverage for major implemented slices including:
 - always-print/receipt recovery;
 - customer attachment and receipt carry-through;
 - optional customer details persistence;
+- exact 10-digit local mobile input constraint;
+- tax-number persistence;
 - Quick Sale focus behavior;
 - debt settlement and duplicate-submit protection;
+- stable partial-settlement feedback containing both remaining balance and invalid-state messaging;
+- readable settlement success retained until explicit **تم**;
 - credit sale reuse of attached customer;
-- quick-cash suggestion logic including the corrected 102/108 behavior;
-- mock **شبكة / مدى** completion path recording a card receipt;
-- direct large quantity entry;
-- embedded quantity keypad entry of **1000** followed by persisted ticket quantity verification.
+- corrected quick-cash suggestions;
+- mock شبكة/مدى completion recording a card receipt;
+- direct large quantity entry and embedded quantity-keypad entry of **1000**.
 
-Every new branch head must pass TypeScript, Vitest, production build and UI-manifest integrity before it is called technically clean. CI proves code/document integrity, not visual correctness.
+Every new branch head must pass TypeScript, Vitest, production build and UI-manifest integrity before being called technically clean. CI proves code/document integrity, not visual correctness.
 
 ---
 
 # 16. Naming / structural state
 
-Completed before visual freeze:
+Completed:
 
-- cashier-facing **شاشة أساسية** has been normalized to **البيع السريع** in `SalesScreen.tsx`;
-- the obsolete hidden **بالضبط** quick-cash control has been removed from the component markup.
+- cashier-facing **شاشة أساسية** → **البيع السريع**;
+- obsolete **بالضبط** removed;
+- separate cash **مسح** action removed because keypad deletion owns that function.
 
-Terminology that remains binding:
+Binding terms:
 
-- **دفع** = general sales checkout entry;
-- **سداد** = cash completion and debt-settlement contexts;
-- payment-method labels = **نقدًا** and **شبكة / مدى** in the current product direction.
+- **دفع** = general checkout entry;
+- **سداد** = cash completion / debt settlement;
+- payment methods = **نقدًا / شبكة / مدى** according to current product direction.
 
 ---
 
 # 17. Manifest reconciliation required
 
-The binding manifest still defines `POS-FLOW-001` as cash-only and maps integrated payment as not production-authorized.
+`POS-FLOW-001` remains cash-only in the binding manifest while the current branch includes an owner-directed mock card UX extension.
 
-The current owner-directed branch includes a **mock card UX extension** for validation.
-
-Therefore one explicit documentation/product task remains before any production claim for integrated payments:
-
-- either add a bounded manifest flow/action scope for the mock integrated-payment UX and later promote it through real-terminal evidence;
-- or keep it explicitly categorized as a branch-level product experiment outside the original cash-flow authorization.
-
-Until reconciled, do not reinterpret the mock card button as certified/production payment-terminal support.
+Before a production integrated-payment claim, either add an explicitly bounded mock/integrated-payment manifest scope and later promote it through terminal evidence, or keep the card experience categorized as product validation outside the original production authorization.
 
 ---
 
@@ -539,12 +405,12 @@ Until reconciled, do not reinterpret the mock card button as certified/productio
 
 Current executable focus remains POS.
 
-- Back Office: ⬜ not UI-phase complete
-- Dashboard: ⬜ not UI-phase complete
-- KDS: ⬜ not UI-phase complete
-- CDS: ⬜ not UI-phase complete
+- Back Office: ⬜
+- Dashboard: ⬜
+- KDS: ⬜
+- CDS: ⬜
 
-Their evidence remains in research/manifest scope; the current branch is intentionally stabilizing the POS interaction language first.
+Their evidence remains in research/manifest scope; this branch is stabilizing the POS interaction language first.
 
 ---
 
@@ -554,6 +420,6 @@ Rifad is **not UI-complete** and not production-backend-complete.
 
 Current checkpoint:
 
-> **A substantial touch-first POS product prototype with Rifad-owned contracts and mock-local persistence, an owner-reviewed basket/payment interaction language, inline checkout, accepted cash tender and success treatment, a large-quantity editor with embedded POS keypad, long-basket scrolling isolated to item content so transaction actions stay reachable, and a testable mock Mada/card path — documented with explicit UI-to-data traceability before further feature expansion.**
+> **A substantial touch-first POS prototype with Rifad-owned contracts and mock-local persistence, owner-reviewed sales/basket/cash/Quick-Sale interaction language, stable action-footer rules, large-quantity numeric editing, readable customer/credit/debt workflows, a stable partial-debt feedback card, explicit debt-settlement result summary, and testable mock card UX — all tracked with UI-to-data traceability.**
 
-Immediate next visual/product improvement is the **Quick Sale search/scanner surface**: make search results faster to scan and touch, preserve scanner/keyboard focus, and ensure barcode/SKU promises remain clearly separated from the still-open catalog data gap rather than faking backend capability.
+Immediate work after owner review of this debt/customer refinement is a **cross-screen responsive/footer consistency audit**: verify the stable primary-action rule and human-scale readability on 1920×1080, 1366×768, short-height POS, tablet landscape and narrow/mobile compositions before calling the core POS visual language locked.
