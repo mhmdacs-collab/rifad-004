@@ -134,3 +134,21 @@ Consequences:
 - the footer is fixed within the relevant panel/dialog/rail, not blindly fixed to the browser viewport.
 
 This is an interaction/layout decision and does not change the underlying business command or persistence semantics.
+
+## D-022 — Consecutive primary actions keep one physical finger target
+
+A stable footer is not sufficient if the main button moves to a different horizontal slot at every step.
+
+For repeated cashier flows, Rifad therefore keeps the **primary completion action in the same physical footer zone whenever practical**. In the current RTL POS composition, the secondary action occupies the right slot and the primary completion action occupies the left slot.
+
+The target continuity includes transitions such as:
+
+`دفع → سداد / تم الدفع → بيع جديد`
+
+and comparable final form/settlement actions such as **إنشاء**, final **حفظ** and **تم**.
+
+When a secondary action exists — for example **حفظ**, **إلغاء** or **طباعة الإيصال** — it uses the secondary slot rather than displacing the primary target. When only one final action exists, it should still prefer the established primary zone rather than jumping to a new position merely because more width is available.
+
+This reduces unnecessary finger travel and supports muscle memory in high-frequency cashier operation. Responsive layouts may change only when preserving the same geometry would make touch or reading materially worse.
+
+Detailed visual treatment is recorded in `docs/ui/visual-decisions/VISUAL-DECISION-005-PRIMARY-ACTION-SPATIAL-CONTINUITY.md`.
