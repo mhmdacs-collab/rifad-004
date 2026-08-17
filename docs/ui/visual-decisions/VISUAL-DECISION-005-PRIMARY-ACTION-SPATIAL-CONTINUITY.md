@@ -35,21 +35,22 @@ From the first basket item, the sale surface exposes **مسح السلة** so a 
 The clear action follows these geometry rules:
 
 - it is **not part of the transaction operation card**;
-- it appears as a dedicated calm-red utility card **above the basket panel**;
-- its appearance may consume space from the flexible/scrollable basket area only;
-- adding/removing it must not alter the height, bottom inset, columns or position of **حفظ/سداد | دفع**;
-- it remains a large one-touch target with a distinct destructive visual identity;
-- it disappears when the basket is empty;
-- it clears the current basket lines using the existing line-removal behavior and does not create a receipt.
+- it lives **inside the basket panel itself**, immediately after the ticket header and directly before the basket lines;
+- it reads visually like a special basket row/utility rather than a second header or footer;
+- its appearance consumes space from the flexible basket-line area only;
+- adding/removing it must not alter the ticket header or the height, bottom inset, columns or position of **حفظ/سداد | دفع**;
+- it uses a strong solid red destructive treatment, comparable in visual weight to the green Pay action, while remaining spatially separated from the catalog/product grid;
+- it remains a large one-touch target, disappears when the basket is empty, and clears the current basket lines using the existing line-removal behavior without creating a receipt.
 
 The current UI maps the bulk affordance to the already-authorized line-removal action (`SALES-ACTION-004`) rather than inventing a new durable field or payment command.
 
 ## Why this is different from the previous interpretation
 
-Two earlier interpretations were corrected:
+Three earlier interpretations were corrected:
 
 1. Quick Sale debt **سداد** was incorrectly moved into the Pay slot and disabled Pay was hidden. The corrected rule preserves **سداد + دفع**.
-2. **مسح السلة** was then placed inside the operation card and allowed the card to grow upward. Even though the bottom row was intended to stay anchored, that still changed the operation card itself and could push the visible actions on real screens. The corrected rule isolates Clear Cart above the basket so the operation card remains structurally unchanged.
+2. **مسح السلة** was placed inside the operation card and allowed the card to grow upward. That changed the operation card itself and could move the visible completion actions on real screens.
+3. Clear Cart was then isolated **above the entire basket panel**. That protected the footer but visually introduced a new strip between the surrounding layout and the ticket header. The corrected rule keeps both ticket header and transaction footer intact by placing Clear Cart **inside the basket body, between the header and the first item**.
 
 ## Scroll relationship
 
@@ -57,7 +58,7 @@ This decision extends D-021:
 
 - repeated content and optional fields absorb scrolling first;
 - the transaction operation card stays outside or at the stable edge of scrolling content;
-- Clear Cart consumes flexible basket space rather than operation-card space;
+- Clear Cart consumes flexible basket-line space rather than header/footer or operation-card space;
 - cash/card/success operation footers are structural siblings of their scrollable body so body padding cannot shift their horizontal placement;
 - dynamic validation must not move the keypad or action card;
 - shorter screens reclaim spacing before shrinking the action targets.
@@ -73,8 +74,9 @@ Customer entry follows the same layout-before-shrink principle:
 
 ## Affected current POS surfaces
 
+- basket header: unchanged;
+- basket body: **مسح السلة** appears as the first special row when items exist, before normal product lines;
 - basket footer: **حفظ / دفع** only as the stable two-slot operation card;
-- basket utility area: independent **مسح السلة** card above the basket when items exist;
 - Quick Sale empty-ticket footer: **سداد / دفع**;
 - cash/card completion: **إلغاء الفاتورة / سداد أو تم الدفع**;
 - sale success: **طباعة / بيع جديد**;
