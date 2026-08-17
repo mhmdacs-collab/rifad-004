@@ -341,7 +341,11 @@ export function InlineCheckoutRail({
 
         {printMessages[printStatus] ? <div className={`inline-print-status inline-print-status--${printStatus}`} role="status"><Icon name="printer" size={17} />{printMessages[printStatus]}</div> : null}
 
-        <label className="inline-print-always"><input type="checkbox" checked={printAlways} onChange={(event) => updatePrintAlways(event.target.checked)} /><span>طباعة الإيصال دائمًا في العمليات القادمة</span></label>
+        <label className="inline-print-always">
+          <input type="checkbox" checked={printAlways} onChange={(event) => updatePrintAlways(event.target.checked)} />
+          <span className="inline-print-always-icon" aria-hidden="true"><Icon name="printer" size={22} /></span>
+          <span className="inline-print-always-copy"><strong>طباعة الإيصال دائمًا</strong><small>في العمليات القادمة</small></span>
+        </label>
 
         <div className="inline-success-actions">
           <button type="button" className="inline-success-print" onClick={onPrint} disabled={busy !== null}><Icon name="printer" size={19} />{printStatus === "failed" ? "إعادة الطباعة" : "طباعة"}</button>
