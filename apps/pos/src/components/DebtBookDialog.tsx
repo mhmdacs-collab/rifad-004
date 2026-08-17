@@ -12,6 +12,7 @@ type DebtBookDialogProps = {
 
 type SettlementSuccess = {
   customerName: string;
+  previousHalalas: number;
   paidHalalas: number;
   remainingHalalas: number;
   currency: Money["currency"];
@@ -76,11 +77,6 @@ export function DebtBookDialog({
   const searchSequence = useRef(0);
   const ledgerSequence = useRef(0);
   const actionLocked = useRef(false);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => () => {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-  }, []);
 
   useEffect(() => {
     if (success) return;
@@ -177,12 +173,18 @@ export function DebtBookDialog({
   const settlementInvalid = selected
     ? settlementHalalas === null || settlementHalalas <= 0 || settlementHalalas > selected.debt.halalas
     : true;
+  const settlementPreviewHalalas = selected
+    ? settlementHalalas === null
+      ? selected.debt.halalas
+      : Math.max(0, selected.debt.halalas - settlementHalalas)
+    : 0;
 
   const submitSettlement = async () => {
     if (!selected || settlementInvalid || settlementHalalas === null || actionLocked.current) return;
     actionLocked.current = true;
     setSubmitting(true);
     setMessage(null);
+    const previousHalalas = selected.debt.halalas;
     const paidHalalas = settlementHalalas;
     const updated = await onSettleDebt(selected.id, paidHalalas);
     if (!updated) {
@@ -194,12 +196,12 @@ export function DebtBookDialog({
 
     setSuccess({
       customerName: updated.name,
+      previousHalalas,
       paidHalalas,
       remainingHalalas: updated.debt.halalas,
       currency: updated.debt.currency,
     });
     setSubmitting(false);
-    closeTimer.current = setTimeout(onClose, 1000);
   };
 
   const confirmationLabel = settlementHalalas !== null && settlementHalalas > 0
@@ -208,21 +210,50 @@ export function DebtBookDialog({
 
   return (
     <div className="dialog-backdrop customer-credit-backdrop" role="presentation" onClick={() => { if (!submitting) onClose(); }}>
-      <section className={`customer-credit-dialog debt-book-dialog${selected ? " debt-book-dialog--selected" : ""}`} role="dialog" aria-modal="true" aria-labelledby="debt-book-title" onClick={(event) => event.stopPropagation()}>
+      <section className={`customer-credit-dialog debt-book-dialog${selected ? " debt-book-dialog--selected" : ""}${success ? " debt-book-dialog--success" : ""}`} role="dialog" aria-modal="true" aria-labelledby="debt-book-title" onClick={(event) => event.stopPropagation()}>
         <header>
           <button type="button" onClick={onClose} aria-label="إغلاق" disabled={submitting}>×</button>
           <div>
             <h2 id="debt-book-title">دفتر الديون</h2>
-            <span>ابحث عن العميل وسجّل السداد.</span>
+            <span>{success ? "ملخص السداد" : "ابحث عن العميل وسجّل السداد."}</span>
           </div>
         </header>
 
         {success ? (
           <div className="debt-book-success" aria-live="assertive">
-            <strong>تم سداد {formatHalalasForInput(success.paidHalalas)} ر.س</strong>
-            <span>{success.customerName}</span>
-            <div><span>الرصيد المتبقي</span><strong><MoneyAmount value={{ halalas: success.remainingHalalas, currency: success.currency }} /></strong></div>
-            <small>سيتم إغلاق دفتر الديون والعودة للبيع تلقائيًا.</small>
+            <div className="debt-book-success-main">
+              <div className="debt-book-success-mark" aria-hidden="true">✓</div>
+              <div className="debt-book-success-copy">
+                <span>تم</span>
+                <strong>تم تسجيل السداد</strong>
+                <small>{success.customerName}</small>
+              </div>
+
+              <div className="debt-book-success-summary" aria-label="ملخص سداد الدين">
+                <div>
+                  <span>الرصيد قبل السداد</span>
+                  <strong><MoneyAmount value={{ halalas: success.previousHalalas, currency: success.currency }} /></strong>
+                </div>
+                <div>
+                  <span>المبلغ المسدد</span>
+                  <strong><MoneyAmount value={{ halalas: success.paidHalalas, currency: success.currency }} /></strong>
+                </div>
+                <div className="debt-book-success-remaining">
+                  <span>{success.remainingHalalas > 0 ? "المتبقي على العميل" : "الرصيد المتبقي"}</span>
+                  <strong><MoneyAmount value={{ halalas: success.remainingHalalas, currency: success.currency }} /></strong>
+                </div>
+              </div>
+
+              <div className="debt-book-success-note">
+                {success.remainingHalalas > 0
+                  ? "يمكن إبلاغ العميل بالمبلغ المتبقي مباشرة من هذا الملخص."
+                  : "تم سداد كامل الدين ولا يوجد رصيد مستحق على العميل."}
+              </div>
+            </div>
+
+            <footer className="debt-book-success-footer">
+              <button type="button" className="primary-button" onClick={onClose}>تم</button>
+            </footer>
           </div>
         ) : (
           <>
@@ -334,21 +365,33 @@ export function DebtBookDialog({
                     </div>
 
                     {editingAmount ? (
-                      <div className="debt-settlement-keypad" aria-label="لوحة مبلغ السداد">
-                        {["1", "2", "3"].map((key) => <button type="button" key={key} onClick={() => applySettlementKey(key)}>{key}</button>)}
-                        <button type="button" className="debt-settlement-key--backspace" aria-label="حذف رقم" onClick={() => applySettlementKey("backspace")}>⌫</button>
-                        {["4", "5", "6"].map((key) => <button type="button" key={key} onClick={() => applySettlementKey(key)}>{key}</button>)}
-                        <button type="button" aria-label="فاصل عشري" onClick={() => applySettlementKey("decimal")}>.</button>
-                        {["7", "8", "9"].map((key) => <button type="button" key={key} onClick={() => applySettlementKey(key)}>{key}</button>)}
-                        <button type="button" className="debt-settlement-key--double-zero" onClick={() => applySettlementKey("00")}>00</button>
-                        <button type="button" className="debt-settlement-key--zero" onClick={() => applySettlementKey("0")}>0</button>
-                      </div>
+                      <>
+                        <div className="debt-settlement-keypad" aria-label="لوحة مبلغ السداد">
+                          {["1", "2", "3"].map((key) => <button type="button" key={key} onClick={() => applySettlementKey(key)}>{key}</button>)}
+                          <button type="button" className="debt-settlement-key--backspace" aria-label="حذف رقم" onClick={() => applySettlementKey("backspace")}>⌫</button>
+                          {["4", "5", "6"].map((key) => <button type="button" key={key} onClick={() => applySettlementKey(key)}>{key}</button>)}
+                          <button type="button" aria-label="فاصل عشري" onClick={() => applySettlementKey("decimal")}>.</button>
+                          {["7", "8", "9"].map((key) => <button type="button" key={key} onClick={() => applySettlementKey(key)}>{key}</button>)}
+                          <button type="button" className="debt-settlement-key--double-zero" onClick={() => applySettlementKey("00")}>00</button>
+                          <button type="button" className="debt-settlement-key--zero" onClick={() => applySettlementKey("0")}>0</button>
+                        </div>
+
+                        <div className={`debt-settlement-feedback${settlementInvalid ? " is-error" : " is-ready"}`} role="status">
+                          <div>
+                            <span>المتبقي بعد السداد</span>
+                            <strong><MoneyAmount value={{ halalas: settlementPreviewHalalas, currency: selected.debt.currency }} /></strong>
+                          </div>
+                          <small>
+                            {settlementInvalid
+                              ? "أدخل مبلغًا أكبر من صفر ولا يتجاوز الرصيد الحالي."
+                              : settlementPreviewHalalas === 0
+                                ? "سيتم سداد كامل الدين."
+                                : "هذا هو الرصيد الذي سيبقى على العميل بعد السداد."}
+                          </small>
+                        </div>
+                      </>
                     ) : null}
 
-                    {editingAmount && settlementHalalas !== null && settlementHalalas > 0 && settlementHalalas <= selected.debt.halalas ? (
-                      <div className="debt-after-payment"><span>المتبقي بعد السداد</span><strong><MoneyAmount value={{ halalas: selected.debt.halalas - settlementHalalas, currency: selected.debt.currency }} /></strong></div>
-                    ) : null}
-                    {settlementInvalid ? <small className="customer-settlement-error">أدخل مبلغًا أكبر من صفر ولا يتجاوز الرصيد الحالي.</small> : null}
                     <button
                       type="button"
                       className="primary-button debt-settlement-submit"
