@@ -1,9 +1,13 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { InlineCheckoutRail } from "./components/InlineCheckoutRail";
 import { LocalServiceEnhancer } from "./components/LocalServiceEnhancer";
 import { TransactionOperationEnhancer } from "./components/TransactionOperationEnhancer";
-import { LEGACY_ORDER_TYPES_KEY } from "./adapters/mockRestaurantService";
 import { installQuantityKeypad } from "./quantity-keypad";
+import {
+  createRestaurantServiceAdapter,
+  LEGACY_ORDER_TYPES_KEY,
+  prepareRestaurantServiceCompatibility,
+} from "./runtime/restaurantServiceAdapter";
 import { PinScreen } from "./screens/PinScreen";
 import { ReceiptsScreen } from "./screens/ReceiptsScreen";
 import { SalesScreen } from "./screens/SalesScreen";
@@ -13,10 +17,13 @@ import { CustomerFlowProvider } from "./state/CustomerFlowContext";
 import { useLocalServiceFlow } from "./state/useLocalServiceFlow";
 import { usePosFlow } from "./state/usePosFlow";
 
+prepareRestaurantServiceCompatibility();
+
 export default function App() {
   const legacyOrderTypeFixture = useRef(import.meta.env.MODE === "test" && window.localStorage.getItem(LEGACY_ORDER_TYPES_KEY) !== null).current;
+  const [restaurantService] = useState(createRestaurantServiceAdapter);
   const flow = usePosFlow();
-  const local = useLocalServiceFlow(flow);
+  const local = useLocalServiceFlow(flow, restaurantService);
   const lastSaleTicket = useRef(flow.ticket);
 
   if (flow.ticket) {
@@ -137,14 +144,12 @@ export default function App() {
               onCash={() => void flow.selectCash()}
               onCard={() => void flow.selectCard()}
               onCompleteCash={async (value) => {
-                const sequence = saleTicket.sequence;
+                local.markSettlementPending(saleTicket.sequence);
                 await flow.completeCash(value);
-                await local.settleActiveOrderIfCompleted(sequence);
               }}
               onCompleteCard={async () => {
-                const sequence = saleTicket.sequence;
+                local.markSettlementPending(saleTicket.sequence);
                 await flow.completeCard();
-                await local.settleActiveOrderIfCompleted(sequence);
               }}
               onPrint={() => void flow.printReceipt()}
               onEmailReceipt={flow.emailReceipt}
