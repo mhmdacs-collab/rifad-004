@@ -274,6 +274,8 @@ No downstream adapter may integrate by directly reading or mutating another doma
 
 The current `BrowserLocalPersistence` transport is **staging evidence**, not the final Windows/PWA production database. The contract is asynchronous/replaceable so IndexedDB, OPFS, SQLite or another proven local store can replace it after restart/crash/migration/performance proof.
 
-Current limitation: the legacy POS mock and restaurant mock still keep their operational prototype snapshots in their existing localStorage keys. Migrating those private snapshots behind `LocalPersistenceContract`, adding schema migrations, and proving cold restart behavior are the next local-first implementation slice.
+The current POS and restaurant mock operational snapshots are now mirrored behind private `LocalPersistenceContract` namespaces (`pos.runtime` and `restaurant.service`) with schema version 1. A temporary composition-root compatibility bridge imports the historical mock keys and hydrates fresh mock instances from the Rifad namespaces. Runtime tests prove a working ticket/customer, completed receipt/history, and an open local restaurant order survive reconstruction even when the historical mock keys are deliberately removed.
+
+This is a **staging cold-restart PASS**, not a production storage freeze. The compatibility bridge remains temporary; packaged Windows cold start, crash/interrupted-write recovery, realistic volume/performance and selection of the production local engine remain required before production acceptance.
 
 See `docs/architecture/LOCAL_PERSISTENCE_AND_OUTBOX_BOUNDARY.md`.
