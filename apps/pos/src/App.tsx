@@ -3,6 +3,7 @@ import { InlineCheckoutRail } from "./components/InlineCheckoutRail";
 import { LocalServiceEnhancer } from "./components/LocalServiceEnhancer";
 import { TransactionOperationEnhancer } from "./components/TransactionOperationEnhancer";
 import { installQuantityKeypad } from "./quantity-keypad";
+import { createPosRuntimeAdapter } from "./runtime/posRuntimeAdapter";
 import {
   createRestaurantServiceAdapter,
   LEGACY_ORDER_TYPES_KEY,
@@ -21,8 +22,9 @@ prepareRestaurantServiceCompatibility();
 
 export default function App() {
   const legacyOrderTypeFixture = useRef(import.meta.env.MODE === "test" && window.localStorage.getItem(LEGACY_ORDER_TYPES_KEY) !== null).current;
+  const [posRuntime] = useState(createPosRuntimeAdapter);
   const [restaurantService] = useState(createRestaurantServiceAdapter);
-  const flow = usePosFlow();
+  const flow = usePosFlow(posRuntime);
   const local = useLocalServiceFlow(flow, restaurantService);
   const lastSaleTicket = useRef(flow.ticket);
 
