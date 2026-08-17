@@ -48,4 +48,4 @@ This explicitly includes restaurant/delivery concepts such as fulfillment mode, 
 - `research/restaurant-pos/DELIVERY_PLATFORM_INTEGRATION_BENCHMARK_2026-08-17.md` — current delivery-platform API evidence, Foodics/aggregator workflow comparison, and Rifad direct-vs-aggregator adapter direction.
 - `research/historical-proposals/` — earlier Odoo/hybrid/open-source proposals retained for evidence. These proposals do not own current Rifad architecture.
 
-Research remains evidence, not automatic implementation authority. Executable behavior still requires the relevant manifest/contract scope.
+Research remains evidence, not automatic implementation authority. Executable behavior still requires the relevant manifest/contract scope; public API documentation alone is not proof that Rifad has production partner credentials or certification.
