@@ -1,0 +1,140 @@
+/*
+ * Rifad POS — Visual Pass 16
+ * Integrates quantity into the ticket item title so repeated items read as one
+ * primary line (for example: 4 × قهوة سعودية) while unit price remains secondary.
+ */
+
+@media (min-width: 781px) {
+  .ticket-panel--sale .ticket-line-button {
+    min-height: 74px;
+    padding: 10px 2px;
+    gap: 12px;
+  }
+
+  .ticket-panel--sale .ticket-line-copy {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .ticket-panel--sale .ticket-line-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 5px;
+  }
+
+  .ticket-line-title-row {
+    min-width: 0;
+    width: 100%;
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-start;
+    gap: 8px;
+    direction: rtl;
+    text-align: right;
+  }
+
+  .ticket-quantity-inline {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    color: #4a5650;
+    font-size: .98rem;
+    font-weight: 760;
+    line-height: 1;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    animation: rifad-quantity-pop 220ms var(--pos-ease) both;
+  }
+
+  .ticket-quantity-inline b {
+    color: #28342e;
+    font-size: 1.05em;
+    font-weight: 900;
+  }
+
+  .ticket-quantity-inline > span {
+    color: #6d7873;
+    font-size: .9em;
+    font-weight: 700;
+  }
+
+  .ticket-panel--sale .ticket-product-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #202824;
+    font-size: 1rem !important;
+    font-weight: 650 !important;
+    line-height: 1.35;
+  }
+
+  .ticket-panel--sale .ticket-unit-price {
+    align-self: flex-end;
+    color: #7a8580;
+    font-size: .7rem;
+    font-weight: 560;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ticket-panel--sale .ticket-line-total {
+    min-width: 96px;
+    color: #121915;
+    font-size: 1.04rem !important;
+    font-weight: 800 !important;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Retire the earlier split quantity presentation from previous visual passes. */
+  .ticket-panel--sale .ticket-quantity-chip,
+  .ticket-panel--sale .ticket-line-times,
+  .ticket-panel--sale .ticket-line-meta {
+    display: none !important;
+  }
+}
+
+@media (max-width: 780px) {
+  .ticket-line-title-row {
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    direction: rtl;
+  }
+
+  .ticket-quantity-inline {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    color: #4a5650;
+    font-size: .94rem;
+    font-weight: 760;
+    line-height: 1;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    animation: rifad-quantity-pop 220ms var(--pos-ease) both;
+  }
+
+  .ticket-quantity-inline b {
+    color: #28342e;
+    font-weight: 900;
+  }
+
+  .ticket-panel--sale .ticket-quantity-chip,
+  .ticket-panel--sale .ticket-line-times,
+  .ticket-panel--sale .ticket-line-meta {
+    display: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticket-quantity-inline {
+    animation: none !important;
+  }
+}
