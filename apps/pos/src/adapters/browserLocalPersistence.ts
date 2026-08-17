@@ -65,6 +65,41 @@ const assertRoot = (value: unknown): StoredRoot => {
   return value as StoredRoot;
 };
 
+const readStoredRoot = (storage: Storage, storageKey: string): StoredRoot | null => {
+  try {
+    const raw = storage.getItem(storageKey);
+    if (!raw) return null;
+    return assertRoot(JSON.parse(raw));
+  } catch (error) {
+    if (error instanceof LocalPersistenceError) throw error;
+    throw new LocalPersistenceError("LOCAL_STORE_READ_FAILED", "تعذر فتح مخزن رفاد المحلي.", error);
+  }
+};
+
+/**
+ * Staging-only synchronous read used by the legacy mock migration bridge.
+ *
+ * Product/domain code must use LocalPersistenceContract instead. This helper
+ * exists only because the current mock runtimes construct synchronously and
+ * still expect their old localStorage keys. It disappears with those mocks.
+ */
+export const readBrowserLocalSnapshotSync = <T>(
+  namespace: string,
+  storage: Storage = window.localStorage,
+  storageKey = BROWSER_LOCAL_PERSISTENCE_KEY,
+): LocalSnapshotRecord<T> | null => {
+  const root = readStoredRoot(storage, storageKey);
+  const stored = root?.namespaces[namespace];
+  if (!stored) return null;
+  return {
+    namespace,
+    schemaVersion: stored.schemaVersion,
+    revision: stored.revision,
+    updatedAt: stored.updatedAt,
+    value: stored.value as T,
+  };
+};
+
 const toOutboxRecord = (root: StoredRoot, event: LocalDomainEventDraft): LocalOutboxRecord => ({
   ...event,
   contractVersion: LOCAL_PERSISTENCE_CONTRACT_VERSION,
@@ -97,18 +132,11 @@ export class BrowserLocalPersistence implements LocalPersistenceContract {
   ) {}
 
   private readRoot(): StoredRoot {
-    try {
-      const raw = this.storage.getItem(this.storageKey);
-      if (!raw) {
-        const root = createRoot();
-        this.writeRoot(root);
-        return root;
-      }
-      return assertRoot(JSON.parse(raw));
-    } catch (error) {
-      if (error instanceof LocalPersistenceError) throw error;
-      throw new LocalPersistenceError("LOCAL_STORE_READ_FAILED", "تعذر فتح مخزن رفاد المحلي.", error);
-    }
+    const stored = readStoredRoot(this.storage, this.storageKey);
+    if (stored) return stored;
+    const root = createRoot();
+    this.writeRoot(root);
+    return root;
   }
 
   private writeRoot(root: StoredRoot) {
