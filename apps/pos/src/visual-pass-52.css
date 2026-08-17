@@ -1,12 +1,11 @@
 /*
  * Rifad POS — Visual Pass 52
- * Owner correction: Clear Cart is a separate destructive utility above the
- * basket. It must never increase or move the stable Save/Credit + Pay action
- * card. Only the scrollable basket area yields vertical space when it appears.
+ * Owner correction: Clear Cart belongs inside the basket body, directly above
+ * the first basket line. Ticket header and the stable Save/Credit + Pay footer
+ * never move; only the flexible basket-line area yields space.
  */
 
-/* The stable transaction card returns to one row only. Clear Cart is no longer
-   a child of this card and therefore cannot change its geometry. */
+/* Stable transaction card remains a single, unchanged two-button row. */
 .transaction-operation-card {
   grid-template-rows: auto !important;
 }
@@ -15,14 +14,13 @@
   grid-row: 1 !important;
 }
 
-/* Dedicated Clear Cart surface: visually distinct, calm red, and placed above
-   the basket panel. Since .ticket-column is a flex column and .ticket-panel is
-   the flexible child, this card consumes basket-list space rather than pushing
-   the operation card downward. */
+/* Clear Cart is structurally inside .ticket-panel, after .ticket-header and
+   before .ticket-lines. It therefore reads like a basket utility/line rather
+   than a second header or a footer action. */
 .ticket-clear-cart-slot {
   flex: 0 0 auto;
   width: 100%;
-  padding: 10px 12px 0;
+  padding: 7px 20px 4px;
   background: #fff;
   box-sizing: border-box;
 }
@@ -31,7 +29,7 @@
   display: none;
 }
 
-.ticket-clear-cart-slot + .ticket-panel {
+.ticket-panel > .ticket-clear-cart-slot + .ticket-lines {
   flex: 1 1 auto;
   min-height: 0;
 }
@@ -40,49 +38,49 @@
   width: 100%;
   min-height: 54px;
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) auto;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
-  padding: 6px 10px;
-  color: #8f3f36;
+  padding: 7px 11px;
+  color: #fff;
   text-align: right;
-  border: 1px solid #e3b7b1;
-  border-radius: 12px;
-  background: #fff6f4;
-  box-shadow: 0 3px 10px rgb(133 61 51 / 6%);
+  border: 0;
+  border-radius: 11px;
+  background: #b4453b;
+  box-shadow: 0 3px 9px rgb(123 42 34 / 10%);
   font: inherit;
   cursor: pointer;
   box-sizing: border-box;
-  transition: background .14s ease, border-color .14s ease, transform .14s ease;
+  transition: background .12s ease, transform .12s ease;
 }
 
 .ticket-clear-cart-icon {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   display: grid;
   place-items: center;
-  color: #a74f45;
-  background: #f9e6e2;
-  border: 1px solid #efcbc5;
-  border-radius: 10px;
+  color: #fff;
+  background: rgb(255 255 255 / 13%);
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: 9px;
 }
 
 .ticket-clear-cart-copy {
   min-width: 0;
   display: grid;
   gap: 1px;
-  line-height: 1.45;
+  line-height: 1.38;
 }
 
 .ticket-clear-cart-copy strong {
-  color: #8c3d34;
+  color: #fff;
   font-size: .82rem;
   font-weight: 850;
 }
 
 .ticket-clear-cart-copy small {
-  color: #a66d65;
-  font-size: .62rem;
+  color: rgb(255 255 255 / 78%);
+  font-size: .61rem;
   font-weight: 650;
 }
 
@@ -93,18 +91,17 @@
   align-items: center;
   justify-content: center;
   padding: 0 9px;
-  color: #98473d;
-  background: #f8e2de;
-  border: 1px solid #edc7c0;
+  color: #fff;
+  background: rgb(255 255 255 / 13%);
+  border: 1px solid rgb(255 255 255 / 19%);
   border-radius: 999px;
-  font-size: .62rem;
+  font-size: .61rem;
   font-weight: 850;
 }
 
 .ticket-clear-cart:hover:not(:disabled),
 .ticket-clear-cart:focus-visible {
-  border-color: #ce8e84;
-  background: #fdf0ed;
+  background: #a33c33;
 }
 
 .ticket-clear-cart:active:not(:disabled) {
@@ -112,25 +109,21 @@
 }
 
 .ticket-clear-cart:disabled {
-  opacity: .56;
+  opacity: .58;
   cursor: default;
 }
 
-/* Mobile ticket surface uses the same independent card above its basket. */
-.mobile-ticket-surface > .ticket-clear-cart-slot {
-  padding: 8px 12px 0;
-}
-
+/* Short displays reclaim basket-list density before shrinking the touch target. */
 @media (min-width: 821px) and (max-height: 800px) {
   .ticket-clear-cart-slot {
-    padding: 7px 10px 0;
+    padding: 5px 16px 3px;
   }
 
   .ticket-clear-cart {
-    min-height: 48px;
+    min-height: 50px;
     grid-template-columns: 36px minmax(0, 1fr) auto;
     gap: 8px;
-    padding: 4px 8px;
+    padding: 5px 9px;
   }
 
   .ticket-clear-cart-icon {
@@ -140,7 +133,7 @@
   }
 
   .ticket-clear-cart-copy strong {
-    font-size: .76rem;
+    font-size: .77rem;
   }
 
   .ticket-clear-cart-copy small {
@@ -150,7 +143,7 @@
 
 @media (max-width: 820px) {
   .ticket-clear-cart-slot {
-    padding: 8px 10px 0;
+    padding: 7px 14px 4px;
   }
 
   .ticket-clear-cart {
