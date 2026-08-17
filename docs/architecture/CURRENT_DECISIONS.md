@@ -58,7 +58,7 @@ Rifad does not promise “any device” or “any integration” without evidenc
 
 ## D-014 — UI implementation is manifest-gated
 
-Every screen, action, state and end-to-end flow receives a stable ID linked to source evidence. Code may start only for a `ready` screen or the explicitly bounded subset of a `ready` flow. Missing behavior is resolved in the manifest before implementation.
+Every screen, action, state and end-to-end flow receives a stable ID linked to source evidence. Code may start only for a `ready` screen or the explicitly bounded subset of a ready flow. Missing behavior is resolved in the manifest before implementation.
 
 ## D-015 — Rifad owns visual authority
 
@@ -135,20 +135,26 @@ Consequences:
 
 This is an interaction/layout decision and does not change the underlying business command or persistence semantics.
 
-## D-022 — Consecutive primary actions keep one physical finger target
+## D-022 — Transaction operation card keeps one stable two-slot geometry
 
-A stable footer is not sufficient if the main button moves to a different horizontal slot at every step.
+A stable footer is not sufficient if the transaction controls are restyled or repositioned as the cashier advances.
 
-For repeated cashier flows, Rifad therefore keeps the **primary completion action in the same physical footer zone whenever practical**. In the current RTL POS composition, the secondary action occupies the right slot and the primary completion action occupies the left slot.
+Rifad therefore keeps the **same two-slot operation card** in the same lower transaction zone whenever practical. In the current RTL POS composition:
 
-The target continuity includes transitions such as:
+- the right slot is secondary / alternative / cancellation;
+- the left slot is the main transaction-completion slot;
+- the two-slot card remains spatially stable through sale, payment completion and sale success.
 
-`دفع → سداد / تم الدفع → بيع جديد`
+The intended current sequence is:
 
-and comparable final form/settlement actions such as **إنشاء**, final **حفظ** and **تم**.
+- sale: **حفظ | دفع**;
+- Quick Sale with an empty ticket: **سداد | دفع**; Pay stays visible but disabled until there is a payable ticket;
+- cash checkout: **إلغاء الفاتورة | سداد**;
+- card/mock checkout: **إلغاء الفاتورة | تم الدفع**;
+- success: **طباعة | بيع جديد**.
 
-When a secondary action exists — for example **حفظ**, **إلغاء** or **طباعة الإيصال** — it uses the secondary slot rather than displacing the primary target. When only one final action exists, it should still prefer the established primary zone rather than jumping to a new position merely because more width is available.
+This means the debt-book **سداد** action on the sale screen is not moved into the Pay slot merely because it is currently the only enabled action. The stable reference is the **operation card and its slot meanings**, not the text label of whichever button is active.
 
-This reduces unnecessary finger travel and supports muscle memory in high-frequency cashier operation. Responsive layouts may change only when preserving the same geometry would make touch or reading materially worse.
+`إلغاء الفاتورة` before payment completion abandons the unpaid prototype transaction and starts a fresh sale without creating a receipt. Production cancellation/audit/fiscal semantics remain a separate domain requirement and must not be inferred from this UI prototype behavior.
 
-Detailed visual treatment is recorded in `docs/ui/visual-decisions/VISUAL-DECISION-005-PRIMARY-ACTION-SPATIAL-CONTINUITY.md`.
+Responsive layouts may compact padding and spacing before shrinking the two touch targets. Detailed visual treatment is recorded in `docs/ui/visual-decisions/VISUAL-DECISION-005-PRIMARY-ACTION-SPATIAL-CONTINUITY.md`.
