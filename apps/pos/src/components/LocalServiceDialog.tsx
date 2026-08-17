@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import type { OpenLocalOrder, ServiceArea, ServicePlace } from "../domain/restaurantService";
+import type { OpenLocalOrder, PlaceGroup, ServicePlace } from "../domain/restaurantService";
 import { formatMoney } from "../domain/money";
 import { Icon } from "./Icon";
 
 type LocalServiceDialogProps = {
   mode: "assign" | "open";
-  areas: readonly ServiceArea[];
+  groups: readonly PlaceGroup[];
   openOrders: readonly OpenLocalOrder[];
   busy: boolean;
   onClose: () => void;
@@ -22,17 +22,17 @@ const elapsedLabel = (iso: string) => {
   return remainder ? `${hours} س ${remainder} د` : `${hours} س`;
 };
 
-export function LocalServiceDialog({ mode, areas, openOrders, busy, onClose, onAssign, onOpen }: LocalServiceDialogProps) {
-  const [activeAreaId, setActiveAreaId] = useState(areas[0]?.id ?? "");
+export function LocalServiceDialog({ mode, groups, openOrders, busy, onClose, onAssign, onOpen }: LocalServiceDialogProps) {
+  const [activeGroupId, setActiveGroupId] = useState(groups[0]?.id ?? "");
 
   useEffect(() => {
-    if (areas.some((area) => area.id === activeAreaId)) return;
-    setActiveAreaId(areas[0]?.id ?? "");
-  }, [activeAreaId, areas]);
+    if (groups.some((group) => group.id === activeGroupId)) return;
+    setActiveGroupId(groups[0]?.id ?? "");
+  }, [activeGroupId, groups]);
 
   const ordersByPlace = useMemo(() => new Map(openOrders.map((order) => [order.servicePlaceId, order])), [openOrders]);
-  const activeArea = areas.find((area) => area.id === activeAreaId) ?? areas[0];
-  const totalPlaces = areas.reduce((sum, area) => sum + area.places.length, 0);
+  const activeGroup = groups.find((group) => group.id === activeGroupId) ?? groups[0];
+  const totalPlaces = groups.reduce((sum, group) => sum + group.places.length, 0);
   const availablePlaces = Math.max(0, totalPlaces - openOrders.length);
 
   const choosePlace = async (place: ServicePlace) => {
@@ -65,24 +65,24 @@ export function LocalServiceDialog({ mode, areas, openOrders, busy, onClose, onA
         </div>
 
         <nav className="local-area-tabs" aria-label="مجموعات الأماكن">
-          {areas.map((area) => {
-            const areaOpenCount = openOrders.filter((order) => order.serviceAreaId === area.id).length;
+          {groups.map((group) => {
+            const groupOpenCount = openOrders.filter((order) => order.placeGroupId === group.id).length;
             return (
-              <button type="button" key={area.id} className={area.id === activeArea?.id ? "active" : ""} onClick={() => setActiveAreaId(area.id)}>
-                <span>{area.name}</span>
-                {areaOpenCount > 0 ? <small>{areaOpenCount}</small> : null}
+              <button type="button" key={group.id} className={group.id === activeGroup?.id ? "active" : ""} onClick={() => setActiveGroupId(group.id)}>
+                <span>{group.name}</span>
+                {groupOpenCount > 0 ? <small>{groupOpenCount}</small> : null}
               </button>
             );
           })}
         </nav>
 
         <div className="local-place-grid" aria-busy={busy}>
-          {activeArea?.places.map((place) => {
+          {activeGroup?.places.map((place) => {
             const order = ordersByPlace.get(place.id);
             const occupied = Boolean(order);
             const selectable = mode === "assign" ? !occupied : occupied;
             return (
-              <button type="button" key={place.id} className={`local-place-card ${occupied ? "local-place-card--occupied" : "local-place-card--free"}`} disabled={!selectable || busy} onClick={() => void choosePlace(place)} aria-label={occupied ? `${place.name}، الحالة: محجوزة` : `${place.name}، الحالة: متاحة`}>
+              <button type="button" key={place.id} className={`local-place-card ${occupied ? "local-place-card--occupied" : "local-place-card--free"}`} disabled={!selectable || busy} onClick={() => void choosePlace(place)} aria-label={occupied ? `${place.name}، محجوزة` : `${place.name}، متاحة`}>
                 <span className="local-place-card-top">
                   <span className={`local-place-status ${occupied ? "occupied" : "free"}`}>{occupied ? "محجوزة" : "متاحة"}</span>
                 </span>
