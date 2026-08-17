@@ -1,0 +1,671 @@
+/*
+ * Rifad POS — Visual Pass 47
+ * Customer / credit / debt touch-first pass.
+ * Keep frequent actions visible, scan-friendly and calm across cashier sizes.
+ */
+
+/* Customer picker --------------------------------------------------------- */
+.customer-picker-dialog {
+  width: min(920px, calc(100vw - 28px));
+  max-height: calc(100dvh - 28px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 20px 18px;
+}
+
+.customer-picker-dialog > .customer-touch-header {
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 16px 0 13px;
+}
+
+.customer-picker-dialog > .customer-touch-header > button,
+.customer-credit-confirm-dialog > .customer-touch-header > button {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  border-radius: 11px;
+}
+
+.customer-picker-dialog .customer-touch-header h2,
+.customer-credit-confirm-dialog .customer-touch-header h2 {
+  font-size: 1.15rem;
+  line-height: 1.55;
+}
+
+.customer-picker-dialog .customer-touch-header span,
+.customer-credit-confirm-dialog .customer-touch-header span {
+  line-height: 1.6;
+}
+
+.customer-picker-dialog .customer-search-form--live {
+  flex: 0 0 auto;
+  margin-top: 13px;
+  align-items: end;
+}
+
+.customer-picker-dialog .customer-search-form input {
+  min-height: 56px;
+  padding-inline: 15px;
+  border-radius: 11px;
+  font-size: .92rem;
+}
+
+.customer-picker-dialog .customer-live-search-status {
+  min-height: 56px;
+  min-width: 104px;
+  border-radius: 11px;
+  background: #f6f8f7;
+  color: #5e6d66;
+  font-size: .74rem;
+}
+
+.customer-picker-dialog .customer-credit-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  grid-template-columns: minmax(280px, .96fr) minmax(320px, 1.04fr);
+  gap: 14px;
+  margin-top: 13px;
+}
+
+.customer-picker-dialog .customer-results {
+  min-height: 0;
+  max-height: none;
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px;
+  border-color: #e1e7e4;
+  background: #f8faf9;
+}
+
+.customer-picker-dialog .customer-results > button {
+  min-height: 72px;
+  padding: 12px 14px;
+  border-radius: 11px;
+  touch-action: manipulation;
+  transition: transform 70ms ease, background 90ms ease, border-color 90ms ease;
+}
+
+.customer-picker-dialog .customer-results > button:active {
+  transform: scale(.985);
+}
+
+.customer-picker-dialog .customer-results > button.active {
+  border-color: #a8cdbd;
+  background: #f1f8f5;
+  box-shadow: inset -3px 0 0 var(--brand);
+}
+
+.customer-picker-dialog .customer-results > button > span:first-child > strong {
+  color: #1a2922;
+  font-size: .96rem;
+  line-height: 1.45;
+}
+
+.customer-picker-dialog .customer-results > button > span:first-child > small {
+  margin-top: 3px;
+  font-size: .76rem;
+}
+
+.customer-picker-dialog .customer-result-debt > small {
+  font-size: .64rem;
+}
+
+.customer-picker-dialog .customer-result-debt > strong {
+  color: #7b463a;
+  font-size: .96rem;
+}
+
+.customer-picker-dialog .customer-account-card,
+.customer-credit-confirm-dialog .customer-account-card {
+  border-color: #dce5e1;
+  border-radius: 13px;
+  box-shadow: 0 3px 12px rgb(22 52 40 / 4%);
+}
+
+.customer-picker-dialog .customer-account-head {
+  min-height: 58px;
+}
+
+.customer-picker-dialog .customer-account-head > span > strong,
+.customer-credit-confirm-dialog .customer-account-head > span > strong {
+  font-size: 1rem;
+}
+
+.customer-picker-dialog .customer-account-head > button {
+  min-height: 44px;
+  padding-inline: 12px;
+  border: 1px solid #d7e1dc;
+  border-radius: 9px;
+  background: #f8faf9;
+}
+
+.customer-picker-dialog .customer-balance-row,
+.customer-credit-confirm-dialog .customer-balance-row {
+  min-height: 52px;
+  padding-block: 11px;
+}
+
+.customer-picker-dialog .customer-balance-row strong,
+.customer-credit-confirm-dialog .customer-balance-row strong {
+  font-size: 1.02rem;
+}
+
+.customer-picker-dialog .customer-balance-row--total strong,
+.customer-credit-confirm-dialog .customer-balance-row--total strong {
+  font-size: 1.24rem;
+}
+
+.customer-picker-dialog .ticket-customer-purpose {
+  padding: 12px 13px;
+  background: #f7faf8;
+}
+
+.customer-picker-dialog .customer-touch-primary,
+.customer-credit-confirm-dialog .customer-touch-primary {
+  width: 100%;
+  min-height: 60px;
+  margin-top: 10px;
+  border-radius: 11px;
+  font-size: .96rem;
+  font-weight: 850;
+}
+
+.customer-picker-dialog .customer-account-placeholder {
+  min-height: 180px;
+  border: 1px dashed #dfe6e3;
+  border-radius: 13px;
+  background: #fafbfa;
+}
+
+.customer-picker-dialog .customer-create-section {
+  flex: 0 0 auto;
+  margin-top: 12px;
+  padding-top: 11px;
+}
+
+.customer-picker-dialog .customer-create-toggle {
+  min-height: 48px;
+  padding-inline: 16px;
+  border-radius: 10px;
+  background: #f7f9f8;
+}
+
+.customer-picker-dialog .customer-create-form--expanded {
+  max-height: min(48dvh, 430px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.customer-picker-dialog .customer-credit-message {
+  flex: 0 0 auto;
+}
+
+/* Credit confirmation: amount hierarchy first, confirmation second. */
+.customer-credit-confirm-dialog {
+  width: min(520px, calc(100vw - 28px));
+  max-height: calc(100dvh - 28px);
+  overflow-y: auto;
+  padding-inline: 20px;
+}
+
+/* Debt book --------------------------------------------------------------- */
+.debt-book-dialog {
+  width: min(1080px, calc(100vw - 28px));
+  height: min(820px, calc(100dvh - 28px));
+  max-height: calc(100dvh - 28px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 20px 18px;
+}
+
+.debt-book-dialog > header {
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 15px 0 12px;
+}
+
+.debt-book-dialog > header > button {
+  width: 48px;
+  height: 48px;
+  flex-basis: 48px;
+}
+
+.debt-book-dialog > header h2 {
+  font-size: 1.16rem;
+}
+
+.debt-book-dialog .debt-book-toolbar {
+  flex: 0 0 auto;
+  grid-template-columns: minmax(0, 1fr) 205px;
+  margin-top: 12px;
+}
+
+.debt-book-dialog .debt-book-toolbar input {
+  min-height: 56px;
+  padding-inline: 15px;
+  border-radius: 11px;
+  font-size: .92rem;
+}
+
+.debt-book-dialog .debt-book-summary {
+  min-height: 56px;
+  padding-inline: 13px;
+  background: #f6f9f7;
+}
+
+.debt-book-dialog .debt-book-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  grid-template-columns: minmax(290px, .76fr) minmax(430px, 1.24fr);
+  gap: 14px;
+  margin-top: 13px;
+}
+
+.debt-book-dialog .debtors-list,
+.debt-book-dialog .debt-account-view,
+.debt-book-dialog .debt-book-placeholder {
+  min-height: 0;
+  height: 100%;
+}
+
+.debt-book-dialog .debtors-list {
+  max-height: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px;
+  background: #f8faf9;
+}
+
+.debt-book-dialog .debtors-list-title,
+.debt-book-dialog .debt-ledger-title {
+  min-height: 42px;
+  padding: 8px 9px;
+}
+
+.debt-book-dialog .debtors-list > button {
+  min-height: 70px;
+  padding: 12px 13px;
+  border-radius: 11px;
+  touch-action: manipulation;
+  transition: transform 70ms ease, background 90ms ease, border-color 90ms ease;
+}
+
+.debt-book-dialog .debtors-list > button:active {
+  transform: scale(.985);
+}
+
+.debt-book-dialog .debtors-list > button.active {
+  border-color: #a8cdbd;
+  background: #f1f8f5;
+  box-shadow: inset -3px 0 0 var(--brand);
+}
+
+.debt-book-dialog .debtors-list > button > span > strong {
+  color: #1b2a23;
+  font-size: .94rem;
+}
+
+.debt-book-dialog .debtors-list > button small {
+  margin-top: 3px;
+  font-size: .74rem;
+}
+
+.debt-book-dialog .debtor-balance {
+  color: #7b463a;
+  font-size: .96rem;
+}
+
+.debt-book-dialog .debt-account-view {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
+.debt-book-dialog .debt-account-head {
+  position: relative;
+  min-height: 78px;
+  padding: 12px 14px;
+  background: #fafcfb;
+}
+
+.debt-book-dialog .debt-account-head > span > strong {
+  font-size: 1rem;
+}
+
+.debt-book-dialog .debt-account-head > div strong {
+  color: #78483c;
+  font-size: 1.18rem;
+}
+
+.debt-change-customer {
+  min-height: 44px;
+  padding: 0 12px;
+  color: var(--brand);
+  border: 1px solid #d5e0db;
+  border-radius: 9px;
+  background: #fff;
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.debt-book-dialog .debt-ledger {
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 13px 8px;
+}
+
+.debt-book-dialog .debt-ledger-row {
+  min-height: 60px;
+  padding: 9px 4px;
+}
+
+.debt-book-dialog .debt-ledger-row > span strong {
+  font-size: .8rem;
+}
+
+.debt-book-dialog .debt-ledger-row > span small {
+  font-size: .65rem;
+}
+
+.debt-book-dialog .debt-ledger-row > strong {
+  font-size: .86rem;
+}
+
+.debt-book-dialog .debt-settlement-box {
+  flex: 0 0 auto;
+  padding: 11px 14px 14px;
+  background: #fafcfb;
+  box-shadow: 0 -5px 16px rgb(24 54 42 / 4%);
+}
+
+.debt-book-dialog .customer-settlement-row {
+  min-height: 62px;
+  padding: 5px 0 10px;
+}
+
+.debt-book-dialog .customer-settlement-row > div > strong {
+  color: #17261f;
+  font-size: 1.34rem;
+}
+
+.debt-book-dialog .customer-settlement-row > button {
+  min-height: 48px;
+  padding-inline: 14px;
+  border-radius: 10px;
+  font-size: .76rem;
+}
+
+.debt-book-dialog .customer-settlement-input {
+  width: min(270px, 100%);
+  border-width: 2px;
+  border-color: #9fc3b3;
+  box-shadow: 0 0 0 4px rgb(10 113 78 / 7%);
+}
+
+.debt-book-dialog .customer-settlement-input input {
+  min-height: 54px;
+  padding-inline: 13px;
+  font-size: 1.3rem;
+  font-variant-numeric: tabular-nums;
+  cursor: default;
+}
+
+.debt-settlement-keypad {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  margin: 2px 0 8px;
+  direction: ltr;
+}
+
+.debt-settlement-keypad > button {
+  min-width: 0;
+  min-height: 50px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: #26372f;
+  border: 1px solid #dbe4df;
+  border-radius: 10px;
+  background: #f8faf9;
+  font: inherit;
+  font-size: 1.04rem;
+  font-weight: 820;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 70ms ease, background 90ms ease, border-color 90ms ease;
+}
+
+.debt-settlement-keypad > button:active {
+  transform: scale(.97);
+  background: #eaf4ef;
+  border-color: #a9c9bb;
+}
+
+.debt-settlement-keypad .debt-settlement-key--backspace {
+  color: #58665f;
+  background: #f3f5f4;
+  font-size: 1.28rem;
+}
+
+.debt-settlement-keypad .debt-settlement-key--double-zero {
+  color: var(--brand);
+  background: #eef7f3;
+}
+
+.debt-settlement-keypad .debt-settlement-key--zero {
+  grid-column: 1 / -1;
+  min-height: 48px;
+}
+
+.debt-book-dialog .debt-after-payment {
+  min-height: 42px;
+  padding: 7px 2px;
+  border: 1px solid #dce9e3;
+  border-radius: 9px;
+  background: #f7faf8;
+}
+
+.debt-book-dialog .debt-after-payment strong {
+  color: #24513e;
+  font-size: 1rem;
+}
+
+.debt-book-dialog .customer-settlement-error {
+  margin: 5px 0 0;
+}
+
+.debt-book-dialog .debt-settlement-submit {
+  min-height: 62px;
+  margin-top: 8px;
+  border-radius: 11px;
+  font-size: .98rem;
+  font-weight: 880;
+}
+
+/* Standard 1366x768 / short cashier monitors: reclaim spacing first. */
+@media (min-width: 821px) and (max-height: 800px) {
+  .customer-picker-dialog,
+  .debt-book-dialog {
+    max-height: calc(100dvh - 16px);
+  }
+
+  .debt-book-dialog {
+    height: calc(100dvh - 16px);
+    padding-bottom: 12px;
+  }
+
+  .debt-book-dialog > header,
+  .customer-picker-dialog > .customer-touch-header {
+    padding-block: 10px 8px;
+  }
+
+  .debt-book-dialog .debt-book-toolbar,
+  .customer-picker-dialog .customer-search-form--live {
+    margin-top: 8px;
+  }
+
+  .debt-book-dialog .debt-book-body,
+  .customer-picker-dialog .customer-credit-body {
+    margin-top: 9px;
+  }
+
+  .debt-book-dialog .debtors-list > button,
+  .customer-picker-dialog .customer-results > button {
+    min-height: 62px;
+  }
+
+  .debt-book-dialog .debt-ledger-row {
+    min-height: 52px;
+  }
+
+  .debt-settlement-keypad {
+    gap: 5px;
+  }
+
+  .debt-settlement-keypad > button {
+    min-height: 46px;
+  }
+
+  .debt-settlement-keypad .debt-settlement-key--zero {
+    min-height: 44px;
+  }
+
+  .debt-book-dialog .debt-settlement-submit {
+    min-height: 58px;
+  }
+}
+
+/* Narrow/mobile: selection becomes the main task instead of stacking two panes. */
+@media (max-width: 820px) {
+  .customer-picker-dialog,
+  .customer-credit-confirm-dialog,
+  .debt-book-dialog {
+    width: calc(100vw - 12px);
+    max-height: calc(100dvh - 12px);
+    border-radius: 14px;
+    padding-inline: 12px;
+  }
+
+  .customer-picker-dialog .customer-search-form--live {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px;
+  }
+
+  .customer-picker-dialog .customer-live-search-status {
+    min-width: 82px;
+    padding-inline: 8px;
+  }
+
+  .customer-picker-dialog .customer-credit-body {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-picker-dialog .customer-results {
+    min-height: 180px;
+  }
+
+  .customer-picker-dialog .customer-account-placeholder {
+    min-height: 100px;
+  }
+
+  .debt-book-dialog {
+    height: calc(100dvh - 12px);
+  }
+
+  .debt-book-dialog .debt-book-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px;
+  }
+
+  .debt-book-dialog .debt-book-summary {
+    width: 96px;
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .debt-book-dialog .debt-book-summary strong {
+    font-size: .8rem;
+  }
+
+  .debt-book-dialog .debt-book-summary small {
+    display: none;
+  }
+
+  .debt-book-dialog .debt-book-body {
+    grid-template-columns: 1fr;
+  }
+
+  .debt-book-dialog--selected .debtors-list {
+    display: none;
+  }
+
+  .debt-book-dialog--selected .debt-account-view {
+    min-height: 0;
+  }
+
+  .debt-book-dialog .debt-account-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 12px;
+  }
+
+  .debt-book-dialog .debt-account-head .debt-change-customer {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .debt-book-dialog .debtors-list,
+  .debt-book-dialog .debt-book-placeholder {
+    min-height: 0;
+  }
+
+  .debt-settlement-keypad > button {
+    min-height: 52px;
+  }
+}
+
+@media (max-width: 520px) {
+  .customer-picker-dialog .customer-search-form--live,
+  .debt-book-dialog .debt-book-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-picker-dialog .customer-live-search-status,
+  .debt-book-dialog .debt-book-summary {
+    width: 100%;
+    min-height: 40px;
+  }
+
+  .debt-book-dialog .debt-book-summary {
+    display: flex;
+    justify-content: space-between;
+    padding-inline: 12px;
+  }
+
+  .debt-book-dialog .customer-settlement-row {
+    grid-template-columns: 1fr auto;
+  }
+
+  .debt-book-dialog .customer-settlement-row > button {
+    min-width: 104px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .customer-picker-dialog .customer-results > button,
+  .debt-book-dialog .debtors-list > button,
+  .debt-settlement-keypad > button {
+    transition: none !important;
+  }
+}
