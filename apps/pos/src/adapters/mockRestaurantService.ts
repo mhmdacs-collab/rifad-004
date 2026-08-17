@@ -1,9 +1,10 @@
 import type { RestaurantServiceContract } from "../contracts/restaurantService";
+import { RESTAURANT_SERVICE_CONTRACT_VERSION } from "../contracts/restaurantService";
 import type {
   OpenLocalOrder,
+  PlaceGroup,
   RestaurantServiceConfig,
   RestaurantServiceSnapshot,
-  ServiceArea,
   ServicePlace,
 } from "../domain/restaurantService";
 import type { Ticket } from "../domain/models";
@@ -19,9 +20,9 @@ const defaultConfig: RestaurantServiceConfig = {
   placeManagementEnabled: true,
 };
 
-const place = (serviceAreaId: string, id: string, name: string): ServicePlace => ({
+const place = (placeGroupId: string, id: string, name: string): ServicePlace => ({
   id,
-  serviceAreaId,
+  placeGroupId,
   name,
 });
 
@@ -30,7 +31,7 @@ const place = (serviceAreaId: string, id: string, name: string): ServicePlace =>
  * Rooms, sessions, VIP groups, extra tables, or any other labels are not seeded
  * by the POS. They will be created later from Back Office configuration.
  */
-export const DEMO_SERVICE_AREAS: readonly ServiceArea[] = [
+export const DEMO_PLACE_GROUPS: readonly PlaceGroup[] = [
   {
     id: "group-tables",
     name: "الطاولات",
@@ -55,9 +56,9 @@ const pause = () => new Promise<void>((resolve) => window.setTimeout(resolve, WA
 const createId = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
 
 const findPlace = (servicePlaceId: string) => {
-  for (const area of DEMO_SERVICE_AREAS) {
-    const found = area.places.find((item) => item.id === servicePlaceId);
-    if (found) return { area, place: found };
+  for (const group of DEMO_PLACE_GROUPS) {
+    const found = group.places.find((item) => item.id === servicePlaceId);
+    if (found) return { group, place: found };
   }
   return null;
 };
@@ -125,9 +126,9 @@ class MockRestaurantServiceStore {
     return normalized;
   }
 
-  async listAreas() {
+  async listPlaceGroups() {
     await pause();
-    return DEMO_SERVICE_AREAS;
+    return DEMO_PLACE_GROUPS;
   }
 
   async listOpenOrders() {
@@ -150,8 +151,8 @@ class MockRestaurantServiceStore {
       id: createId("local-order"),
       commandId,
       ticket: cloneTicket(ticket),
-      serviceAreaId: resolved.area.id,
-      serviceAreaName: resolved.area.name,
+      placeGroupId: resolved.group.id,
+      placeGroupName: resolved.group.name,
       servicePlaceId: resolved.place.id,
       servicePlaceName: resolved.place.name,
       openedAt: now,
@@ -199,9 +200,14 @@ class MockRestaurantServiceStore {
 export const createMockRestaurantService = (): RestaurantServiceContract => {
   const store = new MockRestaurantServiceStore();
   return {
+    adapterInfo: {
+      adapterId: "rifad.mock.restaurant-service",
+      contractVersion: RESTAURANT_SERVICE_CONTRACT_VERSION,
+      transport: "mock",
+    },
     getConfig: () => store.getConfig(),
     updateConfig: ({ config }) => store.updateConfig(config),
-    listAreas: () => store.listAreas(),
+    listPlaceGroups: () => store.listPlaceGroups(),
     listOpenOrders: () => store.listOpenOrders(),
     createOpenOrder: ({ commandId, ticket, servicePlaceId }) => store.createOpenOrder(commandId, ticket, servicePlaceId),
     getOpenOrder: ({ openOrderId }) => store.getOpenOrder(openOrderId),
