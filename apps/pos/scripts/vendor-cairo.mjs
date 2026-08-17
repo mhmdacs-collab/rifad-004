@@ -9,6 +9,10 @@ const outputDir = fileURLToPath(new URL("../public/fonts/cairo/", import.meta.ur
 const weights = [400, 500, 600, 700, 800];
 const subsets = ["arabic", "latin"];
 const files = weights.flatMap((weight) => subsets.map((subset) => `cairo-${subset}-${weight}-normal.woff2`));
+const MAX_DOWNLOAD_ATTEMPTS = 5;
+const RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
+
+const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 const isValidWoff2 = async (path) => {
   try {
@@ -19,14 +23,43 @@ const isValidWoff2 = async (path) => {
   }
 };
 
+const retryDelayMs = (attempt, response) => {
+  const retryAfter = response?.headers.get("retry-after");
+  const retryAfterSeconds = retryAfter ? Number(retryAfter) : Number.NaN;
+  if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds >= 0) {
+    return Math.min(15_000, Math.max(500, retryAfterSeconds * 1000));
+  }
+  return Math.min(8_000, 600 * (2 ** (attempt - 1)));
+};
+
+const fetchWithRetry = async (sourceUrl) => {
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= MAX_DOWNLOAD_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetch(sourceUrl, { headers: { "user-agent": "Rifad-POS-build" } });
+      if (response.ok) return response;
+
+      const error = new Error(`Failed to fetch ${sourceUrl}: ${response.status}`);
+      if (!RETRYABLE_STATUS.has(response.status) || attempt === MAX_DOWNLOAD_ATTEMPTS) throw error;
+      lastError = error;
+      await sleep(retryDelayMs(attempt, response));
+    } catch (error) {
+      if (attempt === MAX_DOWNLOAD_ATTEMPTS) throw error;
+      lastError = error;
+      await sleep(retryDelayMs(attempt));
+    }
+  }
+
+  throw lastError ?? new Error(`Failed to fetch ${sourceUrl}`);
+};
+
 const download = async (sourceUrl, destination, validateWoff2 = false) => {
   if (process.env.RIFAD_REFRESH_FONTS !== "1") {
     if (validateWoff2 ? await isValidWoff2(destination) : await stat(destination).then(() => true, () => false)) return;
   }
 
-  const response = await fetch(sourceUrl, { headers: { "user-agent": "Rifad-POS-build" } });
-  if (!response.ok) throw new Error(`Failed to fetch ${sourceUrl}: ${response.status}`);
-
+  const response = await fetchWithRetry(sourceUrl);
   const bytes = Buffer.from(await response.arrayBuffer());
   if (validateWoff2 && (bytes.length <= 1024 || bytes.subarray(0, 4).toString("ascii") !== "wOF2")) {
     throw new Error(`Invalid WOFF2 payload received for ${sourceUrl}`);
