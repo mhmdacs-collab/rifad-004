@@ -1,0 +1,104 @@
+/*
+ * Rifad POS — Visual Pass 19
+ * Makes the product-card 75/25 split visually literal on common cashier displays.
+ * The upper surface owns product identity; the lower quarter owns unit price.
+ */
+
+@media (min-width: 781px) {
+  .sale-screen-touch button.catalog-product {
+    height: 100%;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: 74% 26%;
+    place-items: stretch;
+    padding: 0 !important;
+    overflow: hidden;
+    border-radius: 8px;
+  }
+
+  .sale-screen-touch button.catalog-product > strong {
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 12px 8px;
+    color: #25302b;
+    font-size: 1.01rem;
+    font-weight: 720;
+    line-height: 1.35;
+    text-align: center;
+  }
+
+  .sale-screen-touch button.catalog-product::after {
+    content: attr(data-price);
+    min-height: 30px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 10px;
+    direction: rtl;
+    color: #17211d;
+    background: rgb(255 255 255 / 48%);
+    border-top: 1px solid rgb(42 66 55 / 17%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 35%);
+    font-size: .96rem;
+    font-weight: 850;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.01em;
+  }
+
+  .sale-screen-touch button.catalog-product:hover:not(:disabled)::after {
+    background: rgb(255 255 255 / 57%);
+  }
+
+  .sale-screen-touch button.catalog-product:active:not(:disabled) {
+    transform: scale(.977);
+  }
+
+  .sale-screen-touch button.catalog-product:active:not(:disabled)::after {
+    background: rgb(255 255 255 / 66%);
+  }
+
+  /* Empty cells keep geometry but visually recede behind sellable products. */
+  .sale-screen-touch .blank-layout-slot {
+    border-color: #e7ebe9;
+    background: #f8faf9;
+    box-shadow: none;
+    opacity: .78;
+  }
+}
+
+@media (max-width: 780px) {
+  .sale-screen-touch button.catalog-product {
+    height: 100%;
+    display: grid;
+    grid-template-rows: 74% 26%;
+    place-items: stretch;
+    padding: 0 !important;
+    overflow: hidden;
+  }
+
+  .sale-screen-touch button.catalog-product > strong {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+  }
+
+  .sale-screen-touch button.catalog-product::after {
+    content: attr(data-price);
+    min-height: 27px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    direction: rtl;
+    color: #17211d;
+    background: rgb(255 255 255 / 52%);
+    border-top: 1px solid rgb(42 66 55 / 16%);
+    font-size: .88rem;
+    font-weight: 820;
+    font-variant-numeric: tabular-nums;
+  }
+}
