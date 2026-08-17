@@ -125,7 +125,7 @@
 
 .inline-checkout-rail--cash .inline-cash-suggestions button:hover {
   color: var(--brand);
-  border-color: #8fbeaC;
+  border-color: #8fbeac;
   background: #f3f9f6;
 }
 
@@ -263,7 +263,7 @@
 }
 
 /* 1366-class displays: retain the hierarchy while reducing vertical demand. */
-@media (min-width: 1024px) and (max-width: 1599px) {
+@media (min-width: 1024px) and (max-width: 1599px) and (max-height: 899px) {
   .inline-checkout-rail--cash .inline-checkout-body {
     padding-inline: 15px;
   }
