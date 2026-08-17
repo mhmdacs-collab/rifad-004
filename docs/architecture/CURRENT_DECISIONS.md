@@ -114,3 +114,23 @@ A working mock card flow does **not** mean Rifad supports a real Mada/payment te
 Production integrated-payment support requires a proven provider/terminal adapter, durable payment records, failure/decline/recovery behavior, reconciliation/refund requirements, security review and capability evidence.
 
 The current card UX extension must remain distinguishable from certified production terminal support in documentation and product claims.
+
+## D-021 — Frequent primary actions stay outside scrolling content
+
+Cashier-facing completion actions should occupy a stable action/footer region within their operational surface rather than moving with long content.
+
+Examples include **دفع**, **سداد**, **طباعة الإيصال**, **بيع جديد** and equivalent confirmation actions.
+
+The intended composition is:
+
+`scrollable/repeatable content → required summary/context → stable primary-action footer`
+
+Consequences:
+
+- item lists, history, optional form fields and other repeatable content absorb scrolling first;
+- shorter screens change spacing, columns or content density before hiding the primary action behind a normal-path scroll;
+- totals, tax, change or remaining balance may stay immediately adjacent to the footer when they are required to make the final decision;
+- dynamic validation near a repeated keypad must reserve stable geometry so state changes do not move the keys or completion action;
+- the footer is fixed within the relevant panel/dialog/rail, not blindly fixed to the browser viewport.
+
+This is an interaction/layout decision and does not change the underlying business command or persistence semantics.
