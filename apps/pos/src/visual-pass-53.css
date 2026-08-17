@@ -1,0 +1,48 @@
+/*
+ * Rifad POS — Visual Pass 53
+ * Zero-jump transaction rail: the sale basket and inline checkout/success rail
+ * must use one physical width so New Sale returns to Save/Credit + Pay without
+ * horizontal finger-target movement.
+ */
+
+@media (min-width: 781px) {
+  .sale-flow-shell {
+    --rifad-transaction-rail-width: clamp(430px, 30vw, 525px);
+    --inline-checkout-width: var(--rifad-transaction-rail-width);
+  }
+
+  .sale-flow-shell > .pos-workspace {
+    grid-template-columns: minmax(0, 1fr) var(--rifad-transaction-rail-width) !important;
+  }
+
+  .sale-flow-shell > .inline-checkout-rail {
+    width: var(--rifad-transaction-rail-width) !important;
+    min-width: var(--rifad-transaction-rail-width) !important;
+    max-width: var(--rifad-transaction-rail-width) !important;
+  }
+}
+
+/* Landscape tablet keeps the existing practical checkout width, but sale and
+   checkout now resolve it from the same variable instead of separate rules. */
+@media (min-width: 781px) and (max-width: 1023px) {
+  .sale-flow-shell {
+    --rifad-transaction-rail-width: min(430px, 46vw);
+  }
+}
+
+/* The physical operation card is identical on both sides of the transition. */
+.ticket-actions.transaction-operation-card,
+.inline-success-actions.transaction-operation-card,
+.inline-operation-footer.transaction-operation-card {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  align-self: stretch !important;
+}
+
+/* Avoid a perceived content nudge caused by stage-specific button internals. */
+.transaction-operation-card > button {
+  justify-content: center !important;
+  align-items: center !important;
+  text-align: center !important;
+}
