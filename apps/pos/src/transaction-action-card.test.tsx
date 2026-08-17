@@ -58,7 +58,7 @@ describe("transaction operation card", () => {
     expect(screen.getByRole("button", { name: "دفع" })).toBeDisabled();
   });
 
-  it("shows Clear Cart inside the basket body without changing the header or operation footer", async () => {
+  it("shows Clear Cart inside the basket before its lines without changing the operation card", async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -67,6 +67,9 @@ describe("transaction operation card", () => {
 
     const clearCart = await screen.findByRole("button", { name: "مسح السلة" });
     expect(clearCart).toBeEnabled();
+    expect(clearCart).toHaveTextContent(/^مسح السلة$/);
+    expect(screen.queryByText("إزالة جميع الأصناف")).not.toBeInTheDocument();
+    expect(screen.queryByText("الكل")).not.toBeInTheDocument();
 
     const clearSlot = clearCart.closest(".ticket-clear-cart-slot");
     const ticketPanel = clearSlot?.parentElement;
