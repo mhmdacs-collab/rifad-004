@@ -6,21 +6,20 @@ export type RestaurantServiceConfig = Readonly<{
 }>;
 
 /**
- * A service place is intentionally generic.
- * The cashier-facing identity comes from its group + name, not a hard-coded
- * table/room/session enum. Back Office can therefore model any venue language.
+ * Rifad-owned generic place identity. External systems may call this a table,
+ * room, seat, section item, booth, or something else; adapters normalize it.
  */
 export type ServicePlace = Readonly<{
   id: string;
-  serviceAreaId: string;
+  placeGroupId: string;
   name: string;
 }>;
 
 /**
- * ServiceArea is the current contract name for a cashier-facing place group.
- * Examples: الطاولات، الغرف، الجلسات، VIP, or any owner-defined grouping.
+ * Cashier-facing configurable grouping layer owned by Rifad.
+ * Donor/API terms such as floor, zone, section, room group, etc. stop at the adapter.
  */
-export type ServiceArea = Readonly<{
+export type PlaceGroup = Readonly<{
   id: string;
   name: string;
   places: readonly ServicePlace[];
@@ -30,8 +29,8 @@ export type OpenLocalOrder = Readonly<{
   id: string;
   commandId: string;
   ticket: Ticket;
-  serviceAreaId: string;
-  serviceAreaName: string;
+  placeGroupId: string;
+  placeGroupName: string;
   servicePlaceId: string;
   servicePlaceName: string;
   openedAt: string;
