@@ -1,6 +1,6 @@
 import { useCallback, useDeferredValue, useEffect, useState } from "react";
-import { createMockPosRuntime } from "../adapters/mockPos";
 import { PosContractError } from "../contracts/pos";
+import type { PosRuntimeContract } from "../contracts/pos";
 import type { LoyaltyRedemptionQuote, LoyaltyStatus } from "../domain/loyalty";
 import { money } from "../domain/money";
 import { readPrintReceiptAlways } from "../domain/posPreferences";
@@ -33,8 +33,7 @@ const EMPTY_CUSTOMER_DETAILS: CustomerDetails = {
   note: "",
 };
 
-export const usePosFlow = () => {
-  const [runtime] = useState(createMockPosRuntime);
+export const usePosFlow = (runtime: PosRuntimeContract) => {
   const [restored] = useState(() => runtime.restore());
   const initialStage: FlowStage = restored.receipt
     ? "success"
