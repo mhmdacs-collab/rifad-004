@@ -6,7 +6,7 @@ Last updated: 2026-08-17
 
 Implemented mock/local UI slice on `agent/pos-visual-pass-01`; owner visual/product review remains iterative.
 
-This is the first executable subset of the older mapped restaurant open-ticket flow. It proves the local-service interaction and open-place lifecycle only. It does **not** claim a real KDS, kitchen printer, multi-device table sync, or production restaurant persistence layer.
+This executable subset proves the local-service interaction, open-place lifecycle and a replaceable Rifad-owned restaurant-service adapter boundary. It does **not** claim a real KDS, kitchen printer, multi-device table sync, or production restaurant persistence layer.
 
 ## Product rule
 
@@ -37,9 +37,7 @@ Future Back Office configuration may:
 - add a new group such as **الغرف**، **الجلسات**، **الخارجية**، **VIP** or any owner-defined label;
 - place any named places inside that group.
 
-The place model therefore does **not** use a required hard-coded `table | room | session` type. Its visible identity comes from the configured group and place name.
-
-The current internal contract name `ServiceArea` represents this generic group concept; it must not be interpreted as requiring a physical room/floor taxonomy.
+The Rifad domain does **not** require a hard-coded `table | room | session` type. The stable public terms are now `PlaceGroup` and `ServicePlace`. An external system may call the same concepts floor, zone, section, table, booth, room or seat; its adapter translates those names before they cross the Rifad contract.
 
 ## Advanced local flow
 
@@ -47,7 +45,7 @@ The current internal contract name `ServiceArea` represents this generic group c
 
 Reopening:
 
-`empty basket → طلبات مفتوحة · N → occupied place → reconstruct order → edit → إرسال or دفع`
+`empty basket → طلبات مفتوحة · N → reserved place → reconstruct order → edit → إرسال or دفع`
 
 - **إرسال** updates the stored open order, increments the mock kitchen revision and clears the working basket again.
 - **دفع** uses the existing checkout flow. When payment succeeds, the matching open place is released.
@@ -61,33 +59,48 @@ Reopening:
 - Reopened order: **إرسال | دفع**.
 - Group tabs and place cards are large touch targets.
 - Place cards show their configured name directly; they do not repeat a hard-coded kind label.
-- Occupied places use calm service-state styling, not destructive red.
-- Wide layouts use a readable place grid; mobile uses readable cards instead of shrinking a desktop floor plan.
+- cashier-facing place state is **متاحة / محجوزة**;
+- a **محجوزة** place uses a very light warm-red treatment while the order total remains the strongest green value;
+- item count is intentionally not shown;
+- wide layouts use a readable place grid; mobile uses readable cards instead of shrinking a desktop floor plan.
 
-## Mock adapter boundary
+## Replaceable adapter boundary
 
-`RestaurantServiceContract` currently owns only the UI-proof state:
+`RestaurantServiceContract` is the only restaurant/local boundary used by state orchestration. It is versioned as contract V1 and exposes Rifad-owned operations for:
 
 - restaurant service configuration;
-- one default place group with six tables;
-- open local order snapshots;
-- mock kitchen revision counter;
-- close/release of an open place.
+- `PlaceGroup → ServicePlace` listing;
+- open local order listing;
+- create/reopen/update/close open local orders.
 
-The existing Sales/Checkout contracts remain authoritative for the working basket and payment. Reopening reconstructs the stored order into the current mock ticket using existing sales actions.
+Current concrete implementation is the mock adapter selected only from:
 
-This deliberate composition proves the interaction without pretending the final production order/place/KDS data model already exists.
+`apps/pos/src/runtime/restaurantServiceAdapter.ts`
+
+Rules now enforced by code structure:
+
+- `useLocalServiceFlow` receives `RestaurantServiceContract` by dependency injection;
+- UI/state modules do not instantiate or import the concrete restaurant adapter;
+- donor/API schemas and type names do not cross the contract;
+- legacy mock-specific preference migration is isolated at the composition root;
+- successful local-order payment is detected through Rifad POS state, not by reading the mock restaurant or POS storage implementation;
+- old mock snapshots using the previous `serviceAreaId/serviceAreaName` fields are normalized to `placeGroupId/placeGroupName` on read.
+
+A future Odoo, open-source donor, remote API, local embedded engine or Rifad-native implementation replaces the composition-root factory and must conform to the same contract.
+
+See `docs/architecture/RESTAURANT_SERVICE_ADAPTER_BOUNDARY.md`.
 
 ## Explicit non-goals
 
 - real kitchen printer or KDS transport;
 - durable production `fulfillmentMode` on every sale/receipt;
 - Back Office group/place CRUD in this POS flow;
-- multi-device occupied-place synchronization;
+- multi-device reserved-place synchronization;
 - move, merge, split, seats or guest count;
 - atomic production kitchen-delta/outbox semantics;
 - delivery-platform integration;
-- production fiscal cancellation behavior.
+- production fiscal cancellation behavior;
+- claiming that every external restaurant system can be connected without a mapping adapter or conformance work.
 
 ## Acceptance evidence
 
@@ -96,12 +109,13 @@ Automated coverage must prove at minimum:
 - simple local reaches checkout without a place-selection step;
 - advanced local starts with exactly one **الطاولات** group and six default tables;
 - **الغرف** and **الجلسات** are not seeded by default;
-- advanced local selects a free place and clears the main basket;
+- advanced local selects an available place and clears the main basket;
 - open-order action appears on an empty basket;
-- an occupied place can be reopened;
+- a reserved place can be reopened;
 - sending additions increments the mock kitchen revision while keeping one open place;
 - paying a reopened local order releases the place;
 - retail/off mode hides restaurant language;
-- open orders prevent disabling the settings that own them.
+- open orders prevent disabling the settings that own them;
+- TypeScript accepts the restaurant flow only through `RestaurantServiceContract` at the state boundary.
 
 Final density and place-card geometry remain owner-review items.
