@@ -4,6 +4,8 @@ import {
   migrateLegacyOrderTypePreference,
 } from "../adapters/mockRestaurantService";
 import type { RestaurantServiceContract } from "../contracts/restaurantService";
+import { withRestaurantPersistenceJournal } from "./journaledRestaurantService";
+import { createLocalPersistenceAdapter } from "./localPersistenceAdapter";
 
 /**
  * POS composition root for restaurant/local service.
@@ -11,7 +13,8 @@ import type { RestaurantServiceContract } from "../contracts/restaurantService";
  * UI/state modules must never import a concrete restaurant adapter directly.
  */
 export const createRestaurantServiceAdapter = (): RestaurantServiceContract => {
-  return createMockRestaurantService();
+  const service = createMockRestaurantService();
+  return withRestaurantPersistenceJournal(service, createLocalPersistenceAdapter());
 };
 
 /** Adapter-specific/legacy bootstrap also stops at the composition root. */
