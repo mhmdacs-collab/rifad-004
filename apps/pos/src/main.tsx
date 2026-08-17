@@ -51,6 +51,7 @@ import "./visual-pass-41.css";
 import "./visual-pass-42.css";
 import "./visual-pass-43.css";
 import "./visual-pass-44.css";
+import "./visual-pass-45.css";
 
 installVisualPass18ProductPrices();
 
