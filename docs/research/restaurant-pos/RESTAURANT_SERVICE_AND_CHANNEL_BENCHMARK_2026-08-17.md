@@ -3,17 +3,21 @@
 Date: 2026-08-17
 Status: Research evidence for current Rifad product discussion. This file is not implementation authorization.
 
+Related delivery/API research:
+
+- `DELIVERY_PLATFORM_INTEGRATION_BENCHMARK_2026-08-17.md`
+
 ## Question being answered
 
-Rifad needs a restaurant workflow that is faster than a generic `Save ticket` pattern, works for direct takeaway sales, supports optional table/room/session service, routes kitchen work correctly, and can later support delivery platforms with channel-specific prices without confusing sales channel with payment method.
+Rifad needs one POS family that can serve retail/direct selling, simple restaurants that only need local/takeaway kitchen identity, larger restaurants that need exact tables/rooms/sessions and open orders, and delivery-platform workflows without forcing unnecessary steps on the cashier.
 
-The research focus is therefore:
+The research focus is:
 
-1. How do established POS products separate direct sales from table service?
-2. How do they represent open orders/tables?
+1. How do established POS products separate direct sales from restaurant service?
+2. How do they represent open orders/tables/areas?
 3. When are kitchen orders sent?
-4. How do dine-in/takeaway/delivery concepts interact with payment and pricing?
-5. Which parts should Rifad borrow as behavior, and which should it simplify?
+4. How do dine-in/takeaway/delivery interact with payment and pricing?
+5. How do online delivery orders reach the POS with minimal cashier work?
 
 ## Official sources inspected
 
@@ -26,35 +30,35 @@ The research focus is therefore:
 
 Observed pattern:
 
-- A normal sale can be saved as an open ticket and paid later.
-- Predefined open-ticket names can represent tables.
-- Dining options are a separate attribute such as Dine in / Takeout / Delivery and appear on kitchen/KDS output.
-- With kitchen printers, saving an open ticket can print the kitchen order immediately.
-- Later additions/removals to an open ticket produce corresponding kitchen changes.
+- normal sales can be saved as open tickets and paid later;
+- predefined ticket names can represent tables;
+- Dining Options are separate attributes such as Dine in / Takeout / Delivery and appear on kitchen/KDS output;
+- saving an open ticket can print the kitchen order immediately;
+- later additions/removals can produce kitchen changes.
 
-Strength: very low training cost and a simple mental model.
+Strength: low training cost and simple mental model.
 
-Limit for Rifad: table service is primarily expressed as saved/predefined tickets rather than a rich operational place view. This is useful as a minimum baseline, but it is not the strongest model for restaurants with rooms, sessions, patios or many occupied places.
+Limit for Rifad: table service is mainly a saved-ticket pattern and does not by itself solve richer rooms/sessions/areas or the requirement that a small restaurant should be able to mark **محلي** without managing exact places.
 
 ### Square for Restaurants
 
 - Floor plans: https://squareup.com/help/us/en/article/6427-building-your-floor-plan
 - Open tickets: https://squareup.com/help/us/en/article/5337-use-open-tickets-with-square
-- Predefined tickets and groups: https://squareup.com/help/us/en/article/5809-use-predefined-tickets
+- Predefined tickets/groups: https://squareup.com/help/us/en/article/5809-use-predefined-tickets
 - Dining options: https://squareup.com/help/au/en/article/5573-create-and-manage-dining-options
 - Send & Stay: https://squareup.com/help/us/en/article/8612-set-up-send-stay-for-your-restaurant
 
 Observed pattern:
 
-- Floor plans contain sections and tables and are used operationally during service.
-- Open checks/tickets are separate from immediate checkout.
-- Ticket groups can represent areas such as dining room or patio.
-- Dining option can be defaulted and carried to kitchen/reporting rather than repeatedly chosen from scratch.
-- Kitchen sending can occur during order entry instead of waiting for final payment.
+- floor plans contain sections and tables and are operational during service;
+- open checks are separate from immediate checkout;
+- ticket groups can represent areas such as dining room/patio;
+- dining option can be defaulted and carried to kitchen/reporting;
+- kitchen sending can happen before final payment.
 
-Strength: strong operational visibility and realistic table/service management.
+Strength: strong place visibility and realistic table service.
 
-Trade-off: a full-service workflow can create more UI and training overhead than a small cafe or direct-sale restaurant needs.
+Trade-off: full floor-plan workflow is unnecessary for small restaurants that only need kitchen distinction between local and takeaway.
 
 ### Lightspeed Restaurant K-Series
 
@@ -65,13 +69,13 @@ Trade-off: a full-service workflow can create more UI and training overhead than
 
 Observed pattern:
 
-- Table service is a distinct operating mode with floor plans.
-- Direct sales are described separately as sales paid immediately without needing a table/tab.
-- A POS configuration can disable table support for a device/workflow that only needs direct sales.
-- Floor plans can carry order-profile and printer configuration.
-- Areas and table identity are first-class operational concepts rather than free-text ticket names only.
+- table service is distinct from direct sales;
+- direct sales are paid immediately without needing a table/tab;
+- a POS configuration can disable table support;
+- floor plans can carry order-profile/printer configuration;
+- areas and tables are first-class concepts.
 
-Strength: this is close to the Rifad requirement that table service be optional while direct selling remains fast.
+Strength: validates that place management should be optional rather than forced into every restaurant/device.
 
 ### Odoo 19 POS Restaurant
 
@@ -81,157 +85,171 @@ Strength: this is close to the Rifad requirement that table service be optional 
 
 Observed pattern:
 
-- The restaurant UI explicitly separates Tables, Register and Orders.
-- A direct new order can exist without a table, or an order can later be assigned to a table/tab.
-- `Send`/order preparation is separate from final payment.
-- Presets can change configuration such as pricelist based on service type, including dine-in, takeout or delivery.
-- Preparation output can identify table, order/preset and delivery/takeout context.
+- restaurant UI separates Tables, Register and Orders;
+- a direct order can exist without a table or later be assigned to a table/tab;
+- preparation send is separate from final payment;
+- presets can change configuration/pricelist based on dine-in/takeout/delivery;
+- preparation output can identify table/order/service context.
 
-Strength: strong separation of order service state, kitchen preparation and payment.
-
-Important lesson for Rifad: pricing/service context can be resolved before payment without making the service type itself a payment method.
+Important lesson: service, preparation and price context can be established independently from final payment.
 
 ### Toast
 
-- Kitchen routing by dining option / service area: https://central.toasttab.com/articles/Knowledge/Print-Routing-by-Dining-Option
+- Kitchen routing by dining option/service area: https://central.toasttab.com/articles/Knowledge/Print-Routing-by-Dining-Option
 
 Observed pattern:
 
-- Kitchen routing rules may depend on dining option and service area.
-- Takeout/delivery can be routed differently from other orders.
+- kitchen routing may depend on dining option and service area;
+- takeout/delivery can route differently.
 
-Strength: confirms that dine-in/takeout/delivery is fundamentally useful to kitchen/operations routing, not only to customer-facing checkout.
+Strength: confirms that local/takeaway/delivery is primarily useful as operational/kitchen context.
+
+### Foodics and delivery-platform integrations
+
+Foodics evidence is detailed in `DELIVERY_PLATFORM_INTEGRATION_BENCHMARK_2026-08-17.md`.
+
+The important product lesson is that API orders can arrive directly in the POS, may be auto-accepted/sent to kitchen, and carry prepaid/unpaid state without requiring the cashier to recreate the order or choose the platform again.
 
 ---
 
 # Rifad conclusion
 
-Rifad should not copy a single donor. The recommended model is:
+Rifad should use one adaptable product model rather than separate retail/basic/advanced applications.
 
-> **Fast direct sale by default + optional local-service/open-order layer + explicit sales-channel/pricing context.**
+> **Direct sale core + optional restaurant-service semantics + optional advanced place management + one online-order experience backed by adapters.**
 
-## 1. Kitchen fulfillment is not payment
+## 1. Restaurant service classification is optional
 
-Use a durable concept such as `fulfillmentMode`:
+A branch/POS setting determines whether restaurant fulfillment semantics are active.
 
-- `takeaway` — **سفري**; default for direct POS sale.
-- `dine_in` — **محلي**; set when an order is assigned to a service place.
-- `delivery` — **توصيل**; normally derived from a delivery sales channel/order workflow.
+### Disabled
 
-This is operational/kitchen information. It must not be modeled as `cash/card` and should not force a cashier-facing selector on every sale.
+Suitable for retail/grocery/direct selling:
 
-## 2. Sales channel is a separate dimension
+- no **محلي / سفري** decision is forced;
+- the cashier sells and presses **دفع**;
+- kitchen fulfillment terminology does not leak into a retail workflow.
 
-Use a durable sales-channel identity, for example:
+### Enabled
 
-- direct POS;
-- Keeta;
-- HungerStation;
-- Ninja;
-- future marketplace/online channels.
+Suitable for restaurants/cafes:
 
-The UI may present a platform as one convenient completion choice, but internally the system must still distinguish:
+- pressing direct **دفع** means normal direct restaurant sale and is operationally **سفري**;
+- **محلي** becomes available as the alternate local preparation path;
+- delivery-platform flows can establish **توصيل**.
 
-- sales channel;
-- fulfillment mode;
-- payment/settlement method.
+The cashier does not need a separate **سفري** button because direct payment already carries that default in restaurant-service mode.
 
-This allows, for example, a delivery order to be cash-on-delivery, paid by card, or settled by the platform without corrupting reporting semantics.
+## 2. Advanced place management is a separate optional setting
 
-## 3. Payment/settlement remains separate
+Do not equate `restaurant service enabled` with `table map required`.
 
-Examples:
+### Simple local restaurant
 
-- cash;
-- card / Mada;
-- credit/customer account;
-- platform settlement.
+Restaurant service ON, place management OFF:
 
-A channel may define a default settlement behavior, but channel identity must not be stored only as a payment method.
+`basket → محلي → checkout → kitchen receives محلي`
 
-## 4. Channel-specific prices are required
+No table/room/session selection is required.
+
+This covers restaurants with only a few tables or businesses that care about local/takeaway preparation but do not need to track exact seating.
+
+### Advanced local restaurant
+
+Restaurant service ON, place management ON:
+
+`basket → محلي → choose service area/place → kitchen → clear working basket → open local order`
+
+Use:
+
+- Service Area: الصالة، الدور الأول، الغرف، الجلسات الخارجية...
+- Service Place: طاولة 12، غرفة 3، جلسة 8...
+
+Payment may happen before or after dining.
+
+## 3. Open-order action is only needed when places/open local orders exist
+
+Recommended label: **طلبات مفتوحة**.
+
+When advanced mode has open local orders and the working basket is empty:
+
+> **طلبات مفتوحة · N | دفع**
+
+The physical action-card slots remain fixed while visual priority changes to the useful available action.
+
+## 4. Fulfillment, channel and collection remain separate internally
+
+Use durable concepts such as:
+
+- fulfillment: `takeaway / dine_in / delivery`;
+- sales channel: direct POS / Keeta / HungerStation / Jahez / Ninja / ...;
+- payment/collection/settlement: cash, Mada/card, credit, prepaid platform, due on delivery, later platform settlement.
+
+The UI can combine them into one convenient tile, but reporting/accounting/integration cannot rely on one overloaded field.
+
+## 5. Delivery can look like a payment/completion choice without being only payment data
+
+For manual/fallback entry, the cashier may see tiles such as **كيتا / هنقرستيشن** alongside completion/payment choices because this is fast and matches real staff language.
+
+Internally the tile sets delivery fulfillment + channel + pricing context + collection state separately.
+
+For an API-connected incoming order, the cashier should not select the platform at all; the order already arrives with those facts.
+
+## 6. Channel-specific prices are required
 
 Rifad should support:
 
 - product base price;
-- optional channel price list / product override;
-- effective price resolution before final confirmation;
+- optional channel price list/product override;
+- effective price snapshot;
 - separate platform commission/settlement terms.
 
-Example intent:
+Example:
 
-- Latte base price;
-- Keeta override 26;
-- HungerStation override 25.
+- Latte direct price;
+- Keeta price 26;
+- HungerStation price 25.
 
-Do not encode this as `price when paymentMethod=keeta`. Resolve it from sales channel/pricing context.
+Manual platform entry recalculates the basket and visibly shows the changed total before completion.
 
-If a platform is selected late in checkout and that selection changes prices, the changed total must be shown before the completion command is confirmed.
+API-connected platform orders preserve the external sold price snapshot rather than being silently rewritten to today's direct POS price.
 
-## 5. Table/local service is optional
+## 7. Kitchen dispatch timing
 
-A POS/branch setting controls whether table/local service is enabled.
+Preparation is an order operation, not one universal payment side effect.
 
-When disabled:
+Intended direction:
 
-- the cashier stays in direct-sale behavior;
-- no table/local management step is forced into the sale.
+- direct restaurant sale: kitchen output **سفري** in direct completion flow;
+- simple local: kitchen output **محلي** in local completion/send flow;
+- advanced local: kitchen output when assigned/sent to a service place;
+- later advanced-local additions/voids: preparation deltas/revisions only;
+- delivery: **توصيل** plus channel identity;
+- API-connected online order: may auto-accept/send to kitchen when configured.
 
-When enabled:
+## 8. Delivery integrations should support direct adapters and aggregators
 
-- the current secondary `Save` concept evolves to **محلي** for a basket with items;
-- pressing **محلي** opens service-area/place selection;
-- selecting a place assigns the order, sends the required kitchen order, clears the main working basket and leaves an open order attached to that place;
-- payment may occur before or after dining according to operation flow, not because `dine_in` inherently means pay later.
+Where official/commercial access is practical, Rifad can implement a direct adapter per platform.
 
-## 6. Service-area/place model
+Where direct access is unavailable or costly to maintain, Rifad can use an approved aggregator adapter.
 
-Do not hard-code every place as `table`.
+The cashier should not know or care which integration path is behind the order.
 
-Use:
+Target principle:
 
-- Service Area: e.g. الصالة، الدور الأول، الجلسات الخارجية، الغرف.
-- Service Place: e.g. طاولة 12، غرفة 3، جلسة 8.
+> **One online-order queue, many adapters behind it.**
 
-This supports restaurant layouts in Saudi/Gulf use cases more naturally than a table-only naming model.
+## 9. Configuration ownership
 
-## 7. Recommended POS presentation
+During UI-first development, temporary POS settings are acceptable to prove:
 
-Use a Rifad hybrid rather than a decorative clone:
+- restaurant-service on/off;
+- place-management on/off;
+- service areas/places;
+- delivery-channel/manual pricing behavior;
+- online-order automation behavior.
 
-- top/side area tabs for service areas;
-- large service-place targets arranged approximately like the real layout on wide screens;
-- every place shows a short name/number and operational state;
-- occupied/open places can show elapsed time and amount when useful;
-- mobile/narrow layouts may use a one-column/list/card representation instead of shrinking a floor plan;
-- exact physical layout editing belongs primarily in Back Office later, while temporary configuration may remain in POS settings during UI-first development.
-
-Avoid decorative chairs/furniture when they reduce touch size or scanning speed. The map should be semantically realistic, not architecturally photorealistic.
-
-## 8. Open-order action behavior
-
-Recommended cashier wording: **طلبات مفتوحة**, not `التذاكر المفتوحة`, because it describes the operational task rather than an internal ticket object.
-
-Target action-card states when table service is enabled:
-
-- basket has items: **محلي | دفع**, with **دفع** visually primary;
-- basket empty + open local orders exist: **طلبات مفتوحة · N | دفع**, where **طلبات مفتوحة** becomes green/primary and disabled **دفع** becomes neutral/silver;
-- basket empty + no open local orders: **محلي | دفع** with non-applicable actions appropriately disabled/neutral according to final visual design.
-
-The card geometry must remain fixed even when visual priority changes.
-
-## 9. Kitchen dispatch timing
-
-Kitchen preparation must be an order operation, not blindly a payment side effect.
-
-Intended product direction:
-
-- direct takeaway: kitchen order is produced in the direct-sale completion flow;
-- local: kitchen order is produced when the basket is assigned/sent to a service place, even if payment is much later;
-- local additions: send/print only the new/changed preparation delta, not a misleading full duplicate order;
-- delivery: kitchen output carries **توصيل** plus channel identity where useful.
-
-Production implementation will need durable dispatch/revision/idempotency semantics before this is treated as complete printer/KDS behavior.
+Production ownership should move business-sensitive configuration to Back Office so ordinary cashiers cannot casually change service modes, integration credentials, branch mappings, menus/pricelists or reconciliation rules.
 
 ---
 
@@ -239,27 +257,30 @@ Production implementation will need durable dispatch/revision/idempotency semant
 
 Borrow:
 
-- Loyverse simplicity and low-friction direct sale;
-- Square/Lightspeed service-area and open-place visibility;
-- Lightspeed optional table-service configuration;
-- Odoo separation of direct register, tables/orders and kitchen send vs payment;
-- donor evidence that fulfillment context belongs on kitchen output.
+- Loyverse simplicity;
+- Square/Lightspeed place visibility when the business actually needs it;
+- Lightspeed's optional table-service idea;
+- Odoo's separation of register/tables/orders/preparation/payment;
+- Foodics' low-touch incoming-online-order pattern;
+- aggregator pattern of one normalized queue and centralized menu management.
 
 Do not copy:
 
-- Loyverse `Save` as the permanent restaurant-facing meaning when the real user intent is local service;
-- a mandatory dine-in/takeout/delivery chooser on every sale;
-- a visually heavy floor-plan editor inside the cashier's normal path;
+- generic `Save` as permanent restaurant meaning;
+- mandatory table selection for every local restaurant;
+- mandatory dine-in/takeaway/delivery chooser on every sale;
+- restaurant terminology in retail/direct POS mode;
+- separate cashier workflow/tablet for every delivery platform;
 - delivery-platform identity as only a payment method;
-- platform commission hidden inside product price.
+- platform commission hidden inside customer-facing product price.
 
 ## Implementation boundary
 
-This benchmark records product direction only.
-
 Before code is authorized:
 
-1. reconcile `UI_EXECUTION_MANIFEST.json` with a new bounded restaurant/open-order flow;
-2. define Rifad contracts for service areas/places, open-order lifecycle, fulfillment, channels, pricing context and kitchen dispatch;
-3. update mock/local persistence intentionally;
-4. then implement the owner-approved visual flow.
+1. reconcile `UI_EXECUTION_MANIFEST.json` with bounded restaurant-service and online-order flows;
+2. define Rifad contracts for service configuration, places/open orders, fulfillment, channels, pricing, kitchen dispatch and delivery adapters;
+3. define normalized external-order/payment/settlement records;
+4. select a first adapter only after real credentials/test access are available;
+5. update mock/local persistence intentionally;
+6. then implement the owner-approved UI flow.
