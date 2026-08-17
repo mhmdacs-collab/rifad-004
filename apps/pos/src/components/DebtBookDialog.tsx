@@ -203,8 +203,8 @@ export function DebtBookDialog({
   };
 
   const confirmationLabel = settlementHalalas !== null && settlementHalalas > 0
-    ? `سداد ${formatHalalasForInput(settlementHalalas)} ر.س`
-    : "سداد";
+    ? `تأكيد سداد ${formatHalalasForInput(settlementHalalas)} ر.س`
+    : "تأكيد السداد";
 
   return (
     <div className="dialog-backdrop customer-credit-backdrop" role="presentation" onClick={() => { if (!submitting) onClose(); }}>
@@ -297,10 +297,14 @@ export function DebtBookDialog({
                           <label className="customer-settlement-input">
                             <input
                               autoFocus
-                              readOnly
                               dir="ltr"
                               inputMode="none"
                               value={amountInput}
+                              onChange={(event) => {
+                                setAmountInput(event.target.value);
+                                setAmountFresh(false);
+                                setMessage(null);
+                              }}
                               onKeyDown={handleSettlementKeyDown}
                               aria-label="مبلغ السداد"
                               disabled={submitting}
@@ -325,7 +329,7 @@ export function DebtBookDialog({
                         }}
                         disabled={submitting}
                       >
-                        {editingAmount ? "كامل الدين" : "سداد جزئي"}
+                        {editingAmount ? "كامل الدين" : "تعديل المبلغ"}
                       </button>
                     </div>
 
