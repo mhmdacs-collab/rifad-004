@@ -1,13 +1,20 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import type { PosRuntimeContract } from "./contracts/pos";
 import { createPosRuntimeAdapter, POS_RUNTIME_ADAPTER_INFO } from "./runtime/posRuntimeAdapter";
 import { usePosFlow } from "./state/usePosFlow";
+import { exercisePosRuntimeContract } from "./testing/posRuntimeConformance";
+
+const STORAGE_KEY = "rifad.pos.mock.v1";
 
 function RuntimeProbe({ runtime }: { runtime: PosRuntimeContract }) {
   const flow = usePosFlow(runtime);
   return <div data-testid="runtime-categories">{flow.categories.map((category) => category.name).join("|")}</div>;
 }
+
+afterEach(() => {
+  window.localStorage.removeItem(STORAGE_KEY);
+});
 
 describe("POS runtime adapter boundary", () => {
   it("declares one Rifad-owned runtime composition point", () => {
@@ -24,6 +31,16 @@ describe("POS runtime adapter boundary", () => {
     expect(typeof runtime.sales.startTicket).toBe("function");
     expect(typeof runtime.checkout.begin).toBe("function");
     expect(typeof runtime.printing.submit).toBe("function");
+  });
+
+  it("runs the reusable Rifad sale conformance probe against the selected adapter", async () => {
+    const result = await exercisePosRuntimeContract(createPosRuntimeAdapter());
+
+    expect(result.productId).toBeTruthy();
+    expect(result.ticketId).toBeTruthy();
+    expect(result.receiptId).toBeTruthy();
+    expect(result.receiptNumber).toMatch(/^R-/);
+    expect(result.receiptCount).toBeGreaterThanOrEqual(1);
   });
 
   it("lets usePosFlow consume an injected runtime instead of constructing the mock internally", async () => {
