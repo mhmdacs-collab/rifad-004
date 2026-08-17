@@ -6,7 +6,7 @@ import { formatMoneyAmount, money, parseRiyalsToHalalas, suggestedCashHalalas } 
 import { readPrintReceiptAlways, writePrintReceiptAlways } from "../domain/posPreferences";
 import type { PrintDeliveryStatus, Receipt, Ticket } from "../domain/models";
 
-export type InlineCheckoutStage = "payment" | "cash" | "success";
+export type InlineCheckoutStage = "payment" | "cash" | "card" | "success";
 
 type InlineCheckoutRailProps = {
   stage: InlineCheckoutStage;
@@ -19,7 +19,9 @@ type InlineCheckoutRailProps = {
   onBackToSales: () => void;
   onBackToPayment: () => void;
   onCash: () => void;
+  onCard: () => void;
   onCompleteCash: (tenderedHalalas: number) => void;
+  onCompleteCard: () => void;
   onPrint: () => void;
   onEmailReceipt: (email: string) => Promise<boolean>;
   onNewSale: () => void;
@@ -33,6 +35,25 @@ const printMessages: Record<PrintDeliveryStatus, string | null> = {
   "delivery-unknown": "حالة الطابعة غير مؤكدة. تحقق من الورق قبل إعادة الطباعة.",
 };
 
+function CashPaymentVisual() {
+  return (
+    <span className="payment-method-visual payment-method-visual--cash" aria-hidden="true">
+      <span className="cash-note cash-note--back" />
+      <span className="cash-note cash-note--front"><Icon name="cash" size={32} /></span>
+      <span className="cash-coin">ر.س</span>
+    </span>
+  );
+}
+
+function MadaPaymentVisual() {
+  return (
+    <span className="payment-method-visual payment-method-visual--mada" aria-hidden="true">
+      <span className="mada-card-shape"><Icon name="card" size={31} /><b>مدى</b></span>
+      <span className="mada-contactless"><i /><i /><i /></span>
+    </span>
+  );
+}
+
 export function InlineCheckoutRail({
   stage,
   ticket,
@@ -44,7 +65,9 @@ export function InlineCheckoutRail({
   onBackToSales,
   onBackToPayment,
   onCash,
+  onCard,
   onCompleteCash,
+  onCompleteCard,
   onPrint,
   onEmailReceipt,
   onNewSale,
@@ -152,23 +175,23 @@ export function InlineCheckoutRail({
           <section className="inline-payment-section" aria-labelledby="inline-payment-title">
             <div className="inline-section-heading">
               <strong id="inline-payment-title">طريقة الدفع</strong>
-              <span>اختر طريقة لإكمال العملية</span>
+              <span>اختر الطريقة المناسبة للعميل</span>
             </div>
             <div className="inline-payment-methods">
-              <button type="button" className="inline-payment-method inline-payment-method--ready" onClick={onCash} disabled={busy === "cash-method"}>
-                <span className="inline-payment-icon"><Icon name="cash" size={27} /></span>
-                <strong>نقدًا</strong>
-                <small>متاح</small>
+              <button type="button" className="inline-payment-method inline-payment-method--cash" onClick={onCash} disabled={busy === "cash-method"}>
+                <CashPaymentVisual />
+                <span className="inline-payment-copy"><strong>نقدًا</strong><small>استلام المبلغ وحساب الباقي</small></span>
+                <span className="inline-payment-chevron">‹</span>
               </button>
-              <button type="button" className="inline-payment-method" disabled>
-                <span className="inline-payment-icon"><Icon name="card" size={27} /></span>
-                <strong>شبكة / مدى</strong>
-                <small>قريبًا</small>
+              <button type="button" className="inline-payment-method inline-payment-method--mada" onClick={onCard} disabled={busy === "card-method"}>
+                <MadaPaymentVisual />
+                <span className="inline-payment-copy"><strong>شبكة / مدى</strong><small>بطاقة أو دفع لاتلامسي</small></span>
+                <span className="inline-payment-chevron">‹</span>
               </button>
             </div>
           </section>
 
-          <div className="inline-checkout-note"><Icon name="wifi" size={17} /><span>الدفع النقدي يعمل محليًا وتتم المزامنة عند توفر الاتصال.</span></div>
+          <div className="inline-checkout-note"><Icon name="wifi" size={17} /><span>اختر طريقة الدفع لإكمال العملية داخل نفس شاشة البيع.</span></div>
         </div>
       </aside>
     );
@@ -209,7 +232,6 @@ export function InlineCheckoutRail({
           </section>
 
           <div className="inline-cash-suggestions" aria-label="مبالغ سريعة">
-            <button type="button" className={tendered === ticket.total.halalas ? "selected" : ""} onClick={() => chooseSuggestion(ticket.total.halalas)}>بالضبط</button>
             {suggestions.slice(0, 4).map((value) => (
               <button type="button" key={value} className={tendered === value ? "selected" : ""} onClick={() => chooseSuggestion(value)}>
                 {formatMoneyAmount(money(value))}
@@ -240,9 +262,45 @@ export function InlineCheckoutRail({
     );
   }
 
+  if (stage === "card") {
+    return (
+      <aside className="inline-checkout-rail inline-checkout-rail--card" aria-label="الدفع عبر شبكة أو مدى">
+        <header className="inline-checkout-head">
+          <button type="button" className="inline-checkout-back" onClick={onBackToPayment} aria-label="العودة إلى طرق الدفع"><Icon name="arrow" size={20} /></button>
+          <div><strong>شبكة / مدى</strong><span>تذكرة #{ticket.sequence}</span></div>
+        </header>
+
+        <div className="inline-checkout-body inline-card-body">
+          <section className="inline-checkout-total-card" aria-label="إجمالي البيع">
+            <span>المبلغ المطلوب</span>
+            <h1><MoneyAmount value={ticket.total} /></h1>
+          </section>
+
+          <InlineNotice message={errorMessage} onDismiss={onDismissError} />
+
+          <section className="inline-card-terminal" aria-labelledby="inline-card-title">
+            <div className="inline-card-terminal-visual"><MadaPaymentVisual /></div>
+            <div className="inline-card-terminal-copy">
+              <span>جاهز للدفع</span>
+              <h2 id="inline-card-title">مرّر البطاقة أو استخدم الدفع اللاتلامسي</h2>
+              <p>بعد تأكيد العملية من جهاز الشبكة، أكمل البيع من الزر أدناه.</p>
+            </div>
+            <div className="inline-card-status"><i /><span>جهاز الدفع جاهز</span></div>
+          </section>
+
+          <button type="button" className="inline-complete-sale inline-complete-card" disabled={busy === "complete-card"} onClick={onCompleteCard}>
+            <Icon name="check" size={21} />
+            <span>{busy === "complete-card" ? "جارٍ تأكيد الدفع…" : "تم الدفع"}</span>
+          </button>
+        </div>
+      </aside>
+    );
+  }
+
   const completed = receipt;
   if (!completed) return null;
   const isCredit = completed.paymentMethod === "credit";
+  const isCard = completed.paymentMethod === "card";
   const resolvedEmail = email || completed.customer?.details.email || "";
 
   return (
@@ -252,7 +310,7 @@ export function InlineCheckoutRail({
         <div className="inline-success-copy">
           <span>اكتملت العملية</span>
           <h1>{isCredit ? "تم تسجيل البيع الآجل بنجاح" : "تمت عملية البيع بنجاح"}</h1>
-          <p>{isCredit ? "حُفظت الفاتورة على حساب العميل." : "حُفظت العملية محليًا وهي جاهزة للمزامنة."}</p>
+          <p>{isCredit ? "حُفظت الفاتورة على حساب العميل." : isCard ? "تم تأكيد الدفع عبر شبكة / مدى وحُفظت العملية." : "حُفظت العملية محليًا وهي جاهزة للمزامنة."}</p>
           <span className="inline-success-local"><i />محفوظ محليًا</span>
         </div>
 
@@ -263,6 +321,11 @@ export function InlineCheckoutRail({
             <>
               <div><span>طريقة الإنهاء</span><strong>آجل</strong></div>
               <div className="inline-success-highlight"><span>العميل</span><strong>{completed.customer?.name ?? "—"}</strong></div>
+            </>
+          ) : isCard ? (
+            <>
+              <div><span>طريقة الدفع</span><strong>شبكة / مدى</strong></div>
+              <div className="inline-success-highlight"><span>المبلغ المدفوع</span><strong><MoneyAmount value={completed.total} /></strong></div>
             </>
           ) : (
             <>
