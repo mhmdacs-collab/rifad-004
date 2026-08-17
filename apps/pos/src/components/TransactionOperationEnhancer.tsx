@@ -73,11 +73,7 @@ export function TransactionOperationEnhancer({ showClearCart, onClearCart }: Tra
           aria-label="مسح السلة"
         >
           <span className="ticket-clear-cart-icon" aria-hidden="true"><Icon name="trash" size={20} /></span>
-          <span className="ticket-clear-cart-copy">
-            <strong>{clearing ? "جارٍ مسح السلة…" : "مسح السلة"}</strong>
-            <small>إزالة جميع الأصناف</small>
-          </span>
-          <span className="ticket-clear-cart-badge" aria-hidden="true">الكل</span>
+          <strong>{clearing ? "جارٍ مسح السلة…" : "مسح السلة"}</strong>
         </button>,
         target,
         `clear-cart-${index}`,
