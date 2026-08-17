@@ -124,10 +124,11 @@ export function InlineCheckoutRail({
   };
 
   const sendEmail = async () => {
-    if (!email.trim() || emailSending) return;
+    const resolvedEmail = email.trim() || receipt?.customer?.details.email?.trim() || "";
+    if (!resolvedEmail || emailSending) return;
     setEmailSending(true);
     setEmailMessage(null);
-    const sent = await onEmailReceipt(email.trim());
+    const sent = await onEmailReceipt(resolvedEmail);
     setEmailSending(false);
     setEmailMessage(sent ? "تم إرسال الإيصال إلى البريد الإلكتروني." : "تعذر إرسال الإيصال. تحقق من البريد وحاول مرة أخرى.");
   };
@@ -242,6 +243,7 @@ export function InlineCheckoutRail({
   const completed = receipt;
   if (!completed) return null;
   const isCredit = completed.paymentMethod === "credit";
+  const resolvedEmail = email || completed.customer?.details.email || "";
 
   return (
     <aside className="inline-checkout-rail inline-checkout-rail--success" aria-label="اكتملت عملية البيع">
@@ -251,6 +253,7 @@ export function InlineCheckoutRail({
           <span>اكتملت العملية</span>
           <h1>{isCredit ? "تم تسجيل البيع الآجل بنجاح" : "تمت عملية البيع بنجاح"}</h1>
           <p>{isCredit ? "حُفظت الفاتورة على حساب العميل." : "حُفظت العملية محليًا وهي جاهزة للمزامنة."}</p>
+          <span className="inline-success-local"><i />محفوظ محليًا</span>
         </div>
 
         <section className="inline-success-summary" aria-label="ملخص العملية">
@@ -258,7 +261,7 @@ export function InlineCheckoutRail({
           <div><span>الإجمالي</span><strong><MoneyAmount value={completed.total} /></strong></div>
           {isCredit ? (
             <>
-              <div><span>طريقة الدفع</span><strong>آجل</strong></div>
+              <div><span>طريقة الإنهاء</span><strong>آجل</strong></div>
               <div className="inline-success-highlight"><span>العميل</span><strong>{completed.customer?.name ?? "—"}</strong></div>
             </>
           ) : (
@@ -271,8 +274,8 @@ export function InlineCheckoutRail({
 
         {completed.customer ? (
           <section className="inline-success-email" aria-label="إرسال الإيصال للعميل">
-            <label><span>إرسال الإيصال إلى العميل</span><input dir="ltr" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="customer@example.com" /></label>
-            <button type="button" onClick={() => void sendEmail()} disabled={busy !== null || emailSending || !email.trim()}>{emailSending ? "جارٍ الإرسال…" : "إرسال"}</button>
+            <label><span>إرسال الإيصال إلى العميل</span><input dir="ltr" type="email" value={resolvedEmail} onChange={(event) => setEmail(event.target.value)} placeholder="customer@example.com" /></label>
+            <button type="button" onClick={() => void sendEmail()} disabled={busy !== null || emailSending || !resolvedEmail.trim()}>{emailSending ? "جارٍ الإرسال…" : "إرسال الإيصال"}</button>
             {emailMessage ? <small role="status">{emailMessage}</small> : null}
           </section>
         ) : null}
