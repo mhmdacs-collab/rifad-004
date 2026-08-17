@@ -1,32 +1,19 @@
 /*
  * Rifad POS — Visual Pass 27
- * Establish Cairo as the canonical Arabic UI typeface and remove the need for
- * platform-font metric workarounds in touch navigation/header text.
+ * Cairo is intentionally scoped to the sale header and sale-page labels only.
+ * The rest of the POS keeps the existing application typography.
  */
 
-:root,
-html,
-body,
-button,
-input,
-select,
-textarea {
-  font-family: "Cairo", Tahoma, Arial, sans-serif !important;
-}
-
-/* Keep POS typography stable across Windows, Android-based touch devices and
-   browser engines by using Cairo metrics consistently in the highest-risk areas. */
 .sale-screen-touch .current-page-title,
 .sale-screen-touch .layout-title,
 .sale-screen-touch .sale-page-tabs button:not(.grid-page):not(.add-sale-page),
 .sale-screen-basic .current-page-title,
-.screen-mode-options button {
+.screen-mode-options button:nth-child(2) > strong::after {
   font-family: "Cairo", Tahoma, Arial, sans-serif !important;
   font-synthesis: none;
 }
 
-/* Cairo has taller Arabic vertical metrics than Segoe/Tahoma. Give the title a
-   real line box instead of relying on glyph overflow or clipping exceptions. */
+/* Touch sale header */
 .sale-screen-touch .current-page-title,
 .sale-screen-touch .layout-title {
   display: flex !important;
@@ -42,7 +29,7 @@ textarea {
   font-weight: 700 !important;
 }
 
-/* Page labels use the same Cairo metrics and remain comfortably centered. */
+/* Sale-page labels */
 .sale-screen-touch .sale-page-tabs button:not(.grid-page):not(.add-sale-page) {
   display: inline-flex !important;
   align-items: center;
@@ -71,18 +58,6 @@ textarea {
   font-size: .82rem;
   line-height: 1.7;
   font-weight: 700;
-}
-
-/* Cairo reads slightly larger at equal CSS sizes; normalize dense POS metadata
-   while preserving the hierarchy created in previous visual passes. */
-.ticket-panel,
-.catalog-product,
-.workspace-header,
-.sale-page-tabs,
-.payment-pane,
-.auth-screen,
-.pin-screen {
-  font-family: "Cairo", Tahoma, Arial, sans-serif !important;
 }
 
 @media (min-width: 781px) and (max-height: 760px) {
