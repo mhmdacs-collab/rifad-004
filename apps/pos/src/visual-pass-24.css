@@ -78,15 +78,15 @@
   }
 }
 
-/* The basic retail-oriented surface is a sale screen, so use the user-facing name
-   "شاشة البيع" without changing the stored per-device mode key. */
+/* The basic retail-oriented surface is optimized for direct barcode/search selling.
+   Use the shorter cashier-facing label without changing the stored per-device mode key. */
 .sale-screen-basic .current-page-title {
   font-size: 0 !important;
   line-height: 1;
 }
 
 .sale-screen-basic .current-page-title::after {
-  content: "شاشة البيع";
+  content: "البيع السريع";
   display: inline-block;
   color: inherit;
   font-size: clamp(.9rem, .84vw, 1.03rem);
