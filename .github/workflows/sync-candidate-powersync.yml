@@ -14,7 +14,7 @@ on:
 jobs:
   powersync-baseline:
     runs-on: ubuntu-latest
-    timeout-minutes: 18
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -128,6 +128,43 @@ jobs:
           PG_URL: postgresql://postgres:changeme@127.0.0.1:5432/postgres
           PS_CLIENT_AUTH_KEY: ZGV2LXNoYXJlZC1zZWNyZXQtZm9yLWRlbW8tb25seS0zMmI
         run: node schema-evolution.mjs
+
+      - name: Switch to signed merchant and branch scoped Sync Streams
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXAMPLE=/tmp/powersync-cli/examples/self-hosted/local-postgres-node
+          cat > "$EXAMPLE/powersync/sync-config.yaml" <<'YAML'
+          config:
+            edition: 3
+          streams:
+            scoped:
+              auto_subscribe: true
+              queries:
+                - SELECT * FROM catalog_items WHERE merchant_id = auth.parameter('merchant_id') AND branch_id = auth.parameter('branch_id')
+                - SELECT * FROM customers WHERE merchant_id = auth.parameter('merchant_id') AND branch_id = auth.parameter('branch_id')
+                - SELECT * FROM sales WHERE merchant_id = auth.parameter('merchant_id') AND branch_id = auth.parameter('branch_id')
+          YAML
+          docker compose \
+            --env-file "$EXAMPLE/powersync/docker/.env" \
+            -f "$EXAMPLE/powersync/docker/docker-compose.yaml" \
+            restart powersync
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8080/probes/liveness >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          exit 1
+
+      - name: Execute tenant branch and server authorization proof
+        working-directory: tests/sync-candidates/powersync
+        env:
+          POWERSYNC_URL: http://127.0.0.1:8080
+          PG_URL: postgresql://postgres:changeme@127.0.0.1:5432/postgres
+          PS_CLIENT_AUTH_KEY: ZGV2LXNoYXJlZC1zZWNyZXQtZm9yLWRlbW8tb25seS0zMmI
+          RIFAD_SECURITY_API_PORT: "8788"
+        run: node security-isolation.mjs
 
       - name: Capture service logs on failure
         if: failure()
