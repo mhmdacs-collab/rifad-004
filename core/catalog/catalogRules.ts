@@ -16,7 +16,7 @@ import {
 } from "../../contracts/catalog";
 
 export const CATALOG_SNAPSHOT_SCHEMA_VERSION = 4 as const;
-export const DEFAULT_CATALOG_COLOR = "#0A714E" as const;
+export const DEFAULT_CATALOG_COLOR: string = "#0A714E";
 export const CATALOG_VISUAL_COLORS = [
   "#0A714E",
   "#2D8CFF",
@@ -46,19 +46,19 @@ export type CatalogSnapshot = Readonly<{
   commandResults: readonly CatalogCommandResult[];
 }>;
 
-export const normalizeCatalogColor = (value: string | undefined | null, fallback = DEFAULT_CATALOG_COLOR) => {
+export const normalizeCatalogColor = (value: string | undefined | null, fallback: string = DEFAULT_CATALOG_COLOR) => {
   const normalized = (value ?? "").trim().toUpperCase();
   return /^#[0-9A-F]{6}$/.test(normalized) ? normalized : fallback;
 };
 
-export const defaultCatalogAppearance = (color = DEFAULT_CATALOG_COLOR): CatalogItemAppearance => ({
+export const defaultCatalogAppearance = (color: string = DEFAULT_CATALOG_COLOR): CatalogItemAppearance => ({
   mode: "color",
   color: normalizeCatalogColor(color),
   shape: "rounded",
   imageDataUrl: null,
 });
 
-export const normalizeCatalogAppearance = (appearance: CatalogItemAppearance | undefined, fallbackColor = DEFAULT_CATALOG_COLOR): CatalogItemAppearance => {
+export const normalizeCatalogAppearance = (appearance: CatalogItemAppearance | undefined, fallbackColor: string = DEFAULT_CATALOG_COLOR): CatalogItemAppearance => {
   if (!appearance) return defaultCatalogAppearance(fallbackColor);
   const imageDataUrl = typeof appearance.imageDataUrl === "string" && /^data:image\/(?:png|jpe?g|webp);base64,/i.test(appearance.imageDataUrl)
     ? appearance.imageDataUrl
