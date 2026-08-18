@@ -7,6 +7,7 @@ import "./reference-overrides.css";
 import "./rifad-polish.css";
 import "./backoffice-2026.css";
 import "./backoffice-layout-safety.css";
+import "./catalog-visuals.css";
 
 const catalog = getBackOfficeCatalogAdmin();
 
