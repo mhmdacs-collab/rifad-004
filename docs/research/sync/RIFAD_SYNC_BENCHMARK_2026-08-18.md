@@ -1,6 +1,6 @@
 # Rifad Synchronization Benchmark — 2026-08-18
 
-Status: **RESEARCH / CANDIDATE GATE — NO TECHNOLOGY SELECTED YET**
+Status: **RESEARCH / CANDIDATE GATE — PROMOTED LEADER UNDER RUNTIME TRIAL, NO FINAL PRODUCTION SELECTION YET**
 
 ## Purpose
 
@@ -163,12 +163,14 @@ The table is a research shortlist, not an adoption decision.
 
 | Candidate | Strong fit | Important concern / proof needed | Current disposition |
 | --- | --- | --- | --- |
-| **PowerSync** | Local SQLite; real-time source→client sync; offline queue; strong additive schema evolution; web SDK; self-host option | Client writes still require a Rifad/backend `uploadData()` API; Tauri SDK is currently alpha; no built-in branch P2P model | **Execute proof** |
-| **CouchDB + compatible client replication (e.g. Pouch-style approach)** | Mature open replication protocol; continuous replication; checkpoints; restart recovery; conflict model; fully inspectable Apache lineage | Need a clean modern Windows + PWA integration proof and a Rifad data-model fit; document model may impose tradeoffs | **Execute open baseline proof** |
-| **Couchbase Lite + Sync Gateway** | Embedded offline DB; continuous bidirectional WebSocket replication; access control; native P2P capability exists on supported native SDKs; browser JS client exists | Community licensing/distribution needs legal review; browser JS currently has no P2P; actual Windows/Tauri packaging must be proved | **Execute only after license/platform gate** |
-| **RxDB** | Strong browser/local-first model; flexible replication against custom backends | Production SQLite storage is a commercial/premium concern; custom HTTP replication still requires server handlers; not a no-work final answer | **Hold / compare if needed** |
-| **Electric Sync (current architecture)** | Modern Postgres→client read-path sync | Current model is not a turnkey symmetric write replication engine; writes remain application/API work | **Not primary candidate** |
-| **Ditto** | Strong offline/P2P/cloud product and multi-platform story | Proprietary/commercial; web/P2P capability boundaries differ by platform | **Commercial fallback only** |
+| **PowerSync** | Local SQLite; real-time source→client sync; offline queue; strong additive schema evolution; web SDK; self-host option | Client writes still require a Rifad/backend `uploadData()` API; Tauri SDK is currently alpha; no built-in branch P2P model | **PROMOTED — 92/100; execute deeper proof first** |
+| **CouchDB + compatible client replication (e.g. Pouch-style approach)** | Mature open replication protocol; continuous replication; checkpoints; restart recovery; conflict model; fully inspectable Apache lineage | Need a clean modern Windows + PWA integration proof and a Rifad data-model fit; document model may impose tradeoffs | **86/100 — hold/open control** |
+| **Couchbase Lite + Sync Gateway** | Embedded offline DB; continuous bidirectional WebSocket replication; access control; native P2P capability exists on supported native SDKs; browser JS client exists | Community licensing/distribution needs legal review; browser JS currently has no P2P; actual Windows/Tauri packaging must be proved | **87/100 — hold below promotion threshold** |
+| **RxDB** | Strong browser/local-first model; flexible replication against custom backends | Production SQLite storage is a commercial/premium concern; custom HTTP replication still requires server handlers; not a no-work final answer | **81/100 — hold** |
+| **Electric Sync (current architecture)** | Modern Postgres→client read-path sync | Current model is not a turnkey symmetric write replication engine; writes remain application/API work | **74/100 — not primary** |
+| **Ditto** | Strong offline/P2P/cloud product and multi-platform story | Proprietary/commercial; web/P2P capability boundaries differ by platform | **78/100 — commercial fallback** |
+
+Full scoring model and evidence are in `docs/research/sync/SYNC_CANDIDATE_SCORECARD_2026-08-18.md`.
 
 ---
 
@@ -275,12 +277,34 @@ The result of that proof — not this benchmark — selects the implementation b
 
 ---
 
-# 7. Current conclusion
+# 7. Owner promotion rule — 90% before deeper trial
 
-No synchronization technology is selected yet.
+On 2026-08-18 the owner set an explicit candidate-selection order:
 
-The evidence supports this priority:
+1. simulate/score candidates against Rifad requirements;
+2. only a candidate scoring **90/100 or higher** is promoted to deeper runtime trial;
+3. test strongest to weakest rather than spending equal implementation effort on all candidates;
+4. if the leader fails a hard production gate, move to the next strongest credible candidate rather than silently lowering requirements.
 
-> **Lock the current reference UI enough to stop visual churn → execute synchronization candidate proofs → adopt the strongest proven replaceable sync capability → continue Back Office/POS product features through that real synchronized path.**
+The current scorecard yields:
+
+1. **PowerSync — 92/100 — PROMOTED**;
+2. Couchbase Lite + Sync Gateway — 87/100 — hold;
+3. CouchDB + PouchDB — 86/100 — hold/open replication control;
+4. RxDB — 81/100 — hold;
+5. Ditto — 78/100 — commercial fallback;
+6. Electric Sync — 74/100 — not primary.
+
+PowerSync has already passed multiple runtime slices documented in `SYNC_CANDIDATE_EXECUTION_2026-08-18.md`, so deeper proof continues there first. CouchDB's already-executed runtime baseline remains the mandatory second credible implementation/control required by project rules; it does not need equal further investment while the promoted leader is still passing.
+
+---
+
+# 8. Current conclusion
+
+No synchronization technology is finally production-selected yet.
+
+The evidence now supports this priority:
+
+> **PowerSync cleared the owner's 90% promotion gate → close its remaining hard runtime/license/operations gates first → if it passes, adopt it behind the Rifad synchronization boundary → if it fails, continue strongest-to-weakest.**
 
 This preserves D-030's prohibition on premature final data-model freeze while fixing the previous sequencing mistake of postponing synchronization until after most product surfaces were complete.
