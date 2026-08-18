@@ -1,15 +1,17 @@
 # VISUAL-DECISION-007 — Back Office Loyverse-like hierarchy
 
 Last updated: 2026-08-18
-Status: **APPROVED BY OWNER — REFINED WITH RIFAD VISUAL IDENTITY**
+Status: **STRUCTURE APPROVED BY OWNER — RIFAD 2026 POLISH UNDER ACTIVE VISUAL REVIEW**
 
 ## Decision
 
-For the current Rifad Back Office product-discovery phase, the owner explicitly approved the supplied Loyverse Back Office screenshots as the primary visual reference for the management shell and catalog administration surfaces.
+For the current Rifad Back Office product-discovery phase, the owner explicitly approved the supplied Loyverse Back Office screenshots as the primary visual reference for the management shell and catalog-administration surfaces.
 
 This approval is visual/interaction hierarchy only. Rifad continues to own all contracts, data meanings, adapters, persistence boundaries and implementation code.
 
-The owner subsequently reviewed the first executable pass at normal desktop scale and approved the hierarchy as a materially better direction, while explicitly requesting a Rifad-specific polish pass: official Rifad colors, clearer typography, slightly larger actions and meaningful action icons.
+The owner rated the first close structural pass at roughly 70% and explicitly identified the remaining gap as the feeling of a modern 2026 product: smoother hierarchy, coherent readable typography, calm colors, meaningful icons, better micro-spacing and simpler merchant-facing workflows.
+
+The structural reference remains accepted. The latest Rifad 2026 polish layer is **not yet visually accepted** and must remain reviewable rather than being treated as final design authority.
 
 ## Approved visual characteristics
 
@@ -21,25 +23,38 @@ The Back Office should stay visually close to the supplied reference in the foll
 - pale gray workspace background with focused white management cards;
 - thin borders, restrained shadows and low visual noise;
 - Arabic typography uses a **Cairo-first** stack with practical Windows/browser fallbacks and must be judged at normal 1920×1080 viewing distance, not screenshot zoom;
-- important list/form text must remain materially clearer than the first 10–12px prototype pass;
-- primary add/save actions use Rifad green and are slightly larger than the first compact prototype so their purpose is immediately visible;
-- add, save, delete and back actions should use clear pictograms **in addition to Arabic labels** where a label exists; icons do not replace action wording;
-- item/category/modifier lists are presented as calm management tables with clear hover/focus feedback;
-- category rows may use UI-only color swatches for scanability until category color becomes an approved durable product field;
-- item editing uses a narrow vertical stack of form cards rather than a wide dashboard-style editor;
-- related item sections are visually separated into successive white cards;
-- save/cancel actions sit at the end of the editing flow rather than dominating the top of the page;
-- category and modifier editing use focused narrow forms consistent with the supplied reference;
-- Rifad identity must be visible through brand color, typography, action treatment and interaction feedback without changing the approved Loyverse-like management hierarchy.
+- list/form text must be comfortably readable and visually coherent rather than reproducing tiny legacy-admin typography;
+- primary actions use Rifad green with a practical 46–48px class target in desktop management surfaces where space allows;
+- add, save, delete and back actions use consistent line pictograms in addition to Arabic action wording where wording is useful;
+- hover/focus/selected states are calm but immediately recognizable;
+- tables prioritize scanning speed over decorative density;
+- item editing uses a focused vertical stack of cards rather than a wide dashboard-style editor;
+- repeated save access may appear at both top and bottom of a long editor while preserving the same label/meaning;
+- category, option-group and add-on editing use focused forms rather than technical developer-style builders;
+- Rifad identity must be visible through brand color, typography, action treatment and interaction feedback without changing the accepted management hierarchy.
+
+## Merchant-simplicity refinement
+
+The visual/product review also rejected technical **variant / Cartesian-combination** language as the primary merchant experience.
+
+The current target presentation is:
+
+- **مجموعات الخيارات** as reusable merchant-managed groups;
+- **أسعار متعددة** as one clear switch inside the item editor;
+- a calm segmented choice between **مجموعة جاهزة** and **خيارات خاصة بهذا الصنف**;
+- direct option/price rows instead of generated-combination machinery;
+- **الإضافات العامة** and **إضافات خاصة بهذا الصنف** as visibly separate concepts.
+
+This simplification is both product and visual hierarchy. It is intentionally designed for a business owner managing many similar items.
 
 ## Current affected surfaces
 
 - `BO-SCREEN-001` — Shell and Navigation
 - `BO-SCREEN-006` — Item List
 - `BO-SCREEN-007` — Item Editor
-- `BO-SCREEN-008` — Variants inside item administration
+- `BO-SCREEN-008` — Reusable Option Groups / Multiple Pricing
 - `BO-SCREEN-009` — Categories
-- `BO-SCREEN-011` — Modifiers
+- `BO-SCREEN-011` — Add-ons
 - `BO-FLOW-002` — Manage Catalog Items
 
 ## Boundaries
@@ -52,12 +67,14 @@ This decision does **not** authorize:
 - implementing inventory, discounts, taxes, suppliers or other Back Office capabilities only because they appear in the reference screenshots;
 - freezing production storage, LAN, branch Sync or fiscal integration design;
 - changing the already approved cashier/POS visual rules unless separately authorized;
-- introducing a mandatory online font dependency as a hidden runtime requirement. Cairo is the preferred face, but the interface must remain readable with the declared local fallbacks.
+- introducing a mandatory online font dependency as a hidden runtime requirement.
 
 The supplied screenshots are a reference for visual structure and usability. Rifad remains independently implemented.
 
 ## Current implementation checkpoint
 
-The Back Office keeps the owner-approved Loyverse-like hierarchy and now layers Rifad-owned polish through `apps/backoffice/src/rifad-polish.css` after the structural/reference styles. The layer applies the official Rifad palette, a Cairo-first typography stack, larger human-readable controls, stronger table/form optical scale, branded focus/hover states and CSS/SVG action pictograms without changing business behavior.
+The Back Office retains the owner-approved Loyverse-like management hierarchy and loads Rifad-owned visual layers last. The current `backoffice-2026.css` pass adds Rifad typography/color/action/icon/micro-interaction treatment plus modern switch, segmented-control, pricing-row and add-on-row patterns.
 
 Functional behavior remains behind `CatalogAdminContract` and its replaceable adapter boundary.
+
+Owner visual acceptance of this latest pass remains pending direct runtime review.
