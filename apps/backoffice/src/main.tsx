@@ -9,6 +9,7 @@ import "./backoffice-2026.css";
 import "./backoffice-layout-safety.css";
 import "./catalog-visuals.css";
 import "./loyverse-reference-pass.css";
+import "./loyverse-font-pass.css";
 
 const catalog = getBackOfficeCatalogAdmin();
 
