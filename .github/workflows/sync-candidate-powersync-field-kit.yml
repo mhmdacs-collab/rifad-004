@@ -1,0 +1,47 @@
+name: Sync candidate - PowerSync field kit
+
+on:
+  push:
+    paths:
+      - "tests/sync-candidates/powersync-field/**"
+      - ".github/workflows/sync-candidate-powersync-field-kit.yml"
+  pull_request:
+    paths:
+      - "tests/sync-candidates/powersync-field/**"
+      - ".github/workflows/sync-candidate-powersync-field-kit.yml"
+  workflow_dispatch:
+
+jobs:
+  browser-and-node-static:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: tests/sync-candidates/powersync-field
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install pinned field-kit dependencies
+        run: npm install --ignore-scripts=false
+      - name: Check Node proof sources
+        run: |
+          node --check backend.mjs
+          node --check native-proof.mjs
+      - name: Build browser compatibility client
+        run: npm run build
+
+  powershell-parse:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: tests/sync-candidates/powersync-field
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse PowerShell launchers
+        shell: powershell
+        run: |
+          [scriptblock]::Create((Get-Content -Raw .\Start-RifadPowerSyncFieldTest.ps1)) | Out-Null
+          [scriptblock]::Create((Get-Content -Raw .\Stop-RifadPowerSyncFieldTest.ps1)) | Out-Null
