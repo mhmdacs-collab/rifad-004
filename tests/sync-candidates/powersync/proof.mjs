@@ -83,17 +83,29 @@ class RifadProofConnector {
     const batch = await database.getCrudBatch();
     if (!batch) return;
 
+    const crud = batch.crud.map((op) => ({
+      clientId: op.clientId,
+      transactionId: op.transactionId,
+      table: op.table,
+      op: op.op,
+      id: op.id,
+      opData: op.opData,
+      previousValues: op.previousValues,
+      metadata: op.metadata
+    }));
+
     const response = await fetch(`http://127.0.0.1:${API_PORT}/sync-batch`, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
         'x-rifad-device': this.deviceId
       },
-      body: JSON.stringify({ crud: batch.crud })
+      body: JSON.stringify({ crud })
     });
 
     if (!response.ok) {
-      throw new Error(`proof backend rejected upload: ${response.status}`);
+      const detail = await response.text();
+      throw new Error(`proof backend rejected upload: ${response.status} ${detail}`);
     }
 
     await batch.complete();
@@ -112,6 +124,16 @@ async function openClient(filename, deviceId) {
     schema
   });
   await db.init();
+  db.registerListener({
+    statusChanged(status) {
+      if (status.dataFlowStatus?.uploadError) {
+        console.error(`UPLOAD_ERROR device=${deviceId}`, status.dataFlowStatus.uploadError);
+      }
+      if (status.dataFlowStatus?.downloadError) {
+        console.error(`DOWNLOAD_ERROR device=${deviceId}`, status.dataFlowStatus.downloadError);
+      }
+    }
+  });
   await db.connect(new RifadProofConnector(deviceId));
   await db.waitForFirstSync();
   return db;
@@ -171,6 +193,7 @@ function startProofBackend(pool) {
             continue;
           }
 
+          if (keys.length === 0) throw new Error(`empty put payload for ${table}:${op.id}`);
           const columns = ['id', ...keys];
           const values = [op.id, ...keys.map((key) => data[key])];
           const params = values.map((_, index) => `$${index + 1}`).join(', ');
