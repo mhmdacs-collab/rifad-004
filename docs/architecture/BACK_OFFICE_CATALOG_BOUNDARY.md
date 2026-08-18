@@ -32,26 +32,31 @@ The public meaning belongs to Rifad contracts. Transport and persistence are rep
 
 ## Current executable product model
 
-`BO-FLOW-002` now covers a practical catalog-management workspace rather than a static item proof.
+`BO-FLOW-002` covers a practical catalog-management workspace rather than a static item proof.
 
 ### Item list and editor
 
 Current executable behavior includes:
 
 - item list;
-- search by item/variant name, SKU or barcode;
+- search by item name, SKU or barcode;
 - filter by category;
 - add and edit item;
 - name and description;
 - category selection;
-- fixed base price represented in exact halalas;
 - base SKU and barcode;
 - available-for-sale state;
-- full-page editor with explicit save/cancel actions.
+- fixed or multiple-price mode;
+- reusable pricing-option groups;
+- sparse per-item overrides of a shared group's prices;
+- item-only pricing choices;
+- reusable general add-ons;
+- item-private add-ons;
+- explicit save/cancel actions.
 
 Turning `availableForSale` off keeps the item manageable in Back Office while excluding it from the current sellable POS catalog.
 
-New POS ticket lines resolve the current catalog name and base price when the item is added. Completed receipt snapshots remain historical sale evidence and must not be silently rewritten by later catalog edits.
+Completed receipt snapshots remain historical sale evidence and must not be silently rewritten by later catalog edits.
 
 ### Categories
 
@@ -62,53 +67,91 @@ Back Office can currently:
 - rename a category;
 - use stable category identity while propagating the renamed display name to current catalog items.
 
-Delete/reorder/color/layout behavior is not frozen yet.
+Delete/reorder/durable color semantics are not frozen yet.
 
-### Variants
+## Reusable option groups and multiple prices
 
-Variants are Rifad catalog facts, not a Back Office-only presentation trick.
+Rifad's merchant-facing model intentionally avoids requiring the owner to rebuild the same technical variant matrix on every product.
 
-The current staging model supports:
+A reusable **option group** is an independently managed catalog entity. Example:
 
-- up to three option dimensions such as **الحجم** or **اللون**;
-- named values under each option;
-- generated Cartesian combinations;
-- a maximum of 200 generated combinations in the current discovery rule;
-- stable variant identity;
-- variant-specific selling price;
-- variant-specific SKU;
-- variant-specific barcode;
-- uniqueness checks across base items and variants.
+`أحجام البيتزا → صغير 10 | وسط 20 | كبير 25`
 
-The base item remains the product family identity. A generated variant is one sellable choice under that item rather than a separate unrelated item.
+Its durable meanings are:
 
-The current POS does **not** yet expose the variant chooser. Back Office variant administration is therefore CURRENT-MOCK product-field evidence, while cashier variant-selection behavior remains a separate POS UI gap that must be authorized before implementation.
+- stable option-group identity;
+- group name;
+- stable option-value identity;
+- option-value name;
+- default exact price for that option value.
 
-### Modifiers / add-ons
+An item pricing policy is one of:
 
-Modifiers are intentionally separate from variants.
+1. **fixed** — one direct price;
+2. **option-group / inherit** — use all current prices from one reusable group;
+3. **option-group / custom** — use the same group identity but override only the item prices that differ;
+4. **custom-options** — item-private pricing choices when they should not be globally reusable.
 
-A modifier group is a reusable catalog entity with:
+Sparse override semantics are deliberate. If an item customizes only `صغير`, the other group values continue inheriting the group's current prices rather than copying all prices into the item.
+
+The Back Office control **أسعار متعددة** disables the fixed-price field and makes option pricing the price authority for that item.
+
+The current staging item keeps a convenience `price` equal to the minimum resolved effective option price for list/report preview. That convenience value is not permission for the cashier to sell without selecting the actual option.
+
+### Legacy variant compatibility
+
+Historical `CatalogVariant*` / generated-combination structures remain only for migration compatibility with previous staging snapshots.
+
+They are not the target merchant-facing product model and new Back Office UI must not reintroduce Cartesian combination building merely because the compatibility types still exist.
+
+If later product discovery proves a genuine multi-dimensional sellable identity need—such as independently scannable size + color combinations—it must be introduced deliberately as its own reviewed capability rather than leaking back from the old prototype.
+
+## POS safety boundary
+
+The current POS does **not** yet expose the approved option/size chooser.
+
+`CatalogReadContract.listItems()` therefore excludes option-priced items by default. Back Office administration opts in with `includeOptionPriced: true`.
+
+This prevents an item whose actual price depends on size/choice from being sold at a silent minimum/fallback price.
+
+Before option-priced items become cashier-sellable, POS must explicitly discover and snapshot:
+
+- selected option/group/value;
+- resolved exact sold price;
+- selected add-ons and their exact sold prices;
+- ticket-line display text;
+- kitchen/receipt presentation where applicable.
+
+## Add-ons
+
+Add-ons are intentionally separate from pricing option groups.
+
+### General reusable add-ons
+
+A reusable add-on group has:
 
 - stable group identity;
 - group name;
-- one or more modifier options;
-- stable option identity;
-- modifier option name;
-- additional price in exact halalas.
+- one or more stable add-on option identities;
+- option name;
+- additional exact price.
 
-Back Office can create/edit modifier groups and assign one or more groups to an item. A group can be reused by multiple items.
+The same group may be assigned to many items.
 
-The current POS does **not** yet apply or price modifiers during a sale. Back Office modifier administration therefore discovers and persists the catalog meaning only; cashier modifier selection, minimum/maximum selection rules, kitchen presentation and receipt snapshots remain future product/UI work.
+### Item-private add-ons
+
+An item may also carry private add-on groups that belong only to that item. This supports genuine one-off choices without creating dozens of globally reusable groups that are meaningful to only one product.
+
+The current POS does **not** yet apply or price add-ons during a sale. Required/optional rules, minimum/maximum selection, ticket-line snapshots, kitchen presentation and receipt presentation remain future product/UI work.
 
 ## Deliberate non-goals
 
 This slice still does not freeze or implement:
 
-- category delete/reorder/color semantics;
-- variant inventory or per-store variant overrides;
-- modifier minimum/maximum/required-selection policies;
-- POS variant/modifier chooser behavior;
+- category delete/reorder/durable color semantics;
+- option-level inventory or per-store option overrides;
+- add-on minimum/maximum/required-selection policies;
+- POS option/add-on chooser behavior;
 - open price;
 - weight/volume selling;
 - cost;
@@ -129,7 +172,7 @@ Those capabilities must expose their UI/product meaning before their durable mod
 
 ## Current staging transport
 
-`BrowserCatalogAdapter` schema version 2 is current executable staging evidence. It provides one Rifad catalog semantics implementation for tests and same-origin/local evaluation and migrates the previous staging item-only shape forward.
+`BrowserCatalogAdapter` schema version 3 is current executable staging evidence. It provides one Rifad catalog-semantics implementation for tests and local evaluation and migrates previous staging shapes forward.
 
 It is **not** a claim that separately hosted Back Office and POS browser origins already synchronize with each other. Browser local storage is origin-scoped.
 
@@ -149,9 +192,19 @@ Visible durable meaning is discovered from the product surface before SQL design
 
 A UI control does not automatically mean one database column. Derived state should stay derived when appropriate, while facts that must survive restart/reporting/synchronization receive explicit Rifad-owned model meaning.
 
-This rule is especially important for variants and modifiers: the UI has now proven that option dimensions, option values, generated variants, modifier groups and modifier options are distinct meanings. Their eventual normalized storage design remains unfrozen.
+The current UI now distinguishes:
 
-`docs/ui/POS_UI_NAMING_AND_FIELD_REGISTER.md` is updated with every newly exposed durable catalog field.
+- fixed versus multiple-price policy;
+- reusable option groups;
+- option values and default prices;
+- per-item sparse price overrides;
+- item-private pricing choices;
+- reusable general add-ons;
+- item-private add-ons.
+
+Their eventual normalized storage design remains unfrozen.
+
+`docs/ui/POS_UI_NAMING_AND_FIELD_REGISTER.md` remains the canonical durable-field traceability register and must reflect these meanings before production data-model freeze.
 
 ## Synchronization direction
 
@@ -159,8 +212,9 @@ The current slice proves shared identity and behavior, not network synchronizati
 
 When Sync is authorized later:
 
-- stable item/category/variant/modifier identities are preserved;
-- updates are versioned/replay-safe;
+- stable item/category/option-group/option-value/add-on identities are preserved;
+- reusable group edits propagate through versioned/replay-safe catalog facts;
+- item-specific overrides remain explicit rather than copying full groups;
 - branch/store overrides are modeled explicitly rather than overwriting global product facts;
 - POS does not read Back Office private tables;
 - Back Office does not write POS private tables;
@@ -173,4 +227,4 @@ LAN and cloud Sync remain separate Rifad capabilities under the existing archite
 
 Do not select/freeze the production catalog database schema merely because `BO-FLOW-002` is executable.
 
-Before freeze, continue product/UI discovery for the remaining catalog extensions, POS variant/modifier behavior, restaurant/place administration, branch/store configuration, delivery/channel pricing and other approved Back Office domains that materially change product data shape.
+Before freeze, continue product/UI discovery for the remaining catalog extensions, POS option/add-on behavior, restaurant/place administration, branch/store configuration, delivery/channel pricing and other approved Back Office domains that materially change product data shape.
