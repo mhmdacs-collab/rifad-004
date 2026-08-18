@@ -14,7 +14,8 @@
     "readyFlows": [
       "POS-FLOW-001",
       "POS-FLOW-002",
-      "POS-FLOW-006"
+      "POS-FLOW-006",
+      "BO-FLOW-002"
     ]
   },
   "surfaces": [
@@ -147,13 +148,13 @@
       "name": "Back Office",
       "sourceSections": ["12. القشرة العامة والتنقل", "13. Reports", "14. Items في Back Office", "15. Advanced Inventory", "16. Employees وAccess Rights", "17. Customers", "18. Settings في Back Office"],
       "screens": [
-        {"id": "BO-SCREEN-001", "name": "Shell and Navigation", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["12.1 الإطار العام", "12.2 خريطة القائمة"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-001", "name": "Shell and Navigation", "status": "implemented", "implementationAllowedByFlows": ["BO-FLOW-002"], "evidence": {"sections": ["12.1 الإطار العام", "12.2 خريطة القائمة"], "confidence": "documented"}, "states": ["items-navigation"], "actionIds": ["BO-NAV-ACTION-001"], "notes": "BO-FLOW-002 permits only the Items navigation destination. Other Back Office families remain gated."},
         {"id": "BO-SCREEN-002", "name": "Sales Summary", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["13.1 أدوات مشتركة", "13.2 Sales Summary"], "confidence": "documented"}},
         {"id": "BO-SCREEN-003", "name": "Sales by Item", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["13.3 Sales by Item"], "confidence": "documented"}},
         {"id": "BO-SCREEN-004", "name": "Report Explorer", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["13.4 بقية تقارير المبيعات"], "confidence": "documented"}},
         {"id": "BO-SCREEN-005", "name": "Back Office Receipts", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["13.5 Receipts في Back Office", "Cancel receipt"], "confidence": "documented"}},
-        {"id": "BO-SCREEN-006", "name": "Item List", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["14.1 Item list"], "confidence": "documented"}},
-        {"id": "BO-SCREEN-007", "name": "Item Editor", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["14.2 نموذج Add/Edit item"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-006", "name": "Item List", "status": "implemented", "implementationAllowedByFlows": ["BO-FLOW-002"], "evidence": {"sections": ["14.1 Item list"], "confidence": "documented"}, "states": ["loading", "item-list", "search-results", "no-results", "recoverable-error"], "actionIds": ["CATALOG-ADMIN-ACTION-001"], "notes": "Current bounded slice includes search by name/SKU/barcode, category filter, item status and opening create/edit. Stock filter, columns, import and export remain outside scope."},
+        {"id": "BO-SCREEN-007", "name": "Item Editor", "status": "implemented", "implementationAllowedByFlows": ["BO-FLOW-002"], "evidence": {"sections": ["14.2 نموذج Add/Edit item"], "confidence": "documented"}, "states": ["creating", "editing", "saving", "validation-error", "saved"], "actionIds": ["CATALOG-ADMIN-ACTION-002", "CATALOG-ADMIN-ACTION-003", "CATALOG-ADMIN-ACTION-004"], "notes": "Current bounded fields are name, description, category selection, fixed base price, SKU, barcode and available-for-sale. Other documented item capabilities remain gated."},
         {"id": "BO-SCREEN-008", "name": "Variants", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["14.3 Variants"], "confidence": "documented"}},
         {"id": "BO-SCREEN-009", "name": "Categories", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["14.4 Categories"], "confidence": "documented"}},
         {"id": "BO-SCREEN-010", "name": "Discounts", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["14.5 Discounts"], "confidence": "documented"}},
@@ -241,7 +242,12 @@
     {"id": "LAYOUT-ACTION-001", "trigger": "Load sale pages", "screens": ["POS-SCREEN-026"], "contract": "SaleLayoutContract.listPages", "contractStatus": "draft-unfrozen", "offline": "local", "idempotency": "query", "visibleResults": ["page-list", "empty-custom-page", "recoverable-error"]},
     {"id": "LAYOUT-ACTION-002", "trigger": "Create custom sale page", "screens": ["POS-SCREEN-026"], "contract": "SaleLayoutContract.createPage", "contractStatus": "draft-unfrozen", "offline": "durable-local", "idempotency": "stable page identity", "visibleResults": ["layout-editing", "recoverable-error"]},
     {"id": "LAYOUT-ACTION-003", "trigger": "Place product in page slot", "screens": ["POS-SCREEN-026"], "contract": "SaleLayoutContract.placeProduct", "contractStatus": "draft-unfrozen", "offline": "durable-local", "idempotency": "set the desired product for one stable page slot", "visibleResults": ["product-picker", "product-placed", "recoverable-error"]},
-    {"id": "LAYOUT-ACTION-004", "trigger": "Remove product from page slot", "screens": ["POS-SCREEN-026"], "contract": "SaleLayoutContract.removeProduct", "contractStatus": "draft-unfrozen", "offline": "durable-local", "idempotency": "clear one stable page slot", "visibleResults": ["layout-editing", "empty-custom-page", "recoverable-error"]}
+    {"id": "LAYOUT-ACTION-004", "trigger": "Remove product from page slot", "screens": ["POS-SCREEN-026"], "contract": "SaleLayoutContract.removeProduct", "contractStatus": "draft-unfrozen", "offline": "durable-local", "idempotency": "clear one stable page slot", "visibleResults": ["layout-editing", "empty-custom-page", "recoverable-error"]},
+    {"id": "BO-NAV-ACTION-001", "trigger": "Open Items in Back Office", "screens": ["BO-SCREEN-001"], "contract": "UI-only Back Office navigation", "contractStatus": "ui-only", "offline": "local", "idempotency": "not a durable business command", "visibleResults": ["items-navigation"]},
+    {"id": "CATALOG-ADMIN-ACTION-001", "trigger": "Load, search or filter item list", "screens": ["BO-SCREEN-006"], "contract": "CatalogAdminContract.listItems", "contractStatus": "draft-unfrozen", "offline": "local-staging", "idempotency": "query", "visibleResults": ["loading", "item-list", "search-results", "no-results", "recoverable-error"]},
+    {"id": "CATALOG-ADMIN-ACTION-002", "trigger": "Add item", "screens": ["BO-SCREEN-007"], "contract": "CatalogAdminContract.createItem", "contractStatus": "draft-unfrozen", "offline": "durable-local-staging", "idempotency": "stable command identity maps to one stable item identity", "visibleResults": ["creating", "saving", "validation-error", "saved"]},
+    {"id": "CATALOG-ADMIN-ACTION-003", "trigger": "Save item edits", "screens": ["BO-SCREEN-007"], "contract": "CatalogAdminContract.updateItem", "contractStatus": "draft-unfrozen", "offline": "durable-local-staging", "idempotency": "stable command identity; update preserves item identity", "visibleResults": ["editing", "saving", "validation-error", "saved"]},
+    {"id": "CATALOG-ADMIN-ACTION-004", "trigger": "Load categories for item editor", "screens": ["BO-SCREEN-007"], "contract": "CatalogAdminContract.listCategories", "contractStatus": "draft-unfrozen", "offline": "local-staging", "idempotency": "query", "visibleResults": ["creating", "editing", "recoverable-error"]}
   ],
   "flows": [
     {
@@ -312,6 +318,24 @@
     {"id": "POS-FLOW-003", "name": "Offline Sale and Synchronization", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["36. تدفق بيع Offline ثم المزامنة"], "confidence": "documented"}},
     {"id": "POS-FLOW-004", "name": "Refund", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["37. تدفق Refund"], "confidence": "documented"}},
     {"id": "POS-FLOW-005", "name": "Cash Shift", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["38. تدفق وردية نقدية"], "confidence": "documented"}},
-    {"id": "BO-FLOW-001", "name": "Purchase Order to Inventory", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["39. تدفق Purchase Order إلى المخزون"], "confidence": "documented"}}
+    {"id": "BO-FLOW-001", "name": "Purchase Order to Inventory", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["39. تدفق Purchase Order إلى المخزون"], "confidence": "documented"}},
+    {
+      "id": "BO-FLOW-002",
+      "name": "Manage Catalog Items",
+      "status": "implemented",
+      "evidence": {"sections": ["12.1 الإطار العام", "14.1 Item list", "14.2 نموذج Add/Edit item"], "confidence": "documented"},
+      "entryPoints": ["Back Office Items navigation"],
+      "steps": [
+        {"order": 1, "screenId": "BO-SCREEN-001", "actionId": "BO-NAV-ACTION-001", "scope": "open only the implemented Items destination; other Back Office destinations remain unavailable"},
+        {"order": 2, "screenId": "BO-SCREEN-006", "actionId": "CATALOG-ADMIN-ACTION-001", "scope": "load item rows and filter by name/SKU/barcode and existing category"},
+        {"order": 3, "screenId": "BO-SCREEN-007", "actionId": "CATALOG-ADMIN-ACTION-004", "scope": "load existing categories into the item editor; category CRUD remains outside this slice"},
+        {"order": 4, "screenId": "BO-SCREEN-007", "actionId": "CATALOG-ADMIN-ACTION-002", "scope": "create one fixed-price each-sold item with name, optional description/category/SKU/barcode and available-for-sale state"},
+        {"order": 5, "screenId": "BO-SCREEN-007", "actionId": "CATALOG-ADMIN-ACTION-003", "scope": "edit the same bounded fields while preserving stable item identity"}
+      ],
+      "mockAdapters": ["BrowserCatalogAdapter"],
+      "offlineVariant": "The current browser staging adapter persists catalog edits locally. This proves Rifad catalog semantics only; it does not claim LAN/cloud synchronization between separately hosted applications.",
+      "nonGoals": ["category CRUD", "variants", "modifiers", "cost", "inventory/stock", "open price", "weight or volume selling", "tax assignment", "composite items", "images or POS shape editing", "per-store price/availability/stock", "delete", "import/export", "permissions", "LAN synchronization", "cloud synchronization", "production database freeze"],
+      "acceptanceCriteria": ["Back Office renders an RTL application shell with only the authorized Items destination active.", "Item list can search by name, SKU or barcode and filter by an existing category.", "Create and edit call Rifad CatalogAdminContract rather than component-local business state.", "Price is converted to exact halalas before crossing the contract.", "Duplicate non-empty SKU or barcode is rejected visibly.", "Turning off Available for sale keeps the item in Back Office while hiding it from the POS sellable catalog.", "The POS catalog reads the same Rifad catalog model, and a new sale uses the latest saved name and base price.", "Catalog storage/transport remains replaceable; current same-store propagation is staging evidence and is not presented as LAN/cloud sync.", "Tests reference BO-FLOW-002 and preserve existing POS behavior."]
+    }
   ]
 }
