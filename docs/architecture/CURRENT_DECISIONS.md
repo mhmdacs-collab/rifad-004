@@ -72,7 +72,8 @@ Current executable ready flows include:
 
 - `POS-FLOW-001` — retail cash sale slice;
 - `POS-FLOW-002` — restaurant local-service prototype;
-- `POS-FLOW-006` — tablet sale-page layout.
+- `POS-FLOW-006` — tablet sale-page layout;
+- `BO-FLOW-002` — bounded Back Office catalog item list + add/edit slice.
 
 ## D-017 — POS is touch-first and human-scaled
 
@@ -279,3 +280,21 @@ The current POS and restaurant mock operational snapshots are now mirrored behin
 This is a **staging cold-restart PASS**, not a production storage freeze. The compatibility bridge remains temporary; packaged Windows cold start, crash/interrupted-write recovery, realistic volume/performance and selection of the production local engine remain required before production acceptance.
 
 See `docs/architecture/LOCAL_PERSISTENCE_AND_OUTBOX_BOUNDARY.md`.
+
+## D-030 — Complete product/UI field discovery before production data-model freeze
+
+Rifad does not freeze its production SQL/database model merely because adapter and local-persistence foundations already exist.
+
+Current priority is **product/UI completeness + durable-field discovery**. Relevant business surfaces are implemented in bounded vertical slices, and every newly exposed durable meaning is traced in `docs/ui/POS_UI_NAMING_AND_FIELD_REGISTER.md` before the production data model is frozen.
+
+A visible control does not automatically imply one database column. Derived presentation state should remain derived where appropriate; facts that must survive restart, reporting, synchronization or integration receive explicit Rifad-owned domain meaning.
+
+Back Office is the primary management surface for discovering merchant-owned configuration and master data. The first executable slice, `BO-FLOW-002`, establishes a shared Rifad catalog meaning for Back Office and POS while deliberately limiting fields to the currently approved UI scope.
+
+The current browser catalog transport is staging evidence only. It does not claim LAN or cloud synchronization and does not select the final production database.
+
+Before production data-model freeze, continue relevant UI/product discovery for catalog extensions, restaurant/place administration, branch/store configuration, delivery/channel pricing and other approved domains that materially change durable data shape.
+
+Existing adapter, local-persistence and outbox boundaries remain foundations underneath this work; they are not discarded, but deeper production infrastructure work must not outrun product-field discovery.
+
+See `docs/architecture/BACK_OFFICE_CATALOG_BOUNDARY.md`.
