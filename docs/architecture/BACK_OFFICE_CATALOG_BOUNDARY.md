@@ -52,7 +52,9 @@ Current executable behavior includes:
 - item-only pricing choices;
 - reusable general add-ons;
 - item-private add-ons;
-- explicit save/cancel actions.
+- item visual representation by color/shape or image;
+- category, reusable option-group and reusable add-on-group accent colors;
+- explicit save/cancel completion.
 
 Turning `availableForSale` off keeps the item manageable in Back Office while excluding it from the current sellable POS catalog.
 
@@ -65,9 +67,10 @@ Back Office can currently:
 - list categories;
 - create a category;
 - rename a category;
+- select an accent color;
 - use stable category identity while propagating the renamed display name to current catalog items.
 
-Delete/reorder/durable color semantics are not frozen yet.
+Delete/reorder are not frozen yet.
 
 ## Reusable option groups and multiple prices
 
@@ -77,10 +80,11 @@ A reusable **option group** is an independently managed catalog entity. Example:
 
 `أحجام البيتزا → صغير 10 | وسط 20 | كبير 25`
 
-Its durable meanings are:
+Its current discovered meanings are:
 
 - stable option-group identity;
 - group name;
+- group accent color;
 - stable option-value identity;
 - option-value name;
 - default exact price for that option value.
@@ -132,6 +136,7 @@ A reusable add-on group has:
 
 - stable group identity;
 - group name;
+- group accent color;
 - one or more stable add-on option identities;
 - option name;
 - additional exact price.
@@ -144,11 +149,50 @@ An item may also carry private add-on groups that belong only to that item. This
 
 The current POS does **not** yet apply or price add-ons during a sale. Required/optional rules, minimum/maximum selection, ticket-line snapshots, kitchen presentation and receipt presentation remain future product/UI work.
 
+## Catalog visual identity boundary
+
+Visual catalog identity is now part of the current discovery slice.
+
+### Item appearance
+
+Current Rifad catalog meaning includes:
+
+- representation mode: color/shape or image;
+- item accent color;
+- item shape: square / rounded square / circle;
+- optional image representation.
+
+The current browser discovery adapter stores a square staging image using `imageDataUrl`. This is not production media architecture.
+
+Production may replace staging transport with:
+
+- local asset/file identity;
+- content-addressed media;
+- object-storage key;
+- external/ERP media reference;
+- another adapter-owned media mechanism.
+
+The merchant-facing meaning should remain stable while media transport changes behind the adapter.
+
+Sale/accounting truth must not depend on image availability.
+
+### Group accent colors
+
+Current catalog semantics include accent colors for:
+
+- category;
+- reusable option group;
+- reusable add-on group.
+
+These are intended as small scanning/identity aids, not broad decorative theming of transaction truth.
+
+See `docs/ui/VISUAL-DECISION-008-CATALOG-VISUAL-IDENTITY.md`.
+
 ## Deliberate non-goals
 
 This slice still does not freeze or implement:
 
-- category delete/reorder/durable color semantics;
+- category delete/reorder;
 - option-level inventory or per-store option overrides;
 - add-on minimum/maximum/required-selection policies;
 - POS option/add-on chooser behavior;
@@ -159,7 +203,7 @@ This slice still does not freeze or implement:
 - low-stock thresholds;
 - taxes;
 - composite items;
-- images/shape/color administration;
+- production media storage/synchronization;
 - branch/store-specific price or availability;
 - delete item;
 - import/export;
@@ -172,7 +216,9 @@ Those capabilities must expose their UI/product meaning before their durable mod
 
 ## Current staging transport
 
-`BrowserCatalogAdapter` schema version 3 is current executable staging evidence. It provides one Rifad catalog-semantics implementation for tests and local evaluation and migrates previous staging shapes forward.
+`BrowserCatalogAdapter` **schema version 4** is current executable staging evidence. It provides one Rifad catalog-semantics implementation for tests and local evaluation and migrates previous staging shapes forward.
+
+Schema v4 includes the current catalog visual-identity meanings as well as the reusable pricing/add-on structures.
 
 It is **not** a claim that separately hosted Back Office and POS browser origins already synchronize with each other. Browser local storage is origin-scoped.
 
@@ -196,11 +242,15 @@ The current UI now distinguishes:
 
 - fixed versus multiple-price policy;
 - reusable option groups;
+- option-group accent color;
 - option values and default prices;
 - per-item sparse price overrides;
 - item-private pricing choices;
 - reusable general add-ons;
-- item-private add-ons.
+- reusable add-on accent color;
+- item-private add-ons;
+- category accent color;
+- item appearance mode/color/shape/image semantics.
 
 Their eventual normalized storage design remains unfrozen.
 
@@ -216,12 +266,22 @@ When Sync is authorized later:
 - reusable group edits propagate through versioned/replay-safe catalog facts;
 - item-specific overrides remain explicit rather than copying full groups;
 - branch/store overrides are modeled explicitly rather than overwriting global product facts;
+- visual identity/media references propagate through adapter-owned sync semantics rather than UI storage hacks;
 - POS does not read Back Office private tables;
 - Back Office does not write POS private tables;
 - conflict policy is domain-specific;
 - transport failure must not corrupt the local sellable catalog.
 
 LAN and cloud Sync remain separate Rifad capabilities under the existing architecture decisions.
+
+## Visual/product reference
+
+Current detailed Loyverse comparison and the owner's runtime visual lessons are preserved in:
+
+- `docs/research/loyverse/LOYVERSE_BACK_OFFICE_CURRENT_REFERENCE_2026-08-18.md`;
+- `docs/ui/visual-decisions/VISUAL-DECISION-007-BACK-OFFICE-LOYVERSE-HIERARCHY.md`.
+
+Rifad intentionally adopts the useful hierarchy/reuse ideas without allowing Loyverse's schema or terminology to become Rifad's architecture.
 
 ## Production freeze gate
 
