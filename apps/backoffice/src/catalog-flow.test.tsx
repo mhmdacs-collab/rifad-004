@@ -20,7 +20,7 @@ describe("BO-FLOW-002 catalog management", () => {
     await user.type(price, "24.50");
     await user.type(screen.getByLabelText("SKU"), "HOT-099");
     await user.type(screen.getByLabelText("الباركود"), "628100009999");
-    await user.click(screen.getByRole("button", { name: "حفظ الصنف" }));
+    await user.click(screen.getAllByRole("button", { name: "حفظ الصنف" })[0]!);
 
     await screen.findByText("ماتشا لاتيه");
     let stored = await catalog.listItems({ query: "HOT-099", includeUnavailable: true, includeOptionPriced: true });
@@ -33,7 +33,7 @@ describe("BO-FLOW-002 catalog management", () => {
     await user.clear(editPrice);
     await user.type(editPrice, "25.00");
     await user.click(screen.getByLabelText("متاح للبيع"));
-    await user.click(screen.getByRole("button", { name: "حفظ الصنف" }));
+    await user.click(screen.getAllByRole("button", { name: "حفظ الصنف" })[0]!);
 
     await waitFor(async () => {
       stored = await catalog.listItems({ query: "HOT-099", includeUnavailable: true, includeOptionPriced: true });
@@ -60,7 +60,7 @@ describe("BO-FLOW-002 catalog management", () => {
     expect(screen.getByLabelText("سعر وسط")).toBeDisabled();
     expect(screen.getByLabelText("سعر كبير")).toBeDisabled();
 
-    await user.click(screen.getByRole("button", { name: "حفظ الصنف" }));
+    await user.click(screen.getAllByRole("button", { name: "حفظ الصنف" })[0]!);
     await screen.findByText("بيتزا ببروني");
 
     let stored = await catalog.listItems({ query: "PIZZA-PEP", includeUnavailable: true, includeOptionPriced: true });
@@ -76,7 +76,7 @@ describe("BO-FLOW-002 catalog management", () => {
     const small = screen.getByLabelText("سعر صغير");
     await user.clear(small);
     await user.type(small, "12.00");
-    await user.click(screen.getByRole("button", { name: "حفظ الصنف" }));
+    await user.click(screen.getAllByRole("button", { name: "حفظ الصنف" })[0]!);
 
     stored = await catalog.listItems({ query: "PIZZA-PEP", includeUnavailable: true, includeOptionPriced: true });
     expect(stored[0]?.pricing).toMatchObject({ mode: "option-group", groupId: "option-pizza-size", priceMode: "custom" });
@@ -128,7 +128,7 @@ describe("BO-FLOW-002 catalog management", () => {
     await user.clear(individual); await user.type(individual, "15.00");
     const family = screen.getByLabelText("سعر عائلي");
     await user.clear(family); await user.type(family, "30.00");
-    await user.click(screen.getByRole("button", { name: "حفظ الصنف" }));
+    await user.click(screen.getAllByRole("button", { name: "حفظ الصنف" })[0]!);
 
     const stored = await catalog.listItems({ query: "بيتزا خاصة", includeUnavailable: true, includeOptionPriced: true });
     expect(stored[0]?.pricing?.mode).toBe("custom-options");
@@ -163,7 +163,7 @@ describe("BO-FLOW-002 catalog management", () => {
     await user.type(screen.getByLabelText("اسم الإضافة الخاصة"), "رانش إضافي");
     const privatePrice = screen.getByLabelText("سعر رانش إضافي");
     await user.clear(privatePrice); await user.type(privatePrice, "2.50");
-    await user.click(screen.getByRole("button", { name: "حفظ الصنف" }));
+    await user.click(screen.getAllByRole("button", { name: "حفظ الصنف" })[0]!);
 
     const stored = await catalog.listItems({ query: "بيتزا رانش", includeUnavailable: true, includeOptionPriced: true });
     expect(stored[0]?.modifierGroupIds).toEqual([created?.id]);
