@@ -1,6 +1,6 @@
 # Approved and Current Visual Decisions
 
-Last updated: 2026-08-17
+Last updated: 2026-08-18
 
 Approved/current records:
 
@@ -10,6 +10,7 @@ Approved/current records:
 - `VISUAL-DECISION-004-INLINE-CHECKOUT-PAYMENT-RECOGNITION.md` — basket-rail checkout, payment recognition, success hierarchy and the boundary between mock card UX and real terminal support.
 - `VISUAL-DECISION-005-PRIMARY-ACTION-SPATIAL-CONTINUITY.md` — stable transaction operation-card geometry, Clear Cart placement and zero-jump rail width.
 - `VISUAL-DECISION-006-RESTAURANT-SERVICE-OPEN-ORDERS.md` — restaurant service/simple-local/advanced-place/online-order direction. The `POS-FLOW-002` local-service mock subset is now executable and behavior-tested; **owner visual acceptance is still pending**. Real kitchen transport, production restaurant persistence and online-order integration remain separate gaps.
+- `VISUAL-DECISION-007-BACK-OFFICE-LOYVERSE-HIERARCHY.md` — owner-approved Back Office visual hierarchy based on the supplied Loyverse screenshots: green top bar, persistent RTL right navigation, compact management tables, lighter typography and narrow vertical editing forms. This is a visual/interaction reference only; Rifad contracts, adapters and data meanings remain authoritative.
 
 Loyverse remains the primary functional baseline, but Rifad may adopt a narrower proven pattern from another product after explicit evidence/decision. No donor owns the complete Rifad interface.
 
