@@ -14,8 +14,8 @@ describe("BO-FLOW-002 catalog management", () => {
     await user.click(screen.getByRole("button", { name: /إضافة صنف/ }));
 
     await user.type(screen.getByLabelText(/اسم الصنف/), "ماتشا لاتيه");
-    await user.selectOptions(screen.getByLabelText("الفئة"), "hot");
-    const price = screen.getByLabelText(/السعر الأساسي/).querySelector("input") as HTMLInputElement;
+    await user.selectOptions(screen.getByLabelText("فئة الصنف"), "hot");
+    const price = screen.getByLabelText("السعر الأساسي") as HTMLInputElement;
     await user.clear(price);
     await user.type(price, "24.50");
     await user.type(screen.getByLabelText("SKU"), "HOT-099");
@@ -28,7 +28,7 @@ describe("BO-FLOW-002 catalog management", () => {
     expect(stored[0]?.price.halalas).toBe(2450);
 
     await user.click(screen.getByText("ماتشا لاتيه"));
-    const editPrice = screen.getByLabelText(/السعر الأساسي/).querySelector("input") as HTMLInputElement;
+    const editPrice = screen.getByLabelText("السعر الأساسي") as HTMLInputElement;
     await user.clear(editPrice);
     await user.type(editPrice, "25.00");
     await user.click(screen.getByLabelText("متاح للبيع"));
