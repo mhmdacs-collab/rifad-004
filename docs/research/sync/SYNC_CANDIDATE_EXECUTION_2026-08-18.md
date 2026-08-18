@@ -1,182 +1,284 @@
 # Rifad Sync Candidate Execution — 2026-08-18
 
-Status: **RUNTIME EVIDENCE — BASELINE ONLY, NO PRODUCTION SELECTION YET**
+Status: **RUNTIME EVIDENCE — POWERSYNC LEADS DEEPER PROOF, NO FINAL PRODUCTION SELECTION YET**
 
-This document records the first executable comparison required by `PROJECT_RULES.md`, `docs/adoption/CAPABILITY_ADOPTION_WORKFLOW.md`, D-032 and `docs/architecture/SYNC_CAPABILITY_BOUNDARY.md`.
+This document records executable evidence required by `PROJECT_RULES.md`, `docs/adoption/CAPABILITY_ADOPTION_WORKFLOW.md`, D-032 and `docs/architecture/SYNC_CAPABILITY_BOUNDARY.md`.
 
-The purpose is not to declare a winner from a README. It is to preserve exactly what was run, what passed, what failed, and what remains unproved before Rifad selects a production synchronization implementation.
+The rule remains: do not select synchronization from README claims. Run the candidate, force failure/restart/schema/security cases, preserve exact limitations, then adopt behind a Rifad-owned boundary only after the remaining gates are acceptable.
 
 ---
 
-## 1. Common proof scenario
+# 1. Product behavior being proved
 
-Both candidates were exercised against the same Rifad-shaped behavior:
+The common Rifad-shaped target is:
 
-1. Back Office creates an item locally and POS receives it through the synchronization path.
-2. POS performs a permitted mutation and Back Office receives it.
-3. POS writes a sale while disconnected/offline, closes/reopens its local database, reconnects, and the sale propagates without becoming a second sale.
-4. The proof records explicit remaining platform/security/schema limitations rather than converting a baseline pass into a production claim.
+1. Back Office changes propagate automatically to relevant POS clients.
+2. permitted POS changes propagate back to cloud/Back Office/relevant clients.
+3. ordinary POS selling remains local-first when disconnected.
+4. reconnect/restart replays pending facts without duplicate finalized sales.
+5. normal additive product growth does not require rewriting the synchronization engine.
+6. merchant/branch boundaries and mutation permissions are enforced from signed/server-verifiable authority, not client claims.
+7. Windows and browser/PWA-class client paths actually execute.
 
-The proof harnesses live under:
+Proof code lives under:
 
 - `tests/sync-candidates/couchdb/`
 - `tests/sync-candidates/powersync/`
+- `tests/sync-candidates/powersync-web/`
+- `tests/sync-candidates/powersync-windows/`
 
 CI workflows:
 
 - `.github/workflows/sync-candidate-couchdb.yml`
 - `.github/workflows/sync-candidate-powersync.yml`
+- `.github/workflows/sync-candidate-powersync-web.yml`
+- `.github/workflows/sync-candidate-powersync-windows.yml`
 
 ---
 
 # 2. Candidate A — Apache CouchDB 3.5.2 + PouchDB 9.0.0
 
-## Runtime used
+## Runtime evidence
 
-- GitHub Actions runner: Ubuntu 24.04
-- Node: 22.23.2
-- CouchDB image: `couchdb:3.5.2`
-- observed image digest: `sha256:b80216f643e99d31df318c740dbc556ac08b56444030ed1d5e6d7b0d4e625213`
-- PouchDB: `9.0.0`
+Representative environment:
 
-## Executed behavior
+- Ubuntu 24.04 GitHub Actions runner;
+- Node 22;
+- CouchDB `3.5.2`;
+- PouchDB `9.0.0`.
 
-The harness creates separate durable local PouchDB databases representing Back Office and POS and uses continuous replication against CouchDB.
+Observed CouchDB image digest during proof:
 
-Observed representative successful run: GitHub Actions run `32182718984`.
+`sha256:b80216f643e99d31df318c740dbc556ac08b56444030ed1d5e6d7b0d4e625213`
 
-Evidence from that run:
+Successful runs include `32182718984`, `32183113102` and current-line run `32184498304`.
 
-- Back Office item -> POS: PASS, observed ~101 ms.
-- permitted POS mutation -> Back Office: PASS, observed ~101 ms.
-- CouchDB server stopped to simulate outage.
-- sale written to POS local database while server unavailable.
-- local POS/Back Office database processes closed and reopened.
-- server restarted and replication resumed.
-- offline sale replay -> Back Office: PASS, observed ~305 ms after reconnect in that run.
-- repeated synchronization left exactly one sale document: PASS.
-- additive fields plus a new option-group entity replicated without changing the replication algorithm: PASS.
+Proved behavior:
 
-The same candidate workflow also passed again on branch head `96e4612a84ac0d0a4a962156a6dbcadccb5cbe32` in run `32183113102`.
+- Back Office item -> POS: PASS;
+- permitted POS mutation -> Back Office: PASS;
+- server outage while POS continues local write: PASS;
+- local database close/reopen before reconnect: PASS;
+- reconnect/resume: PASS;
+- repeated synchronization leaves one stable sale document: PASS;
+- additive fields and a new option-group entity replicate without changing the replication algorithm: PASS.
 
-## Important concerns discovered
+Representative observed timings from one run were ~101 ms connected propagation and ~305 ms reconnect replay. These are CI observations, not product SLAs.
 
-The Node proof dependency installation reported:
+## Concern discovered
 
-- multiple deprecated Level ecosystem dependencies through the current PouchDB package graph;
-- two moderate npm audit findings in the proof dependency tree.
+The current PouchDB 9 Node proof dependency graph reports multiple deprecated Level ecosystem packages and two moderate npm-audit findings.
 
-This does not invalidate CouchDB's replication protocol. It does mean **PouchDB 9.0.0 must not automatically become Rifad's production client merely because the protocol baseline passed**. A modern browser/Windows client path and dependency/security review are still mandatory.
+This does **not** invalidate CouchDB's mature replication protocol. It does mean PouchDB 9 is not automatically accepted as Rifad's production Windows/PWA client merely because the protocol baseline passed.
 
-## Current disposition
+## Disposition
 
-**BASELINE PASS — strong replication-protocol reference; production client path not accepted yet.**
+**PASS as the open replication-protocol control/baseline. HOLD as a production client stack pending a cleaner modern Windows/browser client path.**
 
-Still unproved:
+Still unproved for this candidate:
 
-- actual browser/PWA path;
-- actual Windows packaged-client path;
-- production authentication/authorization;
-- tenant and branch isolation;
-- Rifad domain conflict policies;
-- realistic catalog/sales volume and compaction/storage behavior;
-- production upgrade/migration procedure.
+- production Windows packaged client;
+- production browser/PWA client;
+- signed tenant/branch isolation in the actual chosen client topology;
+- Rifad server/domain mutation authorization;
+- realistic storage/compaction/upgrade behavior.
 
 ---
 
-# 3. Candidate B — PowerSync Service 1.24.0 + Node SDK 0.20.0
+# 3. Candidate B — PowerSync
 
-## Runtime used
+PowerSync has now passed substantially more Rifad-specific gates than the initial baseline.
 
-- GitHub Actions runner: Ubuntu 24.04
-- Node: 22.23.2
-- `@powersync/node`: `0.20.0`
-- local SQLite binding in proof: `better-sqlite3 12.11.1`
-- PowerSync Service observed at runtime: `1.24.0`, Open Edition
-- service image digest: `journeyapps/powersync-service@sha256:0fc9f65e693c07f1206007acddb87141402c09ef20589e29a0dfe20d57ce80b6`
-- source database: PostgreSQL 18 container from the current official self-host example
-- bucket storage: PostgreSQL 18 container from the same current official example
+## Runtime components exercised
 
-The workflow clones the current official `powersync-ja/powersync-cli` self-hosted local Postgres example at runtime, then substitutes only the bounded Rifad proof schema/sync config.
+- PowerSync Service `1.24.0` Open Edition;
+- observed service image digest:
+  `journeyapps/powersync-service@sha256:0fc9f65e693c07f1206007acddb87141402c09ef20589e29a0dfe20d57ce80b6`;
+- `@powersync/node 0.20.0`;
+- `@powersync/web 2.2.0`;
+- SQLite via the PowerSync client path;
+- PostgreSQL 18 source/storage containers from the current official self-host example;
+- Chromium browser runtime;
+- Windows Server 2025 GitHub Actions runtime.
 
-## Rifad write-path proof
-
-PowerSync intentionally leaves client uploads to the application backend through `uploadData()`.
-
-The Rifad proof therefore includes a deliberately small generic write adapter/API that:
-
-- receives normalized CRUD operations from the client SDK;
-- allowlists proof tables/columns;
-- uses parameterized SQL values;
-- stores `(device_id, client_op_id)` upload identity;
-- ignores a repeated client operation that was already applied.
-
-This is a proof of replay-safe integration behavior, **not** the final Rifad authorization/domain API.
-
-## First run failure and correction
-
-Initial run `32182719003` failed because the proof harness serialized `batch.crud` directly.
-
-Inspection of the current official PowerSync JS `CrudEntryImpl` showed that its JSON representation uses transport names such as `op_id`, `type` and `data`, whereas the proof backend expected `clientId`, `table` and `opData`.
-
-The harness was corrected to explicitly translate the SDK object into the Rifad proof DTO before sending it to the backend. This was a **proof-harness adapter bug**, not a synchronization-service failure.
-
-The correction is commit `96e4612a84ac0d0a4a962156a6dbcadccb5cbe32`.
-
-## Successful runtime evidence
-
-GitHub Actions run `32183112863`: PASS.
-
-Observed evidence:
-
-- Back Office item -> POS: PASS, ~607 ms in that run.
-- permitted POS mutation -> Back Office: PASS, ~405 ms.
-- POS explicitly disconnected.
-- sale written to local SQLite while disconnected.
-- POS SQLite client closed and reopened.
-- backend intentionally applied the first sale upload and then returned HTTP 503 before acknowledging success.
-- PowerSync retained/retried the pending upload.
-- backend dedupe prevented a second business application of the same operation.
-- Back Office received the sale after reconnect/retry: PASS.
-- source PostgreSQL contained exactly one sale row: PASS.
-
-The intentional 503 appears as an upload error in the runtime log; this is expected test stimulus, not a failed run.
-
-The proof dependency installation reported zero npm audit findings for the pinned PowerSync proof package set at execution time.
-
-## Important architecture fact exposed by execution
-
-PowerSync provides local SQLite + download/stream synchronization + durable local CRUD queue/retry, but **Rifad still owns the upload API and its authorization/domain validation**.
-
-That is compatible with Rifad's adapter rules, but it is real implementation work and must not be hidden by saying "PowerSync synchronizes everything automatically". The engine can carry future data generically; accepted mutations still require a secure Rifad server boundary.
-
-## Current disposition
-
-**BASELINE PASS — currently the stronger candidate for deeper Rifad platform proof, not yet selected for production.**
-
-Reasons it advances to the next proof stage:
-
-- local SQLite model fits the desired offline POS direction well;
-- successful source Postgres -> local client propagation;
-- successful local write -> Rifad backend -> source -> other client loop;
-- local restart + queued write survived;
-- an ambiguous apply/ack failure was replayed without duplicate sale when paired with Rifad idempotency;
-- current proof dependency set was cleaner than the PouchDB Node dependency graph.
-
-Still unproved:
-
-- actual PWA/browser path;
-- actual Windows packaged-client path;
-- production tenant/branch authorization and mutation validation;
-- schema-evolution proof across running old/new client versions;
-- production media/attachment strategy;
-- conflict/domain policy cases;
-- service lifecycle, backup/restore, upgrades and operational cost;
-- license/dependency distribution review for the exact production topology.
+The proof dependency sets reported zero npm-audit vulnerabilities at the recorded executions. `better-sqlite3` currently brings a deprecated `prebuild-install` warning, which remains dependency-maintenance evidence to watch.
 
 ---
 
-# 4. Current comparison
+## 3.1 Connected + offline + ambiguous retry — PASS
+
+Successful PowerSync baseline runs include `32183112863` and current-line run `32184498353`.
+
+The proof executes:
+
+`local client -> Rifad upload adapter/API -> PostgreSQL source -> PowerSync -> other local client`
+
+Proved:
+
+- Back Office item -> POS: PASS;
+- permitted POS mutation -> Back Office: PASS;
+- POS disconnect -> local sale write: PASS;
+- close/reopen local SQLite before reconnect: PASS;
+- queued operation survives restart: PASS;
+- backend intentionally applies a sale and then returns HTTP 503 before acknowledgement;
+- PowerSync retries the pending operation;
+- Rifad idempotency/dedupe leaves exactly one source sale row: PASS.
+
+On run `32184498353`, representative connected observations were ~708 ms BO->POS and ~303 ms POS->BO; ambiguous reconnect replay was ~102 ms after the reconnect phase. These are proof observations, not SLAs.
+
+### Important architecture fact
+
+PowerSync does not remove Rifad's write/domain API. The client `uploadData()` path still needs a Rifad-owned server boundary that authenticates, authorizes, validates business commands/facts and applies idempotent writes.
+
+That is compatible with the existing Rifad architecture: PowerSync can own replication mechanics while Rifad continues to own accepted business mutation semantics.
+
+---
+
+## 3.2 Additive old/new client schema growth — PASS
+
+File: `tests/sync-candidates/powersync/schema-evolution.mjs`
+
+Run `32184121476` passed; the same gate also passed in run `32184498353`.
+
+The proof runs two clients simultaneously:
+
+- an old client that does not know the new `kitchen_label` field;
+- a new client that does know it.
+
+The source adds/updates the new field.
+
+Result:
+
+- old client continues receiving compatible known fields;
+- old client does not break because it does not expose the unknown additive field;
+- new client receives the additive field;
+- subsequent updates continue reaching both according to their schema;
+- synchronization engine code is unchanged.
+
+Recorded result:
+
+`sync_engine_rewrite=false old_client_survives=true new_client_field=true`
+
+This directly satisfies the owner's requirement that normal future fields should evolve through ordinary schema/configuration work rather than a new synchronization engine per feature.
+
+---
+
+## 3.3 Browser / PWA-class client path — PASS baseline
+
+Files under `tests/sync-candidates/powersync-web/` run the actual `@powersync/web` client inside Chromium, not a Node-only substitute.
+
+Successful run: `32183763273`.
+
+Proved:
+
+- PostgreSQL/PowerSync source -> browser local database: PASS;
+- browser local write -> Rifad upload API -> source: PASS;
+- browser client disconnect -> local offline sale: PASS;
+- browser page close/reopen while preserving its local durable database: PASS;
+- backend intentionally applies the offline sale then returns 503;
+- browser client retries;
+- exactly one source sale remains: PASS;
+- observed retry-attempt count for the intentional ambiguous case: 2.
+
+Representative run observations:
+
+- source -> browser ~112 ms;
+- browser -> source ~731 ms;
+- reconnect/retry assertion observed one source row.
+
+This is a real **browser/PWA-class synchronization proof**, but it is not yet a full installable-service-worker cold-offline-launch proof and is not an iOS/Safari certification.
+
+---
+
+## 3.4 Windows local SQLite/restart path — PASS baseline
+
+Files under `tests/sync-candidates/powersync-windows/` execute on `windows-latest` / Windows Server 2025.
+
+Successful runs include `32183976254` and current-line run `32184498445`.
+
+Proved on `win32 x64`:
+
+- PowerSync Node/SQLite client initializes on Windows;
+- offline local sale creates a pending CRUD/upload operation;
+- database closes and reopens;
+- sale row survives;
+- pending upload queue survives;
+- queued client operation identity remains stable across restart.
+
+Representative recorded identity before and after restart was the same `client_op_id=1`.
+
+Limitation: this Windows job does **not yet** connect live to a remote PowerSync Service. Live online service behavior is proved with the same Node client on Linux and the web client in Chromium; Windows currently proves the native local SQLite/restart half only.
+
+---
+
+## 3.5 Signed merchant/branch isolation + server mutation authorization — PASS baseline
+
+File: `tests/sync-candidates/powersync/security-isolation.mjs`
+
+Run: `32184498353`.
+
+The PowerSync Sync Streams were switched at runtime from an unrestricted proof stream to signed-claim scoped queries using:
+
+- `merchant_id = auth.parameter('merchant_id')`;
+- `branch_id = auth.parameter('branch_id')`.
+
+Three independently authenticated clients were created across:
+
+- merchant A / branch 1;
+- merchant A / branch 2;
+- merchant B / branch 1.
+
+Result:
+
+- every client received its own scoped source row;
+- merchant A/branch 1 did not receive merchant A/branch 2 or merchant B data;
+- branch and merchant isolation both passed.
+
+Recorded result:
+
+`CHECK signed_claim_download_isolation:pass merchant=true branch=true`
+
+A separate Rifad proof write boundary then verified signed JWT claims and Rifad role policy before catalog mutation.
+
+Proved:
+
+- manager in the matching merchant/branch scope: allowed;
+- same signed manager trying another merchant: denied;
+- same signed manager trying another branch: denied;
+- cashier without catalog-management permission: denied;
+- denied attempts created zero source rows.
+
+Recorded result:
+
+`CHECK server_mutation_authorization:pass signed_scope=true role_permission=true denied_writes=0`
+
+This is the intended separation: replication can be bidirectional, while signed scope + Rifad permissions/domain authorization decide what the actor may actually mutate.
+
+---
+
+# 4. Licensing / reuse gate
+
+This is still a real selection gate and must not be hand-waved.
+
+Current upstream licensing evidence:
+
+- PowerSync JavaScript/client SDK repository: Apache-2.0;
+- PowerSync Service Open Edition: FSL-1.1-ALv2 (source-available), with Apache-2.0 future license after the defined two-year period for each version;
+- PowerSync's official licensing page describes the Open Edition as free/self-hosted and the client SDKs as Apache-2.0;
+- upstream public explanation says FSL commercial use is allowed except competing use, but Rifad still needs to record the exact production topology and distribution/hosting interpretation before adoption.
+
+Primary sources:
+
+- https://github.com/powersync-ja/powersync-js/blob/main/LICENSE
+- https://github.com/powersync-ja/powersync-service/blob/main/LICENSE
+- https://powersync.com/legal/licensing-terms
+- https://powersync.com/legal/fsl
+
+Do not describe the PowerSync Service itself as OSI open source. The client SDKs are open source; the current server Open Edition is source-available under FSL.
+
+---
+
+# 5. Current comparison
 
 | Gate | CouchDB + PouchDB | PowerSync |
 | --- | --- | --- |
@@ -185,29 +287,36 @@ Still unproved:
 | local offline durable write | PASS | PASS |
 | local close/reopen before reconnect | PASS | PASS |
 | reconnect replay | PASS | PASS |
-| duplicate-sale protection proof | PASS by stable document identity | PASS with explicit Rifad upload dedupe |
-| additive data growth baseline | PASS in document model | pending dedicated old/new-client schema proof |
-| production Windows path | pending | pending |
-| production PWA/browser path | pending | pending |
-| authz / tenant isolation | pending | pending |
-| dependency/security concern discovered | PouchDB Node graph: deprecations + 2 moderate audit findings | pinned proof graph: 0 audit findings |
-| current disposition | protocol baseline / hold for client-path proof | advance to deeper platform proof |
+| duplicate-sale / ambiguous retry protection | PASS by stable document identity | PASS with explicit Rifad upload idempotency |
+| additive data growth | PASS document baseline | PASS old/new client schema proof |
+| browser/PWA-class runtime | pending modern production client path | PASS Chromium baseline |
+| Windows local runtime/restart | pending production client path | PASS win32 x64 baseline |
+| live Windows -> remote sync service | pending | pending |
+| signed merchant/branch download isolation | pending | PASS baseline |
+| server mutation scope/role authorization | pending | PASS Rifad proof boundary |
+| current dependency concern | PouchDB graph deprecations + 2 moderate audit findings | 0 audit findings in pinned proof sets; one deprecated prebuild helper warning |
+| server licensing | Apache CouchDB is Apache-2.0 | PowerSync Service is FSL source-available; client SDKs Apache-2.0 |
+| current disposition | open protocol control / hold | **leading candidate, conditional on remaining operational/license gates** |
 
-Latency numbers above are CI observations only. They are not product SLAs and should not be compared as a benchmark from one run.
+Latency observations are not an apples-to-apples performance benchmark and are not product SLAs.
 
 ---
 
-# 5. Next mandatory proof
+# 6. Remaining gates before final adoption
 
-Do **not** select a production synchronization engine yet.
+PowerSync is now the **leading candidate**, but production selection is intentionally not declared yet.
 
-The next execution stage is:
+Remaining high-value gates:
 
-1. prove the PowerSync browser/PWA client against the same Rifad-shaped source/write path;
-2. prove the intended Windows client/runtime path, including local database restart/recovery;
-3. run an old-client/new-client additive schema evolution case;
-4. prove tenant/branch scoping plus server-side mutation authorization;
-5. keep CouchDB as the open protocol control and execute its browser path if needed for a fair platform comparison;
-6. only then record an adoption/rejection decision and donor/provenance record.
+1. live Windows client -> actual PowerSync Service -> source -> second client, rather than Windows-local-only proof;
+2. installable PWA/service-worker cold-offline-launch behavior if Rifad depends on cold launch without network;
+3. iPad/Safari path only if practical/required for the selected tablet target;
+4. exact production license/topology record for Rifad's commercial deployment;
+5. service operations: backup/restore, upgrade/rollback, observability and realistic volume;
+6. production authentication/token lifecycle and secret management beyond proof keys;
+7. domain-specific conflict cases only where Rifad permits legitimate concurrent edits;
+8. final donor/adoption/provenance record after selection.
+
+CouchDB remains the open-protocol control. It does not need equal implementation investment unless a remaining PowerSync gate fails or licensing/operations make PowerSync unattractive.
 
 No Branch Hub/LAN implementation is authorized by these results.
