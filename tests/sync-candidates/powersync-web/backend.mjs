@@ -13,6 +13,7 @@ const allowedColumns = {
   catalog_items: new Set(['merchant_id', 'branch_id', 'name', 'price_minor', 'metadata_json']),
   sales: new Set(['merchant_id', 'branch_id', 'device_id', 'business_id', 'total_minor', 'completed_at'])
 };
+const uploadAttempts = new Map();
 let failAfterApplyingNextSale = false;
 
 async function token() {
@@ -55,6 +56,9 @@ async function applyCrud(deviceId, crud) {
       containsSale ||= table === 'sales';
 
       const clientOpId = String(op.clientId ?? `${table}:${op.id}:${op.op}:${JSON.stringify(op.opData ?? {})}`);
+      const attemptKey = `${deviceId}:${table}:${op.id}:${clientOpId}`;
+      uploadAttempts.set(attemptKey, (uploadAttempts.get(attemptKey) ?? 0) + 1);
+
       const dedupe = await client.query(
         'INSERT INTO sync_upload_dedupe(device_id, client_op_id) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING client_op_id',
         [deviceId, clientOpId]
@@ -150,6 +154,16 @@ const server = createServer(async (req, res) => {
       const id = decodeURIComponent(req.url.slice('/control/sale/'.length));
       const result = await pool.query('SELECT * FROM sales WHERE id = $1', [id]);
       json(res, 200, { row: result.rows[0] ?? null, count: result.rowCount });
+      return;
+    }
+
+    if (req.method === 'GET' && req.url?.startsWith('/control/attempts')) {
+      const url = new URL(req.url, `http://127.0.0.1:${PORT}`);
+      const device = url.searchParams.get('device') ?? '';
+      const id = url.searchParams.get('id') ?? '';
+      const prefix = `${device}:sales:${id}:`;
+      const matching = [...uploadAttempts.entries()].filter(([key]) => key.startsWith(prefix)).map(([, count]) => count);
+      json(res, 200, { maxAttempts: matching.length ? Math.max(...matching) : 0 });
       return;
     }
 
