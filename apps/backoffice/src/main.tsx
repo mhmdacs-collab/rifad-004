@@ -8,6 +8,7 @@ import "./rifad-polish.css";
 import "./backoffice-2026.css";
 import "./backoffice-layout-safety.css";
 import "./catalog-visuals.css";
+import "./loyverse-reference-pass.css";
 
 const catalog = getBackOfficeCatalogAdmin();
 
