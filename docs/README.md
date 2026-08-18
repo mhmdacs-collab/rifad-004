@@ -13,11 +13,11 @@ When documents conflict, use this order:
 3. `architecture/RIFAD_ARCHITECTURE.md`, current capability/adoption policy and UI authority policy.
 4. `ui/UI_EXECUTION_MANIFEST.json` for implementation identity/readiness/scope.
 5. `ui/DESIGN_AUTHORITY.md` for POS interaction/visual authority.
-6. `ui/POS_UI_NAMING_AND_FIELD_REGISTER.md` for canonical POS labels and UI-to-data field traceability.
+6. `ui/POS_UI_NAMING_AND_FIELD_REGISTER.md` for canonical labels and UI-to-data field traceability.
 7. `ui/UI_PROGRESS.md` and current UI/product plans for living implementation status.
 8. Research and historical proposals as evidence only.
 
-A product/visual discussion can be documented before implementation while still remaining explicitly **not manifest-authorized**. Restaurant local service now has a bounded executable prototype under `POS-FLOW-002`; online-order/delivery connector implementation remains pending separate scope.
+A product/visual discussion can be documented before implementation while still remaining explicitly **not manifest-authorized**. Restaurant local service has a bounded executable prototype under `POS-FLOW-002`; the first bounded Back Office catalog slice is `BO-FLOW-002`; online-order/delivery connector implementation remains pending separate scope.
 
 ## Current implementation documents
 
@@ -25,13 +25,14 @@ A product/visual discussion can be documented before implementation while still 
 - `architecture/POS_RUNTIME_ADAPTER_BOUNDARY.md` — current general POS runtime composition/injection boundary and replacement rules.
 - `architecture/RESTAURANT_SERVICE_ADAPTER_BOUNDARY.md` — current restaurant/place adapter boundary and external-system translation rules.
 - `architecture/LOCAL_PERSISTENCE_AND_OUTBOX_BOUNDARY.md` — local-first persistence identity, module-private snapshots, transactional outbox, retry/ack semantics, and the separation from LAN, branch/cloud sync and ZATCA/Fatoora.
+- `architecture/BACK_OFFICE_CATALOG_BOUNDARY.md` — first Back Office catalog field-discovery boundary, shared Back Office/POS catalog meaning, bounded fields and explicit non-claim of LAN/cloud synchronization.
 - `adoption/` — how Rifad evaluates and incorporates proven external logic.
 - `donors/` — donor policy and evidence record template.
 - `ui/UI_EXECUTION_MANIFEST.json` — binding screen/action/state/flow inventory and readiness status.
 - `ui/UI_EXECUTION_MANIFEST_SCHEMA.md` — implementation gate and required evidence.
 - `ui/DESIGN_AUTHORITY.md` — functional versus visual authority, touch-first/human-scale rule, responsive policy, restaurant-service rules and online-order interaction rules.
-- `ui/POS_UI_NAMING_AND_FIELD_REGISTER.md` — **canonical POS terminology plus current/missing/reserved/derived/UI-only fields exposed by interface/product direction. Update this whenever new durable meaning is introduced.**
-- `ui/UI_PROGRESS.md` — living record of implemented, owner-reviewed, pending and known-gap POS work.
+- `ui/POS_UI_NAMING_AND_FIELD_REGISTER.md` — **canonical terminology plus current/missing/reserved/derived/UI-only fields exposed by POS and Back Office product direction. Update this whenever new durable meaning is introduced.**
+- `ui/UI_PROGRESS.md` — living record of implemented, owner-reviewed, pending and known-gap UI/product work.
 - `ui/flows/` — bounded vertical slices authorized for implementation.
 - `ui/visual-decisions/` — approved/current visual interaction decisions and explicitly pending owner-directed directions.
 - `ui/` — UI-first product-surface plan, provisional tokens and first executable target.
@@ -41,6 +42,8 @@ A product/visual discussion can be documented before implementation while still 
 Do not postpone UI/product field discovery until database design.
 
 If the interface/product direction introduces a new field, option, fulfillment mode, payment/collection fact, sales channel, integration mapping, customer attribute, setting or status, update `ui/POS_UI_NAMING_AND_FIELD_REGISTER.md` in the same change and classify it as current, required gap, reserved integration, derived or UI-only.
+
+The current product priority is to continue completing relevant UI/product surfaces before freezing the production database. `BO-FLOW-002` therefore discovers product fields through the management UI while keeping transport/persistence replaceable.
 
 This explicitly includes restaurant/delivery concepts such as fulfillment mode, restaurant-service configuration, optional place-group/place management, open-order lifecycle, sales channels, channel-specific pricing, external-order/payment-collection state, settlement/reconciliation and kitchen-dispatch evidence.
 
