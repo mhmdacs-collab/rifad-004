@@ -4,6 +4,7 @@ import App from "./App";
 import { getBackOfficeCatalogAdmin } from "./runtime/backOfficeCatalog";
 import "./styles.css";
 import "./reference-overrides.css";
+import "./rifad-polish.css";
 
 const catalog = getBackOfficeCatalogAdmin();
 
