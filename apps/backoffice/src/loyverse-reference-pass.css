@@ -1,0 +1,614 @@
+/*
+ * Rifad Back Office — reference-tight catalog pass.
+ * Loaded last on purpose. This file may refine visual density only; it must not
+ * own shell geometry or business behavior.
+ */
+
+:root {
+  --bo-ref-green: #0a714e;
+  --bo-ref-green-hover: #086343;
+  --bo-ref-green-soft: #edf6f2;
+  --bo-ref-canvas: #f5f5f5;
+  --bo-ref-surface: #ffffff;
+  --bo-ref-ink: #2d3330;
+  --bo-ref-text: #4f5954;
+  --bo-ref-muted: #89918d;
+  --bo-ref-line: #e2e5e3;
+  --bo-ref-line-strong: #d4d9d6;
+}
+
+html,
+body,
+#root,
+button,
+input,
+select,
+textarea {
+  font-family: "Cairo", Tahoma, "Segoe UI", Arial, sans-serif !important;
+}
+
+body,
+.bo-main,
+.bo-shell {
+  background: var(--bo-ref-canvas) !important;
+}
+
+/* Calm app chrome: one title, one accent, no decorative gradient. */
+.bo-topbar {
+  height: 58px !important;
+  min-height: 58px !important;
+  padding-inline: 24px !important;
+  background: var(--bo-ref-green) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .12) !important;
+}
+
+.bo-topbar-title strong {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+}
+
+.bo-topbar-title span {
+  display: none !important;
+}
+
+.bo-top-status {
+  font-size: 11px !important;
+  opacity: .86;
+}
+
+/* Sidebar follows the reference: quiet text, thin separators, no card-like nav. */
+.bo-sidebar--modern {
+  background: #fff !important;
+  box-shadow: none !important;
+  border-left: 1px solid var(--bo-ref-line) !important;
+}
+
+.bo-account {
+  min-height: 68px !important;
+  padding: 12px 18px !important;
+}
+
+.bo-account .bo-avatar {
+  width: 38px !important;
+  height: 38px !important;
+  background: #eef2f0 !important;
+  color: #66716b !important;
+  font-size: 14px !important;
+}
+
+.bo-account strong { font-size: 14px !important; }
+.bo-account small { font-size: 10px !important; }
+
+.bo-store-switch--modern {
+  min-height: 50px !important;
+  margin: 8px 14px 12px !important;
+  border-radius: 2px !important;
+  border-color: var(--bo-ref-line) !important;
+  background: #fff !important;
+}
+
+.bo-modern-nav-list {
+  padding: 0 0 14px !important;
+  gap: 0 !important;
+}
+
+.bo-modern-nav,
+.bo-modern-nav-title {
+  min-height: 48px !important;
+  padding-inline: 18px !important;
+  border-radius: 0 !important;
+  border-bottom: 1px solid #f1f2f1 !important;
+  font-size: 13px !important;
+}
+
+.bo-modern-nav:hover:not(:disabled) {
+  background: #fafbfa !important;
+  transform: none !important;
+}
+
+.bo-modern-nav-section {
+  margin: 0 !important;
+  padding: 0 0 6px !important;
+  border-top: 1px solid var(--bo-ref-line) !important;
+  border-bottom: 1px solid var(--bo-ref-line) !important;
+}
+
+.bo-modern-nav-title {
+  border-bottom: 0 !important;
+}
+
+.bo-modern-subnav {
+  width: 100% !important;
+  min-height: 40px !important;
+  margin: 0 !important;
+  padding: 0 54px 0 18px !important;
+  border-radius: 0 !important;
+  color: #59635e !important;
+  font-size: 12px !important;
+}
+
+.bo-modern-subnav:hover {
+  background: #fafbfa !important;
+}
+
+.bo-modern-subnav.is-active {
+  background: var(--bo-ref-green-soft) !important;
+  color: var(--bo-ref-green) !important;
+  font-weight: 650 !important;
+}
+
+.bo-modern-subnav.is-active::after {
+  inset-block: 0 !important;
+  width: 3px !important;
+  border-radius: 0 !important;
+}
+
+/* Workspace density mirrors the reference rather than a dashboard landing page. */
+.bo-content {
+  width: min(1120px, calc(100% - 48px)) !important;
+  padding: 22px 0 52px !important;
+}
+
+.bo-page-header--compact {
+  min-height: 46px !important;
+  margin-bottom: 10px !important;
+}
+
+.bo-page-header--compact h1 {
+  font-size: 19px !important;
+  font-weight: 650 !important;
+}
+
+.bo-page-header--compact p {
+  display: none !important;
+}
+
+.bo-primary,
+.bo-secondary {
+  min-height: 42px !important;
+  padding-inline: 16px !important;
+  border-radius: 2px !important;
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.bo-primary {
+  background: var(--bo-ref-green) !important;
+  border-color: var(--bo-ref-green) !important;
+}
+
+.bo-primary:hover:not(:disabled) {
+  background: var(--bo-ref-green-hover) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.bo-secondary {
+  background: #fff !important;
+  border-color: var(--bo-ref-line-strong) !important;
+}
+
+/* Lists: flat white sheet, light dividers, no pill-heavy dashboard styling. */
+.bo-card,
+.bo-form-card {
+  border: 1px solid var(--bo-ref-line) !important;
+  border-radius: 2px !important;
+  background: #fff !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .08) !important;
+}
+
+.bo-modern-toolbar {
+  padding: 10px 14px !important;
+  background: #fff !important;
+  border-bottom-color: var(--bo-ref-line) !important;
+}
+
+.bo-modern-search,
+.bo-modern-filter {
+  height: 40px !important;
+  border-radius: 0 !important;
+  border-width: 0 0 1px !important;
+  border-color: var(--bo-ref-line-strong) !important;
+  box-shadow: none !important;
+}
+
+.bo-modern-search:focus-within,
+.bo-modern-filter:focus-within {
+  border-color: var(--bo-ref-green) !important;
+  box-shadow: none !important;
+}
+
+.bo-list-meta {
+  min-height: 42px !important;
+  background: #fff !important;
+}
+
+.bo-list-meta strong { font-size: 12px !important; }
+.bo-list-meta span { font-size: 10px !important; }
+
+.bo-modern-table th {
+  height: 42px !important;
+  padding: 8px 14px !important;
+  background: #fafafa !important;
+  color: #666f6a !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+}
+
+.bo-modern-table td {
+  padding: 12px 14px !important;
+  font-size: 12px !important;
+}
+
+.bo-modern-table td strong {
+  font-size: 12px !important;
+  font-weight: 650 !important;
+}
+
+.bo-modern-table tbody tr:hover {
+  background: #fafcfb !important;
+  box-shadow: none !important;
+}
+
+.bo-pricing-badge,
+.bo-status {
+  min-height: auto !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  font-size: 10px !important;
+}
+
+/* Item editor: one calm vertical form. */
+.bo-item-editor-2026 {
+  width: min(820px, 100%) !important;
+  margin-inline: auto !important;
+}
+
+.bo-editor-topbar--modern {
+  min-height: 34px !important;
+  margin: 0 0 8px !important;
+}
+
+/* Keep a single save/cancel group at the end of the form. */
+.bo-editor-topbar--modern .bo-editor-actions {
+  display: none !important;
+}
+
+.bo-back-link {
+  min-height: 32px !important;
+  padding: 0 !important;
+  font-size: 11px !important;
+  color: #65716b !important;
+}
+
+.bo-editor-heading {
+  display: none !important;
+}
+
+.bo-editor-column--focused {
+  gap: 10px !important;
+}
+
+.bo-modern-section {
+  overflow: visible !important;
+}
+
+.bo-modern-section .bo-section-heading {
+  min-height: 54px !important;
+  padding: 12px 16px !important;
+  background: #fff !important;
+  border-bottom: 1px solid var(--bo-ref-line) !important;
+}
+
+.bo-modern-section .bo-section-heading h2 {
+  margin: 0 !important;
+  font-size: 14px !important;
+  font-weight: 650 !important;
+}
+
+.bo-modern-section .bo-section-heading p {
+  margin: 2px 0 0 !important;
+  font-size: 9px !important;
+  line-height: 1.6 !important;
+}
+
+.bo-form-grid--modern,
+.bo-modern-section-body {
+  padding: 16px !important;
+}
+
+.bo-form-grid--modern {
+  gap: 13px !important;
+}
+
+.bo-field {
+  gap: 5px !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+}
+
+.bo-field input,
+.bo-field select {
+  height: 40px !important;
+  padding-inline: 10px !important;
+  border-radius: 0 !important;
+  border-width: 0 0 1px !important;
+  border-color: var(--bo-ref-line-strong) !important;
+  box-shadow: none !important;
+}
+
+.bo-field textarea {
+  min-height: 72px !important;
+  padding: 9px 10px !important;
+  border-radius: 0 !important;
+  border-color: var(--bo-ref-line-strong) !important;
+  box-shadow: none !important;
+}
+
+.bo-field input:focus,
+.bo-field select:focus,
+.bo-field textarea:focus {
+  border-color: var(--bo-ref-green) !important;
+  box-shadow: none !important;
+}
+
+/* Switches should read like a setting, not another nested card. */
+.bo-switch-card {
+  min-height: 52px !important;
+  padding: 8px 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.bo-switch-ui {
+  width: 34px !important;
+  height: 18px !important;
+}
+
+.bo-switch-ui::after {
+  top: 2px !important;
+  right: 2px !important;
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.bo-switch-card input:checked + .bo-switch-ui::after {
+  transform: translateX(-16px) !important;
+}
+
+.bo-switch-card strong { font-size: 11px !important; }
+.bo-switch-card small { font-size: 9px !important; }
+
+/* Pricing becomes direct rows instead of panels-inside-panels. */
+.bo-price-mode-row {
+  gap: 18px !important;
+}
+
+.bo-money-input,
+.bo-compact-money {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.bo-multi-price-panel {
+  margin-top: 12px !important;
+  padding-top: 12px !important;
+  gap: 10px !important;
+}
+
+.bo-segmented {
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--bo-ref-line) !important;
+}
+
+.bo-segmented button {
+  min-height: 36px !important;
+  padding: 0 14px !important;
+  border-radius: 0 !important;
+  font-size: 10px !important;
+}
+
+.bo-segmented button.is-active {
+  color: var(--bo-ref-green) !important;
+  background: transparent !important;
+  box-shadow: inset 0 -2px 0 var(--bo-ref-green) !important;
+}
+
+.bo-price-options-card,
+.bo-custom-pricing-card {
+  border-radius: 0 !important;
+  border: 0 !important;
+  background: #fff !important;
+}
+
+.bo-price-options-head {
+  min-height: 50px !important;
+  padding: 8px 0 !important;
+  border-bottom: 1px solid var(--bo-ref-line) !important;
+}
+
+.bo-price-option-row {
+  min-height: 48px !important;
+  padding: 7px 0 !important;
+}
+
+.bo-price-option-row .bo-compact-money,
+.bo-addon-option-row .bo-compact-money {
+  height: 36px !important;
+}
+
+/* POS appearance: compact utility block, not a showcase card. */
+.bo-appearance-editor {
+  grid-template-columns: 145px minmax(0, 1fr) !important;
+  gap: 18px !important;
+  align-items: start !important;
+}
+
+.bo-pos-preview-card {
+  min-height: 175px !important;
+  padding: 12px !important;
+  border-radius: 0 !important;
+  border-color: var(--bo-ref-line) !important;
+  background: #fafafa !important;
+  box-shadow: none !important;
+}
+
+.bo-preview-eyebrow,
+.bo-pos-preview-card > small {
+  display: none !important;
+}
+
+.bo-pos-preview-card > strong {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+.bo-catalog-visual--hero {
+  box-shadow: none !important;
+}
+
+.bo-appearance-controls {
+  gap: 12px !important;
+}
+
+.bo-appearance-block {
+  gap: 7px !important;
+}
+
+.bo-appearance-block > div:first-child > strong {
+  font-size: 11px !important;
+}
+
+.bo-appearance-block > div:first-child > small {
+  font-size: 9px !important;
+}
+
+.bo-color-picker { gap: 7px !important; }
+.bo-color-swatch {
+  width: 29px !important;
+  height: 29px !important;
+  border-radius: 0 !important;
+  box-shadow: 0 0 0 1px #d7dcda !important;
+}
+
+.bo-color-swatch.is-selected {
+  box-shadow: 0 0 0 2px var(--bo-ref-green) !important;
+}
+
+.bo-shape-picker { gap: 6px !important; }
+.bo-shape-picker button {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.bo-image-upload-block {
+  padding-top: 10px !important;
+}
+
+/* Add-ons: flat selectable rows, preserving reusable/private behavior. */
+.bo-addon-sections {
+  gap: 15px !important;
+}
+
+.bo-subsection-title {
+  margin-bottom: 6px !important;
+}
+
+.bo-subsection-title strong { font-size: 11px !important; }
+.bo-subsection-title small { font-size: 9px !important; }
+
+.bo-check-list {
+  grid-template-columns: 1fr !important;
+  gap: 0 !important;
+}
+
+.bo-check-card {
+  min-height: 46px !important;
+  padding: 7px 4px !important;
+  border-width: 0 0 1px !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.bo-check-card:hover {
+  background: #fafcfb !important;
+}
+
+.bo-private-addons {
+  padding-top: 12px !important;
+}
+
+.bo-private-group {
+  margin-top: 6px !important;
+  padding: 8px 0 !important;
+  border-width: 1px 0 0 !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+}
+
+.bo-private-group-head > input,
+.bo-addon-option-row > input,
+.bo-builder-row > input,
+.bo-price-option-row--editable > input {
+  border-radius: 0 !important;
+  border-width: 0 0 1px !important;
+  box-shadow: none !important;
+}
+
+.bo-icon-danger {
+  border-radius: 0 !important;
+}
+
+/* One clear ending to the form, just like the reference. */
+.bo-editor-bottom-actions {
+  margin-top: 14px !important;
+  padding: 12px 0 0 !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+}
+
+.bo-editor-bottom-actions .bo-primary {
+  min-width: 112px;
+}
+
+.bo-editor-bottom-actions .bo-secondary {
+  min-width: 78px;
+}
+
+/* Category / option / modifier dialogs retain features but lose decorative chrome. */
+.bo-focused-modal,
+.bo-modal--wide {
+  border-radius: 2px !important;
+  box-shadow: 0 8px 26px rgba(0,0,0,.18) !important;
+}
+
+.bo-modal-icon {
+  border-radius: 50% !important;
+  box-shadow: none !important;
+}
+
+.bo-builder-row,
+.bo-addon-option-row {
+  border-radius: 0 !important;
+}
+
+@media (max-width: 1100px) {
+  .bo-content { width: calc(100% - 28px) !important; }
+  .bo-item-editor-2026 { width: min(760px, 100%) !important; }
+}
+
+@media (max-width: 780px) {
+  .bo-content { width: calc(100% - 20px) !important; padding-top: 14px !important; }
+  .bo-appearance-editor { grid-template-columns: 1fr !important; }
+  .bo-pos-preview-card { min-height: 150px !important; }
+  .bo-price-mode-row { grid-template-columns: 1fr !important; }
+}
