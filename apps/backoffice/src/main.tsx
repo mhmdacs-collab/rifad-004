@@ -5,6 +5,7 @@ import { getBackOfficeCatalogAdmin } from "./runtime/backOfficeCatalog";
 import "./styles.css";
 import "./reference-overrides.css";
 import "./rifad-polish.css";
+import "./backoffice-2026.css";
 
 const catalog = getBackOfficeCatalogAdmin();
 
