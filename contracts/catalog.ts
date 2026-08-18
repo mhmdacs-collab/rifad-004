@@ -79,7 +79,7 @@ export type CatalogItemCustomPriceOption = Readonly<{
 }>;
 
 export type CatalogItemPricing =
-  | Readonly<{ mode: "fixed" }>
+  | Readonly<{ mode: "fixed"; groupId?: undefined }>
   | Readonly<{
       mode: "option-group";
       groupId: string;
@@ -88,6 +88,7 @@ export type CatalogItemPricing =
     }>
   | Readonly<{
       mode: "custom-options";
+      groupId?: undefined;
       name: string;
       values: readonly CatalogItemCustomPriceOption[];
     }>;
