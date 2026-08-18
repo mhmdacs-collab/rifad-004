@@ -10,7 +10,6 @@ import {
   type CatalogVariant,
   type CatalogVariantOption,
 } from "../../../contracts/catalog";
-import { createBrowserCatalogAdmin } from "../../../adapters/catalog/browserCatalog";
 
 type CatalogPage = "items" | "categories" | "modifiers";
 
@@ -110,7 +109,7 @@ const rebuildVariants = (
 
 const navIcon = (value: string) => <span className="bo-nav-icon" aria-hidden="true">{value}</span>;
 
-export default function App({ catalog = createBrowserCatalogAdmin() }: { catalog?: CatalogAdminContract }) {
+export default function App({ catalog }: { catalog: CatalogAdminContract }) {
   const [page, setPage] = useState<CatalogPage>("items");
   const [items, setItems] = useState<readonly CatalogItem[]>([]);
   const [categories, setCategories] = useState<readonly CatalogCategory[]>([]);
@@ -479,58 +478,45 @@ export default function App({ catalog = createBrowserCatalogAdmin() }: { catalog
           </section>
 
           <section className="bo-form-card">
-            <div className="bo-section-heading"><div><h2>الإضافات</h2><p>اربط مجموعات الإضافات التي تظهر مع هذا الصنف أثناء البيع.</p></div><button className="bo-link-button" type="button" onClick={() => openPage("modifiers")}>إدارة الإضافات</button></div>
-            {modifierGroups.length === 0 ? <div className="bo-empty-panel"><strong>لا توجد مجموعات إضافات</strong><span>أنشئ مجموعة مثل إضافات القهوة ثم اربطها بالصنف.</span></div> : <div className="bo-check-list">{modifierGroups.map((modifier) => <label className="bo-check-row" key={modifier.id}><input type="checkbox" checked={(itemDraft.modifierGroupIds ?? []).includes(modifier.id)} onChange={() => toggleModifierForItem(modifier.id)} /><span><strong>{modifier.name}</strong><small>{modifier.options.map((option) => option.name).join("، ")}</small></span><em>{modifier.options.length} خيار</em></label>)}</div>}
+            <div className="bo-section-heading"><div><h2>الإضافات</h2><p>اربط مجموعات الإضافات التي يمكن اختيارها لاحقًا عند بيع هذا الصنف.</p></div></div>
+            {modifierGroups.length === 0 ? <div className="bo-empty-panel"><strong>لا توجد مجموعات إضافات</strong><span>أنشئها من قسم الإضافات أولًا.</span></div> : <div className="bo-check-list">{modifierGroups.map((modifier) => <label key={modifier.id} className="bo-check-card"><input type="checkbox" checked={(itemDraft.modifierGroupIds ?? []).includes(modifier.id)} onChange={() => toggleModifierForItem(modifier.id)} aria-label={modifier.name} /><span><strong>{modifier.name}</strong><small>{modifier.options.length} إضافة</small></span></label>)}</div>}
           </section>
         </div>
 
-        <aside className="bo-summary-column">
-          <section className="bo-summary-card"><h3>ملخص الصنف</h3><div className="bo-summary-row"><span>السعر الأساسي</span><strong>{formatMoney(itemDraft.price.halalas)}</strong></div><div className="bo-summary-row"><span>المتغيرات</span><strong>{(itemDraft.variants ?? []).length}</strong></div><div className="bo-summary-row"><span>مجموعات الإضافات</span><strong>{(itemDraft.modifierGroupIds ?? []).length}</strong></div><div className="bo-summary-row"><span>الحالة</span><strong className={itemDraft.availableForSale ? "bo-green-text" : "bo-red-text"}>{itemDraft.availableForSale ? "متاح للبيع" : "غير متاح"}</strong></div></section>
-          <section className="bo-summary-card bo-summary-note"><h3>هذه مرحلة اكتشاف المنتج</h3><p>المخزون والتكلفة والضرائب والصور وأسعار الفروع ستدخل عندما نبدأ أقسامها، ولن نفرض حقولها الآن على نموذج رفاد.</p></section>
+        <aside className="bo-editor-side">
+          <section className="bo-form-card bo-side-card"><h3>ملخص الصنف</h3><dl><div><dt>السعر الأساسي</dt><dd>{basePriceText || "0.00"} ر.س</dd></div><div><dt>المتغيرات</dt><dd>{(itemDraft.variants ?? []).length}</dd></div><div><dt>مجموعات الإضافات</dt><dd>{(itemDraft.modifierGroupIds ?? []).length}</dd></div></dl><p>سيبقى شكل البيع في POS الحالي على السعر الأساسي حتى نعتمد واجهة اختيار المتغيرات والإضافات للكاشير.</p></section>
         </aside>
       </div>
-      {error ? <div className="bo-floating-alert" role="alert">{error}</div> : null}
+      {error ? <div className="bo-alert bo-editor-alert" role="alert">{error}</div> : null}
     </form>
   );
 
   const renderCategories = () => (
     <>
-      <div className="bo-page-header"><div><h1>الفئات</h1><p>تنظيم الأصناف في مجموعات واضحة للكاشير.</p></div><button className="bo-primary" type="button" onClick={startNewCategory}>+ إضافة فئة</button></div>
-      {categoryEditorId ? <form className="bo-inline-editor bo-card" onSubmit={saveCategory}><div><label className="bo-field"><span>اسم الفئة</span><input aria-label="اسم الفئة" value={categoryName} onChange={(event) => setCategoryName(event.target.value)} autoFocus /></label></div><div className="bo-inline-actions"><button type="button" className="bo-secondary" onClick={() => setCategoryEditorId(null)}>إلغاء</button><button className="bo-primary" type="submit" disabled={saving}>{saving ? "جارٍ الحفظ…" : "حفظ"}</button></div></form> : null}
-      {error ? <div className="bo-alert" role="alert">{error}</div> : null}
-      <section className="bo-card bo-list-card"><div className="bo-table-headline"><strong>{categories.length} فئة</strong><span>يمكن تعديل الاسم الآن؛ اللون والترتيب نراجعهما لاحقًا.</span></div>{categories.map((category) => <button className="bo-management-row" type="button" key={category.id} onClick={() => startEditCategory(category)}><span className="bo-category-dot">{category.name.slice(0, 1)}</span><span><strong>{category.name}</strong><small>{items.filter((item) => item.categoryId === category.id).length} صنف</small></span><b>تعديل</b></button>)}</section>
+      <div className="bo-page-header"><div><h1>الفئات</h1><p>نظّم الأصناف في مجموعات واضحة للكاشير والتقارير.</p></div><button className="bo-primary" type="button" onClick={startNewCategory}>+ إضافة فئة</button></div>
+      <section className="bo-card"><div className="bo-table-wrap"><table className="bo-simple-table"><thead><tr><th>اسم الفئة</th><th>عدد الأصناف</th></tr></thead><tbody>{categories.map((category) => <tr key={category.id} onClick={() => startEditCategory(category)}><td><strong>{category.name}</strong></td><td>{items.filter((item) => item.categoryId === category.id).length}</td></tr>)}</tbody></table></div></section>
+      {categoryEditorId ? <div className="bo-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) setCategoryEditorId(null); }}><form className="bo-modal" onSubmit={saveCategory}><div className="bo-modal-header"><div><small>{categoryEditorId === "new" ? "فئة جديدة" : "تعديل الفئة"}</small><h2>{categoryEditorId === "new" ? "إضافة فئة" : "تعديل الفئة"}</h2></div><button type="button" onClick={() => setCategoryEditorId(null)} aria-label="إغلاق">×</button></div><label className="bo-field"><span>اسم الفئة <b>*</b></span><input aria-label="اسم الفئة" autoFocus value={categoryName} onChange={(event) => setCategoryName(event.target.value)} /></label>{error ? <div className="bo-alert" role="alert">{error}</div> : null}<div className="bo-modal-actions"><button type="button" className="bo-secondary" onClick={() => setCategoryEditorId(null)} disabled={saving}>إلغاء</button><button type="submit" className="bo-primary" disabled={saving}>{saving ? "جارٍ الحفظ…" : "حفظ"}</button></div></form></div> : null}
     </>
   );
 
   const renderModifiers = () => (
     <>
-      <div className="bo-page-header"><div><h1>الإضافات</h1><p>مجموعات خيارات يمكن ربطها بأكثر من صنف، مثل شوت إضافي أو حليب بديل.</p></div><button className="bo-primary" type="button" onClick={openNewModifier}>+ إضافة مجموعة</button></div>
-      {error ? <div className="bo-alert" role="alert">{error}</div> : null}
-      <section className="bo-card bo-list-card"><div className="bo-table-headline"><strong>{modifierGroups.length} مجموعة</strong><span>سعر الإضافة يُضاف إلى سعر الصنف عند اختيارها مستقبلًا في POS.</span></div>{modifierGroups.map((modifier) => <button className="bo-management-row" type="button" key={modifier.id} onClick={() => openModifier(modifier)}><span className="bo-modifier-icon">＋</span><span><strong>{modifier.name}</strong><small>{modifier.options.map((option) => `${option.name}${option.price.halalas ? ` (+${formatMoney(option.price.halalas)})` : ""}`).join(" · ")}</small></span><em>{modifier.options.length} خيار</em><b>تعديل</b></button>)}</section>
+      <div className="bo-page-header"><div><h1>الإضافات</h1><p>أنشئ مجموعات إضافات قابلة لإعادة الاستخدام واربطها بالأصناف.</p></div><button className="bo-primary" type="button" onClick={openNewModifier}>+ إضافة مجموعة</button></div>
+      <section className="bo-card"><div className="bo-table-wrap"><table className="bo-simple-table"><thead><tr><th>المجموعة</th><th>الخيارات</th><th>مرتبطة بأصناف</th></tr></thead><tbody>{modifierGroups.length === 0 ? <tr><td colSpan={3} className="bo-empty">لا توجد مجموعات إضافات بعد.</td></tr> : modifierGroups.map((modifier) => <tr key={modifier.id} onClick={() => openModifier(modifier)}><td><strong>{modifier.name}</strong></td><td>{modifier.options.map((option) => option.name).join("، ")}</td><td>{items.filter((item) => (item.modifierGroupIds ?? []).includes(modifier.id)).length}</td></tr>)}</tbody></table></div></section>
+      {modifierEditorId !== undefined ? <div className="bo-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) setModifierEditorId(undefined); }}><form className="bo-modal bo-modal--wide" onSubmit={saveModifier}><div className="bo-modal-header"><div><small>{selectedModifier ? "تعديل مجموعة" : "مجموعة جديدة"}</small><h2>{selectedModifier?.name || "إضافة مجموعة إضافات"}</h2></div><button type="button" onClick={() => setModifierEditorId(undefined)} aria-label="إغلاق">×</button></div><label className="bo-field"><span>اسم المجموعة <b>*</b></span><input aria-label="اسم مجموعة الإضافات" autoFocus value={modifierDraft.name} onChange={(event) => setModifierDraft({ ...modifierDraft, name: event.target.value })} placeholder="مثال: إضافات القهوة" /></label><div className="bo-modifier-options"><div className="bo-subsection-title"><strong>الخيارات</strong><button type="button" className="bo-link-button" onClick={addModifierOption}>+ إضافة خيار</button></div>{modifierDraft.options.map((option, index) => <div className="bo-modifier-option-row" key={option.id ?? index}><label className="bo-field"><span>اسم الإضافة</span><input aria-label={`اسم الإضافة ${index + 1}`} value={option.name} onChange={(event) => updateModifierOption(option.id, index, { name: event.target.value })} placeholder="مثال: شوت إضافي" /></label><label className="bo-field"><span>سعر إضافي</span><div className="bo-money-input"><input aria-label={`سعر الإضافة ${index + 1}`} type="number" min="0" step="0.01" value={(option.price.halalas / 100).toFixed(2)} onChange={(event) => updateModifierOption(option.id, index, { halalas: Math.max(0, Math.round(Number(event.target.value || 0) * 100)) })} /><span>ر.س</span></div></label>{modifierDraft.options.length > 1 ? <button type="button" className="bo-row-remove" onClick={() => setModifierDraft({ ...modifierDraft, options: modifierDraft.options.filter((_, optionIndex) => optionIndex !== index) })} aria-label={`حذف الإضافة ${index + 1}`}>×</button> : null}</div>)}</div>{error ? <div className="bo-alert" role="alert">{error}</div> : null}<div className="bo-modal-actions"><button type="button" className="bo-secondary" onClick={() => setModifierEditorId(undefined)} disabled={saving}>إلغاء</button><button type="submit" className="bo-primary" disabled={saving}>{saving ? "جارٍ الحفظ…" : "حفظ"}</button></div></form></div> : null}
     </>
   );
-
-  const renderModifierEditor = () => (
-    <form className="bo-editor-page" onSubmit={saveModifier}>
-      <div className="bo-editor-topbar"><div className="bo-editor-title"><button className="bo-back-button" type="button" onClick={() => setModifierEditorId(undefined)} aria-label="العودة إلى الإضافات">←</button><div><small>{selectedModifier ? "تعديل مجموعة إضافات" : "مجموعة جديدة"}</small><h1>{selectedModifier?.name || "إضافة مجموعة"}</h1></div></div><div className="bo-editor-actions"><button className="bo-secondary" type="button" onClick={() => setModifierEditorId(undefined)}>إلغاء</button><button className="bo-primary" type="submit" disabled={saving}>{saving ? "جارٍ الحفظ…" : "حفظ"}</button></div></div>
-      <div className="bo-editor-layout bo-editor-layout--narrow"><div className="bo-editor-column"><section className="bo-form-card"><div className="bo-section-heading"><div><h2>مجموعة الإضافات</h2><p>أنشئ المجموعة مرة واحدة ثم اربطها بالأصناف المناسبة.</p></div></div><div className="bo-form-grid"><label className="bo-field bo-field--wide"><span>اسم المجموعة <b>*</b></span><input aria-label="اسم مجموعة الإضافات" value={modifierDraft.name} onChange={(event) => setModifierDraft({ ...modifierDraft, name: event.target.value })} placeholder="مثال: إضافات القهوة" autoFocus /></label></div></section><section className="bo-form-card"><div className="bo-section-heading"><div><h2>الخيارات</h2><p>كل خيار يمكن أن يكون مجانيًا أو بسعر إضافي.</p></div><button type="button" className="bo-link-button" onClick={addModifierOption}>+ إضافة خيار</button></div><div className="bo-modifier-options">{modifierDraft.options.map((option, index) => <div className="bo-modifier-option-row" key={option.id ?? index}><span className="bo-drag-handle" aria-hidden="true">⋮⋮</span><label className="bo-field"><span>اسم الإضافة</span><input aria-label={`اسم الإضافة ${index + 1}`} value={option.name} onChange={(event) => updateModifierOption(option.id, index, { name: event.target.value })} placeholder="مثال: شوت إضافي" /></label><label className="bo-field"><span>السعر الإضافي</span><div className="bo-money-input"><input aria-label={`سعر الإضافة ${index + 1}`} type="number" min="0" step="0.01" dir="ltr" value={(option.price.halalas / 100).toFixed(2)} onChange={(event) => updateModifierOption(option.id, index, { halalas: Math.max(0, Math.round(Number(event.target.value || 0) * 100)) })} /><span>ر.س</span></div></label><button type="button" className="bo-remove-circle" aria-label={`حذف الإضافة ${index + 1}`} disabled={modifierDraft.options.length === 1} onClick={() => setModifierDraft({ ...modifierDraft, options: modifierDraft.options.filter((_, optionIndex) => optionIndex !== index) })}>×</button></div>)}</div></section></div></div>
-      {error ? <div className="bo-floating-alert" role="alert">{error}</div> : null}
-    </form>
-  );
-
-  const editingItem = itemEditorId !== undefined;
-  const editingModifier = page === "modifiers" && modifierEditorId !== undefined;
 
   return (
     <div className="bo-shell" dir="rtl">
       {renderSidebar()}
-      <div className="bo-workspace">
-        <header className="bo-topbar"><div className="bo-local-badge"><span></span>بيانات محلية للتقييم</div><div className="bo-topbar-actions"><button type="button" disabled>مساعدة</button><button type="button" disabled className="bo-user-button"><span className="bo-avatar bo-avatar--small">م</span>مدير المتجر</button></div></header>
-        <main className="bo-main">
-          {flash ? <div className="bo-toast" role="status">✓ {flash}</div> : null}
-          {editingItem ? renderItemEditor() : editingModifier ? renderModifierEditor() : page === "categories" ? renderCategories() : page === "modifiers" ? renderModifiers() : renderItemsList()}
-        </main>
-      </div>
+      <main className="bo-main">
+        <div className="bo-topbar"><div><strong>المتجر الرئيسي</strong><span> / </span><span>المكتب الخلفي</span></div><span className="bo-top-status">تجربة محلية</span></div>
+        <div className="bo-content">
+          {itemEditorId !== undefined ? renderItemEditor() : page === "categories" ? renderCategories() : page === "modifiers" ? renderModifiers() : renderItemsList()}
+        </div>
+      </main>
+      {flash ? <div className="bo-toast" role="status">✓ {flash}</div> : null}
     </div>
   );
 }
