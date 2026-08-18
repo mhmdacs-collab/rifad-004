@@ -3,18 +3,22 @@ import {
   type CatalogCategory,
   type CatalogItem,
   type CatalogItemDraft,
+  type CatalogItemPricing,
   type CatalogModifierGroup,
   type CatalogModifierGroupDraft,
   type CatalogModifierOption,
+  type CatalogOptionGroup,
+  type CatalogOptionGroupDraft,
+  type CatalogPrivateModifierGroup,
   type CatalogVariant,
   type CatalogVariantOption,
 } from "../../contracts/catalog";
 
-export const CATALOG_SNAPSHOT_SCHEMA_VERSION = 2 as const;
+export const CATALOG_SNAPSHOT_SCHEMA_VERSION = 3 as const;
 
 export type CatalogCommandResult = Readonly<{
   commandId: string;
-  entityType: "item" | "category" | "modifier";
+  entityType: "item" | "category" | "option-group" | "modifier";
   entityId: string;
 }>;
 
@@ -23,6 +27,7 @@ export type CatalogSnapshot = Readonly<{
   revision: number;
   categories: readonly CatalogCategory[];
   items: readonly CatalogItem[];
+  optionGroups: readonly CatalogOptionGroup[];
   modifierGroups: readonly CatalogModifierGroup[];
   commandResults: readonly CatalogCommandResult[];
 }>;
@@ -33,6 +38,23 @@ export const defaultCatalogCategories = (): readonly CatalogCategory[] => [
   { id: "food", name: "المأكولات" },
   { id: "dessert", name: "الحلويات" },
 ];
+
+const defaultOptionGroups = (): readonly CatalogOptionGroup[] => {
+  const now = "2026-08-18T00:00:00.000Z";
+  return [
+    {
+      id: "option-pizza-size",
+      name: "أحجام البيتزا",
+      values: [
+        { id: "pizza-small", name: "صغير", price: { halalas: 1000, currency: "SAR" } },
+        { id: "pizza-medium", name: "وسط", price: { halalas: 2000, currency: "SAR" } },
+        { id: "pizza-large", name: "كبير", price: { halalas: 2500, currency: "SAR" } },
+      ],
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
+};
 
 const defaultModifierGroups = (): readonly CatalogModifierGroup[] => {
   const now = "2026-08-18T00:00:00.000Z";
@@ -67,13 +89,15 @@ const item = (
     categoryId,
     categoryName: categories.find((category) => category.id === categoryId)?.name ?? null,
     price: { halalas: priceHalalas, currency: "SAR" },
+    pricing: { mode: "fixed" },
     sku,
     barcode,
     availableForSale: true,
     soldBy: "each",
+    modifierGroupIds: [],
+    privateModifierGroups: [],
     variantOptions: [],
     variants: [],
-    modifierGroupIds: [],
     createdAt: now,
     updatedAt: now,
   };
@@ -99,6 +123,7 @@ export const createDefaultCatalogSnapshot = (): CatalogSnapshot => ({
   revision: 1,
   categories: defaultCatalogCategories(),
   items: defaultCatalogItems(),
+  optionGroups: defaultOptionGroups(),
   modifierGroups: defaultModifierGroups(),
   commandResults: [],
 });
@@ -114,82 +139,136 @@ const validateMoney = (halalas: number) => {
 };
 
 const normalizeVariantOptions = (options: readonly CatalogVariantOption[]): readonly CatalogVariantOption[] => {
-  if (options.length > 3) {
-    throw new CatalogContractError("CATALOG_VARIANT_OPTIONS_LIMIT", "يمكن إضافة 3 خيارات للمتغيرات كحد أقصى.");
-  }
-
-  const normalized = options.map((option) => {
-    const name = clean(option.name);
-    if (!name) throw new CatalogContractError("CATALOG_VARIANT_OPTION_NAME_REQUIRED", "اكتب اسم خيار المتغير مثل الحجم أو اللون.");
-    const valueNames = new Set<string>();
-    const values = option.values.map((value) => {
-      const valueName = clean(value.name);
-      if (!valueName) throw new CatalogContractError("CATALOG_VARIANT_VALUE_REQUIRED", "لا تترك قيمة متغير فارغة.");
-      const compare = valueName.toLocaleLowerCase("ar");
-      if (valueNames.has(compare)) throw new CatalogContractError("CATALOG_VARIANT_VALUE_DUPLICATE", "لا تكرر نفس قيمة المتغير داخل الخيار.");
-      valueNames.add(compare);
-      return { ...value, name: valueName };
-    });
-    if (values.length === 0) throw new CatalogContractError("CATALOG_VARIANT_VALUES_REQUIRED", "أضف قيمة واحدة على الأقل لكل خيار متغير.");
-    return { ...option, name, values };
-  });
-
-  const optionNames = new Set<string>();
-  for (const option of normalized) {
-    const compare = option.name.toLocaleLowerCase("ar");
-    if (optionNames.has(compare)) throw new CatalogContractError("CATALOG_VARIANT_OPTION_DUPLICATE", "لا تكرر نفس اسم خيار المتغير.");
-    optionNames.add(compare);
-  }
-
-  const combinations = normalized.reduce((count, option) => count * option.values.length, 1);
-  if (normalized.length > 0 && combinations > 200) {
-    throw new CatalogContractError("CATALOG_VARIANTS_LIMIT", "عدد تركيبات المتغيرات لا يمكن أن يتجاوز 200.");
-  }
-  return normalized;
+  if (options.length > 3) throw new CatalogContractError("CATALOG_VARIANT_OPTIONS_LIMIT", "يمكن إضافة 3 خيارات قديمة كحد أقصى.");
+  return options.map((option) => ({
+    ...option,
+    name: clean(option.name),
+    values: option.values.map((value) => ({ ...value, name: clean(value.name) })),
+  }));
 };
 
-const normalizeVariants = (
-  variants: readonly CatalogVariant[],
-  options: readonly CatalogVariantOption[],
-): readonly CatalogVariant[] => {
-  if (options.length === 0) return [];
-  const expected = options.reduce((count, option) => count * option.values.length, 1);
-  if (variants.length !== expected) {
-    throw new CatalogContractError("CATALOG_VARIANTS_INCOMPLETE", "أعد توليد تركيبات المتغيرات قبل الحفظ.");
-  }
+const normalizeVariants = (variants: readonly CatalogVariant[]): readonly CatalogVariant[] => variants.map((variant) => {
+  validateMoney(variant.price.halalas);
+  return {
+    ...variant,
+    name: clean(variant.name),
+    sku: cleanSku(variant.sku),
+    barcode: cleanBarcode(variant.barcode),
+    price: { halalas: variant.price.halalas, currency: "SAR" as const },
+  };
+});
 
-  const allowedByOption = options.map((option) => new Set(option.values.map((value) => value.id)));
-  const seenCombinations = new Set<string>();
-  const seenIds = new Set<string>();
+export const normalizeOptionGroupDraft = (draft: CatalogOptionGroupDraft): CatalogOptionGroupDraft => {
+  const name = clean(draft.name);
+  if (!name) throw new CatalogContractError("CATALOG_OPTION_GROUP_NAME_REQUIRED", "اكتب اسم مجموعة الخيارات، مثل أحجام البيتزا.");
+  if (draft.values.length < 2) throw new CatalogContractError("CATALOG_OPTION_GROUP_VALUES_REQUIRED", "أضف خيارين على الأقل للمجموعة.");
+  if (draft.values.length > 50) throw new CatalogContractError("CATALOG_OPTION_GROUP_VALUES_LIMIT", "مجموعة الخيارات لا يمكن أن تتجاوز 50 خيارًا.");
 
-  return variants.map((variant) => {
-    if (!variant.id || seenIds.has(variant.id)) throw new CatalogContractError("CATALOG_VARIANT_ID_INVALID", "تعذر حفظ هوية أحد المتغيرات.");
-    seenIds.add(variant.id);
-    if (variant.optionValueIds.length !== options.length) {
-      throw new CatalogContractError("CATALOG_VARIANT_VALUES_INVALID", "تركيبة أحد المتغيرات غير مكتملة.");
-    }
-    variant.optionValueIds.forEach((valueId, index) => {
-      if (!allowedByOption[index]?.has(valueId)) throw new CatalogContractError("CATALOG_VARIANT_VALUES_INVALID", "تركيبة أحد المتغيرات غير صالحة.");
-    });
-    const combination = variant.optionValueIds.join("|");
-    if (seenCombinations.has(combination)) throw new CatalogContractError("CATALOG_VARIANT_DUPLICATE", "هناك تركيبة متغير مكررة.");
-    seenCombinations.add(combination);
-    validateMoney(variant.price.halalas);
+  const names = new Set<string>();
+  const values = draft.values.map((value) => {
+    const valueName = clean(value.name);
+    if (!valueName) throw new CatalogContractError("CATALOG_OPTION_VALUE_NAME_REQUIRED", "اكتب اسم الخيار.");
+    const compare = valueName.toLocaleLowerCase("ar");
+    if (names.has(compare)) throw new CatalogContractError("CATALOG_OPTION_VALUE_DUPLICATE", "لا تكرر نفس الخيار داخل المجموعة.");
+    names.add(compare);
+    validateMoney(value.price.halalas);
     return {
-      ...variant,
-      name: clean(variant.name),
-      sku: cleanSku(variant.sku),
-      barcode: cleanBarcode(variant.barcode),
-      price: { halalas: variant.price.halalas, currency: "SAR" as const },
+      id: value.id,
+      name: valueName,
+      price: { halalas: value.price.halalas, currency: "SAR" as const },
     };
   });
+  return { name, values };
+};
+
+const normalizePrivateModifierGroups = (groups: readonly CatalogPrivateModifierGroup[]): readonly CatalogPrivateModifierGroup[] => {
+  const groupNames = new Set<string>();
+  return groups.map((group) => {
+    const name = clean(group.name);
+    if (!name) throw new CatalogContractError("CATALOG_PRIVATE_MODIFIER_NAME_REQUIRED", "اكتب اسم الإضافات الخاصة.");
+    const compare = name.toLocaleLowerCase("ar");
+    if (groupNames.has(compare)) throw new CatalogContractError("CATALOG_PRIVATE_MODIFIER_DUPLICATE", "لا تكرر نفس مجموعة الإضافات الخاصة.");
+    groupNames.add(compare);
+    if (group.options.length === 0) throw new CatalogContractError("CATALOG_PRIVATE_MODIFIER_OPTIONS_REQUIRED", "أضف خيارًا واحدًا على الأقل للإضافات الخاصة.");
+    const optionNames = new Set<string>();
+    return {
+      ...group,
+      name,
+      options: group.options.map((option) => {
+        const optionName = clean(option.name);
+        if (!optionName) throw new CatalogContractError("CATALOG_PRIVATE_MODIFIER_OPTION_REQUIRED", "اكتب اسم الإضافة الخاصة.");
+        const optionCompare = optionName.toLocaleLowerCase("ar");
+        if (optionNames.has(optionCompare)) throw new CatalogContractError("CATALOG_PRIVATE_MODIFIER_OPTION_DUPLICATE", "لا تكرر نفس الإضافة الخاصة.");
+        optionNames.add(optionCompare);
+        validateMoney(option.price.halalas);
+        return { ...option, name: optionName, price: { halalas: option.price.halalas, currency: "SAR" as const } };
+      }),
+    };
+  });
+};
+
+const normalizePricing = (
+  pricing: CatalogItemPricing | undefined,
+  fallbackPrice: number,
+  optionGroups: readonly CatalogOptionGroup[],
+): { pricing: CatalogItemPricing; effectivePrice: number } => {
+  if (!pricing || pricing.mode === "fixed") {
+    validateMoney(fallbackPrice);
+    return { pricing: { mode: "fixed" }, effectivePrice: fallbackPrice };
+  }
+
+  if (pricing.mode === "option-group") {
+    const group = optionGroups.find((candidate) => candidate.id === pricing.groupId);
+    if (!group) throw new CatalogContractError("CATALOG_OPTION_GROUP_NOT_FOUND", "مجموعة الخيارات المحددة لم تعد موجودة.");
+    const knownValueIds = new Set(group.values.map((value) => value.id));
+    const seen = new Set<string>();
+    const overrides = pricing.priceMode === "custom" ? pricing.overrides.map((override) => {
+      if (!knownValueIds.has(override.valueId)) throw new CatalogContractError("CATALOG_OPTION_OVERRIDE_INVALID", "أحد تخصيصات السعر لا يطابق خيارات المجموعة.");
+      if (seen.has(override.valueId)) throw new CatalogContractError("CATALOG_OPTION_OVERRIDE_DUPLICATE", "يوجد سعر مخصص مكرر لنفس الخيار.");
+      seen.add(override.valueId);
+      validateMoney(override.price.halalas);
+      return { valueId: override.valueId, price: { halalas: override.price.halalas, currency: "SAR" as const } };
+    }) : [];
+    const overrideMap = new Map(overrides.map((override) => [override.valueId, override.price.halalas]));
+    const effectivePrices = group.values.map((value) => overrideMap.get(value.id) ?? value.price.halalas);
+    return {
+      pricing: { mode: "option-group", groupId: group.id, priceMode: pricing.priceMode, overrides },
+      effectivePrice: Math.min(...effectivePrices),
+    };
+  }
+
+  const name = clean(pricing.name);
+  if (!name) throw new CatalogContractError("CATALOG_CUSTOM_OPTIONS_NAME_REQUIRED", "اكتب اسم الخيارات الخاصة، مثل الحجم.");
+  if (pricing.values.length < 2) throw new CatalogContractError("CATALOG_CUSTOM_OPTIONS_VALUES_REQUIRED", "أضف خيارين على الأقل للأسعار المتعددة.");
+  const names = new Set<string>();
+  const values = pricing.values.map((value) => {
+    const valueName = clean(value.name);
+    if (!valueName) throw new CatalogContractError("CATALOG_CUSTOM_OPTION_NAME_REQUIRED", "اكتب اسم الخيار الخاص.");
+    const compare = valueName.toLocaleLowerCase("ar");
+    if (names.has(compare)) throw new CatalogContractError("CATALOG_CUSTOM_OPTION_DUPLICATE", "لا تكرر نفس الخيار الخاص.");
+    names.add(compare);
+    validateMoney(value.price.halalas);
+    return { ...value, name: valueName, price: { halalas: value.price.halalas, currency: "SAR" as const } };
+  });
+  return {
+    pricing: { mode: "custom-options", name, values },
+    effectivePrice: Math.min(...values.map((value) => value.price.halalas)),
+  };
 };
 
 export const normalizeCatalogDraft = (
   draft: CatalogItemDraft,
   categories: readonly CatalogCategory[],
   modifierGroups: readonly CatalogModifierGroup[] = [],
-): CatalogItemDraft & { categoryName: string | null; variantOptions: readonly CatalogVariantOption[]; variants: readonly CatalogVariant[]; modifierGroupIds: readonly string[] } => {
+  optionGroups: readonly CatalogOptionGroup[] = [],
+): CatalogItemDraft & {
+  categoryName: string | null;
+  pricing: CatalogItemPricing;
+  modifierGroupIds: readonly string[];
+  privateModifierGroups: readonly CatalogPrivateModifierGroup[];
+  variantOptions: readonly CatalogVariantOption[];
+  variants: readonly CatalogVariant[];
+} => {
   const name = clean(draft.name);
   const description = clean(draft.description);
   const sku = cleanSku(draft.sku);
@@ -197,13 +276,11 @@ export const normalizeCatalogDraft = (
   const category = draft.categoryId ? categories.find((item) => item.id === draft.categoryId) : null;
 
   if (!name) throw new CatalogContractError("CATALOG_NAME_REQUIRED", "اكتب اسم الصنف.");
-  validateMoney(draft.price.halalas);
   if (draft.price.currency !== "SAR") throw new CatalogContractError("CATALOG_CURRENCY_INVALID", "عملة الكتالوج الحالية هي الريال السعودي.");
   if (draft.categoryId && !category) throw new CatalogContractError("CATALOG_CATEGORY_NOT_FOUND", "الفئة المحددة غير موجودة.");
   if (sku.length > 40) throw new CatalogContractError("CATALOG_SKU_TOO_LONG", "SKU يجب ألا يتجاوز 40 محرفًا.");
 
-  const variantOptions = normalizeVariantOptions(draft.variantOptions ?? []);
-  const variants = normalizeVariants(draft.variants ?? [], variantOptions);
+  const normalizedPricing = normalizePricing(draft.pricing, draft.price.halalas, optionGroups);
   const modifierIds = Array.from(new Set(draft.modifierGroupIds ?? []));
   const knownModifierIds = new Set(modifierGroups.map((modifier) => modifier.id));
   if (modifierIds.some((id) => !knownModifierIds.has(id))) {
@@ -218,10 +295,12 @@ export const normalizeCatalogDraft = (
     barcode,
     categoryId: category?.id ?? null,
     categoryName: category?.name ?? null,
-    price: { halalas: draft.price.halalas, currency: "SAR" },
-    variantOptions,
-    variants,
+    price: { halalas: normalizedPricing.effectivePrice, currency: "SAR" },
+    pricing: normalizedPricing.pricing,
     modifierGroupIds: modifierIds,
+    privateModifierGroups: normalizePrivateModifierGroups(draft.privateModifierGroups ?? []),
+    variantOptions: normalizeVariantOptions(draft.variantOptions ?? []),
+    variants: normalizeVariants(draft.variants ?? []),
   };
 };
 
@@ -235,30 +314,25 @@ export const assertCatalogIdentityUnique = (
   draft: Pick<CatalogItemDraft, "sku" | "barcode" | "variants">,
   excludeItemId: string | null,
 ) => {
-  const existing = items
-    .filter((item) => item.id !== excludeItemId)
-    .flatMap(identityRecords);
+  const existing = items.filter((item) => item.id !== excludeItemId).flatMap(identityRecords);
   const incoming = [
     { sku: cleanSku(draft.sku), barcode: cleanBarcode(draft.barcode) },
     ...(draft.variants ?? []).map((variant) => ({ sku: cleanSku(variant.sku), barcode: cleanBarcode(variant.barcode) })),
   ];
-
   const ownSkus = new Set<string>();
   const ownBarcodes = new Set<string>();
   for (const record of incoming) {
     if (record.sku) {
-      if (ownSkus.has(record.sku)) throw new CatalogContractError("CATALOG_SKU_DUPLICATE", "SKU مستخدم لأكثر من صنف أو متغير.");
-      ownSkus.add(record.sku);
-      if (existing.some((candidate) => cleanSku(candidate.sku) === record.sku)) {
-        throw new CatalogContractError("CATALOG_SKU_DUPLICATE", "SKU مستخدم لصنف أو متغير آخر.");
+      if (ownSkus.has(record.sku) || existing.some((candidate) => cleanSku(candidate.sku) === record.sku)) {
+        throw new CatalogContractError("CATALOG_SKU_DUPLICATE", "SKU مستخدم لصنف أو خيار آخر.");
       }
+      ownSkus.add(record.sku);
     }
     if (record.barcode) {
-      if (ownBarcodes.has(record.barcode)) throw new CatalogContractError("CATALOG_BARCODE_DUPLICATE", "الباركود مستخدم لأكثر من صنف أو متغير.");
-      ownBarcodes.add(record.barcode);
-      if (existing.some((candidate) => cleanBarcode(candidate.barcode) === record.barcode)) {
-        throw new CatalogContractError("CATALOG_BARCODE_DUPLICATE", "الباركود مستخدم لصنف أو متغير آخر.");
+      if (ownBarcodes.has(record.barcode) || existing.some((candidate) => cleanBarcode(candidate.barcode) === record.barcode)) {
+        throw new CatalogContractError("CATALOG_BARCODE_DUPLICATE", "الباركود مستخدم لصنف أو خيار آخر.");
       }
+      ownBarcodes.add(record.barcode);
     }
   }
 };
@@ -276,7 +350,6 @@ export const normalizeModifierDraft = (draft: CatalogModifierGroupDraft): Catalo
   const name = clean(draft.name);
   if (!name) throw new CatalogContractError("CATALOG_MODIFIER_NAME_REQUIRED", "اكتب اسم مجموعة الإضافات.");
   if (draft.options.length === 0) throw new CatalogContractError("CATALOG_MODIFIER_OPTIONS_REQUIRED", "أضف خيارًا واحدًا على الأقل لمجموعة الإضافات.");
-
   const names = new Set<string>();
   const options: readonly CatalogModifierOption[] = draft.options.map((option) => {
     const optionName = clean(option.name);
