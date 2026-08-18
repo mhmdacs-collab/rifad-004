@@ -57,42 +57,73 @@ The old visible **محلي / سفري / توصيل** selector is superseded and 
 
 ## Product
 
-`BO-FLOW-002` is now the first executable cross-surface catalog discovery slice. It introduces a Rifad-owned `CatalogAdminContract` / `CatalogReadContract` staging model shared with the POS catalog adapter. The current browser transport is proof only; these fields are not a frozen SQL schema.
+`BO-FLOW-002` is the executable cross-surface catalog discovery slice. It uses Rifad-owned `CatalogAdminContract` / `CatalogReadContract` meanings shared with the POS catalog adapter. The current browser transport and schema-v2 snapshot are staging proof only; these fields are not a frozen SQL schema.
 
 | Field | Status | Reason |
 | --- | --- | --- |
 | `id` | CURRENT / CURRENT-MOCK shared catalog | stable identity reused by Back Office and POS |
 | `name` | CURRENT | Back Office display/edit, POS tile/ticket/search |
 | `description` | CURRENT-MOCK | visible/editable in BO-FLOW-002; future durable product description |
-| `categoryId` / `categoryName` | CURRENT | catalog organization; BO-FLOW-002 selects an existing category only |
+| `categoryId` / `categoryName` | CURRENT-MOCK shared catalog | category selection plus Back Office category create/rename; normalized production storage not frozen |
 | base `price` (`Money`) | CURRENT | direct-price authority; BO-FLOW-002 edits exact halalas |
 | `sku` | CURRENT-MOCK / production durable required | BO list/editor and POS staging search by SKU |
 | `barcode` | CURRENT-MOCK / production durable required | BO list/editor and POS staging exact-string search; scanner hardware not yet proven |
 | `availableForSale` | CURRENT-MOCK | false keeps item in Back Office and removes it from current sellable POS catalog |
 | `soldBy = each` | CURRENT-MOCK fixed | current bounded slice sells by unit only; weight/volume behavior is still REQUIRED-GAP |
 | `createdAt` / `updatedAt` | CURRENT-MOCK | staging catalog lifecycle evidence; final audit semantics not frozen |
+| `variantOptions[].id/name` | CURRENT-MOCK | Back Office defines up to three option dimensions such as size/color |
+| `variantOptions[].values[].id/name` | CURRENT-MOCK | named values belong to a stable option dimension |
+| `variants[].id` | CURRENT-MOCK | stable generated variant identity under the base item |
+| `variants[].optionValueIds` | CURRENT-MOCK | identifies one generated option-value combination |
+| `variants[].price` | CURRENT-MOCK | variant-specific selling price in exact halalas |
+| `variants[].sku` / `variants[].barcode` | CURRENT-MOCK | independently editable and uniqueness-checked across base items and variants |
+| `modifierGroupIds[]` | CURRENT-MOCK | reusable modifier groups assigned to an item |
+| modifier-group `id/name` | CURRENT-MOCK | independently managed reusable add-on group |
+| modifier-option `id/name/price` | CURRENT-MOCK | stable option plus additional price in exact halalas |
 | `abbreviation` | DERIVED | current POS compact tile helper derived from product name; should not become authoritative product truth merely for presentation |
 | channel pricelist/product override | REQUIRED-GAP | delivery-platform selling prices |
 | branch/store-specific availability/price | REQUIRED-GAP | future branch-aware catalog configuration |
 | cost / inventory tracking / low-stock threshold | REQUIRED-GAP, not BO-FLOW-002 | documented Back Office features pending their own UI slice |
 | tax assignment | REQUIRED-GAP, not BO-FLOW-002 | pending tax/product UI and fiscal/accounting design |
-| variants / modifiers / composite structure | REQUIRED-GAP, not BO-FLOW-002 | pending dedicated UI flows |
-| product image / POS visual appearance | future/UI scope | not authorized by current bounded Back Office slice |
+| composite structure | REQUIRED-GAP, not BO-FLOW-002 | pending dedicated UI flow |
+| product image / POS visual appearance | future/UI scope | pending its own product/UI decision |
 | `tone` | UI-ONLY | prototype visual treatment |
+
+### Variant and modifier boundary
+
+Back Office now proves the administration meaning of variants and modifiers, but it does **not** imply that the current cashier POS already consumes them.
+
+Current variant discovery rules:
+
+- maximum three option dimensions in the current staging rule;
+- maximum 200 generated combinations;
+- each generated combination can carry its own price, SKU and barcode;
+- SKU/barcode uniqueness checks include base items and variants.
+
+Current modifier discovery rules:
+
+- modifier groups are reusable catalog entities rather than fields embedded separately into every product;
+- each group contains one or more named options with an additional price;
+- one item may reference multiple modifier groups.
+
+Cashier variant selection, modifier selection/pricing, selection requirements/limits, ticket-line snapshots and kitchen/receipt presentation remain **REQUIRED-GAP** until the POS variant/modifier flow is explicitly authorized and reviewed.
 
 ### Current BO-FLOW-002 field boundary
 
-Current editable fields are deliberately limited to:
+Current editable/administered catalog meanings are:
 
-- name;
-- description;
-- existing category selection;
+- item name and description;
+- category selection;
+- category create and rename;
 - fixed base price;
-- SKU;
-- barcode;
-- available-for-sale.
+- base SKU and barcode;
+- available-for-sale;
+- variant option names and values;
+- generated variant price/SKU/barcode;
+- reusable modifier groups and their options/additional prices;
+- assignment of modifier groups to items.
 
-The current slice does **not** authorize category CRUD, variants, modifiers, cost, stock, open-price products, weight/volume selling, taxes, composite items, per-store overrides, delete, import/export or product imagery. Those fields stay discoverable from their own UI flows before production data-model freeze.
+The current slice still does **not** authorize cost, stock, open-price products, weight/volume selling, taxes, composite items, per-store overrides, delete/import/export, product imagery, or production POS variant/modifier selection. Those meanings remain discoverable from their own UI flows before production data-model freeze.
 
 Completed receipts must preserve historical product name/effective selling price snapshots even if the product is later renamed, repriced or disabled.
 
@@ -118,7 +149,7 @@ Restaurant/channel production additions:
 | stable branch/device/employee refs | REQUIRED-GAP | multi-device/audit |
 | kitchen sent quantities/revisions | REQUIRED-GAP | preparation deltas/retry safety |
 
-TicketLine current fields: `id`, `productId`, `name`, `unitPrice`, `quantity`; line total is DERIVED. Effective price source/channel and kitchen sent-quantity/revision are REQUIRED-GAP. Visual tone is UI-ONLY.
+TicketLine current fields: `id`, `productId`, `name`, `unitPrice`, `quantity`; line total is DERIVED. Effective price source/channel, selected variant snapshot, selected modifier snapshots and kitchen sent-quantity/revision are REQUIRED-GAP. Visual tone is UI-ONLY.
 
 A newly added ticket line uses the catalog facts resolved at the time it is added. Later Back Office edits must not silently rewrite already-completed receipt snapshots.
 
@@ -206,7 +237,7 @@ These remain RESERVED-INTEGRATION / REQUIRED-GAP until the delivery/online-order
 
 CURRENT receipt includes ID/number/payment method, item snapshots, subtotal/redemption/tax/total, tendered/change/loyalty earned, completion time, employee/branch name snapshots and customer snapshot.
 
-Restaurant/channel production additions remain REQUIRED-GAP: fulfillment, channel snapshot, place/group relation or historical snapshot, price-context evidence, stable employee/branch/device IDs, durable payment links, and future fiscal/refund/cancellation evidence.
+Restaurant/channel production additions remain REQUIRED-GAP: fulfillment, channel snapshot, place/group relation or historical snapshot, price-context evidence, stable employee/branch/device IDs, durable payment links, selected variant/modifier snapshots where applicable, and future fiscal/refund/cancellation evidence.
 
 ---
 
@@ -243,7 +274,7 @@ Executable local preferences/configuration:
 
 The legacy generic visible-order-type setting is superseded/hidden in normal current UI.
 
-Production Back Office should own persistent restaurant groups/places, channels/pricelists, connector mappings/credentials and online-order policies where appropriate. `BO-FLOW-002` begins Back Office product ownership only for its bounded catalog fields.
+Production Back Office should own persistent restaurant groups/places, channels/pricelists, connector mappings/credentials and online-order policies where appropriate. `BO-FLOW-002` begins Back Office product ownership for catalog items, categories, variant definitions and modifier groups in staging.
 
 ---
 
@@ -255,7 +286,7 @@ Production print history needs durable job/receipt/printer/device links, status,
 
 `POS-FLOW-002` has a **CURRENT-MOCK `kitchenRevision`** proving that an advanced local order can be sent, reopened and updated without creating a second open place. It is not real kitchen transport.
 
-Production kitchen REQUIRED-GAP: dispatch ID, order/ticket ID, fulfillment, place when local, channel when relevant, routed printer/KDS/station, revision/version, line/void deltas, idempotency/outbox identity, delivery state and timestamps.
+Production kitchen REQUIRED-GAP: dispatch ID, order/ticket ID, fulfillment, place when local, channel when relevant, routed printer/KDS/station, revision/version, line/void deltas, selected modifier/variant presentation where applicable, idempotency/outbox identity, delivery state and timestamps.
 
 ---
 
@@ -263,40 +294,41 @@ Production kitchen REQUIRED-GAP: dispatch ID, order/ticket ID, fulfillment, plac
 
 The former total SKU/barcode data gap is now partially closed **only for the staging catalog slice**:
 
-- Back Office can store and edit one SKU and one barcode;
-- duplicate non-empty SKU/barcode is rejected in the current adapter;
-- POS staging catalog search resolves name, SKU or barcode;
-- disabling an item removes it from sellable POS search.
+- Back Office can store and edit base-item SKU/barcode plus variant-specific SKU/barcode;
+- duplicate non-empty SKU/barcode is rejected across base items and variants in the current adapter;
+- POS staging catalog search resolves base item name/SKU/barcode; the Back Office list also searches variant identities;
+- disabling an item removes the family from sellable POS search.
 
-This does **not** yet prove production barcode-scanner hardware behavior, multiple barcodes per item, barcode standards/normalization, branch/cloud synchronization, import/export or production persistence.
+This does **not** yet prove production barcode-scanner hardware behavior, multiple barcodes per sellable identity, barcode standards/normalization, POS variant scanning/selection behavior, branch/cloud synchronization, import/export or production persistence.
 
-> **SKU/barcode identity exists in BO-FLOW-002 staging evidence; production scanner and synchronization support remain separate proof work.**
+> **SKU/barcode identity exists in BO-FLOW-002 staging evidence; production scanner, variant resolution and synchronization support remain separate proof work.**
 
 ---
 
 # 13. UI-only state
 
-Do not persist merely because visible: dialog/menu state, hover/pressed/animation, keypad digits/freshness, temporary numeric input, responsive mode, decorative tone, scroll position, validation CSS state, selected service group, list presentation, green/silver emphasis, local-service toast or modal state, Back Office drawer visibility, current search text or current filter selection.
+Do not persist merely because visible: dialog/menu state, hover/pressed/animation, keypad digits/freshness, temporary numeric input, responsive mode, decorative tone, scroll position, validation CSS state, selected service group, list presentation, green/silver emphasis, local-service toast or modal state, current Back Office page/editor visibility, current search text, filter selection, unsaved variant-value input or toast visibility.
 
 ---
 
 # 14. Highest-priority production gaps
 
 1. continue UI/product field discovery before production database freeze;
-2. authoritative `fulfillmentMode`;
-3. production restaurant configuration;
-4. authoritative place groups/places/open-order lifecycle + multi-device sync;
-5. durable kitchen delta/idempotency/outbox;
-6. `salesChannelId` and channel configuration;
-7. channel-aware pricing/effective sold-price evidence;
-8. direct/aggregator delivery adapter contract + external IDs/mappings/webhook idempotency;
-9. platform payment-collection + settlement/reconciliation;
-10. production SKU/barcode persistence, scanner behavior and synchronization;
-11. durable checkout/payment records;
-12. stable employee/branch/device IDs on receipts;
-13. print-job history;
-14. structured business/device configuration;
-15. legitimate Mada references without prohibited sensitive data.
+2. POS variant/modifier selection and sale-line snapshot semantics;
+3. authoritative `fulfillmentMode`;
+4. production restaurant configuration;
+5. authoritative place groups/places/open-order lifecycle + multi-device sync;
+6. durable kitchen delta/idempotency/outbox;
+7. `salesChannelId` and channel configuration;
+8. channel-aware pricing/effective sold-price evidence;
+9. direct/aggregator delivery adapter contract + external IDs/mappings/webhook idempotency;
+10. platform payment-collection + settlement/reconciliation;
+11. production SKU/barcode persistence, scanner behavior and synchronization;
+12. durable checkout/payment records;
+13. stable employee/branch/device IDs on receipts;
+14. print-job history;
+15. structured business/device configuration;
+16. legitimate Mada references without prohibited sensitive data.
 
 ---
 
