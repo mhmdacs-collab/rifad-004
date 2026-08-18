@@ -2,282 +2,224 @@
 
 Status: **CONTINUATION CHECKPOINT — READ FIRST IN A NEW CHAT/CODEX SESSION**
 
-This file captures the current Rifad state after the POS visual/product work, restaurant-service prototype, adapter/persistence foundations, and the first Back Office catalog-management slice.
-
-It exists so a future ChatGPT/Codex session can continue without relying on prior chat history.
+This file summarizes the current product/architecture state and the immediate continuation order. Higher-authority decisions remain in `PROJECT_RULES.md` and `docs/architecture/CURRENT_DECISIONS.md`.
 
 ---
 
 # 0. Repository / workflow checkpoint
 
-Repository:
+Repository: `mhmdacs-collab/rifad-004`
 
-- `mhmdacs-collab/rifad-004`
+Active branch: `agent/pos-visual-pass-01`
 
-Active branch:
+Pull request: PR #2
 
-- `agent/pos-visual-pass-01`
+Rules:
 
-Pull request:
-
-- PR #2
-- must remain **Draft**;
-- must remain **unmerged** until explicit owner approval.
-
-Before any future write:
-
-1. fetch PR #2 and the actual branch head;
-2. do not assume the SHA in this handoff is still current;
-3. inspect the latest CI/checks;
-4. edit the active branch directly;
-5. run/check Manifest + Back Office + POS verification after final changes;
-6. avoid empty/no-op documentation commits.
-
-Latest implementation direction at the time of this handoff includes the final-loaded Back Office visual simplification layer `loyverse-reference-pass.css`, plus the visual catalog identity work (item image/color/shape and group colors).
+- keep PR #2 **Draft** and **unmerged** until explicit owner approval;
+- before every future write, fetch PR #2 and actual head;
+- edit the active branch directly;
+- do not assume the SHA recorded in an older chat/document is current;
+- run/check applicable Manifest + Back Office + POS verification after implementation changes;
+- avoid empty/no-op documentation commits.
 
 ---
 
-# 1. Authority and product posture
+# 1. Read-first authority
 
-Read in this order when resuming:
+Read in this order:
 
 1. `PROJECT_RULES.md`;
 2. `docs/architecture/CURRENT_DECISIONS.md`;
 3. `docs/architecture/RIFAD_ARCHITECTURE.md`;
-4. `docs/ui/UI_EXECUTION_MANIFEST.json`;
-5. `docs/ui/DESIGN_AUTHORITY.md`;
-6. `docs/ui/POS_UI_NAMING_AND_FIELD_REGISTER.md`;
-7. this handoff and current flow/visual-decision files;
-8. research as evidence only.
+4. current capability boundaries, especially `docs/architecture/SYNC_CAPABILITY_BOUNDARY.md`;
+5. `docs/ui/UI_EXECUTION_MANIFEST.json`;
+6. `docs/ui/DESIGN_AUTHORITY.md`;
+7. `docs/ui/POS_UI_NAMING_AND_FIELD_REGISTER.md`;
+8. this handoff;
+9. research as evidence only.
 
-Current strategic posture:
-
-- **UI/Product Completeness + Durable Field Discovery comes before production database freeze.**
-- Adapter/persistence/outbox work already completed remains foundation, not permission to rush production DB/LAN/cloud/fiscal implementation.
-- Back Office is now the primary surface for discovering merchant-owned master data/configuration.
-- Loyverse is the primary functional/interaction baseline, but Rifad independently owns final product meaning, contracts, data, code and branding.
-
-Do not change Rifad's domain/schema simply to match Odoo, Loyverse or another donor/external system.
+Rifad owns product meanings/contracts. External projects/libraries are donors or adapters, never hidden product authority.
 
 ---
 
-# 2. Core architecture already established
+# 2. Owner workflow / execution rule
 
-## 2.1 Rifad-owned adapter model
+The owner clarified two critical working rules.
 
-The rule is:
+## 2.1 Visual reference lock first
 
-`Rifad UI / domain -> Rifad-owned contract -> adapter -> external/local implementation`
+For surfaces using Loyverse as the approved reference, do not repeatedly alternate between visual redesign and feature invention.
 
-External schemas, IDs, SDK types, error types, credentials and lifecycle rules stop at the adapter boundary.
+The intended workflow is:
 
-### General POS runtime
+`Loyverse reference → reproduce hierarchy/spacing/interaction closely → owner visual sign-off → then add Rifad improvements deliberately`
 
-`PosRuntimeContract` is dependency-injected from the composition root.
+For the current Back Office this means simplicity over decorative redesign: calm white surfaces, soft gray workspace, restrained typography, thin separators, minimal shadows, stable RTL navigation, compact administrative density and one clear completion area.
 
-`usePosFlow` must not construct the mock/donor runtime internally.
+Current latest simplification layer: `apps/backoffice/src/loyverse-reference-pass.css` loaded last.
 
-Replacement runtimes should pass reusable conformance probes.
+Final Back Office visual acceptance is still pending.
 
-See:
+## 2.2 Do not reinvent solved infrastructure
 
-- `docs/architecture/POS_RUNTIME_ADAPTER_BOUNDARY.md`
+Before implementing substantial infrastructure from zero:
 
-### Restaurant/local service
+- define the bounded Rifad capability/contract;
+- search multiple credible existing implementations;
+- run/characterize them;
+- inspect source/tests/failures where available;
+- verify license/dependencies/distribution obligations;
+- reuse/port/adapt the smallest proven slice behind Rifad-owned boundaries.
 
-Restaurant/place logic sits behind a Rifad-owned service contract.
+This is mandatory under `docs/adoption/CAPABILITY_ADOPTION_WORKFLOW.md`.
 
-Current generic model:
+---
 
-`PlaceGroup -> ServicePlace -> OpenLocalOrder`
+# 3. Current strategic priority — synchronization sequencing corrected
 
-Do not let an external table/floor/session schema leak into Rifad.
+The earlier handoff wording postponed deep synchronization until after most product-field discovery. That was too broad and is superseded by D-030 + D-032.
 
-Potential external translations:
+The correct distinction is:
 
-- floor/zone/section -> `PlaceGroup`;
-- table/room/booth -> `ServicePlace`;
-- table session/check/ticket -> Rifad open local order representation behind the adapter.
+- **final production business/database model freeze still waits for sufficient product/UI durable-field discovery;**
+- **synchronization selection/proof should happen earlier, once the current POS/Back Office visual shell is locked enough to stop visual churn.**
 
-See:
+Why: Back Office exists to control/manage the product that POS actually runs. A Back Office that adds an item, price, option group, table setting or permission but cannot propagate it to POS is still only a disconnected UI proof.
 
-- `docs/architecture/RESTAURANT_SERVICE_ADAPTER_BOUNDARY.md`
+Current intended sequence:
 
-## 2.2 Local-first persistence foundation
+1. lock current Loyverse-reference visual shell enough to stop repeated styling churn;
+2. execute synchronization candidate proofs;
+3. adopt one replaceable schema-tolerant synchronization capability;
+4. connect Back Office ↔ POS through that real path;
+5. continue product features/field discovery end-to-end through synchronization;
+6. freeze mature production domain/data model later.
 
-`LocalPersistenceContract` V1 exists as a Rifad-owned boundary.
+Read:
 
-Current architectural meanings include:
+- `docs/architecture/SYNC_CAPABILITY_BOUNDARY.md`;
+- `docs/research/sync/RIFAD_SYNC_BENCHMARK_2026-08-18.md`.
+
+No synchronization technology is selected yet.
+
+---
+
+# 4. Synchronization behavior now required
+
+Loyverse is the behavioral baseline, not a proprietary technology donor.
+
+Official Loyverse documentation currently shows:
+
+- Back Office/POS online changes propagate in real time/quickly;
+- new items/categories can appear across connected devices and Back Office;
+- offline receipts are stored locally as unsynchronized and automatically sync after reconnect;
+- manual sync exists as fallback;
+- open tickets synchronize across online POS devices in the same store;
+- permissions decide which POS actions/users may modify protected business data.
+
+Rifad therefore requires:
+
+- automatic/continuous connected synchronization by default;
+- durable offline-capable local POS facts and automatic reconnect replay;
+- stable identity/idempotency so retry never duplicates a finalized sale/payment/order fact;
+- permissions/domain authority separate from replication direction;
+- manual Sync/status only as fallback/diagnostic/user-confidence affordance;
+- schema/feature growth handled by normal schema/configuration evolution, **not a new sync engine per feature**;
+- actual Windows + tablet/PWA proof before production selection;
+- future branch-local/LAN capability must remain possible, but Branch Hub is **not** authorized just because sync work starts.
+
+Current candidate research includes PowerSync, Apache CouchDB replication and Couchbase Lite/Sync Gateway as high-value proof candidates with different unresolved platform/license/topology tradeoffs. Documentation is not enough to pick a winner.
+
+---
+
+# 5. Core architecture already established
+
+## Rifad-owned adapter model
+
+`Rifad UI/domain → Rifad contract → replaceable adapter → external/local implementation`
+
+Important current boundaries:
+
+- `PosRuntimeContract`;
+- `RestaurantServiceContract` with `PlaceGroup → ServicePlace → OpenLocalOrder`;
+- `CatalogAdminContract` / `CatalogReadContract`;
+- `LocalPersistenceContract`;
+- synchronization boundary now defined separately in `SYNC_CAPABILITY_BOUNDARY.md`.
+
+Provider schemas/IDs/SDK errors/credentials stop at adapters.
+
+## Local persistence
+
+Current local persistence foundation includes:
 
 - stable installation identity;
-- branch/device binding context;
+- branch/device context;
 - versioned module-private snapshots;
 - revision metadata;
-- transactional outbox semantics;
+- transactional outbox;
 - stable event identity/deduplication;
 - retry/failure bookkeeping;
-- explicit acknowledgement.
+- acknowledgement.
 
-Current browser storage is **staging**, not production DB selection.
+Current browser storage/localStorage compatibility is staging only, not final Windows/PWA production database selection.
 
-The production local engine is intentionally not frozen yet.
+Keep these separate:
 
-See:
-
-- `docs/architecture/LOCAL_PERSISTENCE_AND_OUTBOX_BOUNDARY.md`
-
-## 2.3 LAN, branch/cloud sync and Fatoora/ZATCA remain separate capabilities
-
-Do not merge these concerns:
-
-`Local Persistence != LAN != Branch/Cloud Sync != Fiscal/ZATCA`
-
-Intended future separation:
-
-- local persistence owns offline local truth;
-- LAN handles branch-local device coordination such as KDS/CDS/printers/multi-device branch behavior where appropriate;
-- branch/cloud sync propagates authoritative facts between branch/cloud nodes and resolves sync conflicts;
-- Fatoora/ZATCA is a fiscal adapter/state machine consuming final local fiscal facts with stable identity/retry/audit behavior.
-
-A failed external/fiscal retry must never create a second sale.
+`Local Persistence != Sync != LAN/Branch Hub != Fiscal/ZATCA`
 
 ---
 
-# 3. POS product state
+# 6. POS current product state
 
-Current POS is a working UI/product prototype with significant interaction polish.
+Current POS prototype includes substantial Arabic RTL/touch interaction work:
 
-Implemented/validated areas include:
-
-- Arabic RTL sales screen;
-- Cairo-based POS typography treatment;
-- touch product grid and Quick Sale/search-first mode;
-- sale-page tabs/layout editing;
-- cart/ticket quantity editing with internal keypad;
-- clear-cart action in basket body;
-- checkout inline in the transaction rail;
-- cash payment with quick amounts, keypad, change and `سداد`;
-- mock `شبكة / مدى` path;
-- print-receipt preference and success flow;
-- customer selection/creation;
-- customer debt/credit flow and debt ledger UI;
-- stable two-slot transaction action geometry;
+- product grid and Quick Sale/search-first mode;
+- cart quantity editing/keypad;
+- inline checkout rail;
+- cash flow with quick amounts/change/`سداد`;
+- mock Mada/card path;
+- success/print preference;
+- customer selection/creation and debt/credit proof;
+- stable transaction action geometry;
 - restaurant local-service prototype;
-- reusable Rifad catalog reader boundary shared with Back Office.
+- shared catalog reader boundary.
 
 Important non-claims:
 
-- mock card flow is not real terminal integration;
-- current customer tax field is not proof of ZATCA validation;
-- current restaurant send/kitchen revision is not real KDS/printer transport;
-- current delivery/channel integration is not implemented;
-- current browser persistence is not production storage.
+- no real terminal integration;
+- no production ZATCA;
+- no real KDS/printer transport;
+- no production delivery connector;
+- no production local database;
+- no production branch/cloud synchronization yet.
+
+Current POS still lacks approved pricing-option/add-on chooser and sold-line option/add-on snapshots.
 
 ---
 
-# 4. Restaurant/local service state
+# 7. Restaurant / delivery product meanings
 
-Two independent product settings exist conceptually:
+Restaurant service and advanced place management are separate configuration layers.
 
-1. restaurant-service classification enabled/disabled;
-2. advanced place management enabled/disabled.
+Current prototype defaults:
 
-## Retail/direct mode
+- one group `الطاولات`;
+- `طاولة 1..6`;
+- free `متاحة`;
+- occupied/open `محجوزة`;
+- `إرسال` separate from `دفع`;
+- current kitchen behavior is mock only.
 
-Restaurant service OFF:
+Persistent group/place configuration belongs primarily in Back Office later.
 
-- no permanent local/takeaway question;
-- normal sale -> Pay.
+Fulfillment, sales channel and payment/collection/settlement remain distinct durable concepts.
 
-## Simple restaurant mode
-
-Restaurant service ON, place management OFF:
-
-- `محلي | دفع`;
-- direct `دفع` is operationally takeaway;
-- `محلي` is dine-in/local without required table assignment.
-
-## Advanced restaurant mode
-
-Restaurant service ON, place management ON:
-
-- `محلي` opens group/place selection;
-- default proof configuration is exactly one group `الطاولات`;
-- default places are `طاولة 1` through `طاولة 6`;
-- no default rooms/sessions groups;
-- free place label: `متاحة`;
-- occupied/open place label: `محجوزة`;
-- open-order context still uses `طلبات مفتوحة`;
-- reopening a place restores the open order;
-- `إرسال` updates the mock kitchen revision and clears the working cart again;
-- successful payment releases the place.
-
-Back Office will later own persistent groups/places/settings.
-
-Future heavy restaurant features are intentionally not added yet just because another system supports them. Examples:
-
-- transfer table;
-- merge tables;
-- split bill;
-- reservation;
-- guest count;
-- waiter assignment;
-- floor-map coordinates.
-
-Evaluate actual product need and external candidates first.
+Preferred future delivery cashier UX: one `طلبات أونلاين` queue with multiple direct/aggregator adapters behind it. Current delivery work is research/design only.
 
 ---
 
-# 5. Delivery/channel product model already decided
-
-Durable concepts must remain separate:
-
-## Fulfillment
-
-- takeaway;
-- dine-in/local;
-- delivery.
-
-## Sales channel
-
-Examples:
-
-- direct POS;
-- Keeta;
-- HungerStation;
-- Jahez;
-- Ninja;
-- future direct/aggregator channels.
-
-## Collection/payment/settlement
-
-Examples:
-
-- cash in store;
-- Mada in store;
-- prepaid by platform;
-- cash on delivery;
-- card on delivery;
-- platform receivable/settlement.
-
-Important accounting/product rule:
-
-A platform-prepaid order is one sale. Later bank settlement is settlement of a receivable, not a second sale. Platform commission/fees are separate from the customer-facing sale price.
-
-Preferred future cashier experience:
-
-- one `طلبات أونلاين` queue;
-- direct and aggregator adapters behind one Rifad capability model;
-- API-originated orders arrive already carrying channel/fulfillment/prices/payment state;
-- cashier does not re-enter/reselect the platform.
-
-Delivery remains research/product design until separately authorized.
-
----
-
-# 6. Back Office — current priority
-
-The Back Office was started intentionally before production DB freeze so Rifad can discover how merchant master data is actually created and maintained.
+# 8. Back Office / catalog current model
 
 Current executable catalog destinations:
 
@@ -286,280 +228,116 @@ Current executable catalog destinations:
 - `مجموعات الخيارات`;
 - `الإضافات`.
 
-Other navigation areas may be visible as future placeholders but are not implemented claims.
+Current item/catalog meanings include:
 
-The shared catalog boundary is Rifad-owned; current browser transport is staging only.
-
-See:
-
-- `docs/architecture/BACK_OFFICE_CATALOG_BOUNDARY.md`;
-- `docs/ui/flows/BO-FLOW-002.md`.
-
----
-
-# 7. Current catalog/item model
-
-## 7.1 Item basics currently discovered
-
-Current item editor/list work covers:
-
-- name;
-- description;
-- category;
-- fixed base price;
-- SKU;
-- barcode;
-- available-for-sale state;
-- visual representation;
+- name/description/category;
+- fixed price;
+- SKU/barcode;
+- available-for-sale;
+- merchant visual representation;
 - pricing policy;
-- reusable/general add-on assignments;
+- reusable/general add-ons;
 - item-private add-ons.
 
-Do not interpret this as frozen SQL.
+## Multiple pricing
 
-## 7.2 Merchant pricing model — Rifad-native
+Merchant UX intentionally uses reusable **مجموعات الخيارات** rather than forcing technical Cartesian variants.
 
-The owner rejected forcing repeated technical variant construction for common restaurant cases.
+Example: `أحجام البيتزا → صغير 10 | وسط 20 | كبير 25`.
 
-Merchant-facing concept is **مجموعات الخيارات**.
-
-Example reusable group:
-
-`أحجام البيتزا -> صغير 10 | وسط 20 | كبير 25`
-
-One group can serve 100–200+ items.
-
-An item supports:
+An item can use:
 
 1. fixed price;
-2. reusable option group with inherited prices;
-3. reusable option group with sparse item-specific price overrides;
-4. item-private direct option prices.
+2. shared group with inherited prices;
+3. shared group with sparse item-specific overrides;
+4. item-private direct options.
 
-UI rule:
+Sparse override means unchanged values continue inheriting the shared group.
 
-- default: one base price;
-- enable **أسعار متعددة**;
-- base-price input becomes non-authoritative/disabled;
-- choose `مجموعة جاهزة` or `خيارات خاصة بهذا الصنف`;
-- if using shared group, optionally `تخصيص الأسعار لهذا الصنف`;
-- sparse override means only exceptional values are stored as item-specific price differences; the rest continue to inherit the shared group.
+## Visual catalog identity
 
-This is D-031.
+Current browser catalog staging schema is v4 and carries:
 
-## 7.3 Add-ons
+- item appearance mode `color | image`;
+- item color/shape/image staging semantics;
+- category color;
+- option-group color;
+- reusable add-on-group color.
 
-Rifad currently distinguishes:
+`imageDataUrl` is staging transport only. Production media storage/sync remains unselected.
 
-- **الإضافات العامة** — reusable group assignable to many items;
-- **إضافات خاصة بهذا الصنف** — private group only for one item.
-
-Current POS does not yet have the approved add-on chooser/rules.
-
-## 7.4 POS safety for option-priced items
-
-Until cashier option selection is implemented, option-priced items are hidden from the default POS catalog reader.
-
-Never sell a multi-price item silently at a preview/minimum/fallback price.
+Current cashier POS still does **not** render this appearance contract yet.
 
 ---
 
-# 8. Catalog visual identity now discovered
+# 9. Back Office visual continuation
 
-Current Rifad catalog contract includes merchant-controlled visual identity:
+Primary owner-supplied Loyverse screenshots are a direct structural/interaction reference.
 
-## Item
+Avoid repeating earlier over-design mistakes:
 
-- visual mode: color/shape or image;
-- accent color;
-- shape: square / rounded square / circle;
-- optional image.
+- giant headings/empty margins;
+- nested card-inside-card layouts;
+- gradients/heavy shadows;
+- oversized preview surfaces;
+- repeated Save/Cancel zones;
+- visual CSS that changes shell geometry;
+- adding complexity merely to appear modern.
 
-Current browser discovery UI:
+`backoffice-layout-safety.css` protects fixed topbar/sidebar geometry after an earlier polish layer broke layout flow.
 
-- accepts JPG/PNG/WebP;
-- center-crops/resizes to a square 512x512 staging image;
-- stores staging image data in the browser adapter snapshot.
+Current CSS load direction keeps `loyverse-reference-pass.css` last to flatten/decorate less.
 
-Important boundary:
-
-- `imageDataUrl` is not production media design;
-- production may use asset ID, local file, object key, media service, etc.;
-- image availability never owns sale/accounting truth.
-
-## Category
-
-- name + accent color.
-
-## Reusable option group
-
-- name + accent color + values/prices.
-
-## Reusable add-on group
-
-- name + accent color + options/prices.
-
-The browser catalog snapshot is currently schema v4 with migration support.
-
-See:
-
-- `docs/ui/VISUAL-DECISION-008-CATALOG-VISUAL-IDENTITY.md`.
+Evaluate at normal 1920×1080 viewing distance. Cairo-first Arabic typography remains the direction without mandatory remote-font dependency.
 
 ---
 
-# 9. Back Office visual direction — critical continuation notes
+# 10. Known gaps after synchronization gate
 
-## 9.1 Owner reference
+Product gaps still include:
 
-The owner supplied multiple Loyverse Back Office screenshots and explicitly wants Rifad to be very close in **clarity, calmness, typography, spacing and interaction hierarchy**.
-
-Do not misread this as “copy the green”.
-
-The desired feeling is:
-
-- immediately obvious task;
-- quiet white cards;
-- light gray workspace;
-- thin separators;
-- minimal shadows;
-- restrained typography;
-- stable right-side navigation;
-- compact administrative density;
-- simple line icons;
-- very little decorative styling;
-- one clear completion area;
-- enough whitespace for reading, not decorative emptiness.
-
-The owner's earlier evaluation of the Rifad Back Office was around 60–70% depending on the pass. **Current visual acceptance is still pending.**
-
-## 9.2 What went wrong in previous Rifad passes
-
-Avoid repeating these mistakes:
-
-- giant headings;
-- giant empty margins around a narrow form;
-- nested card/panel/card structures;
-- gradients to simulate modernity;
-- heavy shadows;
-- oversized product preview;
-- too many bold labels;
-- repeated Save/Cancel at both top and bottom;
-- visual CSS changing layout geometry;
-- adding complexity just to make the UI look “creative”.
-
-An earlier `backoffice-2026.css` change broke shell geometry by moving fixed regions into normal flow. `backoffice-layout-safety.css` was added specifically to prevent polish from moving the topbar/sidebar/workspace.
-
-## 9.3 Latest simplification pass
-
-Latest runtime direction adds `loyverse-reference-pass.css` **last** in `apps/backoffice/src/main.tsx`.
-
-Its purpose is to reduce over-design:
-
-- flatten surfaces;
-- remove gradients/heavy shadows;
-- simplify top bar and sidebar;
-- reduce nested-card feel;
-- make item editor sections calmer;
-- compact the item visual/appearance section;
-- visually keep one Save/Cancel completion area;
-- make pricing/add-on rows feel like direct admin rows rather than dashboard widgets.
-
-This latest pass is not yet owner-accepted; it needs direct runtime screenshot review.
-
-## 9.4 Typography
-
-Cairo-first remains the target Arabic typography direction.
-
-Do not introduce a mandatory remote font dependency that breaks offline/local use.
-
-Evaluate at the owner's normal 1920x1080 screen distance, not only at browser zoom/screenshot magnification.
-
----
-
-# 10. Loyverse reference knowledge preserved
-
-Read:
-
-- `docs/research/loyverse/LOYVERSE_BACK_OFFICE_CURRENT_REFERENCE_2026-08-18.md`
-
-That document preserves:
-
-- official Loyverse pages reviewed;
-- observed item/category/image/modifier/variant/store/inventory/composite/import-export capabilities;
-- owner's screenshot-derived visual lessons;
-- the distinction between Loyverse facts and Rifad-native product decisions;
-- current Rifad gaps discovered from comparison.
-
-Older larger Loyverse research remains under `docs/research/loyverse/`.
-
----
-
-# 11. Current known Back Office gaps / next likely product slices
-
-Do not implement all of these at once. Continue section by section with owner review.
-
-Known gaps include:
-
-- final visual acceptance of item list/editor/categories/options/add-ons;
-- delete/reorder lifecycle and permissions;
-- cost;
-- inventory/stock tracking;
-- low-stock configuration;
-- stock quantity/adjustment flows;
-- taxes;
-- sold by weight/volume;
-- composite item / recipe / BOM behavior;
-- branch/store-specific availability and pricing;
-- import/export;
-- cashier option chooser;
-- cashier add-on chooser/rules;
-- sold-line option/add-on snapshots;
-- reporting for option/add-on selection;
-- production media storage/sync;
-- Back Office restaurant groups/places/settings;
-- delivery channels and channel pricing management;
-- employee/permission management;
-- final production database model.
-
-Recommended immediate continuation:
-
-1. visually evaluate the latest simplified item editor/list on 1920x1080;
-2. refine until owner accepts the catalog Back Office visual language;
-3. finish current catalog surfaces before opening a large new domain;
-4. then choose the next bounded Back Office slice (likely inventory/cost or branch/store catalog behavior based on owner priority);
-5. continue field discovery in the canonical field register;
-6. only after major product surfaces are known, perform production domain/data-model freeze;
-7. then deepen Local DB -> LAN -> branch/cloud sync -> fiscal/external adapters.
-
----
-
-# 12. Do-not-claim list
-
-A future assistant/Codex must not claim the following as production-ready unless new evidence exists:
-
-- real Mada/card terminal integration;
-- production ZATCA/Fatoora integration;
-- LAN synchronization;
-- branch/cloud synchronization;
-- production local database selection;
-- real KDS/printer dispatch;
-- real restaurant multi-device table locking;
-- real delivery-platform connectors;
-- production accounting integration;
-- production media storage/synchronization;
 - final Back Office visual acceptance;
-- final database schema.
+- POS option/add-on chooser + sold snapshots;
+- add-on required/min/max rules;
+- cost/inventory/low-stock/tax/weight/composite flows;
+- branch/store product overrides;
+- delete/reorder/import/export/permissions;
+- Back Office restaurant groups/places/settings;
+- delivery/channel administration;
+- employee/permission management;
+- production media storage/sync;
+- final production local/cloud database selection;
+- branch/LAN topology;
+- production fiscal/payment/KDS/delivery connectors.
+
+These should be discovered/implemented in bounded vertical slices, increasingly through the real synchronization path once it is adopted.
 
 ---
 
-# 13. Communication/workflow preferences relevant to continuation
+# 11. Do-not-claim list
 
-When working in this repository:
+Do not claim production readiness for any of the following without new runtime evidence:
 
-- edit the branch directly rather than dumping code snippets into chat;
-- keep explanations concise and product-focused;
-- after visible UI changes, request runtime screenshots for owner visual review;
-- do not merge PR #2 without explicit approval;
-- prefer complete vertical behavior over decorative screen museums;
-- do not let infrastructure outrun product-field discovery;
-- do not let a donor/external adapter own Rifad's domain.
+- synchronization technology selection;
+- branch/cloud synchronization;
+- LAN/Branch Hub;
+- production local DB;
+- real Mada/card terminal;
+- ZATCA/Fatoora production integration;
+- real KDS/printer dispatch;
+- restaurant multi-device locking;
+- delivery-platform connectors;
+- accounting integration;
+- production media storage/sync;
+- final database schema;
+- final Back Office visual acceptance.
+
+---
+
+# 12. Communication / implementation preference
+
+- Keep product discussion concise and focused until direction is clear.
+- When implementation is explicitly requested, edit the branch directly rather than dumping code into chat.
+- Do not invent a technology/version ladder when a mature reusable capability may already exist; research first.
+- Do not merge PR #2 without explicit approval.
+- Do not let external providers own Rifad's domain.
