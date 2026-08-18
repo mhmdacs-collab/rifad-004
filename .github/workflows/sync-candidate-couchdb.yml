@@ -1,0 +1,53 @@
+name: Sync candidate - CouchDB baseline
+
+on:
+  push:
+    paths:
+      - "tests/sync-candidates/couchdb/**"
+      - ".github/workflows/sync-candidate-couchdb.yml"
+  pull_request:
+    paths:
+      - "tests/sync-candidates/couchdb/**"
+      - ".github/workflows/sync-candidate-couchdb.yml"
+  workflow_dispatch:
+
+jobs:
+  couchdb-baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: tests/sync-candidates/couchdb
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install pinned client dependency
+        run: npm install --ignore-scripts=false
+      - name: Start CouchDB 3.5.2
+        run: |
+          docker run -d \
+            --name rifad-couchdb-proof \
+            -p 5984:5984 \
+            -e COUCHDB_USER=admin \
+            -e COUCHDB_PASSWORD=rifad-sync-proof \
+            couchdb:3.5.2
+          for i in $(seq 1 60); do
+            if curl -fsS -u admin:rifad-sync-proof http://127.0.0.1:5984/ >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          curl -fsS -u admin:rifad-sync-proof -X PUT http://127.0.0.1:5984/rifad_sync >/dev/null
+      - name: Execute Rifad synchronization proof
+        env:
+          COUCH_CONTAINER: rifad-couchdb-proof
+          COUCH_URL: http://admin:rifad-sync-proof@127.0.0.1:5984/rifad_sync
+        run: node proof.mjs
+      - name: Capture CouchDB logs on failure
+        if: failure()
+        run: docker logs rifad-couchdb-proof || true
+      - name: Cleanup
+        if: always()
+        run: docker rm -f rifad-couchdb-proof || true
