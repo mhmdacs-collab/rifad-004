@@ -1,0 +1,29 @@
+name: Sync candidate - PowerSync Windows local
+
+on:
+  push:
+    paths:
+      - "tests/sync-candidates/powersync-windows/**"
+      - ".github/workflows/sync-candidate-powersync-windows.yml"
+  pull_request:
+    paths:
+      - "tests/sync-candidates/powersync-windows/**"
+      - ".github/workflows/sync-candidate-powersync-windows.yml"
+  workflow_dispatch:
+
+jobs:
+  powersync-windows-local:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: tests/sync-candidates/powersync-windows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install pinned Windows proof dependencies
+        run: npm install --ignore-scripts=false
+      - name: Execute Windows local SQLite/restart proof
+        run: node proof.mjs
