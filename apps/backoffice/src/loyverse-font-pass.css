@@ -1,0 +1,78 @@
+/* Typography calibration from the owner-provided Loyverse archive.
+   The saved archive ships Roboto Latin/Cyrillic subsets; Arabic glyphs fall
+   through to the browser/system sans stack. Keep the same behavior without
+   importing proprietary page assets or copying bundled font binaries. */
+
+html,
+body,
+#root,
+button,
+input,
+select,
+textarea {
+  font-family: Roboto, "Segoe UI", Tahoma, Arial, sans-serif !important;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-weight: 400;
+}
+
+.bo-topbar-title strong,
+.bo-page-header--compact h1,
+.bo-modern-section .bo-section-heading h2,
+.bo-editor-heading h1 {
+  font-weight: 500 !important;
+}
+
+.bo-account strong,
+.bo-store-switch--modern strong,
+.bo-modern-nav-title strong,
+.bo-modern-subnav.is-active,
+.bo-list-meta strong,
+.bo-modern-table td strong,
+.bo-field,
+.bo-switch-card strong,
+.bo-subsection-title strong,
+.bo-pos-preview-card > strong,
+.bo-primary,
+.bo-secondary,
+.bo-action-with-icon,
+.bo-back-link {
+  font-weight: 500 !important;
+}
+
+.bo-modern-nav,
+.bo-modern-subnav,
+.bo-modern-table td,
+.bo-modern-table th,
+.bo-field input,
+.bo-field select,
+.bo-field textarea,
+.bo-modern-search input,
+.bo-modern-filter select,
+.bo-top-status,
+.bo-account small,
+.bo-store-switch--modern small,
+.bo-list-meta span,
+.bo-modern-section .bo-section-heading p,
+.bo-switch-card small,
+.bo-subsection-title small,
+.bo-appearance-block small {
+  font-weight: 400 !important;
+}
+
+/* Arabic UI reads better with a slightly more generous line box while keeping
+   the compact vertical rhythm from the Loyverse reference. */
+.bo-modern-nav,
+.bo-modern-subnav,
+.bo-modern-table,
+.bo-field,
+.bo-switch-card,
+.bo-modern-section,
+.bo-page-header--compact,
+.bo-pos-preview-card {
+  line-height: 1.55;
+}
