@@ -1,0 +1,138 @@
+name: Sync candidate - PowerSync baseline
+
+on:
+  push:
+    paths:
+      - "tests/sync-candidates/powersync/**"
+      - ".github/workflows/sync-candidate-powersync.yml"
+  pull_request:
+    paths:
+      - "tests/sync-candidates/powersync/**"
+      - ".github/workflows/sync-candidate-powersync.yml"
+  workflow_dispatch:
+
+jobs:
+  powersync-baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install pinned Rifad proof dependencies
+        working-directory: tests/sync-candidates/powersync
+        run: npm install --ignore-scripts=false
+
+      - name: Prepare current official PowerSync self-host stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 https://github.com/powersync-ja/powersync-cli.git /tmp/powersync-cli
+          EXAMPLE=/tmp/powersync-cli/examples/self-hosted/local-postgres-node
+          cp "$EXAMPLE/.env.example" "$EXAMPLE/.env"
+          cat > "$EXAMPLE/powersync/docker/.env" <<'ENV'
+          PS_DATABASE_NAME=postgres
+          PS_DATABASE_PASSWORD=changeme
+          PS_DATABASE_PORT=5432
+          PS_DATABASE_USER=postgres
+          PS_DATA_SOURCE_URI=postgresql://postgres:changeme@pg-db:5432/postgres
+          PS_STORAGE_DATABASE=powersync_storage
+          PS_STORAGE_PASSWORD=changeme
+          PS_STORAGE_PORT=5433
+          PS_STORAGE_USER=postgres
+          PS_STORAGE_SOURCE_URI=postgresql://postgres:changeme@pg-storage:5433/powersync_storage
+          PS_CLIENT_AUTH_KEY=ZGV2LXNoYXJlZC1zZWNyZXQtZm9yLWRlbW8tb25seS0zMmI
+          PS_PORT=8080
+          ENV
+          cat > "$EXAMPLE/powersync/docker/modules/database-postgres/init-scripts/00-schema.sql" <<'SQL'
+          CREATE TABLE IF NOT EXISTS catalog_items (
+            id TEXT PRIMARY KEY,
+            merchant_id TEXT NOT NULL,
+            branch_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            price_minor BIGINT NOT NULL,
+            metadata_json TEXT
+          );
+          CREATE TABLE IF NOT EXISTS customers (
+            id TEXT PRIMARY KEY,
+            merchant_id TEXT NOT NULL,
+            branch_id TEXT NOT NULL,
+            display_name TEXT NOT NULL,
+            note TEXT
+          );
+          CREATE TABLE IF NOT EXISTS sales (
+            id TEXT PRIMARY KEY,
+            merchant_id TEXT NOT NULL,
+            branch_id TEXT NOT NULL,
+            device_id TEXT NOT NULL,
+            business_id TEXT NOT NULL UNIQUE,
+            total_minor BIGINT NOT NULL,
+            completed_at TEXT NOT NULL
+          );
+          CREATE TABLE IF NOT EXISTS sync_upload_dedupe (
+            device_id TEXT NOT NULL,
+            client_op_id TEXT NOT NULL,
+            PRIMARY KEY (device_id, client_op_id)
+          );
+          ALTER TABLE catalog_items REPLICA IDENTITY FULL;
+          ALTER TABLE customers REPLICA IDENTITY FULL;
+          ALTER TABLE sales REPLICA IDENTITY FULL;
+          SQL
+          : > "$EXAMPLE/powersync/docker/modules/database-postgres/init-scripts/02-seed.sql"
+          cat > "$EXAMPLE/powersync/sync-config.yaml" <<'YAML'
+          config:
+            edition: 3
+          streams:
+            global:
+              auto_subscribe: true
+              queries:
+                - SELECT * FROM catalog_items
+                - SELECT * FROM customers
+                - SELECT * FROM sales
+          YAML
+
+      - name: Start PowerSync + Postgres services
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXAMPLE=/tmp/powersync-cli/examples/self-hosted/local-postgres-node
+          docker compose \
+            --env-file "$EXAMPLE/powersync/docker/.env" \
+            -f "$EXAMPLE/powersync/docker/docker-compose.yaml" \
+            up -d
+          for i in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:8080/probes/liveness >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:8080/probes/liveness
+          docker image inspect journeyapps/powersync-service:latest --format 'POWERSYNC_IMAGE={{index .RepoDigests 0}}'
+
+      - name: Execute Rifad PowerSync proof
+        working-directory: tests/sync-candidates/powersync
+        env:
+          POWERSYNC_URL: http://127.0.0.1:8080
+          PG_URL: postgresql://postgres:changeme@127.0.0.1:5432/postgres
+          PS_CLIENT_AUTH_KEY: ZGV2LXNoYXJlZC1zZWNyZXQtZm9yLWRlbW8tb25seS0zMmI
+          RIFAD_PROOF_API_PORT: "8787"
+        run: node proof.mjs
+
+      - name: Capture service logs on failure
+        if: failure()
+        shell: bash
+        run: |
+          EXAMPLE=/tmp/powersync-cli/examples/self-hosted/local-postgres-node
+          docker compose --env-file "$EXAMPLE/powersync/docker/.env" -f "$EXAMPLE/powersync/docker/docker-compose.yaml" ps || true
+          docker compose --env-file "$EXAMPLE/powersync/docker/.env" -f "$EXAMPLE/powersync/docker/docker-compose.yaml" logs --no-color --tail=300 || true
+
+      - name: Cleanup
+        if: always()
+        shell: bash
+        run: |
+          EXAMPLE=/tmp/powersync-cli/examples/self-hosted/local-postgres-node
+          if [ -f "$EXAMPLE/powersync/docker/docker-compose.yaml" ]; then
+            docker compose --env-file "$EXAMPLE/powersync/docker/.env" -f "$EXAMPLE/powersync/docker/docker-compose.yaml" down -v --remove-orphans || true
+          fi
