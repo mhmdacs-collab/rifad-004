@@ -2,6 +2,7 @@ import {
   CatalogContractError,
   type CatalogCategory,
   type CatalogItem,
+  type CatalogItemAppearance,
   type CatalogItemDraft,
   type CatalogItemPricing,
   type CatalogModifierGroup,
@@ -14,7 +15,20 @@ import {
   type CatalogVariantOption,
 } from "../../contracts/catalog";
 
-export const CATALOG_SNAPSHOT_SCHEMA_VERSION = 3 as const;
+export const CATALOG_SNAPSHOT_SCHEMA_VERSION = 4 as const;
+export const DEFAULT_CATALOG_COLOR = "#0A714E" as const;
+export const CATALOG_VISUAL_COLORS = [
+  "#0A714E",
+  "#2D8CFF",
+  "#7B61FF",
+  "#9B51E0",
+  "#F2994A",
+  "#F2C94C",
+  "#EB5757",
+  "#27AE60",
+  "#56CCF2",
+  "#667085",
+] as const;
 
 export type CatalogCommandResult = Readonly<{
   commandId: string;
@@ -32,11 +46,40 @@ export type CatalogSnapshot = Readonly<{
   commandResults: readonly CatalogCommandResult[];
 }>;
 
+export const normalizeCatalogColor = (value: string | undefined | null, fallback = DEFAULT_CATALOG_COLOR) => {
+  const normalized = (value ?? "").trim().toUpperCase();
+  return /^#[0-9A-F]{6}$/.test(normalized) ? normalized : fallback;
+};
+
+export const defaultCatalogAppearance = (color = DEFAULT_CATALOG_COLOR): CatalogItemAppearance => ({
+  mode: "color",
+  color: normalizeCatalogColor(color),
+  shape: "rounded",
+  imageDataUrl: null,
+});
+
+export const normalizeCatalogAppearance = (appearance: CatalogItemAppearance | undefined, fallbackColor = DEFAULT_CATALOG_COLOR): CatalogItemAppearance => {
+  if (!appearance) return defaultCatalogAppearance(fallbackColor);
+  const imageDataUrl = typeof appearance.imageDataUrl === "string" && /^data:image\/(?:png|jpe?g|webp);base64,/i.test(appearance.imageDataUrl)
+    ? appearance.imageDataUrl
+    : null;
+  if (imageDataUrl && imageDataUrl.length > 1_500_000) {
+    throw new CatalogContractError("CATALOG_IMAGE_TOO_LARGE", "صورة الصنف كبيرة جدًا. اختر صورة أصغر.");
+  }
+  const shape = ["square", "rounded", "circle"].includes(appearance.shape) ? appearance.shape : "rounded";
+  return {
+    mode: appearance.mode === "image" && imageDataUrl ? "image" : "color",
+    color: normalizeCatalogColor(appearance.color, fallbackColor),
+    shape: shape as CatalogItemAppearance["shape"],
+    imageDataUrl,
+  };
+};
+
 export const defaultCatalogCategories = (): readonly CatalogCategory[] => [
-  { id: "hot", name: "المشروبات الساخنة" },
-  { id: "cold", name: "المشروبات الباردة" },
-  { id: "food", name: "المأكولات" },
-  { id: "dessert", name: "الحلويات" },
+  { id: "hot", name: "المشروبات الساخنة", color: "#F2994A" },
+  { id: "cold", name: "المشروبات الباردة", color: "#2D8CFF" },
+  { id: "food", name: "المأكولات", color: "#0A714E" },
+  { id: "dessert", name: "الحلويات", color: "#9B51E0" },
 ];
 
 const defaultOptionGroups = (): readonly CatalogOptionGroup[] => {
@@ -45,6 +88,7 @@ const defaultOptionGroups = (): readonly CatalogOptionGroup[] => {
     {
       id: "option-pizza-size",
       name: "أحجام البيتزا",
+      color: "#2D8CFF",
       values: [
         { id: "pizza-small", name: "صغير", price: { halalas: 1000, currency: "SAR" } },
         { id: "pizza-medium", name: "وسط", price: { halalas: 2000, currency: "SAR" } },
@@ -62,6 +106,7 @@ const defaultModifierGroups = (): readonly CatalogModifierGroup[] => {
     {
       id: "modifier-coffee",
       name: "إضافات القهوة",
+      color: "#9B51E0",
       options: [
         { id: "modifier-coffee-shot", name: "شوت إسبريسو إضافي", price: { halalas: 400, currency: "SAR" } },
         { id: "modifier-coffee-milk", name: "حليب بديل", price: { halalas: 300, currency: "SAR" } },
@@ -81,19 +126,21 @@ const item = (
   barcode: string,
 ): CatalogItem => {
   const categories = defaultCatalogCategories();
+  const category = categories.find((candidate) => candidate.id === categoryId);
   const now = "2026-08-18T00:00:00.000Z";
   return {
     id,
     name,
     description: "",
     categoryId,
-    categoryName: categories.find((category) => category.id === categoryId)?.name ?? null,
+    categoryName: category?.name ?? null,
     price: { halalas: priceHalalas, currency: "SAR" },
     pricing: { mode: "fixed" },
     sku,
     barcode,
     availableForSale: true,
     soldBy: "each",
+    appearance: defaultCatalogAppearance(category?.color),
     modifierGroupIds: [],
     privateModifierGroups: [],
     variantOptions: [],
@@ -178,7 +225,7 @@ export const normalizeOptionGroupDraft = (draft: CatalogOptionGroupDraft): Catal
       price: { halalas: value.price.halalas, currency: "SAR" as const },
     };
   });
-  return { name, values };
+  return { name, color: normalizeCatalogColor(draft.color, "#2D8CFF"), values };
 };
 
 const normalizePrivateModifierGroups = (groups: readonly CatalogPrivateModifierGroup[]): readonly CatalogPrivateModifierGroup[] => {
@@ -264,6 +311,7 @@ export const normalizeCatalogDraft = (
 ): CatalogItemDraft & {
   categoryName: string | null;
   pricing: CatalogItemPricing;
+  appearance: CatalogItemAppearance;
   modifierGroupIds: readonly string[];
   privateModifierGroups: readonly CatalogPrivateModifierGroup[];
   variantOptions: readonly CatalogVariantOption[];
@@ -273,7 +321,7 @@ export const normalizeCatalogDraft = (
   const description = clean(draft.description);
   const sku = cleanSku(draft.sku);
   const barcode = cleanBarcode(draft.barcode);
-  const category = draft.categoryId ? categories.find((item) => item.id === draft.categoryId) : null;
+  const category = draft.categoryId ? categories.find((candidate) => candidate.id === draft.categoryId) : null;
 
   if (!name) throw new CatalogContractError("CATALOG_NAME_REQUIRED", "اكتب اسم الصنف.");
   if (draft.price.currency !== "SAR") throw new CatalogContractError("CATALOG_CURRENCY_INVALID", "عملة الكتالوج الحالية هي الريال السعودي.");
@@ -297,6 +345,7 @@ export const normalizeCatalogDraft = (
     categoryName: category?.name ?? null,
     price: { halalas: normalizedPricing.effectivePrice, currency: "SAR" },
     pricing: normalizedPricing.pricing,
+    appearance: normalizeCatalogAppearance(draft.appearance, category?.color),
     modifierGroupIds: modifierIds,
     privateModifierGroups: normalizePrivateModifierGroups(draft.privateModifierGroups ?? []),
     variantOptions: normalizeVariantOptions(draft.variantOptions ?? []),
@@ -364,5 +413,5 @@ export const normalizeModifierDraft = (draft: CatalogModifierGroupDraft): Catalo
       price: { halalas: option.price.halalas, currency: "SAR" },
     };
   });
-  return { name, options };
+  return { name, color: normalizeCatalogColor(draft.color, "#9B51E0"), options };
 };
