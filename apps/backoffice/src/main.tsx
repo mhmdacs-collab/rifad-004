@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import { getBackOfficeCatalogAdmin } from "./runtime/backOfficeCatalog";
 import "./styles.css";
+import "./reference-overrides.css";
 
 const catalog = getBackOfficeCatalogAdmin();
 
