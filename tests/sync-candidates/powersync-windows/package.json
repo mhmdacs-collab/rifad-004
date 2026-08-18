@@ -1,0 +1,9 @@
+{
+  "name": "rifad-sync-powersync-windows-proof",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@powersync/node": "0.20.0",
+    "better-sqlite3": "12.11.1"
+  }
+}
