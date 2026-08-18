@@ -1,0 +1,625 @@
+/*
+ * Rifad Back Office visual polish.
+ * Keeps the owner-approved Loyverse-like administration hierarchy while
+ * applying Rifad brand color, human-readable optical scale and clearer actions.
+ */
+
+:root {
+  --bo-rifad: #0a714e;
+  --bo-rifad-dark: #07543b;
+  --bo-rifad-soft: #e8f3ef;
+  --bo-rifad-soft-2: #f3f8f6;
+  --bo-ink: #17211d;
+  --bo-muted: #68746f;
+  --bo-line: #dde5e1;
+  --bo-canvas: #f4f6f5;
+  --bo-danger: #b64545;
+  --bo-danger-soft: #fff1f1;
+  --bo-shadow: 0 2px 8px rgba(26, 46, 38, .09);
+  font-family: "Cairo", Tahoma, "Segoe UI", Arial, sans-serif;
+}
+
+html,
+body,
+#root,
+button,
+input,
+select,
+textarea {
+  font-family: "Cairo", Tahoma, "Segoe UI", Arial, sans-serif;
+}
+
+body {
+  color: var(--bo-ink);
+  background: var(--bo-canvas);
+  font-size: 14px;
+  font-weight: 400;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Rifad identity: retain the approved Loyverse-like bar geometry, replace donor green. */
+.bo-topbar {
+  min-height: 56px;
+  height: 56px;
+  background: var(--bo-rifad) !important;
+  border-bottom-color: var(--bo-rifad-dark) !important;
+  color: #fff !important;
+  box-shadow: 0 1px 5px rgba(7, 84, 59, .22);
+  padding-inline: 22px 24px;
+}
+
+.bo-topbar strong,
+.bo-topbar span,
+.bo-top-status {
+  color: #fff !important;
+}
+
+.bo-topbar strong {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.bo-top-status {
+  opacity: .86;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Navigation readability. */
+.bo-sidebar {
+  width: 300px;
+  border-left-color: var(--bo-line);
+  color: var(--bo-ink);
+}
+
+.bo-brand strong,
+.bo-store-switch strong,
+.bo-sidebar-footer strong {
+  color: var(--bo-ink);
+  font-weight: 700;
+}
+
+.bo-brand span,
+.bo-store-switch small,
+.bo-sidebar-footer small {
+  color: var(--bo-muted);
+}
+
+.bo-nav-item,
+.bo-subnav-item,
+.bo-nav-group-title {
+  color: #33413b;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.bo-nav-item {
+  min-height: 50px;
+  font-weight: 600;
+}
+
+.bo-nav-group-title {
+  min-height: 48px;
+  font-weight: 700;
+}
+
+.bo-subnav-item {
+  min-height: 43px;
+  font-weight: 500;
+  border-radius: 2px;
+  transition: color .14s ease, background .14s ease, padding .14s ease;
+}
+
+.bo-subnav-item:hover {
+  color: var(--bo-rifad-dark);
+  background: #f5f8f7;
+}
+
+.bo-subnav-item--active {
+  color: var(--bo-rifad) !important;
+  background: var(--bo-rifad-soft) !important;
+  font-weight: 700;
+  box-shadow: inset -3px 0 0 var(--bo-rifad);
+}
+
+.bo-nav-group-title .bo-nav-icon,
+.bo-subnav-item--active + .bo-nav-icon {
+  color: var(--bo-rifad);
+}
+
+.bo-nav-item--disabled {
+  opacity: .62;
+}
+
+.bo-nav-item em {
+  color: #8b9691;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Main workspace: readable, still compact like the reference. */
+.bo-main {
+  background: var(--bo-canvas);
+}
+
+.bo-content {
+  color: var(--bo-ink);
+}
+
+.bo-page-header {
+  min-height: 78px;
+  margin-bottom: 16px;
+}
+
+.bo-page-header h1,
+.bo-editor-title h1 {
+  color: var(--bo-ink);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.bo-page-header h1 {
+  font-size: 24px;
+}
+
+.bo-page-header p,
+.bo-section-heading p,
+.bo-muted-line,
+.bo-table-headline,
+.bo-hint,
+.bo-empty-panel span {
+  color: var(--bo-muted);
+}
+
+.bo-page-header p {
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+/* Primary/secondary actions: larger and recognisable at normal 1080p distance. */
+.bo-primary,
+.bo-secondary {
+  min-height: 48px;
+  border-radius: 4px;
+  padding-inline: 18px;
+  font-size: 14px;
+  line-height: 1;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  box-shadow: none;
+}
+
+.bo-primary {
+  color: #fff;
+  background: var(--bo-rifad) !important;
+  border-color: var(--bo-rifad) !important;
+  box-shadow: 0 2px 5px rgba(10, 113, 78, .2);
+}
+
+.bo-primary:hover:not(:disabled) {
+  background: var(--bo-rifad-dark) !important;
+  border-color: var(--bo-rifad-dark) !important;
+  box-shadow: 0 3px 8px rgba(7, 84, 59, .24);
+}
+
+.bo-primary:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 1px 3px rgba(7, 84, 59, .18);
+}
+
+.bo-secondary {
+  color: #3c4a44;
+  background: #fff;
+  border-color: #cbd5d0;
+}
+
+.bo-secondary:hover:not(:disabled) {
+  color: var(--bo-rifad-dark);
+  background: var(--bo-rifad-soft-2);
+  border-color: #aabbb3;
+}
+
+.bo-primary:focus-visible,
+.bo-secondary:focus-visible,
+.bo-link-button:focus-visible,
+.bo-back-button:focus-visible,
+.bo-row-remove:focus-visible,
+.bo-text-danger:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(10, 113, 78, .19);
+  outline-offset: 2px;
+}
+
+/* Crisp action pictograms. They supplement Arabic labels; they never replace them. */
+.bo-page-header .bo-primary::before,
+.bo-link-button::before,
+.bo-dashed-button::before,
+.bo-inline-add .bo-secondary::before {
+  content: "";
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M11 5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6V5Z'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M11 5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6V5Z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.bo-editor-actions .bo-primary::before,
+.bo-modal-actions .bo-primary::before {
+  content: "";
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M20.7 5.3a1 1 0 0 1 0 1.4l-10 10a1 1 0 0 1-1.4 0l-5-5a1 1 0 1 1 1.4-1.4l4.3 4.29L19.3 5.3a1 1 0 0 1 1.4 0Z'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M20.7 5.3a1 1 0 0 1 0 1.4l-10 10a1 1 0 0 1-1.4 0l-5-5a1 1 0 1 1 1.4-1.4l4.3 4.29L19.3 5.3a1 1 0 0 1 1.4 0Z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.bo-text-danger {
+  color: var(--bo-danger) !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding-inline: 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.bo-text-danger:hover {
+  background: var(--bo-danger-soft);
+}
+
+.bo-text-danger::before,
+.bo-row-remove::before {
+  content: "";
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M9 3a2 2 0 0 0-2 2v1H4a1 1 0 1 0 0 2h1l.86 11.18A2 2 0 0 0 7.86 21h8.28a2 2 0 0 0 2-1.82L19 8h1a1 1 0 1 0 0-2h-3V5a2 2 0 0 0-2-2H9Zm6 3H9V5h6v1Zm-7.14 2h8.28l-.85 11H8.71L7.86 8Z'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M9 3a2 2 0 0 0-2 2v1H4a1 1 0 1 0 0 2h1l.86 11.18A2 2 0 0 0 7.86 21h8.28a2 2 0 0 0 2-1.82L19 8h1a1 1 0 1 0 0-2h-3V5a2 2 0 0 0-2-2H9Zm6 3H9V5h6v1Zm-7.14 2h8.28l-.85 11H8.71L7.86 8Z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.bo-row-remove {
+  color: var(--bo-danger) !important;
+  width: 42px;
+  height: 42px;
+  border-radius: 4px;
+  font-size: 0 !important;
+  display: grid;
+  place-items: center;
+}
+
+.bo-row-remove:hover {
+  background: var(--bo-danger-soft);
+}
+
+.bo-back-button {
+  width: 44px;
+  height: 44px;
+  color: var(--bo-rifad-dark);
+  border-color: #cad5d0;
+  background: #fff;
+  font-size: 0 !important;
+  display: grid;
+  place-items: center;
+}
+
+.bo-back-button::before {
+  content: "";
+  width: 20px;
+  height: 20px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M14.7 5.3a1 1 0 0 1 0 1.4L9.41 12l5.3 5.3a1 1 0 0 1-1.42 1.4l-6-6a1 1 0 0 1 0-1.4l6-6a1 1 0 0 1 1.42 0Z'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M14.7 5.3a1 1 0 0 1 0 1.4L9.41 12l5.3 5.3a1 1 0 0 1-1.42 1.4l-6-6a1 1 0 0 1 0-1.4l6-6a1 1 0 0 1 1.42 0Z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+/* Tables: increase legibility without losing the calm Loyverse density. */
+.bo-card,
+.bo-form-card,
+.bo-summary-card {
+  border-color: var(--bo-line);
+  box-shadow: var(--bo-shadow);
+}
+
+.bo-table-headline {
+  min-height: 54px;
+  padding-inline: 18px;
+  font-size: 12px;
+}
+
+.bo-table-headline strong {
+  color: #34423c;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+th {
+  color: #5c6963 !important;
+  background: #fafcfb !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding-block: 14px !important;
+}
+
+td {
+  color: #35433d !important;
+  font-size: 14px !important;
+  line-height: 1.55;
+  padding-block: 15px !important;
+}
+
+td strong {
+  color: var(--bo-ink) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+
+tbody tr:hover,
+tbody tr:focus {
+  background: var(--bo-rifad-soft-2) !important;
+}
+
+.bo-price {
+  color: var(--bo-rifad-dark) !important;
+  font-weight: 700 !important;
+}
+
+.bo-status {
+  min-height: 29px;
+  padding-inline: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.bo-status--on {
+  color: var(--bo-rifad-dark);
+  background: var(--bo-rifad-soft);
+}
+
+/* Filters and form controls. */
+.bo-toolbar {
+  gap: 10px;
+}
+
+.bo-search-field,
+.bo-filter-field {
+  min-height: 48px;
+  border-color: #cfd9d4;
+  border-radius: 4px;
+}
+
+.bo-search-field input,
+.bo-filter-field select {
+  font-size: 14px;
+  color: var(--bo-ink);
+}
+
+.bo-filter-field {
+  font-size: 12px;
+}
+
+.bo-field {
+  gap: 7px;
+  color: #45534d;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.bo-field input,
+.bo-field select {
+  min-height: 46px;
+  height: 46px;
+  padding-inline: 12px;
+  border-color: #cfd9d4;
+  border-radius: 3px;
+  color: var(--bo-ink);
+  font-size: 14px;
+}
+
+.bo-field textarea {
+  padding: 11px 12px;
+  border-color: #cfd9d4;
+  border-radius: 3px;
+  color: var(--bo-ink);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.bo-field input:focus,
+.bo-field select:focus,
+.bo-field textarea:focus,
+.bo-inline-add input:focus,
+.bo-variant-table input:focus {
+  border-color: var(--bo-rifad) !important;
+  box-shadow: 0 0 0 3px rgba(10, 113, 78, .08) !important;
+}
+
+.bo-money-input {
+  min-height: 46px;
+  border-color: #cfd9d4;
+  border-radius: 3px;
+}
+
+.bo-money-input span {
+  color: #54625c;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.bo-section-heading {
+  min-height: 74px;
+  padding: 16px 18px;
+  border-bottom-color: #e8eeeb;
+}
+
+.bo-section-heading h2 {
+  color: var(--bo-ink);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.bo-section-heading p {
+  font-size: 12px;
+}
+
+.bo-toggle {
+  border-color: #d8e1dd;
+  background: #fbfcfc;
+}
+
+.bo-toggle input,
+.bo-check-card input {
+  accent-color: var(--bo-rifad);
+}
+
+.bo-toggle strong,
+.bo-check-card strong {
+  color: var(--bo-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.bo-toggle small,
+.bo-check-card small {
+  color: var(--bo-muted);
+  font-size: 11px;
+}
+
+.bo-link-button {
+  color: var(--bo-rifad) !important;
+  min-height: 40px;
+  padding-inline: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bo-link-button:hover {
+  color: var(--bo-rifad-dark) !important;
+  background: var(--bo-rifad-soft-2);
+  border-radius: 4px;
+}
+
+.bo-dashed-button {
+  color: var(--bo-rifad) !important;
+  border-color: #9fbdb0 !important;
+  min-height: 46px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.bo-chip {
+  color: var(--bo-rifad-dark);
+  background: var(--bo-rifad-soft);
+  border-color: #c8ddd4;
+  font-size: 12px;
+}
+
+.bo-check-card:has(input:checked) {
+  border-color: #9fc5b5;
+  background: var(--bo-rifad-soft-2);
+}
+
+/* Modal/editing surfaces: focused and less visually brittle. */
+.bo-modal {
+  border-color: var(--bo-line);
+  box-shadow: 0 14px 38px rgba(23, 33, 29, .18);
+}
+
+.bo-modal-actions,
+.bo-editor-actions {
+  gap: 10px;
+}
+
+.bo-modal-actions .bo-primary,
+.bo-modal-actions .bo-secondary,
+.bo-editor-actions .bo-primary,
+.bo-editor-actions .bo-secondary {
+  min-width: 104px;
+}
+
+.bo-editor-title small,
+.bo-modal-header small {
+  color: var(--bo-rifad);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.bo-editor-title h1 {
+  font-size: 23px;
+}
+
+.bo-option-card,
+.bo-empty-panel,
+.bo-check-card,
+.bo-modifier-option-row {
+  border-color: #dce5e1;
+}
+
+.bo-option-header strong,
+.bo-subsection-title strong {
+  color: var(--bo-ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Rifad category and modifier visual cues; these remain UI-only until durable color is approved. */
+.bo-simple-table tbody tr:nth-child(6n + 1) td:first-child::after,
+.bo-simple-table tbody tr:nth-child(6n + 2) td:first-child::after,
+.bo-simple-table tbody tr:nth-child(6n + 3) td:first-child::after,
+.bo-simple-table tbody tr:nth-child(6n + 4) td:first-child::after,
+.bo-simple-table tbody tr:nth-child(6n + 5) td:first-child::after,
+.bo-simple-table tbody tr:nth-child(6n + 6) td:first-child::after {
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(23, 33, 29, .09);
+}
+
+.bo-shell:has(.bo-subnav-item--active:nth-of-type(3)) .bo-simple-table td:first-child::before {
+  background: var(--bo-rifad) !important;
+  box-shadow: 0 2px 5px rgba(10, 113, 78, .22);
+}
+
+.bo-toast {
+  color: var(--bo-rifad-dark);
+  background: #f1faf6;
+  border-color: #bad8cb;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.bo-alert,
+.bo-floating-alert {
+  color: #8d3f3f;
+  background: var(--bo-danger-soft);
+  border-color: #e7bebe;
+  font-size: 13px;
+}
+
+@media (max-width: 1100px) {
+  .bo-sidebar { width: 270px; }
+  .bo-primary, .bo-secondary { min-height: 46px; }
+  td { font-size: 13px !important; }
+}
+
+@media (max-width: 760px) {
+  .bo-sidebar { width: 100%; }
+  .bo-topbar strong { font-size: 16px; }
+  .bo-page-header h1 { font-size: 21px; }
+  .bo-primary, .bo-secondary { min-height: 46px; font-size: 13px; }
+}
