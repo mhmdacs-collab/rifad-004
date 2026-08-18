@@ -1,3 +1,5 @@
+import { createBrowserCatalogReader } from "../../../../adapters/catalog/browserCatalog";
+import type { CatalogItem } from "../../../../contracts/catalog";
 import { loyaltyContract } from "./mockLoyalty";
 import type {
   CatalogContract,
@@ -22,6 +24,7 @@ import type {
   EmployeeSession,
   Money,
   Product,
+  ProductTone,
   Receipt,
   ReceiptItem,
   RestoredPosState,
@@ -30,30 +33,33 @@ import type {
   TicketLine,
 } from "../domain/models";
 
-const STORAGE_KEY = "rifad.pos.mock.v1";
+export const MOCK_POS_STORAGE_KEY = "rifad.pos.mock.v1";
+const STORAGE_KEY = MOCK_POS_STORAGE_KEY;
 const WAIT_MS = import.meta.env.MODE === "test" ? 0 : 180;
 
-const products: readonly Product[] = [
-  { id: "p-001", name: "قهوة سعودية", categoryId: "hot", categoryName: "المشروبات الساخنة", price: money(1800), abbreviation: "قس", tone: "sand" },
-  { id: "p-002", name: "لاتيه", categoryId: "hot", categoryName: "المشروبات الساخنة", price: money(2200), abbreviation: "لا", tone: "amber" },
-  { id: "p-003", name: "شاي كرك", categoryId: "hot", categoryName: "المشروبات الساخنة", price: money(1400), abbreviation: "شك", tone: "rose" },
-  { id: "p-004", name: "قهوة اليوم", categoryId: "hot", categoryName: "المشروبات الساخنة", price: money(1600), abbreviation: "قي", tone: "stone" },
-  { id: "p-005", name: "ماء معدني", categoryId: "cold", categoryName: "المشروبات الباردة", price: money(400), abbreviation: "م", tone: "sky" },
-  { id: "p-006", name: "عصير برتقال", categoryId: "cold", categoryName: "المشروبات الباردة", price: money(1500), abbreviation: "عب", tone: "amber" },
-  { id: "p-007", name: "موهيتو نعناع", categoryId: "cold", categoryName: "المشروبات الباردة", price: money(1900), abbreviation: "من", tone: "mint" },
-  { id: "p-008", name: "تمر سكري", categoryId: "food", categoryName: "المأكولات", price: money(1200), abbreviation: "تس", tone: "sand" },
-  { id: "p-009", name: "كرواسون جبن", categoryId: "food", categoryName: "المأكولات", price: money(1700), abbreviation: "كج", tone: "stone" },
-  { id: "p-010", name: "ساندويتش حلوم", categoryId: "food", categoryName: "المأكولات", price: money(2600), abbreviation: "سح", tone: "mint" },
-  { id: "p-011", name: "كيكة تمر", categoryId: "dessert", categoryName: "الحلويات", price: money(2000), abbreviation: "كت", tone: "rose" },
-  { id: "p-012", name: "براوني", categoryId: "dessert", categoryName: "الحلويات", price: money(1800), abbreviation: "بر", tone: "stone" },
-];
+const PRODUCT_TONES: readonly ProductTone[] = ["sand", "mint", "rose", "sky", "amber", "stone"];
 
-const categories = [
-  { id: "hot", name: "ساخنة" },
-  { id: "cold", name: "باردة" },
-  { id: "food", name: "مأكولات" },
-  { id: "dessert", name: "حلويات" },
-] as const;
+const toneFor = (id: string): ProductTone => {
+  let hash = 0;
+  for (const character of id) hash = ((hash << 5) - hash + character.charCodeAt(0)) | 0;
+  return PRODUCT_TONES[Math.abs(hash) % PRODUCT_TONES.length] ?? "stone";
+};
+
+const abbreviationFor = (name: string) => {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length >= 2) return `${words[0]?.[0] ?? ""}${words[1]?.[0] ?? ""}`;
+  return Array.from(words[0] ?? "ص").slice(0, 2).join("");
+};
+
+const toPosProduct = (item: CatalogItem): Product => ({
+  id: item.id,
+  name: item.name,
+  categoryId: item.categoryId ?? "uncategorized",
+  categoryName: item.categoryName ?? "بدون فئة",
+  price: money(item.price.halalas),
+  abbreviation: abbreviationFor(item.name),
+  tone: toneFor(item.id),
+});
 
 type CreditSaleRecord = {
   id: string;
@@ -246,6 +252,7 @@ class MockStore {
   private state: Persisted;
   private checkout: { id: string; ticket: Ticket; method: "cash" | "card" | null } | null = null;
   private completedCommands = new Map<string, Receipt>();
+  private readonly catalog = createBrowserCatalogReader();
 
   constructor() {
     this.state = this.read();
@@ -388,12 +395,24 @@ class MockStore {
 
   async search(query: string, categoryId: string | null): Promise<readonly Product[]> {
     await pause();
-    const normalized = query.trim().toLocaleLowerCase("ar");
-    return products.filter((product) => {
-      const matchesCategory = !categoryId || categoryId === "all" || product.categoryId === categoryId;
-      const matchesQuery = !normalized || product.name.toLocaleLowerCase("ar").includes(normalized);
-      return matchesCategory && matchesQuery;
+    const uncategorized = categoryId === "uncategorized";
+    const items = await this.catalog.listItems({
+      query,
+      categoryId: uncategorized ? null : categoryId === "all" ? null : categoryId,
+      includeUnavailable: false,
     });
+    return items
+      .filter((item) => !uncategorized || item.categoryId === null)
+      .map(toPosProduct);
+  }
+
+  async listCategories() {
+    await pause();
+    const categories = await this.catalog.listCategories();
+    const items = await this.catalog.listItems({ includeUnavailable: false });
+    return items.some((item) => item.categoryId === null)
+      ? [...categories, { id: "uncategorized", name: "بدون فئة" }]
+      : categories;
   }
 
   async listSalePages() { await pause(); return this.state.salePages; }
@@ -601,7 +620,12 @@ class MockStore {
 
   async placeSalePageProduct(pageId: string, slotIndex: number, productId: string): Promise<readonly SalePage[]> {
     await pause();
-    if (!products.some((product) => product.id === productId)) throw new PosContractError("PRODUCT_NOT_FOUND", "العنصر غير متاح.");
+    try {
+      const product = await this.catalog.getItem({ itemId: productId });
+      if (!product.availableForSale) throw new Error("unavailable");
+    } catch {
+      throw new PosContractError("PRODUCT_NOT_FOUND", "العنصر غير متاح.");
+    }
     this.state = {
       ...this.state,
       salePages: this.state.salePages.map((page) => {
@@ -643,8 +667,14 @@ class MockStore {
   async addItem(ticketId: string, productId: string): Promise<Ticket> {
     await pause();
     const ticket = this.requireTicket(ticketId);
-    const product = products.find((item) => item.id === productId);
-    if (!product) throw new PosContractError("PRODUCT_NOT_FOUND", "العنصر غير متاح.");
+    let product: Product;
+    try {
+      const catalogItem = await this.catalog.getItem({ itemId: productId });
+      if (!catalogItem.availableForSale) throw new Error("unavailable");
+      product = toPosProduct(catalogItem);
+    } catch {
+      throw new PosContractError("PRODUCT_NOT_FOUND", "العنصر غير متاح.");
+    }
     const existing = ticket.lines.find((line) => line.productId === product.id);
     const lines = existing
       ? ticket.lines.map((line) => line.id === existing.id ? { ...line, quantity: line.quantity + 1 } : line)
@@ -730,7 +760,7 @@ export const createMockPosRuntime = (): MockPosRuntime => {
 
   const deviceSession: DeviceSessionContract = { linkWithCredentials: ({ email, password }) => store.link(email, password) };
   const employeeSession: EmployeeSessionContract = { unlock: ({ pin }) => store.unlock(pin) };
-  const catalog: CatalogContract = { search: ({ query, categoryId }) => store.search(query, categoryId), categories: async () => categories };
+  const catalog: CatalogContract = { search: ({ query, categoryId }) => store.search(query, categoryId), categories: () => store.listCategories() };
   const saleLayout: SaleLayoutContract = {
     listPages: () => store.listSalePages(),
     createPage: ({ name }) => store.createSalePage(name),

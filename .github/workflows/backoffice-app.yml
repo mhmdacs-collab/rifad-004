@@ -1,37 +1,35 @@
-name: POS application
+name: Back Office application
 
 on:
   push:
     paths:
-      - "apps/pos/**"
+      - "apps/backoffice/**"
       - "contracts/catalog.ts"
       - "core/catalog/**"
       - "adapters/catalog/**"
-      - ".github/workflows/pos-app.yml"
+      - ".github/workflows/backoffice-app.yml"
   pull_request:
     paths:
-      - "apps/pos/**"
+      - "apps/backoffice/**"
       - "contracts/catalog.ts"
       - "core/catalog/**"
       - "adapters/catalog/**"
-      - ".github/workflows/pos-app.yml"
+      - ".github/workflows/backoffice-app.yml"
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: apps/pos
+        working-directory: apps/backoffice
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: apps/pos/package-lock.json
+          cache-dependency-path: apps/backoffice/package-lock.json
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
