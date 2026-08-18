@@ -1,11 +1,12 @@
-import type {
-  CatalogAdminContract,
-  CatalogCategory,
-  CatalogItem,
-  CatalogItemDraft,
-  CatalogModifierGroup,
-  CatalogModifierGroupDraft,
-  CatalogReadContract,
+import {
+  CatalogContractError,
+  type CatalogAdminContract,
+  type CatalogCategory,
+  type CatalogItem,
+  type CatalogItemDraft,
+  type CatalogModifierGroup,
+  type CatalogModifierGroupDraft,
+  type CatalogReadContract,
 } from "../../contracts/catalog";
 import {
   CATALOG_SNAPSHOT_SCHEMA_VERSION,
@@ -111,7 +112,7 @@ export class BrowserCatalogAdapter implements CatalogAdminContract {
   }
 
   async listCategories() {
-    return clone(this.read().categories).sort((a, b) => a.name.localeCompare(b.name, "ar"));
+    return [...clone(this.read().categories)].sort((a, b) => a.name.localeCompare(b.name, "ar"));
   }
 
   async listItems(input: { query?: string; categoryId?: string | null; includeUnavailable?: boolean } = {}) {
@@ -141,7 +142,7 @@ export class BrowserCatalogAdapter implements CatalogAdminContract {
   }
 
   async listModifierGroups() {
-    return clone(this.read().modifierGroups).sort((a, b) => a.name.localeCompare(b.name, "ar"));
+    return [...clone(this.read().modifierGroups)].sort((a, b) => a.name.localeCompare(b.name, "ar"));
   }
 
   async createItem(input: { commandId: string; item: CatalogItemDraft }): Promise<CatalogItem> {
