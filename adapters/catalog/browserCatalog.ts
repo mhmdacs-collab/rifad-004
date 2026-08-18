@@ -13,8 +13,11 @@ import {
 } from "../../contracts/catalog";
 import {
   CATALOG_SNAPSHOT_SCHEMA_VERSION,
+  DEFAULT_CATALOG_COLOR,
   assertCatalogIdentityUnique,
   createDefaultCatalogSnapshot,
+  normalizeCatalogAppearance,
+  normalizeCatalogColor,
   normalizeCatalogDraft,
   normalizeCategoryName,
   normalizeModifierDraft,
@@ -58,20 +61,43 @@ const parseSnapshot = (raw: string | null): CatalogSnapshot => {
   try {
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     if (!Array.isArray(parsed.categories) || !Array.isArray(parsed.items)) return fallback;
+
+    const categories = (parsed.categories as Array<Partial<CatalogCategory> & Pick<CatalogCategory, "id" | "name">>).map((category, index) => ({
+      id: category.id,
+      name: category.name,
+      color: normalizeCatalogColor(category.color, fallback.categories[index % fallback.categories.length]?.color ?? DEFAULT_CATALOG_COLOR),
+    }));
+    const categoryColorById = new Map(categories.map((category) => [category.id, category.color]));
+
+    const optionGroups = Array.isArray(parsed.optionGroups)
+      ? (parsed.optionGroups as Array<CatalogOptionGroup & { color?: string }>).map((group) => ({
+          ...group,
+          color: normalizeCatalogColor(group.color, "#2D8CFF"),
+        }))
+      : fallback.optionGroups;
+
+    const modifierGroups = Array.isArray(parsed.modifierGroups)
+      ? (parsed.modifierGroups as Array<CatalogModifierGroup & { color?: string }>).map((group) => ({
+          ...group,
+          color: normalizeCatalogColor(group.color, "#9B51E0"),
+        }))
+      : fallback.modifierGroups;
+
     return {
       schemaVersion: CATALOG_SNAPSHOT_SCHEMA_VERSION,
       revision: Number.isSafeInteger(parsed.revision) ? Number(parsed.revision) : 1,
-      categories: parsed.categories as CatalogSnapshot["categories"],
+      categories,
       items: (parsed.items as CatalogItem[]).map((item) => ({
         ...item,
         pricing: migratePricing(item),
+        appearance: normalizeCatalogAppearance(item.appearance, categoryColorById.get(item.categoryId ?? "")),
         modifierGroupIds: item.modifierGroupIds ?? [],
         privateModifierGroups: item.privateModifierGroups ?? [],
         variantOptions: item.variantOptions ?? [],
         variants: item.variants ?? [],
       })),
-      optionGroups: Array.isArray(parsed.optionGroups) ? parsed.optionGroups as CatalogSnapshot["optionGroups"] : fallback.optionGroups,
-      modifierGroups: Array.isArray(parsed.modifierGroups) ? parsed.modifierGroups as CatalogSnapshot["modifierGroups"] : fallback.modifierGroups,
+      optionGroups,
+      modifierGroups,
       commandResults: migrateCommandResults(parsed.commandResults),
     };
   } catch {
@@ -104,6 +130,7 @@ const hydrateItem = (snapshot: CatalogSnapshot, item: CatalogItem): CatalogItem 
   ...item,
   pricing: migratePricing(item),
   price: effectiveItemPrice(item, snapshot.optionGroups),
+  appearance: normalizeCatalogAppearance(item.appearance, snapshot.categories.find((category) => category.id === item.categoryId)?.color),
   modifierGroupIds: item.modifierGroupIds ?? [],
   privateModifierGroups: item.privateModifierGroups ?? [],
 });
@@ -197,6 +224,7 @@ export class BrowserCatalogAdapter implements CatalogAdminContract {
       barcode: normalized.barcode,
       availableForSale: normalized.availableForSale,
       soldBy: "each",
+      appearance: normalized.appearance,
       modifierGroupIds: normalized.modifierGroupIds,
       privateModifierGroups: normalized.privateModifierGroups,
       variantOptions: normalized.variantOptions,
@@ -204,13 +232,13 @@ export class BrowserCatalogAdapter implements CatalogAdminContract {
       createdAt: now,
       updatedAt: now,
     };
+    const next = { ...snapshot, items: [...snapshot.items, item] };
     this.write({
-      ...snapshot,
+      ...next,
       revision: snapshot.revision + 1,
-      items: [...snapshot.items, item],
       commandResults: appendCommand(snapshot, input.commandId, "item", item.id),
     });
-    return clone(hydrateItem({ ...snapshot, items: [...snapshot.items, item] }, item));
+    return clone(hydrateItem(next, item));
   }
 
   async updateItem(input: { commandId: string; itemId: string; item: CatalogItemDraft }): Promise<CatalogItem> {
@@ -232,6 +260,7 @@ export class BrowserCatalogAdapter implements CatalogAdminContract {
       sku: normalized.sku,
       barcode: normalized.barcode,
       availableForSale: normalized.availableForSale,
+      appearance: normalized.appearance,
       modifierGroupIds: normalized.modifierGroupIds,
       privateModifierGroups: normalized.privateModifierGroups,
       variantOptions: normalized.variantOptions,
@@ -247,14 +276,18 @@ export class BrowserCatalogAdapter implements CatalogAdminContract {
     return clone(hydrateItem(next, updated));
   }
 
-  async createCategory(input: { commandId: string; name: string }): Promise<CatalogCategory> {
+  async createCategory(input: { commandId: string; name: string; color?: string }): Promise<CatalogCategory> {
     const snapshot = this.read();
     const prior = this.prior(snapshot, input.commandId, "category");
     if (prior) {
       const existing = snapshot.categories.find((category) => category.id === prior.entityId);
       if (existing) return clone(existing);
     }
-    const category: CatalogCategory = { id: createCategoryId(), name: normalizeCategoryName(input.name, snapshot.categories) };
+    const category: CatalogCategory = {
+      id: createCategoryId(),
+      name: normalizeCategoryName(input.name, snapshot.categories),
+      color: normalizeCatalogColor(input.color),
+    };
     this.write({
       ...snapshot,
       revision: snapshot.revision + 1,
@@ -264,7 +297,7 @@ export class BrowserCatalogAdapter implements CatalogAdminContract {
     return clone(category);
   }
 
-  async updateCategory(input: { commandId: string; categoryId: string; name: string }): Promise<CatalogCategory> {
+  async updateCategory(input: { commandId: string; categoryId: string; name: string; color?: string }): Promise<CatalogCategory> {
     const snapshot = this.read();
     const prior = this.prior(snapshot, input.commandId, "category");
     if (prior) {
@@ -273,7 +306,11 @@ export class BrowserCatalogAdapter implements CatalogAdminContract {
     }
     const existing = snapshot.categories.find((category) => category.id === input.categoryId);
     if (!existing) throw new CatalogContractError("CATALOG_CATEGORY_NOT_FOUND", "الفئة المحددة غير موجودة.");
-    const updated = { ...existing, name: normalizeCategoryName(input.name, snapshot.categories, input.categoryId) };
+    const updated = {
+      ...existing,
+      name: normalizeCategoryName(input.name, snapshot.categories, input.categoryId),
+      color: normalizeCatalogColor(input.color, existing.color),
+    };
     this.write({
       ...snapshot,
       revision: snapshot.revision + 1,
@@ -299,6 +336,7 @@ export class BrowserCatalogAdapter implements CatalogAdminContract {
     const group: CatalogOptionGroup = {
       id: createOptionGroupId(),
       name: normalized.name,
+      color: normalizeCatalogColor(normalized.color, "#2D8CFF"),
       values: normalized.values.map((value) => ({ ...value, id: value.id || `option-value-${crypto.randomUUID()}` })),
       createdAt: now,
       updatedAt: now,
@@ -329,6 +367,7 @@ export class BrowserCatalogAdapter implements CatalogAdminContract {
     const updated: CatalogOptionGroup = {
       ...existing,
       name: normalized.name,
+      color: normalizeCatalogColor(normalized.color, existing.color),
       values: normalized.values.map((value) => ({
         ...value,
         id: value.id && existingById.has(value.id) ? value.id : `option-value-${crypto.randomUUID()}`,
@@ -359,6 +398,7 @@ export class BrowserCatalogAdapter implements CatalogAdminContract {
     const modifier: CatalogModifierGroup = {
       id: createModifierId(),
       name: normalized.name,
+      color: normalizeCatalogColor(normalized.color, "#9B51E0"),
       options: normalized.options.map((option) => ({ ...option, id: option.id || `modifier-option-${crypto.randomUUID()}` })),
       createdAt: now,
       updatedAt: now,
@@ -388,6 +428,7 @@ export class BrowserCatalogAdapter implements CatalogAdminContract {
     const updated: CatalogModifierGroup = {
       ...existing,
       name: normalized.name,
+      color: normalizeCatalogColor(normalized.color, existing.color),
       options: normalized.options.map((option) => ({ ...option, id: option.id || `modifier-option-${crypto.randomUUID()}` })),
       updatedAt: new Date().toISOString(),
     };
