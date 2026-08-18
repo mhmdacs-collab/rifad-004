@@ -29,6 +29,7 @@ Other Back Office families remain outside this flow.
 - search by item name, SKU or barcode;
 - filter by category;
 - open the full item editor;
+- show item visual identity/thumbnail;
 - show availability, effective starting price, pricing mode and add-on group count.
 
 ### Item editor
@@ -44,7 +45,8 @@ Other Back Office families remain outside this flow.
 - optional item-specific price overrides;
 - optional item-only custom pricing choices;
 - reusable general add-on assignment;
-- item-private add-ons.
+- item-private add-ons;
+- POS visual representation by color/shape or image.
 
 ## Pricing and reusable option groups
 
@@ -84,9 +86,43 @@ POS option/add-on selection and ticket-line snapshots remain a separate future p
 - list categories;
 - create category;
 - rename category;
+- select an accent color;
 - preserve category identity when renamed.
 
-Delete/reorder/durable color semantics are non-goals for this slice.
+Delete/reorder remain non-goals for this slice.
+
+## Catalog visual identity
+
+The current flow includes merchant-managed visual identity as Rifad catalog data rather than component-only styling.
+
+### Item representation
+
+The item can use:
+
+- **color/shape** representation; or
+- **image** representation.
+
+Current discovered item appearance meanings:
+
+- accent color;
+- shape: square / rounded square / circle;
+- optional image representation.
+
+The current browser UI accepts JPG/PNG/WebP and center-crops/resizes the staging image to 512×512 for a square POS-oriented preview.
+
+`imageDataUrl` is staging transport only. Production media storage may use an asset/file/object reference behind an adapter without changing merchant semantics.
+
+### Group colors
+
+Current reusable visual accents include:
+
+- category color;
+- reusable option-group color;
+- reusable add-on-group color.
+
+These are small semantic scanning aids, not permission to use large decorative backgrounds throughout the Back Office.
+
+See `docs/ui/VISUAL-DECISION-008-CATALOG-VISUAL-IDENTITY.md`.
 
 ## Add-ons
 
@@ -94,6 +130,7 @@ Delete/reorder/durable color semantics are non-goals for this slice.
 
 - list reusable add-on groups;
 - create/edit a reusable group;
+- choose a group accent color;
 - add/remove named options;
 - set an additional price per option;
 - assign the same group to many items.
@@ -110,7 +147,9 @@ The current POS does not yet expose add-on selection/pricing. Required/optional 
 
 All mutations go through Rifad-owned `CatalogAdminContract`. Reads consumed by POS remain behind `CatalogReadContract`.
 
-Current staging implementation is `BrowserCatalogAdapter` schema v3. Browser storage is not the product contract and is not a LAN/cloud synchronization claim.
+Current staging implementation is `BrowserCatalogAdapter` **schema v4**. Browser storage is not the product contract and is not a LAN/cloud synchronization claim.
+
+Schema v4 includes migration support for earlier staging snapshots and the current catalog visual-identity meanings.
 
 Future local/LAN/cloud/external catalog implementations must translate into these Rifad meanings without leaking provider schema or IDs into the UI.
 
@@ -120,7 +159,7 @@ Future local/LAN/cloud/external catalog implementations must translate into thes
 - stock/inventory;
 - low-stock thresholds;
 - tax assignment;
-- product image/POS appearance;
+- production media storage/synchronization;
 - open price;
 - weight/volume selling;
 - composite items;
@@ -133,6 +172,17 @@ Future local/LAN/cloud/external catalog implementations must translate into thes
 - cloud sync;
 - production database freeze.
 
+## Visual reference boundary
+
+The current Back Office hierarchy is owner-directed from supplied Loyverse runtime screenshots, but Rifad owns final styling and implementation.
+
+Latest lessons are preserved in:
+
+- `docs/ui/visual-decisions/VISUAL-DECISION-007-BACK-OFFICE-LOYVERSE-HIERARCHY.md`;
+- `docs/research/loyverse/LOYVERSE_BACK_OFFICE_CURRENT_REFERENCE_2026-08-18.md`.
+
+The latest runtime simplification pass intentionally favors flat white cards, thin separators, quiet Cairo typography, restrained shadows, one completion area and minimal decorative effects.
+
 ## Acceptance evidence
 
 - Back Office TypeScript/tests/build pass.
@@ -143,4 +193,5 @@ Future local/LAN/cloud/external catalog implementations must translate into thes
 - Tests prove item-only custom multiple prices.
 - Tests prove reusable general add-ons and item-private add-ons can coexist.
 - Tests prove option-priced items remain hidden from the current cashier reader until the POS chooser is authorized.
-- Existing staging snapshots migrate to catalog schema v3 without making browser storage authoritative production persistence.
+- Tests prove category/group colors and item appearance survive adapter reconstruction.
+- Existing staging snapshots migrate forward to catalog schema v4 without making browser storage authoritative production persistence.
