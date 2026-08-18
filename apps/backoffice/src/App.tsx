@@ -248,14 +248,14 @@ export default function App({ catalog = createBrowserCatalogAdmin() }: { catalog
                 </label>
                 <label className="bo-field">
                   <span>الفئة</span>
-                  <select value={draft.categoryId ?? ""} onChange={(event) => setDraft({ ...draft, categoryId: event.target.value || null })}>
+                  <select aria-label="فئة الصنف" value={draft.categoryId ?? ""} onChange={(event) => setDraft({ ...draft, categoryId: event.target.value || null })}>
                     <option value="">بدون فئة</option>
                     {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
                   </select>
                 </label>
                 <label className="bo-field">
                   <span>السعر الأساسي <b>*</b></span>
-                  <div className="bo-money-input"><input inputMode="decimal" dir="ltr" value={priceText} onChange={(event) => setPriceText(event.target.value)} /><span>ر.س</span></div>
+                  <div className="bo-money-input"><input aria-label="السعر الأساسي" inputMode="decimal" dir="ltr" value={priceText} onChange={(event) => setPriceText(event.target.value)} /><span>ر.س</span></div>
                 </label>
                 <label className="bo-field">
                   <span>SKU</span>
@@ -266,7 +266,7 @@ export default function App({ catalog = createBrowserCatalogAdmin() }: { catalog
                   <input dir="ltr" value={draft.barcode} onChange={(event) => setDraft({ ...draft, barcode: event.target.value })} inputMode="numeric" />
                 </label>
                 <label className="bo-toggle bo-field--wide">
-                  <input type="checkbox" checked={draft.availableForSale} onChange={(event) => setDraft({ ...draft, availableForSale: event.target.checked })} />
+                  <input aria-label="متاح للبيع" type="checkbox" checked={draft.availableForSale} onChange={(event) => setDraft({ ...draft, availableForSale: event.target.checked })} />
                   <span><strong>متاح للبيع</strong><small>عند إيقافه يبقى الصنف في المكتب الخلفي ولا يظهر في كتالوج البيع.</small></span>
                 </label>
               </div>
