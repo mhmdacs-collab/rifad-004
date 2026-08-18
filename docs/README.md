@@ -4,6 +4,16 @@ Last updated: 2026-08-18
 
 This directory separates binding Rifad decisions from historical/research evidence.
 
+## New-session / Codex continuation entry point
+
+When resuming the current work in a new ChatGPT/Codex session, read **`CURRENT_WORK_HANDOFF_2026-08-18.md` first** after `PROJECT_RULES.md`.
+
+That handoff records the current branch/PR workflow, adapter/persistence foundations, POS and restaurant state, delivery/channel decisions, current Back Office catalog model, latest Loyverse-driven visual direction, explicit non-claims, and the recommended continuation order.
+
+For the current Back Office/Loyverse evidence specifically, also read:
+
+- `research/loyverse/LOYVERSE_BACK_OFFICE_CURRENT_REFERENCE_2026-08-18.md` — official source list, owner-screenshot observations, product inferences and Rifad-vs-Loyverse boundaries.
+
 ## Authority order
 
 When documents conflict, use this order:
@@ -15,12 +25,14 @@ When documents conflict, use this order:
 5. `ui/DESIGN_AUTHORITY.md` for POS interaction/visual authority.
 6. `ui/POS_UI_NAMING_AND_FIELD_REGISTER.md` for canonical labels and UI-to-data field traceability.
 7. `ui/UI_PROGRESS.md` and current UI/product plans for living implementation status.
-8. Research and historical proposals as evidence only.
+8. `CURRENT_WORK_HANDOFF_2026-08-18.md` for the latest continuation checkpoint when it does not conflict with higher authority.
+9. Research and historical proposals as evidence only.
 
 A product/visual discussion can be documented before implementation while still remaining explicitly **not manifest-authorized**. Restaurant local service has a bounded executable prototype under `POS-FLOW-002`; the first bounded Back Office catalog slice is `BO-FLOW-002`; online-order/delivery connector implementation remains pending separate scope.
 
 ## Current implementation documents
 
+- `CURRENT_WORK_HANDOFF_2026-08-18.md` — **current cross-domain continuation checkpoint for new chats/Codex sessions.**
 - `architecture/` — binding architecture direction and current decisions.
 - `architecture/POS_RUNTIME_ADAPTER_BOUNDARY.md` — current general POS runtime composition/injection boundary and replacement rules.
 - `architecture/RESTAURANT_SERVICE_ADAPTER_BOUNDARY.md` — current restaurant/place adapter boundary and external-system translation rules.
@@ -51,7 +63,8 @@ Invisible infrastructure facts such as installation identity, branch/device rout
 
 ## Research
 
-- `research/loyverse/` — preserved product, UI and technical reference research.
+- `research/loyverse/LOYVERSE_BACK_OFFICE_CURRENT_REFERENCE_2026-08-18.md` — **current Back Office reference snapshot:** official Loyverse pages reviewed, item/category/image/modifier/variant/store/inventory/composite/import-export findings, screenshot-derived visual lessons, and explicit Rifad-native deviations such as reusable option groups.
+- `research/loyverse/` — preserved broader product, UI and technical reference research.
 - `research/restaurant-pos/RESTAURANT_SERVICE_AND_CHANNEL_BENCHMARK_2026-08-17.md` — current official-market comparison for direct sale, simple/advanced local service, open orders, kitchen routing, channels and pricing.
 - `research/restaurant-pos/DELIVERY_PLATFORM_INTEGRATION_BENCHMARK_2026-08-17.md` — current delivery-platform API evidence, Foodics/aggregator workflow comparison, and Rifad direct-vs-aggregator adapter direction.
 - `research/historical-proposals/` — earlier Odoo/hybrid/open-source proposals retained for evidence. These proposals do not own current Rifad architecture.
