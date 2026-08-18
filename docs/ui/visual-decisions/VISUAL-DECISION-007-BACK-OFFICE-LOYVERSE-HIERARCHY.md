@@ -1,71 +1,83 @@
 # VISUAL-DECISION-007 — Back Office Loyverse-like hierarchy
 
 Last updated: 2026-08-18
-Status: **STRUCTURE APPROVED BY OWNER — FINAL VISUAL ACCEPTANCE STILL PENDING**
+Status: **VISUAL REFERENCE / SHELL LOCKED BY OWNER**
 
 ## Decision
 
-For the current Rifad Back Office product-discovery phase, the owner explicitly approved the supplied Loyverse Back Office screenshots as the primary visual reference for the management shell and catalog-administration surfaces.
+The owner has explicitly closed the general Back Office visual-design phase for the current product cycle.
 
-This approval is visual/interaction hierarchy only. Rifad continues to own all contracts, data meanings, adapters, persistence boundaries and implementation code.
+Loyverse remains the direct structural/interaction reference for the management shell and catalog-administration surfaces. The purpose of the lock is to stop alternating between redesign and feature invention: Rifad now keeps this visual language stable while synchronization and product capabilities are developed.
 
-The owner repeatedly identified the remaining gap not as missing decoration but as the feeling of a modern, calm, obvious product: coherent typography, restrained colors, meaningful icons, consistent spacing, smooth hierarchy and merchant-facing simplicity.
+This is a **reference/shell lock**, not a claim that every future screen is pixel-frozen forever. New feature-specific controls may be added where required, but they must inherit the locked hierarchy instead of reopening general layout/styling work.
 
-The key lesson from the latest runtime comparison is:
+Rifad continues to own all contracts, data meanings, adapters, persistence boundaries, implementation code and brand identity.
 
-> **Modernity comes from discipline and removal, not from adding visual effects.**
+## Locked visual characteristics
 
-The structural reference remains accepted. The current simplified visual pass is **not yet owner-accepted as final** and must remain directly reviewable at runtime.
+The Back Office must keep the following baseline unless the owner explicitly reopens visual design:
 
-## Approved visual characteristics
-
-The Back Office should stay visually close to the supplied reference in the following areas:
-
-- full-width application bar at the top using **Rifad primary green `#0A714E`**, not donor/lime green;
+- full-width application bar using Rifad primary green `#0A714E`;
 - persistent RTL navigation rail on the right;
-- compact administration navigation density rather than oversized dashboard navigation;
-- pale gray workspace background with focused white management cards;
+- compact administration navigation density;
+- pale gray workspace with focused white management surfaces;
 - thin borders and restrained/no shadows where separation is already clear;
-- avoid decorative gradients in ordinary management surfaces;
-- Arabic typography uses a **Cairo-first** stack with practical Windows/browser fallbacks and must be judged at normal 1920×1080 viewing distance, not screenshot zoom;
-- list/form text must be comfortably readable and visually coherent rather than reproducing tiny legacy-admin typography;
-- add, save, delete and back actions use consistent line pictograms in addition to Arabic wording where wording helps;
-- hover/focus/selected states are calm but immediately recognizable;
-- tables prioritize scanning speed over decorative density;
-- item editing uses a focused vertical management form rather than a wide dashboard-style editor;
-- use one calm Save/Cancel completion area for the item form; the latest owner comparison rejected duplicate Save/Cancel areas as unnecessary visual noise;
-- category, option-group and add-on editing use focused forms rather than technical developer-style builders;
-- product preview/representation controls stay compact and practical instead of becoming a hero/marketing card;
-- Rifad identity is visible through brand color, typography, action treatment and interaction feedback without changing the accepted management hierarchy.
+- no decorative gradients in ordinary management surfaces;
+- Cairo-first Arabic typography with practical offline Windows/browser fallbacks;
+- comfortably readable list/form text at normal 1920×1080 viewing distance;
+- consistent simple line pictograms for common actions where useful;
+- calm, obvious hover/focus/selected states;
+- tables optimized for scanning speed;
+- focused vertical item editing instead of dashboard-style composition;
+- one clear Save/Cancel completion area per form;
+- compact practical product/POS representation controls;
+- category, option-group and add-on editing presented as direct merchant forms, not technical builders;
+- Rifad identity expressed through brand color, typography, action treatment and interaction feedback without changing the accepted hierarchy.
 
-## Visual anti-patterns discovered during implementation
+## Locked workflow rule
 
-Do not repeat these mistakes:
+For this visual family the sequence is now:
+
+`Loyverse reference → reproduce closely → visual shell lock → build Rifad capabilities on top`
+
+Do **not** return to:
+
+`visual tweak → feature → redesign → feature → redesign`
+
+General visual changes now require one of:
+
+1. an explicit owner request to reopen the visual layer;
+2. a concrete usability/responsive/accessibility defect;
+3. a new feature whose required interaction cannot fit the locked hierarchy without a bounded adjustment.
+
+A feature request by itself is not permission to redesign unrelated surfaces.
+
+## Visual anti-patterns already rejected
+
+Do not reintroduce:
 
 1. giant page headings inside ordinary admin forms;
-2. large decorative empty margins around an unnecessarily narrow editor;
+2. large decorative empty margins around unnecessarily narrow editors;
 3. nested card-inside-card-inside-panel structures;
-4. gradients or heavy shadows intended to simulate a “2026” feeling;
+4. gradients/heavy shadows used to simulate modernity;
 5. oversized product preview blocks;
 6. excessive bold text;
-7. repeated primary actions that compete for attention;
-8. CSS polish layers changing the topbar/sidebar/workspace geometry;
+7. repeated primary actions competing for attention;
+8. CSS polish layers changing topbar/sidebar/workspace geometry;
 9. tiny Arabic typography copied from legacy enterprise UI;
-10. adding decoration where a divider, spacing or typography difference would communicate hierarchy better.
+10. decoration where spacing, typography or a divider communicates hierarchy better.
 
-## Merchant-simplicity refinement
+## Merchant-simplicity refinement retained
 
-The product review also rejected technical **variant / Cartesian-combination** language as the primary merchant experience.
+The locked presentation keeps the Rifad-native merchant model:
 
-The current target presentation is:
+- **مجموعات الخيارات** as reusable groups;
+- **أسعار متعددة** as one clear item-level control;
+- **مجموعة جاهزة** or **خيارات خاصة بهذا الصنف**;
+- direct option/price rows rather than generated Cartesian-combination machinery;
+- **الإضافات العامة** and **إضافات خاصة بهذا الصنف** as separate concepts.
 
-- **مجموعات الخيارات** as reusable merchant-managed groups;
-- **أسعار متعددة** as one clear switch inside the item editor;
-- a calm choice between **مجموعة جاهزة** and **خيارات خاصة بهذا الصنف**;
-- direct option/price rows instead of generated-combination machinery;
-- **الإضافات العامة** and **إضافات خاصة بهذا الصنف** as visibly separate concepts.
-
-This simplification is both product and visual hierarchy. It is intentionally designed for a business owner managing many similar items.
+This is product meaning, not a temporary visual trick.
 
 ## Current affected surfaces
 
@@ -79,34 +91,33 @@ This simplification is both product and visual hierarchy. It is intentionally de
 
 ## Current implementation layering
 
-The Back Office currently loads several historical/current CSS layers. The latest simplification layer is:
+The final simplification layer remains:
 
 - `apps/backoffice/src/loyverse-reference-pass.css`
 
-It is loaded after the other visual layers and exists specifically to flatten over-designed treatments and restore the owner-approved calm reference feel.
+It loads after earlier visual layers to flatten over-designed treatments.
 
-`apps/backoffice/src/backoffice-layout-safety.css` protects the shell geometry. Visual-polish layers must not move the fixed topbar/right navigation/independent workspace regions.
+`apps/backoffice/src/backoffice-layout-safety.css` protects the fixed topbar/right-navigation/workspace geometry. Future feature CSS must not casually override that shell geometry.
 
-This layering is a current implementation checkpoint, not a recommendation to accumulate endless override files. A future cleanup/consolidation may simplify CSS ownership after the visual direction is accepted.
+A later cleanup may consolidate historical CSS layers without changing the locked visual result.
 
 ## Boundaries
 
-This decision does **not** authorize:
+This lock does **not** authorize:
 
-- copying Loyverse source code, proprietary assets or exact branded icons;
-- importing donor database schemas or IDs;
-- changing Rifad catalog contracts merely to resemble Loyverse;
-- implementing inventory, discounts, taxes, suppliers or other Back Office capabilities only because they appear in the reference screenshots;
-- freezing production storage, LAN, branch Sync or fiscal integration design;
-- changing already approved cashier/POS visual rules unless separately authorized;
-- introducing a mandatory online font dependency as a hidden runtime requirement.
-
-The supplied screenshots are a reference for visual structure and usability. Rifad remains independently implemented.
+- copying Loyverse source code, proprietary assets or branded icons;
+- importing donor schemas/IDs;
+- changing Rifad contracts merely to resemble Loyverse;
+- adding inventory, discounts, taxes or other capabilities solely because they exist in the reference;
+- freezing production storage, synchronization, LAN or fiscal technology;
+- changing already approved cashier/POS visual rules without separate authorization;
+- introducing a mandatory online font dependency.
 
 ## Related evidence and decisions
 
 - `docs/research/loyverse/LOYVERSE_BACK_OFFICE_CURRENT_REFERENCE_2026-08-18.md`
 - `docs/ui/VISUAL-DECISION-008-CATALOG-VISUAL-IDENTITY.md`
+- `docs/architecture/SYNC_CAPABILITY_BOUNDARY.md`
 - `docs/CURRENT_WORK_HANDOFF_2026-08-18.md`
 
-Owner visual acceptance of the latest simplified pass remains pending direct runtime review.
+The next cross-surface gate after this lock is synchronization candidate execution/adoption, not another general Back Office redesign.
