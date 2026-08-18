@@ -57,7 +57,7 @@ The old visible **محلي / سفري / توصيل** selector is superseded and 
 
 ## Product
 
-`BO-FLOW-002` is the executable cross-surface catalog discovery slice. It uses Rifad-owned `CatalogAdminContract` / `CatalogReadContract` meanings shared with the POS catalog adapter. The current browser transport and schema-v3 snapshot are staging proof only; these fields are not a frozen SQL schema.
+`BO-FLOW-002` is the executable cross-surface catalog discovery slice. It uses Rifad-owned `CatalogAdminContract` / `CatalogReadContract` meanings shared with the POS catalog adapter. The current browser transport and **schema-v4** snapshot are staging proof only; these fields are not a frozen SQL schema.
 
 Merchant-facing terminology is deliberately simple:
 
@@ -68,7 +68,8 @@ Merchant-facing terminology is deliberately simple:
 - **خيارات خاصة بهذا الصنف** — non-reusable item-only price choices;
 - **تخصيص الأسعار لهذا الصنف** — sparse overrides while retaining the shared group;
 - **الإضافات العامة** — reusable add-on groups;
-- **إضافات خاصة بهذا الصنف** — item-private add-on groups.
+- **إضافات خاصة بهذا الصنف** — item-private add-on groups;
+- **العرض في نقطة البيع** — item representation by color/shape or image.
 
 | Field | Status | Reason |
 | --- | --- | --- |
@@ -76,9 +77,11 @@ Merchant-facing terminology is deliberately simple:
 | `name` | CURRENT | Back Office display/edit, POS tile/ticket/search |
 | `description` | CURRENT-MOCK | visible/editable in BO-FLOW-002; future durable product description |
 | `categoryId` / `categoryName` | CURRENT-MOCK shared catalog | category selection plus Back Office category create/rename; normalized production storage not frozen |
+| category `color` | CURRENT-MOCK | merchant-managed catalog accent used for visual grouping/scanning; production normalization not frozen |
 | `price` (`Money`) | CURRENT / CURRENT-MOCK | fixed-price authority; for multiple-price staging items it is a convenience minimum resolved price, not permission to sell without an option choice |
 | `pricing.mode = fixed | option-group | custom-options` | CURRENT-MOCK | explicit fixed versus multiple-price policy |
 | option-group `id/name` | CURRENT-MOCK | reusable pricing-choice group such as أحجام البيتزا |
+| option-group `color` | CURRENT-MOCK | reusable group accent for management/scanning |
 | option-group value `id/name/price` | CURRENT-MOCK | stable reusable option value plus its default exact price |
 | `pricing.groupId` | CURRENT-MOCK | shared option group selected for an item |
 | `pricing.priceMode = inherit | custom` | CURRENT-MOCK | whether item follows group prices or has sparse item overrides |
@@ -88,9 +91,14 @@ Merchant-facing terminology is deliberately simple:
 | `barcode` | CURRENT-MOCK / production durable required | BO list/editor and POS staging exact-string search; scanner hardware not yet proven |
 | `availableForSale` | CURRENT-MOCK | false keeps item in Back Office and removes it from current sellable POS catalog |
 | `soldBy = each` | CURRENT-MOCK fixed | current bounded slice sells by unit only; weight/volume behavior is still REQUIRED-GAP |
+| `appearance.mode = color | image` | CURRENT-MOCK | merchant-selected POS representation mode; production media transport not frozen |
+| `appearance.color` | CURRENT-MOCK | item accent color when using visual representation |
+| `appearance.shape = square | rounded | circle` | CURRENT-MOCK | item visual shape semantics |
+| `appearance.imageDataUrl` | CURRENT-MOCK staging transport | browser-only image transport for discovery; production should replace with adapter-owned media/asset reference as appropriate |
 | `createdAt` / `updatedAt` | CURRENT-MOCK | staging catalog lifecycle evidence; final audit semantics not frozen |
 | `modifierGroupIds[]` | CURRENT-MOCK | reusable general add-on groups assigned to an item |
 | general add-on group `id/name` | CURRENT-MOCK | independently managed reusable add-on group |
+| general add-on group `color` | CURRENT-MOCK | reusable add-on accent for management/scanning |
 | general add-on option `id/name/price` | CURRENT-MOCK | stable reusable option plus additional exact price |
 | `privateModifierGroups[].id/name` | CURRENT-MOCK | item-private add-on group that is not reusable globally |
 | private add-on option `id/name/price` | CURRENT-MOCK | item-private option plus additional exact price |
@@ -101,10 +109,10 @@ Merchant-facing terminology is deliberately simple:
 | cost / inventory tracking / low-stock threshold | REQUIRED-GAP, not BO-FLOW-002 | documented Back Office features pending their own UI slice |
 | tax assignment | REQUIRED-GAP, not BO-FLOW-002 | pending tax/product UI and fiscal/accounting design |
 | composite structure | REQUIRED-GAP, not BO-FLOW-002 | pending dedicated UI flow |
-| product image / POS visual appearance | future/UI scope | pending its own product/UI decision |
-| `tone` | UI-ONLY | prototype visual treatment |
+| production media asset/storage identity | REQUIRED-GAP | current image Data URL is browser staging only; local/LAN/cloud/ERP media transport remains unfrozen |
+| `tone` | UI-ONLY | older prototype visual treatment; do not confuse with current merchant-owned catalog appearance semantics |
 
-### Pricing-option and add-on boundary
+### Pricing-option, add-on and visual-identity boundary
 
 Back Office now proves a reusable merchant-friendly pricing model rather than requiring technical Cartesian variant creation per item.
 
@@ -125,6 +133,14 @@ Current add-on discovery rules:
 - one item may reference multiple general add-on groups;
 - an item may also contain private add-on groups that belong only to that item.
 
+Current visual-identity discovery rules:
+
+- category, reusable option-group and reusable add-on-group colors are merchant-owned catalog semantics;
+- item appearance may be color/shape or image;
+- current browser image preparation center-crops/resizes to a square staging image;
+- current browser `imageDataUrl` is transport evidence only and must not freeze production media architecture;
+- sale/accounting truth must never depend on image availability.
+
 The current POS does **not** yet consume option-priced items or add-ons. `CatalogReadContract.listItems()` hides option-priced items by default until an approved cashier chooser exists. Back Office explicitly opts in with `includeOptionPriced: true`.
 
 Cashier option selection, add-on selection/pricing, requirements/limits, resolved sold-price snapshots, ticket-line text, kitchen presentation and receipt presentation remain **REQUIRED-GAP** until the POS option/add-on flow is explicitly authorized and reviewed.
@@ -136,19 +152,21 @@ Current editable/administered catalog meanings are:
 - item name and description;
 - category selection;
 - category create and rename;
+- category accent color;
 - fixed base price;
 - base SKU and barcode;
 - available-for-sale;
-- reusable option groups and direct default prices;
+- reusable option groups, accent colors and direct default prices;
 - fixed versus multiple-price policy;
 - shared-group assignment;
 - sparse per-item group price overrides;
 - item-only multiple-price choices;
-- reusable general add-on groups and their options/additional prices;
+- reusable general add-on groups, accent colors and options/additional prices;
 - assignment of general add-on groups to items;
-- item-private add-on groups/options/additional prices.
+- item-private add-on groups/options/additional prices;
+- item POS representation mode/color/shape/image semantics.
 
-The current slice still does **not** authorize cost, stock, open-price products, weight/volume selling, taxes, composite items, per-store overrides, delete/import/export, product imagery, or production POS option/add-on selection. Those meanings remain discoverable from their own UI flows before production data-model freeze.
+The current slice still does **not** authorize cost, stock, open-price products, weight/volume selling, taxes, composite items, per-store overrides, delete/import/export, production media storage/synchronization, or production POS option/add-on selection. Those meanings remain discoverable from their own UI flows before production data-model freeze.
 
 Completed receipts must preserve historical product name/effective selling price snapshots even if the product is later renamed, repriced or disabled.
 
@@ -299,7 +317,7 @@ Executable local preferences/configuration:
 
 The legacy generic visible-order-type setting is superseded/hidden in normal current UI.
 
-Production Back Office should own persistent restaurant groups/places, channels/pricelists, connector mappings/credentials and online-order policies where appropriate. `BO-FLOW-002` begins Back Office product ownership for catalog items, categories, reusable option groups/multiple pricing and general/private add-ons in staging.
+Production Back Office should own persistent restaurant groups/places, channels/pricelists, connector mappings/credentials and online-order policies where appropriate. `BO-FLOW-002` begins Back Office product ownership for catalog items, categories, reusable option groups/multiple pricing, general/private add-ons and current catalog visual identity in staging.
 
 ---
 
@@ -333,7 +351,9 @@ This does **not** yet prove production barcode-scanner hardware behavior, multip
 
 # 13. UI-only state
 
-Do not persist merely because visible: dialog/menu state, hover/pressed/animation, keypad digits/freshness, temporary numeric input, responsive mode, decorative tone, scroll position, validation CSS state, selected service group, list presentation, green/silver emphasis, local-service toast or modal state, current Back Office page/editor visibility, current search text, filter selection, unsaved option/add-on input or toast visibility.
+Do not persist merely because visible: dialog/menu state, hover/pressed/animation, keypad digits/freshness, temporary numeric input, responsive mode, older decorative tone, scroll position, validation CSS state, selected service group, list presentation, green/silver emphasis, local-service toast or modal state, current Back Office page/editor visibility, current search text, filter selection, unsaved option/add-on input or toast visibility.
+
+Do not classify merchant-selected category/group/item catalog colors or item image/shape semantics as UI-only; those are CURRENT-MOCK catalog semantics in the current discovery contract.
 
 ---
 
@@ -354,7 +374,8 @@ Do not persist merely because visible: dialog/menu state, hover/pressed/animatio
 13. stable employee/branch/device IDs on receipts;
 14. print-job history;
 15. structured business/device configuration;
-16. legitimate Mada references without prohibited sensitive data.
+16. production media asset storage/synchronization semantics;
+17. legitimate Mada references without prohibited sensitive data.
 
 ---
 
