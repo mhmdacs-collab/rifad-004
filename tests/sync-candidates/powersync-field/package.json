@@ -1,0 +1,20 @@
+{
+  "name": "rifad-sync-powersync-field-proof",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@journeyapps/wa-sqlite": "1.2.0",
+    "@powersync/node": "0.20.0",
+    "@powersync/web": "2.2.0",
+    "better-sqlite3": "12.11.1",
+    "jose": "6.2.3",
+    "pg": "8.22.0"
+  },
+  "devDependencies": {
+    "vite": "8.0.16"
+  }
+}
