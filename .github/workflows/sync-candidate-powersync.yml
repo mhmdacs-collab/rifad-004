@@ -53,7 +53,8 @@ jobs:
             branch_id TEXT NOT NULL,
             name TEXT NOT NULL,
             price_minor BIGINT NOT NULL,
-            metadata_json TEXT
+            metadata_json TEXT,
+            kitchen_label TEXT
           );
           CREATE TABLE IF NOT EXISTS customers (
             id TEXT PRIMARY KEY,
@@ -111,7 +112,7 @@ jobs:
           curl -fsS http://127.0.0.1:8080/probes/liveness
           docker image inspect journeyapps/powersync-service:latest --format 'POWERSYNC_IMAGE={{index .RepoDigests 0}}'
 
-      - name: Execute Rifad PowerSync proof
+      - name: Execute Rifad PowerSync behavior proof
         working-directory: tests/sync-candidates/powersync
         env:
           POWERSYNC_URL: http://127.0.0.1:8080
@@ -119,6 +120,14 @@ jobs:
           PS_CLIENT_AUTH_KEY: ZGV2LXNoYXJlZC1zZWNyZXQtZm9yLWRlbW8tb25seS0zMmI
           RIFAD_PROOF_API_PORT: "8787"
         run: node proof.mjs
+
+      - name: Execute additive old/new client schema proof
+        working-directory: tests/sync-candidates/powersync
+        env:
+          POWERSYNC_URL: http://127.0.0.1:8080
+          PG_URL: postgresql://postgres:changeme@127.0.0.1:5432/postgres
+          PS_CLIENT_AUTH_KEY: ZGV2LXNoYXJlZC1zZWNyZXQtZm9yLWRlbW8tb25seS0zMmI
+        run: node schema-evolution.mjs
 
       - name: Capture service logs on failure
         if: failure()
