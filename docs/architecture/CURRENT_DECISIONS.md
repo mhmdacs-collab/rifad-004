@@ -298,3 +298,37 @@ Before production data-model freeze, continue relevant UI/product discovery for 
 Existing adapter, local-persistence and outbox boundaries remain foundations underneath this work; they are not discarded, but deeper production infrastructure work must not outrun product-field discovery.
 
 See `docs/architecture/BACK_OFFICE_CATALOG_BOUNDARY.md`.
+
+## D-031 — Merchant pricing uses reusable option groups with sparse item overrides; add-ons support reusable and item-private scope
+
+Rifad must not force a merchant to rebuild the same size/price matrix separately on every item.
+
+The merchant-facing Back Office concept is **مجموعات الخيارات**, not technical Cartesian variant construction.
+
+Example:
+
+`أحجام البيتزا → صغير 10 | وسط 20 | كبير 25`
+
+One reusable option group may serve many items. An item pricing policy is explicitly one of:
+
+1. fixed price;
+2. reusable option group with inherited group prices;
+3. reusable option group with sparse per-item overrides only where an item's price differs;
+4. item-private option prices when the choices should not be globally reusable.
+
+The Back Office exposes one clear **أسعار متعددة** control. Enabling it disables the fixed-price field and makes option pricing authoritative for that item.
+
+Sparse override semantics are required: customizing one group value on one item must not copy/freeze every other group price into that item. Unchanged values continue inheriting the reusable group, which keeps later shared-price maintenance practical across large catalogs.
+
+Add-ons are separate from pricing-option groups:
+
+- **الإضافات العامة** are reusable groups that may be assigned to many items;
+- **إضافات خاصة بهذا الصنف** belong only to one item when the choice is genuinely one-off.
+
+Historical generated `CatalogVariant*` structures remain staging-migration compatibility only. They do not own new merchant UX. If a later requirement needs true independently identifiable multi-dimensional variants, that capability must be rediscovered and authorized explicitly rather than reappearing through legacy schema.
+
+The current POS has no approved pricing-option/add-on chooser. Therefore option-priced items are hidden from the default cashier catalog reader until POS-SCREEN-005 is separately authorized. Rifad must never silently sell an option-priced item at a minimum/fallback preview price.
+
+This decision remains behind Rifad-owned `CatalogAdminContract` / `CatalogReadContract` boundaries. Local/LAN/cloud/ERP adapters must translate into these meanings rather than imposing their own variant schema on Rifad.
+
+See `docs/ui/flows/BO-FLOW-002.md` and `docs/architecture/BACK_OFFICE_CATALOG_BOUNDARY.md`.
