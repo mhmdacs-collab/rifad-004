@@ -1,3 +1,4 @@
+import type { EffectivePosConfiguration, EffectivePosPaymentMethod, PosPaymentDirectImpact, PosPaymentMethodKind } from "../../../../contracts/posConfiguration";
 import { createMockPosRuntime } from "../adapters/mockPos";
 import type { PosRuntimeContract } from "../contracts/pos";
 import {
@@ -20,6 +21,39 @@ export type PosRuntimeAdapterInfo = Readonly<{
   transport: "local" | "remote-api" | "hybrid";
   implementation: "mock" | "external" | "rifad-native";
 }>;
+
+const impactForKind = (kind: PosPaymentMethodKind): PosPaymentDirectImpact => {
+  if (kind === "cash") return "cash";
+  if (kind === "card") return "bank";
+  if (kind === "customer-credit") return "customer-receivable";
+  return "bank";
+};
+
+const normalizePaymentMethod = (method: EffectivePosPaymentMethod): EffectivePosPaymentMethod => ({
+  ...method,
+  directImpact: method.directImpact ?? impactForKind(method.kind),
+  systemDefault: method.systemDefault
+    ?? (method.id === "payment-cash" ? "cash" : method.id === "payment-mada-mock" || method.id === "payment-card" ? "network" : method.id === "payment-credit" ? "credit" : null),
+});
+
+const normalizeEffectiveConfiguration = (configuration: EffectivePosConfiguration): EffectivePosConfiguration => {
+  const methods = configuration.paymentMethods.map(normalizePaymentMethod);
+  const hasCredit = methods.some((method) => method.systemDefault === "credit" || method.id === "payment-credit");
+  const paymentMethods = hasCredit ? methods : [
+    ...methods,
+    {
+      id: "payment-credit",
+      name: "آجل",
+      kind: "customer-credit" as const,
+      enabled: true,
+      sortOrder: Math.max(20, ...methods.map((method) => method.sortOrder)) + 10,
+      availability: "offline-capable" as const,
+      directImpact: "customer-receivable" as const,
+      systemDefault: "credit" as const,
+    },
+  ];
+  return { ...configuration, paymentMethods };
+};
 
 /**
  * Single composition point for the general POS runtime.
@@ -69,7 +103,7 @@ export const createPosRuntimeAdapter = (): PosRuntimeContract => {
           });
         }
       }
-      return persistedEffectiveConfiguration.read();
+      return normalizeEffectiveConfiguration(await persistedEffectiveConfiguration.read());
     },
   };
 
