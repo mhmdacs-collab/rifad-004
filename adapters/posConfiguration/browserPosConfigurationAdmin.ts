@@ -1,4 +1,7 @@
+import type { PosPaymentDirectImpact, PosPaymentMethodKind } from "../../contracts/posConfiguration";
 import type {
+  MerchantDeliveryConfiguration,
+  MerchantPaymentType,
   MerchantPosConfiguration,
   PosConfigurationAdminContract,
 } from "../../contracts/posConfigurationAdmin";
@@ -34,9 +37,110 @@ const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 const now = () => new Date().toISOString();
 const newId = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
 
+const impactForKind = (kind: PosPaymentMethodKind): PosPaymentDirectImpact => {
+  if (kind === "cash") return "cash";
+  if (kind === "card") return "bank";
+  if (kind === "customer-credit") return "customer-receivable";
+  return "bank";
+};
+
+export const createDefaultDeliveryConfiguration = (): MerchantDeliveryConfiguration => ({
+  enabled: false,
+  channels: [
+    {
+      id: "delivery-hungerstation",
+      name: "HungerStation",
+      kind: "platform",
+      brandKey: "hungerstation",
+      enabled: false,
+      electronicPaymentEnabled: true,
+      cashOnDeliveryEnabled: true,
+      codSettlement: "courier-pays-merchant",
+      storeIds: [],
+      selfDelivery: null,
+    },
+    {
+      id: "delivery-keeta",
+      name: "Keeta",
+      kind: "platform",
+      brandKey: "keeta",
+      enabled: false,
+      electronicPaymentEnabled: true,
+      cashOnDeliveryEnabled: true,
+      codSettlement: "courier-pays-merchant",
+      storeIds: [],
+      selfDelivery: null,
+    },
+    {
+      id: "delivery-jahez",
+      name: "Jahez",
+      kind: "platform",
+      brandKey: "jahez",
+      enabled: false,
+      electronicPaymentEnabled: true,
+      cashOnDeliveryEnabled: true,
+      codSettlement: "courier-pays-merchant",
+      storeIds: [],
+      selfDelivery: null,
+    },
+    {
+      id: "delivery-self",
+      name: "التوصيل الذاتي",
+      kind: "self-delivery",
+      brandKey: "self-delivery",
+      enabled: false,
+      electronicPaymentEnabled: false,
+      cashOnDeliveryEnabled: true,
+      codSettlement: "courier-pays-merchant",
+      storeIds: [],
+      selfDelivery: {
+        feeMode: "manual",
+        defaultFeeHalalas: 0,
+        allowPosFeeOverride: true,
+        feeBeneficiary: "merchant",
+      },
+    },
+  ],
+});
+
+const normalizedDefaultPayment = (payment: MerchantPaymentType): MerchantPaymentType => {
+  const systemDefault = payment.systemDefault
+    ?? (payment.id === "payment-cash" ? "cash" : payment.id === "payment-card" ? "network" : payment.id === "payment-credit" ? "credit" : null);
+  return {
+    ...payment,
+    directImpact: payment.directImpact ?? impactForKind(payment.kind),
+    systemDefault,
+  };
+};
+
+const normalizeConfiguration = (configuration: MerchantPosConfiguration): MerchantPosConfiguration => {
+  const paymentTypes = configuration.paymentTypes.map(normalizedDefaultPayment);
+  const hasCreditDefault = paymentTypes.some((payment) => payment.systemDefault === "credit" || payment.id === "payment-credit");
+  const nextPayments = hasCreditDefault ? paymentTypes : [
+    ...paymentTypes,
+    {
+      id: "payment-credit",
+      name: "آجل",
+      kind: "customer-credit" as const,
+      enabled: true,
+      sortOrder: Math.max(20, ...paymentTypes.map((payment) => payment.sortOrder)) + 10,
+      availability: "offline-capable" as const,
+      storeIds: [],
+      directImpact: "customer-receivable" as const,
+      systemDefault: "credit" as const,
+    },
+  ];
+
+  return {
+    ...configuration,
+    paymentTypes: nextPayments.map(normalizedDefaultPayment),
+    delivery: configuration.delivery ?? createDefaultDeliveryConfiguration(),
+  };
+};
+
 const defaultState = (): BrowserPosConfigurationAdminState => ({
   schemaVersion: BROWSER_POS_CONFIGURATION_ADMIN_SCHEMA_VERSION,
-  configuration: createDefaultMerchantPosConfiguration(),
+  configuration: normalizeConfiguration(createDefaultMerchantPosConfiguration()),
   completedCommandIds: [],
   pinFingerprints: {},
 });
@@ -48,7 +152,7 @@ const parseState = (raw: string | null): BrowserPosConfigurationAdminState => {
     if (parsed.schemaVersion !== BROWSER_POS_CONFIGURATION_ADMIN_SCHEMA_VERSION || !parsed.configuration) return defaultState();
     return {
       schemaVersion: BROWSER_POS_CONFIGURATION_ADMIN_SCHEMA_VERSION,
-      configuration: parsed.configuration,
+      configuration: normalizeConfiguration(parsed.configuration),
       completedCommandIds: Array.isArray(parsed.completedCommandIds) ? parsed.completedCommandIds.filter((id): id is string => typeof id === "string") : [],
       pinFingerprints: parsed.pinFingerprints && typeof parsed.pinFingerprints === "object" ? parsed.pinFingerprints : {},
     };
@@ -70,7 +174,7 @@ export const createBrowserPosConfigurationAdmin = (
   let state = parseState(storage.getItem(storageKey));
 
   const persist = () => storage.setItem(storageKey, JSON.stringify(state));
-  const read = () => clone(state.configuration);
+  const read = () => clone(normalizeConfiguration(state.configuration));
   const completed = (commandId: string) => state.completedCommandIds.includes(commandId);
 
   const commit = (
@@ -81,7 +185,7 @@ export const createBrowserPosConfigurationAdmin = (
     const commandIds = [...state.completedCommandIds, commandId].slice(-500);
     state = {
       schemaVersion: BROWSER_POS_CONFIGURATION_ADMIN_SCHEMA_VERSION,
-      configuration,
+      configuration: normalizeConfiguration(configuration),
       completedCommandIds: commandIds,
       pinFingerprints,
     };
@@ -131,11 +235,30 @@ export const createBrowserPosConfigurationAdmin = (
     savePaymentType: async ({ commandId, paymentType }) => {
       if (completed(commandId)) return read();
       const id = paymentType.id ?? newId("payment-type");
-      return commit(commandId, saveMerchantPaymentType({ config: state.configuration, draft: paymentType, id, updatedAt: now() }));
+      const existing = state.configuration.paymentTypes.find((payment) => payment.id === id);
+      const configuration = saveMerchantPaymentType({ config: state.configuration, draft: paymentType, id, updatedAt: now() });
+      const directImpact = paymentType.directImpact ?? existing?.directImpact ?? impactForKind(paymentType.kind);
+      const systemDefault = paymentType.systemDefault ?? existing?.systemDefault ?? null;
+      return commit(commandId, {
+        ...configuration,
+        paymentTypes: configuration.paymentTypes.map((payment) => payment.id === id
+          ? { ...payment, directImpact, systemDefault }
+          : payment),
+      });
     },
     reorderPaymentTypes: async ({ commandId, orderedIds }) => {
       if (completed(commandId)) return read();
       return commit(commandId, reorderMerchantPaymentTypes({ config: state.configuration, orderedIds, updatedAt: now() }));
+    },
+    saveDeliveryConfiguration: async ({ commandId, delivery }) => {
+      if (completed(commandId)) return read();
+      const updatedAt = now();
+      return commit(commandId, {
+        ...state.configuration,
+        revision: state.configuration.revision + 1,
+        updatedAt,
+        delivery: clone(delivery),
+      });
     },
   };
 };
