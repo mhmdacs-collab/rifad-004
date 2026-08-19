@@ -1,6 +1,7 @@
 import type { EffectivePosConfiguration, EffectivePosPaymentMethod, PosPaymentDirectImpact, PosPaymentMethodKind } from "../../../../contracts/posConfiguration";
 import { createMockPosRuntime } from "../adapters/mockPos";
 import type { PosRuntimeContract } from "../contracts/pos";
+import { createDeliveryCollectionAdapter } from "./deliveryCollectionAdapter";
 import {
   createAuthorizationAdapter,
   createEffectivePosConfigurationAdapter,
@@ -64,9 +65,9 @@ const normalizeEffectiveConfiguration = (configuration: EffectivePosConfiguratio
  * snapshot back through LocalPersistenceContract. Replacing the mock removes
  * this bridge without changing UI/state contracts.
  *
- * MAP-01 configuration and authorization are composed here as independent
- * Rifad-owned capabilities. They do not live inside the legacy mock and they do
- * not select a synchronization provider or production local database.
+ * MAP-01 configuration, authorization and delivery collection are composed here
+ * as independent Rifad-owned capabilities. They do not live inside the legacy
+ * mock and they do not select a synchronization provider or production DB.
  */
 export const POS_RUNTIME_ADAPTER_INFO: PosRuntimeAdapterInfo = {
   id: "rifad-mock-pos",
@@ -109,11 +110,13 @@ export const createPosRuntimeAdapter = (): PosRuntimeContract => {
 
   const authorization = createAuthorizationAdapter(effectiveConfiguration);
   const managerOverride = createManagerOverrideAdapter(effectiveConfiguration, authorization, persistence);
+  const deliveryCollection = createDeliveryCollectionAdapter(persistence);
   const runtime: PosRuntimeContract = {
     ...legacyRuntime,
     effectiveConfiguration,
     authorization,
     managerOverride,
+    deliveryCollection,
   };
   return withLocalPersistenceJournal(runtime, persistence, snapshotBridge);
 };
