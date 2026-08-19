@@ -52,7 +52,7 @@ describe("MAP-01 owner policy → effective local POS enforcement", () => {
     await admin.setEmployeePin({ commandId: "manager-pin", employeeId: "employee-manager-001", pin: "4321" });
     await admin.reorderPaymentTypes({
       commandId: "merchant-payment-order",
-      orderedIds: ["payment-card", "payment-cash"],
+      orderedIds: ["payment-card", "payment-cash", "payment-credit"],
     });
 
     const merchantPolicy = await admin.read();
@@ -63,7 +63,8 @@ describe("MAP-01 owner policy → effective local POS enforcement", () => {
     });
 
     expect(projected.revision).toBe(merchantPolicy.revision);
-    expect(projected.paymentMethods.map((method) => method.id)).toEqual(["payment-card", "payment-cash"]);
+    expect(projected.paymentMethods.map((method) => method.id)).toEqual(["payment-card", "payment-cash", "payment-credit"]);
+    expect(projected.paymentMethods.map((method) => method.directImpact)).toEqual(["bank", "cash", "customer-receivable"]);
     expect(projected.roles.flatMap((role) => role.permissions)).not.toContain("access-back-office");
 
     const persistence = createBrowserLocalPersistence(window.localStorage, posKey);
@@ -121,7 +122,7 @@ describe("MAP-01 owner policy → effective local POS enforcement", () => {
     const reopenedConfiguration = createEffectivePosConfigurationAdapter(reopenedPersistence);
     const afterRestart = await reopenedConfiguration.read();
     expect(afterRestart).toEqual(await configuration.read());
-    expect(afterRestart.paymentMethods.map((method) => method.id)).toEqual(["payment-card", "payment-cash"]);
+    expect(afterRestart.paymentMethods.map((method) => method.id)).toEqual(["payment-card", "payment-cash", "payment-credit"]);
     expect(afterRestart.roles.find((role) => role.roleId === "role-cashier")?.permissions).toEqual(["accept-payment", "view-all-receipts"]);
   });
 });
