@@ -1,0 +1,69 @@
+.inline-payment-methods {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 10px !important;
+  align-items: stretch;
+}
+
+.inline-payment-methods--two-columns {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.inline-payment-methods--two-columns .inline-payment-method {
+  min-width: 0;
+  padding-inline: 12px !important;
+  gap: 10px !important;
+}
+
+.inline-payment-methods--two-columns .inline-payment-copy {
+  min-width: 0;
+}
+
+.inline-payment-methods--two-columns .inline-payment-copy strong,
+.inline-payment-methods--two-columns .inline-payment-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inline-payment-methods--two-columns .inline-payment-copy strong {
+  white-space: nowrap;
+}
+
+.inline-payment-methods--two-columns .inline-payment-copy small {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.payment-method-visual--credit {
+  display: grid !important;
+  place-items: center;
+  border-radius: 10px;
+  background: #f3eefb;
+  color: #6343a5;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.payment-method-visual--custom {
+  display: grid !important;
+  place-items: center;
+  border-radius: 10px;
+  background: #f3f6f5;
+  color: #586660;
+}
+
+.inline-payment-method--credit:not(:disabled):hover {
+  border-color: #b9a7df !important;
+  background: #fbf9ff !important;
+}
+
+.inline-payment-method--custom:disabled {
+  opacity: .72 !important;
+}
+
+@media (max-width: 1180px) {
+  .inline-payment-methods--two-columns {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
