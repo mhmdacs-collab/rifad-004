@@ -25,8 +25,8 @@ const source: MerchantPosConfiguration = {
     { id: "device-b", name: "كاشير ب", storeId: "store-b", status: "linked" },
   ],
   roles: [
-    { id: "cashier", name: "كاشير", permissions: ["accept-payment"], ownerRole: false },
-    { id: "manager", name: "مدير", permissions: ["accept-payment", "perform-returns"], ownerRole: false },
+    { id: "cashier", name: "كاشير", permissions: ["accept-payment", "manage-employees"], ownerRole: false },
+    { id: "manager", name: "مدير", permissions: ["accept-payment", "perform-returns", "access-back-office"], ownerRole: false },
   ],
   employees: [
     { id: "employee-a", name: "موظف أ", email: "", phone: "", roleId: "cashier", storeIds: ["store-a"], active: true, pinConfigured: true },
@@ -40,12 +40,13 @@ const source: MerchantPosConfiguration = {
 };
 
 describe("MAP-01 owner configuration projection", () => {
-  it("projects only the branch/device-relevant employees, roles and payment methods", () => {
+  it("projects only branch/device-relevant facts and strips Back Office-only permissions from the POS role snapshot", () => {
     const effective = projectEffectivePosConfiguration({ source, branchId: "store-a", deviceId: "device-a" });
 
     expect(effective.revision).toBe(7);
     expect(effective.employees.map((employee) => employee.employeeId)).toEqual(["employee-a"]);
     expect(effective.roles.map((role) => role.roleId)).toEqual(["cashier"]);
+    expect(effective.roles[0]?.permissions).toEqual(["accept-payment"]);
     expect(effective.paymentMethods.map((method) => method.id)).toEqual(["mada-a", "cash"]);
     expect(effective.paymentMethods.map((method) => method.sortOrder)).toEqual([10, 20]);
   });
