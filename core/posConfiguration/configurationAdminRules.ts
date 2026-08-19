@@ -31,7 +31,7 @@ const requiredName = (value: string, label: string) => {
   return normalized;
 };
 
-const unique = (values: readonly string[]) => [...new Set(values)];
+const unique = <T extends string>(values: readonly T[]): T[] => [...new Set(values)];
 
 const next = (
   current: MerchantPosConfiguration,
@@ -219,12 +219,9 @@ export const markMerchantEmployeePinConfigured = (input: {
   }
   const employee = input.config.employees.find((item) => item.id === input.employeeId);
   if (!employee) throw new PosConfigurationAdminError("EMPLOYEE_NOT_FOUND", "الموظف غير موجود.");
-  if (input.config.employees.some((item) => item.id !== input.employeeId && item.pinConfigured && item.id === `pin:${input.pin}`)) {
-    // No raw PIN is available in the public snapshot; production uniqueness is
-    // enforced by the credential store. This guard intentionally cannot pretend
-    // to prove uniqueness from the public merchant snapshot.
-    throw new PosConfigurationAdminError("EMPLOYEE_PIN_CONFLICT", "الرقم السري مستخدم لموظف آخر.");
-  }
+  // PIN uniqueness cannot be proven from the public merchant snapshot because
+  // raw credentials are intentionally absent. The credential-owning adapter
+  // enforces uniqueness before calling this pure state transition.
   return next(
     input.config,
     { employees: input.config.employees.map((item) => item.id === input.employeeId ? { ...item, pinConfigured: true } : item) },
