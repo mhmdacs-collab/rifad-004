@@ -1,5 +1,3 @@
-import type { DeliveryChannelKind } from "../../../../contracts/posConfiguration";
-
 export type CurrencyCode = "SAR";
 
 export type Money = Readonly<{
@@ -54,26 +52,11 @@ export type CustomerReference = Readonly<{
   details: CustomerDetails;
 }>;
 
-/**
- * Durable sale context for the currently executable delivery/COD path.
- * It answers both "where did this order come from?" and "how did the merchant
- * receive the money?" so cash/bank reporting never erases the sales channel.
- */
-export type DeliveryCollectionContext = Readonly<{
-  channelId: string;
-  channelName: string;
-  channelKind: DeliveryChannelKind;
-  paymentMode: "cash-on-delivery";
-  settlement: "courier-pays-merchant";
-  merchantCollection: "cash" | "card";
-}>;
-
 export type Ticket = Readonly<{
   id: string;
   sequence: number;
   lines: readonly TicketLine[];
   customer: CustomerReference | null;
-  deliveryCollection?: DeliveryCollectionContext | null;
   subtotal: Money;
   loyaltyRedemption: Money;
   taxIncluded: Money;
@@ -137,7 +120,6 @@ export type Receipt = Readonly<{
   employeeName: string;
   branchName: string;
   customer: CustomerReference | null;
-  deliveryCollection?: DeliveryCollectionContext | null;
 }>;
 
 export type PrintDeliveryStatus = "idle" | "queued" | "printed" | "failed" | "delivery-unknown";
