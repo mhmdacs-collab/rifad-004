@@ -2,17 +2,19 @@ import { useState } from "react";
 import type { CatalogAdminContract } from "../../../contracts/catalog";
 import type { PosConfigurationAdminContract } from "../../../contracts/posConfigurationAdmin";
 import BackOfficeApp from "./BackOfficeApp";
+import PaymentAndDeliverySettingsApp from "./PaymentAndDeliverySettingsApp";
 import PosOperationalConfigApp from "./PosOperationalConfigApp";
 import { getBackOfficePosConfigurationAdmin } from "./runtime/backOfficePosConfiguration";
 import "./pos-operational-config.css";
+import "./payment-delivery-settings.css";
 
-type BackOfficeArea = "catalog" | "operations";
+type BackOfficeArea = "catalog" | "operations" | "payments";
 
 const BACK_OFFICE_AREA_KEY = "rifad.backoffice.active-area.v1";
 
 const initialArea = (): BackOfficeArea => {
   const stored = window.localStorage.getItem(BACK_OFFICE_AREA_KEY);
-  return stored === "catalog" || stored === "operations" ? stored : "catalog";
+  return stored === "catalog" || stored === "operations" || stored === "payments" ? stored : "catalog";
 };
 
 export default function App({
@@ -47,8 +49,20 @@ export default function App({
         >
           إدارة الموظفين والإعدادات
         </button>
+        <button
+          aria-label="الدفع والتوصيل"
+          className={area === "payments" ? "is-active" : ""}
+          type="button"
+          onClick={() => openArea("payments")}
+        >
+          الدفع والتوصيل
+        </button>
       </div>
-      {area === "catalog" ? <BackOfficeApp catalog={catalog} /> : <PosOperationalConfigApp admin={posConfiguration} />}
+      {area === "catalog"
+        ? <BackOfficeApp catalog={catalog} />
+        : area === "operations"
+          ? <PosOperationalConfigApp admin={posConfiguration} />
+          : <PaymentAndDeliverySettingsApp admin={posConfiguration} />}
     </>
   );
 }
