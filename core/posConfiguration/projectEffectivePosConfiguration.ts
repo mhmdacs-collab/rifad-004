@@ -1,8 +1,13 @@
 import {
   POS_CONFIGURATION_CONTRACT_VERSION,
+  POS_PERMISSION_KEYS,
   type EffectivePosConfiguration,
+  type PosPermissionKey,
 } from "../../contracts/posConfiguration";
-import type { MerchantPosConfiguration } from "../../contracts/posConfigurationAdmin";
+import type {
+  MerchantPermissionKey,
+  MerchantPosConfiguration,
+} from "../../contracts/posConfigurationAdmin";
 
 export class PosConfigurationProjectionError extends Error {
   constructor(readonly code: string, message: string) {
@@ -10,6 +15,10 @@ export class PosConfigurationProjectionError extends Error {
     this.name = "PosConfigurationProjectionError";
   }
 }
+
+const POS_PERMISSION_SET = new Set<string>(POS_PERMISSION_KEYS);
+const isPosPermissionKey = (permission: MerchantPermissionKey): permission is PosPermissionKey =>
+  POS_PERMISSION_SET.has(permission);
 
 /**
  * Projects owner-managed merchant policy into the exact branch/device-local
@@ -72,7 +81,10 @@ export const projectEffectivePosConfiguration = (input: {
     .map((role) => ({
       roleId: role.id,
       roleName: role.name,
-      permissions: [...role.permissions],
+      // One merchant role spans the product, but a branch POS receives only
+      // the locally enforceable POS capabilities. Back Office-only rights stay
+      // in the owner source model.
+      permissions: role.permissions.filter(isPosPermissionKey),
     }));
 
   const paymentMethods = source.paymentTypes
