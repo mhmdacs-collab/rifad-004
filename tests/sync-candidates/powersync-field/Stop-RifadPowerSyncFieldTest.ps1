@@ -13,9 +13,13 @@ if (-not (Test-Path $StateFile)) {
 
 $state = Get-Content -Raw $StateFile | ConvertFrom-Json
 
+# Start-RifadPowerSyncFieldTest.ps1 launches backend/Vite through cmd.exe /k.
+# Stopping only the recorded cmd.exe PID can orphan the child node.exe process,
+# leaving ports 8787/4173 occupied on the next run. Kill the whole Windows
+# process tree rooted at each recorded launcher PID instead.
 foreach ($pidValue in @($state.backendPid, $state.webPid)) {
   if ($pidValue) {
-    Stop-Process -Id ([int]$pidValue) -Force -ErrorAction SilentlyContinue
+    & taskkill.exe /PID ([string][int]$pidValue) /T /F 2>$null | Out-Null
   }
 }
 
