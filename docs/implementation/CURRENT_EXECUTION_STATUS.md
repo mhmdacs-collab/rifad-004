@@ -60,7 +60,7 @@ The merchant may hide/re-show these methods without deleting their stable meanin
 - The local effective configuration survives restart and repairs an older restored-device binding before reading payment policy.
 - The visible **دفع** action enforces `accept-payment`; manager approval is command-scoped and never elevates the cashier session.
 - POS payment selection is **N-method and configuration-driven**, not a hard-coded Cash/Card list.
-- Up to five visible choices retain the comfortable single-column treatment; larger sets use a compact two-column tablet layout, with constrained phone layouts returning to one column instead of shrinking touch targets.
+- Payment cards use one full-width touch column with Arabic primary + English secondary labels and no permanent explanatory description; larger configured sets scroll vertically instead of shrinking cards or switching to a dense multi-column payment grid.
 - **آجل** is a first-class default payment choice and opens the existing customer-credit flow.
 - Merchant-defined methods occupy the same surface. Methods whose completion lifecycle is not yet implemented are visible but disabled rather than silently completing as another payment type.
 
@@ -114,7 +114,7 @@ Evidence now proves:
 5. visible authorization deny/one-action override work;
 6. Cash / Network / Credit are the three starter methods and preserve direct impact;
 7. payment order survives projection/restart;
-8. six configured methods trigger the compact two-column payment layout;
+8. larger configured payment sets preserve one-column touch geometry and expose a scroll-list contract; default methods render concise Arabic + English labels without permanent descriptions;
 9. Credit dispatches from the payment surface to the customer-credit flow;
 10. delivery policy persists in Back Office staging;
 11. only executable courier-pays-merchant COD channels produce the Delivery hub;
