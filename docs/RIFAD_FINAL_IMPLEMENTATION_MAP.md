@@ -1,6 +1,6 @@
 # Rifad Final Implementation Map
 
-Status: **OWNER-APPROVED EXECUTION ROADMAP**
+Status: **OWNER-APPROVED EXECUTION ROADMAP — MAP-00 PASS**
 
 Date: 2026-08-19
 
@@ -20,9 +20,9 @@ It converts the current product/code review into one dependency-ordered plan so 
 
 It does **not** freeze the final production SQL/domain model. D-030 remains valid: durable product meanings must be discovered through real product flows before final schema freeze.
 
-It also does **not** discard the synchronization evidence already produced. Existing CouchDB/PowerSync proofs remain valuable research/adoption evidence. The new execution order simply stops additional synchronization adoption work until the POS operational core and production local-persistence gate below are complete enough to test the real Rifad facts.
+It also does **not** discard the synchronization evidence already produced. Existing CouchDB/PowerSync proofs remain valuable research/adoption evidence. The execution order stops additional synchronization adoption work until the POS operational core and production local-persistence gate below are complete enough to test the real Rifad facts.
 
-When this document conflicts with higher-authority files, `PROJECT_RULES.md` and `docs/architecture/CURRENT_DECISIONS.md` still win until the conflicting decision is explicitly reconciled. Therefore `MAP-00` includes the required authority reconciliation before new feature implementation.
+D-033 in `docs/architecture/CURRENT_DECISIONS.md` now explicitly reconciles this sequence with higher-authority project decisions.
 
 ---
 
@@ -43,17 +43,17 @@ When this document conflicts with higher-authority files, `PROJECT_RULES.md` and
 
 ## 3. Current truth baseline
 
-The current POS is already beyond the first retail demo slice. The code contains device linking, employee PIN, catalog/search, touch sale pages, cart editing, quantity keypad, cash checkout/change, mock card flow, customer/credit/loyalty proofs, receipts/reprint, restaurant local-service flow, local persistence contracts and transactional outbox behavior.
+The current POS is already beyond the first retail demo slice. The code contains device linking, employee PIN, catalog/search, touch sale pages, cart editing, quantity keypad, cash checkout/change, mock card flow, customer/credit/loyalty behavior, receipts/reprint/email behavior, restaurant local-service flow, local persistence contracts and transactional outbox behavior.
 
-However, the current binding UI manifest and some documentation lag behind the code. Example: `ReceiptsScreen.tsx` currently declares `data-screen-id="POS-SCREEN-012"`, while the manifest reserves `POS-SCREEN-012` for **Save Open Ticket** and `POS-SCREEN-016` for **Receipts List**. This must be corrected before expanding the execution surface.
+MAP-00 corrected the stable Receipts screen identity to `POS-SCREEN-016`, reconciled already-existing customer/credit/loyalty, mock-card, receipt and sale-page editing behavior into the UI manifest, and updated the field/progress/continuation records without promoting mock/staging behavior into production claims.
 
-The current local persistence implementation is also explicitly staging (`browser-storage`). The contract foundation is retained, but the production local database remains unselected.
+The current local persistence implementation is explicitly staging (`browser-storage`). The contract foundation is retained, but the production local database remains unselected.
 
 The largest remaining product-model gaps are:
 
+- owner-managed effective POS configuration and local authorization;
 - shift lifecycle and cash drawer accounting;
-- employee permissions and one-action manager override;
-- owner/Back Office configuration projected into the POS;
+- time clock;
 - complete sold-line truth for pricing options, add-ons, discounts, taxes and fulfillment;
 - complete open-ticket/order lifecycle;
 - durable payment records, split-payment-ready model, receipt detail and refund lifecycle;
@@ -67,7 +67,7 @@ The largest remaining product-model gaps are:
 
 | Map ID | Capability / gate | Depends on | Main owner of truth | Outcome |
 |---|---|---|---|---|
-| `MAP-00` | Reality + authority reconciliation | current branch | Documentation / product authority | Manifest, field register, progress and sequencing match current code reality |
+| `MAP-00` | Reality + authority reconciliation | current branch | Documentation / product authority | **PASS — 2026-08-19** |
 | `MAP-01` | Effective POS configuration + authorization model | MAP-00 | Owner/Back Office defines; POS consumes locally | POS knows enabled features, methods, permissions and manager overrides without cloud dependency during work |
 | `MAP-02` | Shift, cash drawer ledger and time clock | MAP-01 | POS operational truth | Complete cashier workday and cash accountability exist locally |
 | `MAP-03` | Complete sale-line truth | MAP-01 | POS sale/order truth | Options, add-ons, discounts, taxes, fulfillment and sold-price snapshots are durable |
@@ -87,22 +87,33 @@ The rule is simple: **do not restart synchronization adoption before `MAP-10`.**
 
 # 5. MAP-00 — Reality and authority reconciliation
 
+Status: **PASS — 2026-08-19**
+
 ## Objective
 
 Make the repository describe the product that actually exists before adding behavior.
 
-## Required work
+## Completed work
 
-- Audit implemented POS screens/actions/flows against `docs/ui/UI_EXECUTION_MANIFEST.json`.
-- Correct stable screen/action IDs where code and manifest disagree, beginning with the Receipts screen mismatch.
-- Update `docs/ui/UI_PROGRESS.md` to distinguish `implemented`, `partial`, `mock/proof`, `mapped` and `not started` accurately.
-- Update `docs/ui/POS_UI_NAMING_AND_FIELD_REGISTER.md` with already-existing customer credit, loyalty, receipt, restaurant and local-persistence durable meanings that are currently under-recorded.
-- Reconcile the execution wording in D-032 / documentation map / handoff so the owner-approved order is explicit: operational POS core → production local persistence → host/device proof → sync re-entry.
-- Do **not** implement new product behavior in this map item.
+- audited implemented POS/Back Office code and current contracts against the UI manifest;
+- corrected `ReceiptsScreen.tsx` from the reused `POS-SCREEN-012` ID to the reserved `POS-SCREEN-016` identity;
+- reconciled already-existing customer/credit/loyalty, mock-card, receipts/reprint and sale-page rename/move/delete behavior into `UI_EXECUTION_MANIFEST.json` without authorizing unrelated future scope;
+- reconciled Back Office catalog schema v4, catalog visual identity and category/option/add-on color behavior;
+- updated `UI_PROGRESS.md` to reflect the real POS, Back Office, local-persistence and sync-evidence states;
+- expanded `POS_UI_NAMING_AND_FIELD_REGISTER.md` to cover effective configuration/authorization, shift/cash/time-clock gaps, payment normalization, local persistence/outbox infrastructure facts and current event families;
+- added `MAP_00_REALITY_AUTHORITY_RECONCILIATION.md` as the detailed product/code/docs audit;
+- added D-033 and revised D-030/D-032 sequencing so operational POS core → production local persistence → host/device proof → sync re-entry is explicit;
+- updated repository/documentation entry points and the current handoff;
+- preserved all existing synchronization evidence without selecting a provider;
+- introduced no new business feature in MAP-00.
+
+## Verification
+
+The GitHub **UI manifest integrity**, **POS application** and **Back Office application** workflows passed on the reconciled branch head after these changes. Sync-candidate workflows may still run automatically on repository pushes, but they are not the current execution lane.
 
 ## Exit gate
 
-`MAP-00 PASS` only when a new session can read the manifest/progress/field register and reach the same current-state conclusion as the code review.
+`MAP-00 PASS`: a new session reading the authority decisions, final map, manifest, progress and field register should reach the same current-state conclusion as the code review.
 
 ---
 
@@ -213,7 +224,7 @@ Existing manifest references already reserve:
 - `POS-SCREEN-020` — Current Shift;
 - `POS-SCREEN-021` — Close Shift and Reports.
 
-`MAP-00` must make these ready through bounded flows before implementation.
+These remain mapped until the bounded MAP-02 manifest/flow is made ready after MAP-01.
 
 ## Offline rules
 
@@ -345,11 +356,11 @@ Cash remains locally completable. Integrated terminal methods remain separate ad
 
 Manifest references:
 
-- `POS-SCREEN-016` — Receipts List;
-- `POS-SCREEN-017` — Receipt Detail;
-- `POS-SCREEN-018` — Refund;
-- `POS-SCREEN-010` — Split Payment;
-- `POS-SCREEN-009` — Integrated Payment.
+- `POS-SCREEN-016` — Receipts List — CURRENT executable list/reprint;
+- `POS-SCREEN-017` — Receipt Detail — mapped;
+- `POS-SCREEN-018` — Refund — mapped;
+- `POS-SCREEN-010` — Split Payment — mapped;
+- `POS-SCREEN-009` — existing mock Card/Mada UX only; production terminal support remains separate.
 
 Required core behavior before database adoption:
 
@@ -437,8 +448,6 @@ Required proof:
 
 Do not mix this with cloud sync.
 
-Minimum hardware lanes:
-
 ### Barcode scanner
 
 - HID scanner baseline;
@@ -513,7 +522,7 @@ The selected synchronization provider must remain transport/replication infrastr
 - source-of-truth write API;
 - local business state meaning.
 
-Final adoption requires the remaining license/topology/auth/secret/backup/restore/upgrade/rollback/observability gates plus real Windows and tablet evidence. Existing PowerSync leadership in technical proofs is evidence, not automatic adoption.
+Final adoption requires the remaining license/topology/auth/secret/backup/restore/upgrade/rollback/observability gates plus real Windows and tablet evidence. Existing PowerSync technical evidence is evidence, not automatic adoption.
 
 `MAP-10 PASS` ends with one recorded adoption decision or an explicit rejection/next-candidate decision.
 
@@ -661,8 +670,8 @@ Applicable evidence must include:
 
 # 21. Immediate next action
 
-The next implementation task is **`MAP-00 — Reality and authority reconciliation` only**.
+`MAP-00` is complete and verified.
 
-Do not start Shift UI, new database code or synchronization work in the same change.
+**Do not start MAP-02, database selection or synchronization.**
 
-`MAP-00` should produce a clean, code-accurate manifest/progress/field register and reconcile the documented execution sequence. Then stop for owner review before `MAP-01` begins.
+The next product capability is **`MAP-01 — Effective POS Configuration + Authorization`**, but begin it only after owner review of the MAP-00 reconciliation. MAP-01 must first map/approve its bounded screens/actions/contracts and clarify the owner→POS effective configuration model before implementing shift/refund/payment authorization behavior.
