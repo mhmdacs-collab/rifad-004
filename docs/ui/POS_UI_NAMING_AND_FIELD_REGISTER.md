@@ -2,625 +2,314 @@
 
 Last updated: 2026-08-20
 
-## Purpose
+Status: **CURRENT — MAP-01 payment/direct-impact/delivery-collection closeout reconciled**
 
-Canonical register for POS-facing terminology, executable fields, mock/staging proof fields, durable production requirements, integration reservations, derived values and UI-only state. Back Office fields that directly define POS business data are also recorded while the shared product model is being discovered.
+This register is the canonical traceability index between visible POS/Back Office concepts and durable Rifad-owned meanings. It prevents UI-first work from silently creating unnamed database/business facts.
 
-This is **not** a frozen SQL schema. It is the traceability bridge between visible product behavior, Rifad-owned contracts and future production persistence/synchronization.
+It must be read with:
 
-Use with `UI_EXECUTION_MANIFEST.json`, `DESIGN_AUTHORITY.md`, `UI_PROGRESS.md`, `docs/RIFAD_FINAL_IMPLEMENTATION_MAP.md`, current Rifad contracts/core/adapters and architecture capability boundaries.
+- `docs/ui/UI_EXECUTION_MANIFEST.json`
+- `docs/architecture/PAYMENT_AND_DELIVERY_COLLECTION_DECISION.md`
+- `docs/implementation/CURRENT_EXECUTION_STATUS.md`
 
-## Status legend
+## 1. Classification
 
-- **CURRENT** — exists in the current executable Rifad model/contract and established runtime.
-- **CURRENT-MOCK** — exists in executable UI-proof/mock/staging behavior; proves interaction/meaning but is not yet the production durable implementation.
-- **REQUIRED-GAP** — approved/necessary durable product data still missing from the production-target contract/model.
-- **RESERVED-INTEGRATION** — required before a named real integration is claimed.
-- **DERIVED** — calculated from authoritative facts.
-- **UI-ONLY** — presentation state that should not become durable truth merely because it appears in UI.
-
----
-
-# 1. Canonical cashier terminology
-
-| Concept | Label | Status / meaning |
-| --- | --- | --- |
-| Touch/page grid | **شاشة لمس** | CURRENT |
-| Search/barcode-first | **البيع السريع** | CURRENT; internal `basic` compatibility may remain |
-| General checkout | **دفع** | CURRENT; MAP-01 now gates entry with `accept-payment` |
-| Restaurant local alternative | **محلي** | CURRENT-MOCK in POS-FLOW-002; simple → checkout, advanced → place selector |
-| Advanced open local orders | **طلبات مفتوحة** | CURRENT-MOCK; may display `طلبات مفتوحة · N` |
-| Update reopened advanced local order | **إرسال** | CURRENT-MOCK; mock kitchen revision/update only |
-| Credit sale | **آجل** | CURRENT |
-| Cash/debt completion | **سداد** | CURRENT |
-| Attach customer | **إضافة عميل إلى التذكرة** | CURRENT |
-| Clear basket | **مسح السلة** | CURRENT |
-| Legacy generic ticket save | **حفظ** | CURRENT behavior exists through SalesContract; dedicated open-ticket UI family remains incomplete |
-| Receipts | **الإيصالات** | CURRENT executable list/reprint screen (`POS-SCREEN-016`) |
-
-Do not use **سداد** as the general sales-screen checkout label.
-
-## Fulfillment / kitchen-service meaning
-
-Target durable field: `fulfillmentMode`.
-
-| Durable value | Arabic | Production status |
-| --- | --- | --- |
-| `takeaway` | **سفري** | REQUIRED-GAP; currently inferred/presented by restaurant prototype |
-| `dine_in` | **محلي** | REQUIRED-GAP; current proof keeps local context in mock service state |
-| `delivery` | **توصيل** | REQUIRED-GAP; future delivery-channel flow |
-
-The old visible **محلي / سفري / توصيل** selector is superseded and hidden in the normal current local-service UI. Do not promote its old `orderType` shape into production schema.
-
----
-
-# 2. Product / catalog / pricing
-
-`BO-FLOW-002` is the executable cross-surface catalog discovery slice. It uses Rifad-owned `CatalogAdminContract` / `CatalogReadContract` meanings shared with the POS catalog adapter. The current browser transport and **schema-v4** snapshot are staging proof only; these fields are not a frozen SQL schema.
-
-Merchant-facing terminology:
-
-- **سعر واحد** — one fixed direct price;
-- **أسعار متعددة** — price depends on an option such as size;
-- **مجموعات الخيارات** — reusable option/price sets shared by many items;
-- **مجموعة جاهزة** — item uses one reusable option group;
-- **خيارات خاصة بهذا الصنف** — non-reusable item-only price choices;
-- **تخصيص الأسعار لهذا الصنف** — sparse overrides while retaining the shared group;
-- **الإضافات العامة** — reusable add-on groups;
-- **إضافات خاصة بهذا الصنف** — item-private add-on groups;
-- **العرض في نقطة البيع** — item representation by color/shape or image.
-
-| Field | Status | Reason |
-| --- | --- | --- |
-| `id` | CURRENT / CURRENT-MOCK shared catalog | stable Rifad identity reused by Back Office and POS |
-| `name` | CURRENT | Back Office display/edit, POS tile/ticket/search |
-| `description` | CURRENT-MOCK | visible/editable in BO-FLOW-002; future durable description |
-| `categoryId` / `categoryName` | CURRENT-MOCK shared catalog | category selection and POS presentation; normalized production storage not frozen |
-| category `color` | CURRENT-MOCK | merchant-managed scanning/identity aid |
-| `price` (`Money`) | CURRENT / CURRENT-MOCK | fixed-price authority; multiple-price staging uses convenience minimum preview only |
-| `pricing.mode = fixed | option-group | custom-options` | CURRENT-MOCK | explicit fixed vs multiple-price policy |
-| option-group `id/name/color` | CURRENT-MOCK | reusable merchant pricing group |
-| option-group value `id/name/price` | CURRENT-MOCK | stable value and exact default price |
-| `pricing.groupId` | CURRENT-MOCK | selected reusable group |
-| `pricing.priceMode = inherit | custom` | CURRENT-MOCK | inheritance vs sparse override |
-| `pricing.overrides[].valueId/price` | CURRENT-MOCK | only changed item-specific prices |
-| item-private pricing `name/values[].id/name/price` | CURRENT-MOCK | non-reusable multiple prices |
-| `sku` | CURRENT-MOCK / production durable required | BO list/editor and POS staging search |
-| `barcode` | CURRENT-MOCK / production durable required | BO list/editor and POS staging exact search; scanner hardware not proven |
-| `availableForSale` | CURRENT-MOCK | false keeps item manageable but excludes it from current sellable POS catalog |
-| `soldBy = each` | CURRENT-MOCK fixed | weight/volume behavior remains REQUIRED-GAP |
-| `appearance.mode = color | image` | CURRENT-MOCK | merchant-selected POS representation |
-| `appearance.color` | CURRENT-MOCK | item accent color |
-| `appearance.shape = square | rounded | circle` | CURRENT-MOCK | merchant-owned appearance semantics |
-| `appearance.imageDataUrl` | CURRENT-MOCK staging transport | browser-only media transport; production asset identity remains open |
-| `createdAt` / `updatedAt` | CURRENT-MOCK | staging lifecycle evidence |
-| `modifierGroupIds[]` | CURRENT-MOCK | reusable add-on groups assigned to item |
-| general add-on group `id/name/color` | CURRENT-MOCK | reusable add-on group |
-| general add-on option `id/name/price` | CURRENT-MOCK | exact additional price |
-| `privateModifierGroups[].id/name` | CURRENT-MOCK | item-private add-on group |
-| private add-on option `id/name/price` | CURRENT-MOCK | item-private exact additional price |
-| legacy `variantOptions[]` / `variants[]` | CURRENT-MOCK migration-only | old staging compatibility, not target merchant model |
-| `abbreviation` | DERIVED | compact POS helper derived from name |
-| channel pricelist/product override | REQUIRED-GAP | delivery/channel pricing |
-| branch/store-specific availability/price | REQUIRED-GAP | future branch-aware catalog configuration |
-| cost / inventory tracking / low-stock threshold | REQUIRED-GAP | dedicated inventory/product flow required |
-| tax assignment | REQUIRED-GAP | MAP-03 configuration/sale-truth work |
-| composite structure | REQUIRED-GAP | dedicated product flow |
-| production media asset/storage identity | REQUIRED-GAP | browser image Data URL is staging only |
-| `tone` | UI-ONLY | older prototype visual treatment |
-
-### Pricing-option / add-on safety boundary
-
-The current POS does **not** yet consume option-priced items or add-ons. `CatalogReadContract.listItems()` hides option-priced items by default until an approved cashier chooser exists. Back Office explicitly opts in with `includeOptionPriced: true`.
-
-Before cashier sale, production must snapshot at least:
-
-- selected option group/value identity and display text;
-- exact resolved sold price;
-- selected general/private add-ons and exact additional prices;
-- discount/tax effects applicable to the line;
-- kitchen/receipt presentation where applicable.
-
-Completed receipts must preserve historical product/name/effective-price facts even after later catalog edits.
-
----
-
-# 3. Sale pages / cashier layout
-
-Current `SaleLayoutContract` behavior is CURRENT:
-
-- list pages;
-- create page;
-- rename page;
-- delete page;
-- move/reorder page;
-- place product in a slot;
-- remove product from a slot.
-
-Current sale-page layout is operational POS configuration/state in the staging runtime. Final owner-vs-device scope and production persistence are not frozen.
-
-Selected page tab, drag/hover/temporary modal state and scroll positions are UI-ONLY.
-
----
-
-# 4. Ticket / working sale
-
-CURRENT: `id`, `sequence`, `lines`, customer concept, subtotal, loyalty redemption, tax included, total, updatedAt.
-
-| Field | Status | Reason |
-| --- | --- | --- |
-| `fulfillmentMode` | REQUIRED-GAP | authoritative takeaway/dine-in/delivery |
-| `salesChannelId` | REQUIRED-GAP | direct vs platform source |
-| `priceContextId` / pricelist evidence | REQUIRED-GAP | branch/channel pricing |
-| `placeGroupId` | REQUIRED-GAP | advanced local relation |
-| `servicePlaceId` | REQUIRED-GAP | exact service place |
-| durable open-order ID/status/revision | REQUIRED-GAP | production lifecycle |
-| created timestamp | REQUIRED-GAP | audit/elapsed time |
-| stable branch/device/employee refs | REQUIRED-GAP | audit and future routing |
-| kitchen sent quantities/revisions | REQUIRED-GAP | preparation delta/retry safety |
-
-Current `TicketLine`: `id`, `productId`, `name`, `unitPrice`, `quantity`; line total is DERIVED.
-
-Production TicketLine REQUIRED-GAP:
-
-- selected pricing-option snapshot;
-- selected reusable/private add-on snapshots;
-- exact effective sold-price source/context;
-- discount snapshot/allocation where applicable;
-- tax snapshot/allocation where applicable;
-- fulfillment/preparation facts where applicable;
-- line comment if the approved cashier flow introduces it;
-- kitchen sent quantity/revision when preparation exists.
-
-A newly added line uses catalog facts resolved at the time it is added. Later Back Office edits must not silently rewrite a completed receipt.
-
----
-
-# 5. Restaurant service configuration / open orders
-
-`POS-FLOW-002` uses `RestaurantServiceContract` and current local staging implementation.
-
-These remain **CURRENT-MOCK** product evidence, not final production persistence.
-
-## RestaurantServiceConfig
-
-| Field | Status | Meaning |
-| --- | --- | --- |
-| `restaurantServiceEnabled` | CURRENT-MOCK / production REQUIRED-GAP | enables restaurant semantics; MAP-01 also carries an owner feature flag but the old prototype config is not yet migrated |
-| `placeManagementEnabled` | CURRENT-MOCK / production REQUIRED-GAP | enables exact place workflow; owner-managed full restaurant configuration remains later work |
-
-## PlaceGroup
-
-CURRENT-MOCK: `id`, `name`, `places[]`. Current default: exactly one group **الطاولات** with **طاولة 1..6**. Production still needs branch scope, display order, active state and owner/Back Office configuration.
-
-## ServicePlace
-
-CURRENT-MOCK: `id`, `placeGroupId`, `name`. Production active state/order are REQUIRED-GAP; capacity/seats/x/y/shape are not added unless later UI/product scope approves them.
-
-## OpenLocalOrder
-
-CURRENT-MOCK:
-
-- `id`, `commandId`;
-- stored Ticket snapshot;
-- place-group/place IDs + names;
-- `openedAt`, `updatedAt`;
-- `kitchenRevision`.
-
-Production requires authoritative open-order status/revision/ownership, safe update/void rules, local persistence, future multi-device coordination and real kitchen dispatch semantics. Do not freeze the mock snapshot as database schema.
-
----
-
-# 6. Customer / debt / loyalty
-
-## Customer
-
-CURRENT: `id`, `name`, `mobile`, email, address, city, region, postalCode, country, customerCode, optional taxNumber, note and current debt convenience balance.
-
-Current create/edit enforces the local Saudi `05XXXXXXXX` proof rule. Tax-number presence alone is not ZATCA-compliance evidence.
-
-CURRENT executable customer behavior includes search/create/update/attach/remove/profile/purchase history.
-
-## Debt
-
-`DebtLedgerEntry` CURRENT: ID/customer, kind `opening | credit-sale | payment`, direction `debit | credit`, amount, createdAt and related ticket sequence when applicable.
-
-CURRENT executable behavior includes credit sale and debt settlement.
-
-Future permissions, credit limit, due dates, aging, statement export and accounting integration are REQUIRED-GAP/unscoped.
-
-## Loyalty
-
-CURRENT contract/proof meanings include program configuration, customer balance/status, qualifying purchases, redemption quote/applied redemption, loyalty earned and purchase history.
-
-Production eventually needs durable loyalty transaction/audit evidence and owner-managed program policy.
-
----
-
-# 7. Effective configuration / authorization — MAP-01 PASS
-
-MAP-01 is no longer an undefined product-model gap. The Rifad-owned configuration/authorization meaning is established and executable with current browser staging transports. Production storage/transport/security remain later gates.
-
-## Owner/Back Office merchant configuration
-
-`MerchantPosConfiguration` / `PosConfigurationAdminContract` CURRENT at the contract/domain level and CURRENT-MOCK at the browser staging transport level.
-
-| Meaning | Status |
+| Class | Meaning |
 | --- | --- |
-| configuration revision / updatedAt | CURRENT / CURRENT-MOCK transport |
-| Stores: id/name/address/phone/taxRegistrationNumber/description/active | CURRENT / CURRENT-MOCK transport |
-| POS Devices: id/name/storeId/status | CURRENT / CURRENT-MOCK transport |
-| Roles: id/name/explicit permissions/ownerRole | CURRENT / CURRENT-MOCK transport |
-| Employees: id/name/email/phone/roleId/storeIds/active/pinConfigured | CURRENT / CURRENT-MOCK transport |
-| feature flags | CURRENT / CURRENT-MOCK transport |
-| Payment Types: id/name/kind/enabled/sortOrder/availability/storeIds | CURRENT / CURRENT-MOCK transport |
-| raw employee PIN | **must not be merchant configuration**; current staging adapter stores only a low-entropy proof fingerprint separately |
-| production credential verifier/lockout/host security | REQUIRED-GAP before production host/storage security gate |
+| `CURRENT` | durable/business meaning exists in a current Rifad contract/model/adapter |
+| `CURRENT-MOCK` | meaning exists and is exercised, but current transport/provider/runtime is staging/mock |
+| `REQUIRED-GAP` | visible/product-required durable fact still needs its owning contract/lifecycle |
+| `RESERVED-INTEGRATION` | identity/field is reserved for a later external provider/hardware integration |
+| `DERIVED` | calculated from authoritative fields; should not become competing source-of-truth state |
+| `UI-ONLY` | presentation state only; must not create a business/database field |
+
+## 2. Device and employee session
+
+| Visible/business concept | Canonical meaning | Class | Notes |
+| --- | --- | --- | --- |
+| Device ID | stable POS node identity | `CURRENT-MOCK` | current device-link runtime is staging |
+| Device name | cashier-facing POS device label | `CURRENT-MOCK` | projected/store-linked meaning exists |
+| Branch/store ID | store scope for the POS node | `CURRENT-MOCK` | effective configuration is branch/device scoped |
+| Branch/store name | cashier-facing branch label | `CURRENT-MOCK` | presentation from bound context |
+| Linked account/email | current device-link credential context | `CURRENT-MOCK` | not final merchant account/security model |
+| Employee ID | stable acting employee identity | `CURRENT-MOCK` | local authorization evaluates this ID |
+| Employee name | cashier-facing employee name | `CURRENT-MOCK` | not authorization authority by itself |
+| Role ID | stable role identity | `CURRENT-MOCK` | role name is never permission authority |
+| Role name | display label | `CURRENT-MOCK` | explicit capability list owns authorization |
+| Four-digit PIN | employee/manager local credential input | `CURRENT-MOCK` | raw PIN must not be persisted in public config/audit; production verifier/lockout remains later security work |
+
+## 3. Effective POS configuration and authorization
+
+Current local namespace: `pos.effective-configuration`.
+
+| Field / concept | Canonical meaning | Class | Notes |
+| --- | --- | --- | --- |
+| contract version | Rifad configuration contract version | `CURRENT` | provider-independent |
+| schema version | local effective-snapshot schema | `CURRENT-MOCK` | current browser persistence transport is staging |
+| revision | merchant-policy revision projected to POS | `CURRENT-MOCK` | used by authorization/audit evidence |
+| effective timestamp | time snapshot became effective | `CURRENT-MOCK` | local projection evidence |
+| branch ID | exact target branch | `CURRENT-MOCK` | projection rejects unavailable/mismatched branch |
+| device ID | exact target POS device | `CURRENT-MOCK` | projection rejects unavailable/mismatched device |
+| features | owner-managed operational switches | `CURRENT-MOCK` | feature switch does not imply owning MAP feature is implemented |
+| role permissions | explicit locally enforceable POS capabilities | `CURRENT-MOCK` | Back Office-only permissions stripped from POS projection |
+| employee branch scope | branches employee may act in | `CURRENT-MOCK` | evaluated locally |
+| employee active state | whether employee can act | `CURRENT-MOCK` | evaluated locally |
+
+Current authorization namespace: `pos.authorization-audit`.
+
+Current event family:
+
+- `authorization.manager-override-approved.v1`
+
+Manager override fields are CURRENT-MOCK: actor employee, approver employee, capability, branch, command, target, timestamp and config revision. Raw manager PIN is never an audit/configuration field.
+
+## 4. Catalog and sale layout
+
+| Concept | Canonical meaning | Class | Notes |
+| --- | --- | --- | --- |
+| Item ID/name | stable sellable catalog identity | `CURRENT-MOCK` | current browser catalog adapter is staging |
+| Category ID/name | catalog grouping | `CURRENT-MOCK` | current Back Office management exists |
+| SKU | merchant item stock-keeping identity | `CURRENT-MOCK` | searchable in Back Office |
+| Barcode | merchant scan/search identity | `CURRENT-MOCK` | current POS hardware scanning is not claimed |
+| Available for sale | whether item may appear in sellable POS catalog | `CURRENT-MOCK` | Back Office unavailable item remains manageable |
+| Base price | exact SAR Money in halalas | `CURRENT-MOCK` | no floating-point authority |
+| Pricing mode | fixed / reusable option group / item-private choices | `CURRENT-MOCK` | cashier option selection remains MAP-03 gap |
+| Add-on groups | reusable/private add-on configuration | `CURRENT-MOCK` | POS selection/rules remain MAP-03 gap |
+| Item appearance | merchant POS color/shape/image staging meaning | `CURRENT-MOCK` | not sale truth |
+| Sale page ID/name | stable tablet sale-page identity | `CURRENT-MOCK` | current local layout contract |
+| Product slot | desired product assigned to stable sale-page slot | `CURRENT-MOCK` | layout persists locally |
+
+## 5. Ticket / sale-money truth
+
+| Concept | Canonical meaning | Class | Notes |
+| --- | --- | --- | --- |
+| Ticket ID | stable working sale identity | `CURRENT-MOCK` | current runtime/local journal |
+| Ticket sequence | cashier-facing sequence | `CURRENT-MOCK` | current mock sequencing |
+| Ticket line ID | stable current line identity | `CURRENT-MOCK` | quantity mutations target it |
+| Product snapshot name/price | current sold-line base facts | `CURRENT-MOCK` | exact option/add-on/tax/discount sold snapshot remains MAP-03 |
+| Quantity | exact desired line quantity | `CURRENT-MOCK` | set semantics, not replayed increment authority |
+| Customer reference | attached customer identity/details | `CURRENT-MOCK` | current customer-credit model |
+| Subtotal | exact Money | `DERIVED` | from authoritative current lines |
+| Loyalty redemption | exact applied redemption Money | `CURRENT-MOCK` | existing local behavior |
+| Tax included | current mock derived tax amount | `CURRENT-MOCK` | final tax assignment/sold snapshot remains MAP-03 |
+| Total | exact Money payable for current implemented sale facts | `DERIVED` | self-delivery fee is NOT included until its sale-money contract is implemented |
+
+### Required later sold-line fields
+
+`REQUIRED-GAP` for MAP-03 includes resolved pricing-option identity/value, selected add-ons and exact added amounts, discount snapshot, tax snapshot and any other sale-line choice that changes durable sold truth.
+
+## 6. Payment methods — current MAP-01 meaning
+
+A Payment Type identifies **how the merchant's right is collected/held**, not merely a button label.
+
+### 6.1 Stable starter methods
+
+A new merchant configuration begins with:
+
+| Stable method | Operational kind | Direct impact | Class |
+| --- | --- | --- | --- |
+| نقدي | `cash` | `cash` | `CURRENT-MOCK` |
+| شبكة / مدى | `card` | `bank` | `CURRENT-MOCK` |
+| آجل | `customer-credit` | `customer-receivable` | `CURRENT-MOCK` |
+
+The merchant may hide/re-show and reorder these methods without deleting their stable meaning. Additional merchant methods can be added.
+
+### 6.2 Payment Type fields
+
+| Field | Canonical meaning | Class | Notes |
+| --- | --- | --- | --- |
+| payment method ID | stable method identity | `CURRENT-MOCK` | default or merchant-defined |
+| name | cashier-facing method label | `CURRENT-MOCK` | may be merchant-defined |
+| operational kind | cash/card/customer-credit/custom | `CURRENT-MOCK` | controls currently available completion adapter |
+| enabled | whether method appears as a payment choice | `CURRENT-MOCK` | hidden is not deleted |
+| sort order | merchant-defined display order | `CURRENT-MOCK` | projected to POS |
+| availability | offline-capable / online-required | `CURRENT-MOCK` | final provider connectivity policy may specialize this |
+| store IDs | optional branch scope | `CURRENT-MOCK` | empty = all stores in current admin semantics |
+| direct impact | `cash | bank | customer-receivable | external-platform` | `CURRENT-MOCK` | product meaning; not final accounting ledger implementation |
+| system default | `cash | network | credit | null` | `CURRENT-MOCK` | stable starter identity/migration meaning |
 
-`BO-FLOW-003` now provides executable Back Office administration for Employees, Access Rights, Features, Stores, POS Devices and Payment Types. Taxes/Discounts/Receipt/Open-ticket/Kitchen/Dining business semantics remain owned by their later map items even where feature keys already exist.
+### 6.3 Payment surface behavior
 
-## Effective POS projection
+| UI behavior | Class | Notes |
+| --- | --- | --- |
+| payment choices come from effective config | `CURRENT` | no hard-coded two-button payment rail |
+| one-column small method set | `UI-ONLY` | touch layout behavior |
+| two-column layout when visible choices exceed five | `UI-ONLY` | tablet/desktop presentation |
+| phone returns to one column | `UI-ONLY` | avoids shrinking touch targets |
+| Credit opens customer selection/credit charge | `CURRENT-MOCK` | reuses existing customer-credit contract |
+| unsupported custom financial lifecycle shown disabled | `CURRENT` | must never silently map to Cash/Card |
 
-`EffectivePosConfiguration` CURRENT contract/domain meaning and CURRENT-MOCK local staging persistence:
+### 6.4 Split payment
 
-- `contractVersion` / `schemaVersion`;
-- `revision` / `effectiveAt`;
-- `branchId` / `deviceId`;
-- feature flags;
-- enabled and branch-filtered payment methods + merchant order + availability;
-- branch-relevant employee snapshots;
-- POS-only role/capability snapshots.
+`POS-SCREEN-010` remains `REQUIRED-GAP` / MAP-05.
 
-`projectEffectivePosConfiguration()` is pure Rifad domain logic. It validates store/device relation, filters branch scope and removes Back Office-only rights before the snapshot reaches POS.
+Future split payment must allocate one sale across **any enabled Payment Types**, not a fixed Cash/Network pair. Required later durable facts include allocation/payment-record ID, payment-method ID, exact amount, lifecycle/status, provider/reference when applicable, idempotent completion and refund/reversal linkage.
 
-Real Back Office → POS transport is still REQUIRED-GAP for MAP-11. MAP-01 does not call its current test/staging assembly “synchronization”.
+## 7. Delivery channel and merchant collection
 
-## Employee authorization
+Delivery channel is deliberately separate from Payment Type.
 
-Legacy `EmployeeSession` remains CURRENT identity convenience: `employeeId`, `employeeName`, `roleName`. Role name is **not** authorization authority.
+A sale may therefore be simultaneously:
 
-Authorization facts established by MAP-01:
+- `channel = HungerStation`;
+- `merchant collection = cash`;
+- `direct impact = cash`.
 
-| Meaning | Status |
-| --- | --- |
-| concrete POS permission/capability set | CURRENT contract + CURRENT-MOCK local projection |
-| employee active state | CURRENT contract + CURRENT-MOCK local projection |
-| branch/store scope | CURRENT contract + CURRENT-MOCK local projection |
-| configuration revision/effective time | CURRENT contract + CURRENT-MOCK local projection |
-| local authorization decision + deny reason | CURRENT |
-| `accept-payment` visible checkout gate | CURRENT |
-| `reprint-resend-receipts` visible reprint gate | CURRENT |
-| one-action manager override request | CURRENT |
-| approval ID / actor / approver / capability / branch / command / target / approvedAt / configurationRevision | CURRENT contract + CURRENT-MOCK audit persistence |
-| raw manager PIN in approval/audit | forbidden; tests prove absence |
-| permanent cashier elevation after override | forbidden; tests prove next protected checkout requires a fresh approval |
+### 7.1 Delivery configuration fields
 
-Current local authorization can operate after restart from the effective snapshot without a live cloud call.
+| Field / concept | Canonical meaning | Class | Notes |
+| --- | --- | --- | --- |
+| delivery enabled | merchant enables delivery family | `CURRENT-MOCK` | disabled by default |
+| channel ID | stable delivery/source identity | `CURRENT-MOCK` | known or custom |
+| channel name | merchant-facing channel label | `CURRENT-MOCK` | examples: HungerStation, Keeta, Jahez |
+| channel kind | `platform | self-delivery | custom` | `CURRENT-MOCK` | source/operational classification |
+| brand key | known visual brand identity key | `CURRENT-MOCK` | visual mapping, not money authority |
+| channel enabled | whether channel is available to effective config | `CURRENT-MOCK` | branch scope also applies |
+| electronic payment enabled | platform/customer may be prepaid electronically | `CURRENT-MOCK` policy | settlement execution remains later |
+| COD enabled | channel supports payment at delivery | `CURRENT-MOCK` policy | execution additionally depends on settlement mode |
+| COD settlement | `courier-pays-merchant | platform-settlement` | `CURRENT-MOCK` | only courier-pays-merchant is executable now |
+| store IDs | optional delivery-channel branch scope | `CURRENT-MOCK` | projected locally |
 
----
+Known starter definitions are provisioned for HungerStation, Keeta, Jahez and self-delivery, plus custom channel creation. Starter delivery channels are hidden/disabled until enabled by the merchant.
 
-# 8. Shift / cash / time clock — MAP-02
+### 7.2 Current executable Delivery COD fields
 
-These meanings are REQUIRED-GAP and must be defined before production local-storage freeze because they are first-class cashier operational facts.
+Current local namespace: `pos.delivery-collection`.
 
-## Shift
+Current event families:
 
-Target meanings include at least:
+- `delivery.collection-set.v1`
+- `delivery.collection-cleared.v1`
+- `delivery.collection-receipt-attached.v1`
 
-- stable `shiftId`;
-- branch/device context;
-- openedBy employee;
-- `openedAt`;
-- opening cash amount;
-- current/open/closed status;
-- closedBy employee;
-- `closedAt`;
-- expected cash;
-- actual/count cash;
-- variance;
-- totals needed for X/current-shift and close/Z reporting without making report UI the source of truth.
+| Field | Canonical meaning | Class |
+| --- | --- | --- |
+| ticket ID | sale being collected through delivery channel | `CURRENT-MOCK` |
+| receipt ID | completed receipt association, nullable before completion | `CURRENT-MOCK` |
+| channel ID/name/kind | durable source/channel context | `CURRENT-MOCK` |
+| payment mode | current executable value `cash-on-delivery` | `CURRENT-MOCK` |
+| settlement | current executable value `courier-pays-merchant` | `CURRENT-MOCK` |
+| merchant collection | `cash | card` | `CURRENT-MOCK` |
+| created/updated timestamps | local collection-context lifecycle evidence | `CURRENT-MOCK` |
 
-Expected-cash semantics will be based on authoritative cash movements, not a mutable scalar balance.
+Current safe POS path:
 
-## Cash movement / drawer ledger
+`توصيل → القناة → عند الاستلام → كيف استلم المحل المبلغ؟ → نقدي | شبكة`
 
-Target meanings include:
+Cash/Network remains payment authority; `DeliveryCollectionContract` preserves the channel so the source is not lost when the receipt is paid.
 
-- stable movement ID;
-- shift ID;
-- kind such as opening, sale, refund, pay-in, pay-out, close/count adjustment where product rules permit;
-- direction/amount;
-- employee/device/timestamp;
-- command/idempotency identity;
-- note/reason where product flow requires it;
-- related sale/refund/payment identity where applicable.
+### 7.3 Platform electronic settlement
 
-## Time clock
+`external-platform` direct impact and `platform-settlement` policy are `CURRENT-MOCK` configuration meanings, but the following are `REQUIRED-GAP` until the payment/settlement lifecycle owns them:
 
-Target meanings remain separate from shift cash accounting:
+- settlement batch/reference;
+- gross platform receivable;
+- commission/fees;
+- adjustments;
+- net amount received;
+- settlement date/status;
+- reconciliation difference.
 
-- employee clock-in/clock-out identity/time;
-- active timecard state;
-- adjustment/audit rules if owner/manager editing is later approved.
+POS must not complete a platform-settlement sale as Cash or Network merely because those adapters exist.
 
-Shifts and time clock may be enabled independently by merchant configuration.
+## 8. Self-delivery
 
----
+Current Back Office policy fields:
 
-# 9. Checkout / payments / settlement — MAP-05
+| Field | Meaning | Class |
+| --- | --- | --- |
+| self-delivery channel enabled | merchant uses own delivery | `CURRENT-MOCK` |
+| fee mode | current value `manual` | `CURRENT-MOCK` policy |
+| default delivery fee | exact intended delivery fee in halalas | `CURRENT-MOCK` policy only |
+| allow POS fee override | whether cashier may change configured fee later | `CURRENT-MOCK` policy only |
+| fee beneficiary | `merchant | courier` | `CURRENT-MOCK` policy |
 
-Current checkout includes checkout identity, ticket link, selected method and command/idempotency identity. MAP-01 now requires local `accept-payment` authorization before checkout entry.
+The following remain `REQUIRED-GAP` before self-delivery can be executable in POS:
 
-Current methods:
+- exact ticket/invoice delivery-fee mutation contract;
+- durable fee amount actually charged on the sale;
+- fee beneficiary snapshot on completed sale;
+- if courier is beneficiary, courier/payable or custody meaning;
+- zone/distance/location price resolution;
+- delivery address/zone fields required by the eventual delivery workflow.
 
-- `cash` → **نقدًا** — CURRENT;
-- `card` → **شبكة / مدى** — CURRENT-MOCK UX only;
-- `credit` → **آجل** — CURRENT customer-credit path.
+A textbox that visually shows a delivery fee without changing authoritative ticket money is prohibited.
 
-Cash receipt evidence: `tendered` CURRENT; `change` CURRENT/preserved derived fact.
+## 9. Customer credit / آجل
 
-## Normalized payment record requirement
+| Concept | Meaning | Class |
+| --- | --- | --- |
+| customer ID/name/mobile/details | customer identity/profile | `CURRENT-MOCK` |
+| customer attached to ticket | current sale customer | `CURRENT-MOCK` |
+| Credit/آجل payment choice | creates customer-credit sale through existing flow | `CURRENT-MOCK` |
+| debt ledger entry | opening / credit sale / settlement | `CURRENT-MOCK` |
+| debt balance | derived/current local customer balance | `CURRENT-MOCK` |
+| settlement amount | exact Money applied against debt | `CURRENT-MOCK` |
 
-The current single receipt `paymentMethod` is not sufficient for production split-payment/reconciliation behavior.
+Production credit permissions/limits/aging/accounting remain later product gates; their absence does not remove Credit as a default quick-sale payment choice.
 
-REQUIRED-GAP target payment facts include:
+## 10. Receipt and completed-sale fields
 
-- stable `paymentId`;
-- sale/receipt/checkout relation;
-- payment method identity/type;
-- exact amount;
-- status/lifecycle;
-- command/idempotency key;
-- created/authorized/completed/failed/refunded timestamps as applicable;
-- employee/device context where needed;
-- provider/terminal reference evidence only for integrated methods.
+| Concept | Meaning | Class | Notes |
+| --- | --- | --- | --- |
+| receipt ID/number | stable completed-sale receipt identity | `CURRENT-MOCK` | current runtime |
+| payment method | current cash/card/credit receipt classification | `CURRENT-MOCK` | normalized multi-payment records remain MAP-05 |
+| items | completed current line snapshots | `CURRENT-MOCK` | MAP-03 expands sold truth |
+| subtotal/redemption/tax/total | exact Money facts in current model | `CURRENT-MOCK` | tax finality later |
+| tendered/change | current cash/card/credit completion facts | `CURRENT-MOCK` | payment normalization later |
+| completed timestamp | completion time | `CURRENT-MOCK` |
+| employee/branch | cashier and branch display snapshot | `CURRENT-MOCK` |
+| delivery collection association | lookup through `DeliveryCollectionContract` | `CURRENT-MOCK` | separate puzzle capability, deliberately not overloaded into receipt.paymentMethod |
 
-A sale may later have multiple payment records without changing sale identity.
+Receipt detail/refund normalized lifecycle remains MAP-05.
 
-## Production Mada reservation
+## 11. Restaurant/local-service staging
 
-RESERVED-INTEGRATION: provider/acquirer, terminal ID, external reference, approval/auth reference, RRN when supplied, permitted masked-card reference, scheme/status/provider timestamps and reconciliation/refund evidence.
+Current restaurant service/place/open-order proof remains `CURRENT-MOCK`. It is not the owner of payment/direct-impact or delivery-channel meanings.
 
-Never store full PAN, PIN, CVV or track data.
+Real KDS/printer transport, multi-device synchronization, production open-ticket lifecycle and production Back Office ownership remain separate gates.
 
----
+## 12. Local persistence / outbox
 
-# 10. Receipt / refund lifecycle
+Current known Rifad namespaces include:
 
-CURRENT Receipt includes ID/number/payment method convenience value, item snapshots, subtotal/redemption/tax/total, tendered/change/loyalty earned, completion time, employee/branch name snapshots and customer snapshot.
+- `pos.runtime`
+- `pos.effective-configuration`
+- `pos.authorization-audit`
+- `pos.delivery-collection`
 
-CURRENT executable behavior:
+Current browser persistence is `CURRENT-MOCK` transport behind `LocalPersistenceContract`.
 
-- sale-success receipt;
-- receipt list/history (`POS-SCREEN-016`);
-- reprint, now locally protected by `reprint-resend-receipts`;
-- explicit confirmation after `delivery-unknown` before another print attempt;
-- email-receipt behavior in the current runtime.
+It is **not**:
 
-REQUIRED-GAP production additions:
+- the MAP-06 production local database;
+- MAP-10 synchronization;
+- LAN/Branch Hub;
+- fiscal/ZATCA authority.
 
-- stable employee/branch/device IDs;
-- fulfillment/channel/price-context evidence where applicable;
-- selected option/add-on sold snapshots;
-- durable payment links;
-- receipt-detail lifecycle;
-- refund/return identity and line/quantity/amount evidence;
-- reason/authorization where required;
-- fiscal/cancellation references when ZATCA scope defines them.
+`Local Persistence != Sync != LAN/Branch Hub != Fiscal/ZATCA`
 
-Refund is not currently implemented and must not be inferred from receipt existence.
+## 13. Hardware/provider reserved fields
 
----
+The following remain `RESERVED-INTEGRATION` until their owning capability is approved:
 
-# 11. Delivery sales channels / online orders
+- real integrated card/Mada terminal provider/device/reference/status fields;
+- printer hardware identity/delivery acknowledgement;
+- real KDS/CDS pairing/transport identity;
+- delivery-platform API order IDs/webhook/provider references;
+- fiscal/ZATCA UUID/hash/clearance/reporting fields.
 
-Target durable concept: `salesChannelId`; examples direct POS, Keeta, HungerStation, Jahez, Ninja and future channels.
+Current mock Card/Mada behavior must not be interpreted as production terminal support.
 
-Real delivery adapters reserve:
+## 14. Immediate roadmap implications
 
-- external order/reference and connector identity;
-- external store/location mapping;
-- webhook/event identity + idempotency;
-- external status/timestamps;
-- external sold-price snapshots;
-- item/option mapping evidence;
-- payment/collection state;
-- settlement status/reference;
-- commission/fee evidence;
-- customer/address data only within approved privacy scope.
+- **MAP-01 PASS:** effective configuration, authorization, payment direct impact, N-method selection and bounded delivery COD collection context.
+- **MAP-02 next:** Shift + Cash Drawer Ledger + Time Clock. Cash-drawer expected balance must consume `directImpact = cash`; it must not infer cash from payment labels.
+- **MAP-03:** sold tax/discount/pricing-option/add-on truth.
+- **MAP-04:** open-ticket lifecycle.
+- **MAP-05:** normalized payment records, split payment across any enabled methods, receipt detail/refunds and later payment/settlement lifecycle.
+- **MAP-06:** production local persistence selection.
+- **MAP-10:** synchronization provider.
+- **MAP-11:** real Back Office ↔ POS transport.
 
-These remain RESERVED-INTEGRATION / REQUIRED-GAP until the delivery/online-order UI and a real connector are separately authorized. Channel identity must never be inferred solely from payment method.
-
----
-
-# 12. Device / local node / persistence infrastructure facts
-
-## Device session
-
-CURRENT `DeviceSession`: device ID/name, branch ID/name, linked email.
-
-## Local node context
-
-CURRENT infrastructure facts owned by `LocalPersistenceContract`:
-
-- `installationId` — stable local installation identity;
-- `branchId` — branch binding when linked;
-- `deviceId` — device binding when linked.
-
-These identities are distinct and must not be collapsed.
-
-## Local snapshots
-
-CURRENT infrastructure facts:
-
-- namespace;
-- schemaVersion;
-- revision;
-- updatedAt;
-- module-private snapshot value.
-
-Current private namespaces include:
-
-- `pos.runtime`, schema v1;
-- `restaurant.service`, schema v1;
-- `pos.effective-configuration`, schema v1 — MAP-01 local policy snapshot;
-- `pos.authorization-audit`, schema v1 — MAP-01 manager-approval audit proof.
-
-Another module must not use another module's private snapshot/table as an integration API.
-
-## Transactional outbox event
-
-CURRENT infrastructure facts:
-
-- stable event `id`;
-- versioned `type`;
-- `aggregateType` / `aggregateId`;
-- `occurredAt`;
-- payload;
-- contractVersion;
-- installation/branch/device context;
-- `queuedAt`;
-- retry `attempts`;
-- `lastAttemptAt`;
-- `lastError`.
-
-Current event families include:
-
-- `sale.completed.v1`;
-- `ticket.opened.v1`;
-- `customer.created.v1`;
-- `customer.updated.v1`;
-- `customer.credit-charged.v1`;
-- `customer.debt-settled.v1`;
-- `local-order.opened.v1`;
-- `local-order.updated.v1`;
-- `local-order.closed.v1`;
-- `print.attempted.v1`;
-- `authorization.manager-override-approved.v1`.
-
-These event shapes may evolve before production contract freeze. Stable identity/idempotency behavior is the invariant; physical local tables are not a Sync/Fiscal/LAN public API.
-
-Current browser local persistence is CURRENT-MOCK/staging transport. Production engine selection is MAP-06.
-
----
-
-# 13. Printing / kitchen dispatch
-
-Receipt-print UI states CURRENT: `idle`, `queued`, `printed`, `failed`, `delivery-unknown`.
-
-Production print history REQUIRED-GAP: durable job/receipt/printer/device links, status, command identity, timestamps, attempts and safe unknown-delivery evidence. `delivery-unknown` must not cause blind duplicate print.
-
-`POS-FLOW-002` has CURRENT-MOCK `kitchenRevision` proving an advanced local order can be sent, reopened and updated without creating a second open place.
-
-Production kitchen REQUIRED-GAP:
-
-- dispatch ID;
-- order/ticket ID;
-- fulfillment;
-- place when local;
-- channel when relevant;
-- routed printer/KDS/station;
-- revision/version;
-- line/void deltas;
-- selected option/add-on presentation;
-- idempotency/outbox identity;
-- delivery state/timestamps.
-
----
-
-# 14. SKU / barcode status
-
-SKU/barcode is no longer a total data-model gap.
-
-CURRENT-MOCK staging evidence:
-
-- Back Office stores/edits base SKU/barcode;
-- duplicate non-empty base identity is rejected by current catalog rules;
-- POS staging search resolves fixed-price base item name/SKU/barcode;
-- disabling an item removes it from sellable POS search;
-- option-priced items stay hidden until explicit cashier option resolution exists.
-
-Still REQUIRED-GAP / hardware proof:
-
-- production scanner transport and keyboard-wedge/device behavior;
-- multiple barcodes/option-level sellable identity if product scope requires them;
-- barcode standards/normalization policy;
-- production persistence;
-- branch/cloud propagation;
-- import/export.
-
----
-
-# 15. Current local preferences / staging configuration
-
-CURRENT local preference/proof behavior:
-
-- sale mode `touch | basic`;
-- `printReceiptAlways`;
-- restaurant service ON/OFF CURRENT-MOCK;
-- place management ON/OFF CURRENT-MOCK.
-
-MAP-01 CURRENT product authority now also includes a structured merchant configuration → effective POS configuration boundary for employee authorization, feature flags, branch/device scope and Payment Types. Its browser storage is staging transport only.
-
-The legacy visible-order-type setting is superseded/hidden in normal current UI. The old restaurant prototype settings are not silently promoted into the new merchant-configuration model; their full migration belongs to the appropriate restaurant configuration lifecycle.
-
----
-
-# 16. UI-only state
-
-Do not persist merely because visible:
-
-- dialog/menu open state;
-- hover/pressed/animation;
-- keypad digits/freshness before command submission;
-- temporary numeric input;
-- responsive mode;
-- old decorative tone;
-- scroll position;
-- validation CSS state;
-- selected service-group tab;
-- list presentation state;
-- toast/modal visibility;
-- current Back Office editor visibility;
-- current search/filter text;
-- unsaved option/add-on input.
-
-Do not classify merchant-selected category/group/item catalog colors or item image/shape semantics as UI-only; those are CURRENT-MOCK catalog semantics.
-
----
-
-# 17. Highest-priority production gaps — dependency order
-
-Current checkpoint:
-
-- **MAP-00 PASS** — repository reality/authority reconciliation;
-- **MAP-01 PASS** — owner→POS effective configuration + authorization/manager override.
-
-Next dependency order:
-
-1. **MAP-02:** shift, cash ledger and time-clock facts;
-2. **MAP-03:** POS pricing-option/add-on chooser plus sold-line pricing/discount/tax/fulfillment snapshots;
-3. **MAP-04:** full open-ticket/open-order lifecycle and conflict/void/revision semantics;
-4. **MAP-05:** normalized payment records, split-ready model, receipt detail and refund lifecycle;
-5. **MAP-06:** production local persistence, real migrations, crash recovery and volume;
-6. **MAP-07/08/09:** packaged Windows, physical scanner/printer/cash drawer and supported tablet/PWA evidence;
-7. **MAP-10:** synchronization re-entry/final adoption using real Rifad operational facts;
-8. **MAP-11:** real owner Back Office ↔ cashier POS integration;
-9. later verticals: inventory, restaurant admin/KDS/CDS, delivery, fiscal, accounting and other approved capabilities.
-
-Production media asset storage, branch/store product overrides, advanced inventory, delivery mappings, ZATCA and real payment-terminal evidence remain separately governed capabilities; they must not be smuggled into an unrelated map item.
-
----
-
-# 18. Change-control rule
-
-When visible product work introduces a field/label/option/fulfillment/channel/price/payment/shift/permission fact or restaurant/kitchen state:
-
-1. update this register in the same PR;
-2. classify CURRENT / CURRENT-MOCK / REQUIRED-GAP / RESERVED-INTEGRATION / DERIVED / UI-ONLY;
-3. update Rifad contracts/models when it becomes authoritative durable business data;
-4. update the UI Execution Manifest before behavior implementation where required;
-5. add restart/idempotency tests for state that must survive failure/restart;
-6. do not wait for SQL design to discover visible business requirements;
-7. do not freeze production database shape merely because one UI slice has a staging storage shape;
-8. do not let Sync/LAN/Fiscal/ERP read private module persistence as an integration shortcut.
+Do not start MAP-02 automatically. Stop for owner review after MAP-01 closeout.
