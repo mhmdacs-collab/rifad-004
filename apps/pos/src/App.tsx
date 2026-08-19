@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { ConfiguredPaymentMethodRail } from "./components/ConfiguredPaymentMethodRail";
 import { InlineCheckoutRail } from "./components/InlineCheckoutRail";
 import { LocalServiceEnhancer } from "./components/LocalServiceEnhancer";
 import { TransactionOperationEnhancer } from "./components/TransactionOperationEnhancer";
@@ -134,7 +135,20 @@ export default function App() {
 
           <LocalServiceEnhancer ticket={saleTicket} local={local} legacyFixture={legacyOrderTypeFixture} />
 
-          {inlineCheckoutStage ? (
+          {inlineCheckoutStage === "payment" ? (
+            <ConfiguredPaymentMethodRail
+              ticket={saleTicket}
+              paymentMethods={effectiveConfiguration.configuration?.paymentMethods ?? []}
+              configurationLoading={effectiveConfiguration.loading}
+              configurationError={effectiveConfiguration.errorMessage}
+              busy={flow.busy}
+              errorMessage={flow.errorMessage}
+              onDismissError={flow.clearError}
+              onBackToSales={flow.returnToSales}
+              onCash={() => void flow.selectCash()}
+              onCard={() => void flow.selectCard()}
+            />
+          ) : inlineCheckoutStage ? (
             <InlineCheckoutRail
               stage={inlineCheckoutStage}
               ticket={saleTicket}
@@ -142,8 +156,6 @@ export default function App() {
               printStatus={flow.printStatus}
               busy={flow.busy}
               errorMessage={flow.errorMessage}
-              configurationError={effectiveConfiguration.errorMessage}
-              paymentMethods={effectiveConfiguration.configuration?.paymentMethods ?? []}
               onDismissError={flow.clearError}
               onBackToSales={flow.returnToSales}
               onBackToPayment={flow.returnToPayment}
