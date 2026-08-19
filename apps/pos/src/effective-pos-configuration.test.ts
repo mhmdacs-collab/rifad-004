@@ -31,7 +31,11 @@ describe("MAP-01 effective POS configuration + authorization", () => {
     expect(first.branchId).toBe("branch-olaya");
     expect(first.deviceId).toBe("device-pos-01");
     expect(first.revision).toBe(1);
-    expect(first.paymentMethods.filter((item) => item.enabled).map((item) => item.kind)).toEqual(["cash", "card"]);
+    expect(first.paymentMethods.filter((item) => item.enabled).map((item) => [item.kind, item.directImpact])).toEqual([
+      ["cash", "cash"],
+      ["card", "bank"],
+      ["customer-credit", "customer-receivable"],
+    ]);
 
     const stored = await persistence.readSnapshot(POS_EFFECTIVE_CONFIGURATION_NAMESPACE);
     expect(stored?.revision).toBe(1);
