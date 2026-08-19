@@ -7,6 +7,27 @@ import type {
 
 export const POS_CONFIGURATION_ADMIN_CONTRACT_VERSION = 1 as const;
 
+export type BackOfficePermissionKey =
+  | "access-back-office"
+  | "view-sales-reports"
+  | "cancel-receipts"
+  | "manage-items"
+  | "manage-inventory"
+  | "view-item-cost"
+  | "manage-employees"
+  | "manage-customers"
+  | "edit-general-settings"
+  | "manage-stores"
+  | "manage-pos-devices"
+  | "manage-payment-types"
+  | "manage-loyalty"
+  | "manage-taxes"
+  | "manage-kitchen-routing"
+  | "manage-dining-options"
+  | "manage-billing";
+
+export type MerchantPermissionKey = PosPermissionKey | BackOfficePermissionKey;
+
 export type MerchantStore = Readonly<{
   id: string;
   name: string;
@@ -29,7 +50,7 @@ export type MerchantPosDevice = Readonly<{
 export type MerchantRole = Readonly<{
   id: string;
   name: string;
-  permissions: readonly PosPermissionKey[];
+  permissions: readonly MerchantPermissionKey[];
   ownerRole: boolean;
 }>;
 
@@ -89,6 +110,12 @@ export type MerchantPaymentTypeDraft = Omit<MerchantPaymentType, "id" | "sortOrd
 
 /**
  * Owner/Back Office administration boundary for POS-operational policy.
+ *
+ * The merchant role model intentionally contains both branch-POS permissions
+ * and Back Office permissions because Loyverse's mature Access Rights baseline
+ * administers one employee role across the product. The POS projection later
+ * strips the Back Office-only permissions and carries only locally enforceable
+ * POS capabilities to the branch device.
  *
  * This contract owns merchant intent. It is deliberately separate from the
  * device-specific EffectivePosConfigurationContract consumed by a branch POS.
