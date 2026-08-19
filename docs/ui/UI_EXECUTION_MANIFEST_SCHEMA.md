@@ -1,12 +1,12 @@
 # UI Execution Manifest Schema and Gate
 
-Last updated: 2026-08-17
+Last updated: 2026-08-20
 
 ## Binding artifact
 
-`UI_EXECUTION_MANIFEST.json` is the implementation inventory for Rifad product surfaces. It converts research into stable screen, action, state and flow IDs.
+`UI_EXECUTION_MANIFEST.json` is the implementation inventory for Rifad product surfaces. It converts research and approved product decisions into stable screen, action, state and flow IDs.
 
-The manifest does not replace the source research. It points to evidence sections and narrows what implementation is allowed to claim.
+The manifest does not replace source research or owner-approved product decisions. It points to evidence sections and narrows what implementation is allowed to claim.
 
 For POS-facing terminology and durable UI-field traceability, use `POS_UI_NAMING_AND_FIELD_REGISTER.md` alongside the manifest.
 
@@ -40,6 +40,8 @@ Codex or a human developer may implement UI only when either:
 Everything else is evidence-gathering work. Missing actions, states, layout choices or error behavior must not be invented. Update the manifest first.
 
 After a permitted scope advances to `implemented` or `verified`, it remains listed in `implementationGate.readyFlows`; the gate records the approved scope while the status records its current lifecycle stage.
+
+A screen may participate in more than one executable flow. Each flow owns only the screen/action subset listed in that flow's steps. A shared screen is **not** required to repeat all of its other visible actions in every flow that uses it; instead, every flow step must reference an action declared by that screen.
 
 ## Required screen fields before `ready`
 
@@ -81,6 +83,8 @@ Pure UI navigation or presentation actions may use `uiOnly: true`; they must not
 - explicit non-goals;
 - end-to-end acceptance criteria.
 
+A flow step must name an action declared by that screen. The screen may declare additional actions used by another ready flow or by an already-recorded implemented capability; those actions do not automatically become part of the current flow.
+
 ## UI-to-data traceability gate
 
 UI-first does not mean data-later-without-traceability.
@@ -96,11 +100,13 @@ Do not create database columns for purely presentational state such as pressed s
 
 ## Evidence confidence
 
-- `documented`: supported directly by the research and cited sources.
+- `documented`: supported directly by the functional research/cited sources **or by an explicit owner-approved product/architecture decision recorded in the repository**.
 - `observed`: based on recorded interface evidence that may vary by version.
 - `inferred`: not enough for `ready`; requires product confirmation or additional evidence.
 
 An `inferred` requirement cannot silently become implementation behavior.
+
+Research evidence should use the exact section string from the canonical Loyverse analysis. Owner-approved product evidence may use an explicit architecture-decision reference in the form `<DECISION_FILE>.md §...`; the referenced decision file must exist under `docs/architecture/`. This is for Rifad-owned product decisions that intentionally extend or specialize the reference product, not a substitute for researching reference behavior.
 
 ## Change control
 
