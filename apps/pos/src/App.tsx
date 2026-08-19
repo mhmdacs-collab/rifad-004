@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import type { EffectiveDeliveryChannel } from "../../../contracts/posConfiguration";
+import type { DeliveryMerchantCollection } from "../../../contracts/deliveryCollection";
 import { ConfiguredPaymentMethodRail } from "./components/ConfiguredPaymentMethodRail";
 import { CustomerCreditDialog } from "./components/CustomerCreditDialog";
 import { InlineCheckoutRail } from "./components/InlineCheckoutRail";
@@ -32,6 +34,7 @@ export default function App() {
   const [posRuntime] = useState(createPosRuntimeAdapter);
   const [restaurantService] = useState(createRestaurantServiceAdapter);
   const [creditPaymentOpen, setCreditPaymentOpen] = useState(false);
+  const [paymentContextError, setPaymentContextError] = useState<string | null>(null);
   const flow = usePosFlow(posRuntime);
   const effectiveConfiguration = useEffectivePosConfiguration(posRuntime, flow.device);
   const managerOverride = useManagerOverrideGate(posRuntime, flow.employee, flow.device);
@@ -47,6 +50,7 @@ export default function App() {
   useEffect(() => {
     if (flow.stage !== "success") return;
     setCreditPaymentOpen(false);
+    setPaymentContextError(null);
     const printButton = document.querySelector<HTMLButtonElement>(".inline-success-print");
     printButton?.setAttribute("aria-label", "طباعة الإيصال");
   }, [flow.stage, flow.printStatus]);
@@ -95,10 +99,91 @@ export default function App() {
       ? { ...saleTicket, lines: [], customer: null }
       : saleTicket;
 
+    const clearDeliveryForDirectPayment = async () => {
+      await posRuntime.deliveryCollection.clearForTicket({
+        commandId: commandId("delivery-direct-clear"),
+        ticketId: saleTicket.id,
+      });
+    };
+
+    const selectDirectPayment = async (method: "cash" | "card") => {
+      setPaymentContextError(null);
+      try {
+        await clearDeliveryForDirectPayment();
+        if (method === "cash") await flow.selectCash();
+        else await flow.selectCard();
+      } catch (error) {
+        setPaymentContextError(error instanceof Error ? error.message : "تعذر تجهيز سياق الدفع المحلي.");
+      }
+    };
+
+    const selectDeliveryCollection = async (
+      channel: EffectiveDeliveryChannel,
+      merchantCollection: DeliveryMerchantCollection,
+    ) => {
+      setPaymentContextError(null);
+      try {
+        await posRuntime.deliveryCollection.setForTicket({
+          commandId: commandId("delivery-collection"),
+          ticketId: saleTicket.id,
+          channelId: channel.id,
+          channelName: channel.name,
+          channelKind: channel.kind,
+          merchantCollection,
+        });
+        if (merchantCollection === "cash") await flow.selectCash();
+        else await flow.selectCard();
+      } catch (error) {
+        setPaymentContextError(error instanceof Error ? error.message : "تعذر حفظ قناة التوصيل محليًا.");
+      }
+    };
+
+    const switchCheckoutMethod = async (method: "cash" | "card") => {
+      setPaymentContextError(null);
+      try {
+        const current = await posRuntime.deliveryCollection.readForTicket({ ticketId: saleTicket.id });
+        if (current) {
+          await posRuntime.deliveryCollection.setForTicket({
+            commandId: commandId("delivery-collection-switch"),
+            ticketId: saleTicket.id,
+            channelId: current.channelId,
+            channelName: current.channelName,
+            channelKind: current.channelKind,
+            merchantCollection: method,
+          });
+        }
+        if (method === "cash") await flow.selectCash();
+        else await flow.selectCard();
+      } catch (error) {
+        setPaymentContextError(error instanceof Error ? error.message : "تعذر تغيير طريقة تحصيل طلب التوصيل.");
+      }
+    };
+
+    const openCreditPayment = async () => {
+      setPaymentContextError(null);
+      try {
+        await clearDeliveryForDirectPayment();
+        setCreditPaymentOpen(true);
+      } catch (error) {
+        setPaymentContextError(error instanceof Error ? error.message : "تعذر تجهيز البيع الآجل.");
+      }
+    };
+
+    const returnPaymentToSales = async () => {
+      setPaymentContextError(null);
+      try {
+        await clearDeliveryForDirectPayment();
+        flow.returnToSales();
+      } catch (error) {
+        setPaymentContextError(error instanceof Error ? error.message : "تعذر إغلاق سياق الدفع.");
+      }
+    };
+
     const startFreshSale = () => {
       local.abandonActiveResume();
       local.clearCheckoutContext();
       setCreditPaymentOpen(false);
+      setPaymentContextError(null);
       void flow.newSale();
     };
 
@@ -176,12 +261,16 @@ export default function App() {
                 configurationLoading={effectiveConfiguration.loading}
                 configurationError={effectiveConfiguration.errorMessage}
                 busy={flow.busy}
-                errorMessage={flow.errorMessage}
-                onDismissError={flow.clearError}
-                onBackToSales={flow.returnToSales}
-                onCash={() => void flow.selectCash()}
-                onCard={() => void flow.selectCard()}
-                onCredit={() => setCreditPaymentOpen(true)}
+                errorMessage={paymentContextError ?? flow.errorMessage}
+                onDismissError={() => {
+                  setPaymentContextError(null);
+                  flow.clearError();
+                }}
+                onBackToSales={() => void returnPaymentToSales()}
+                onCash={() => void selectDirectPayment("cash")}
+                onCard={() => void selectDirectPayment("card")}
+                onCredit={() => void openCreditPayment()}
+                onDeliveryCollect={(channel, merchantCollection) => void selectDeliveryCollection(channel, merchantCollection)}
               />
             ) : inlineCheckoutStage ? (
               <InlineCheckoutRail
@@ -190,12 +279,15 @@ export default function App() {
                 receipt={flow.receipt}
                 printStatus={flow.printStatus}
                 busy={flow.busy}
-                errorMessage={flow.errorMessage}
-                onDismissError={flow.clearError}
+                errorMessage={paymentContextError ?? flow.errorMessage}
+                onDismissError={() => {
+                  setPaymentContextError(null);
+                  flow.clearError();
+                }}
                 onBackToSales={flow.returnToSales}
                 onBackToPayment={flow.returnToPayment}
-                onCash={() => void flow.selectCash()}
-                onCard={() => void flow.selectCard()}
+                onCash={() => void switchCheckoutMethod("cash")}
+                onCard={() => void switchCheckoutMethod("card")}
                 onCompleteCash={async (value) => {
                   local.markSettlementPending(saleTicket.sequence);
                   await flow.completeCash(value);
@@ -269,6 +361,7 @@ export default function App() {
         onNewSale={() => {
           local.abandonActiveResume();
           local.clearCheckoutContext();
+          setPaymentContextError(null);
           void flow.newSale();
         }}
       />
