@@ -1,6 +1,6 @@
 # Current Rifad Decisions
 
-Last updated: 2026-08-18
+Last updated: 2026-08-19
 
 These decisions supersede earlier architecture proposals under `docs/research/historical-proposals/` when they conflict. Detailed capability documents remain authoritative for the implementation boundary of their respective capability.
 
@@ -77,7 +77,9 @@ Current executable ready flows include:
 - `POS-FLOW-001` — retail cash sale slice;
 - `POS-FLOW-002` — restaurant local-service prototype;
 - `POS-FLOW-006` — tablet sale-page layout;
-- `BO-FLOW-002` — bounded Back Office catalog list + add/edit slice.
+- `BO-FLOW-002` — bounded Back Office catalog management slice.
+
+MAP-00 additionally records already-existing executable customer/credit/loyalty, receipt/reprint and mock-card behavior that outgrew older manifest wording. That reconciliation does not automatically authorize future scope expansion.
 
 ## D-017 — POS is touch-first and human-scaled
 
@@ -165,20 +167,18 @@ Rifad does not freeze its final production SQL/database model merely because ada
 
 Current UI/product work must continue discovering durable meanings through bounded vertical slices and tracing them in `docs/ui/POS_UI_NAMING_AND_FIELD_REGISTER.md`.
 
-However, the previous wording that **all deeper infrastructure must wait until major product-field discovery is complete was too broad**.
+Reusable infrastructure may be researched or proved before full feature completion when all of the following are true:
 
-Reusable infrastructure may and sometimes must be selected/proved before full feature completion when all of the following are true:
-
-1. it enables a real end-to-end product flow that otherwise cannot be evaluated;
+1. it enables a real product/architecture question that otherwise cannot be evaluated;
 2. it is replaceable behind a Rifad-owned contract;
 3. it tolerates future schema/field growth through normal schema/configuration evolution;
 4. it does not force unfinished provider/database shapes to become Rifad domain truth.
 
-Synchronization now meets that condition because Back Office cannot fulfill its management purpose while POS remains a disconnected browser snapshot.
+The synchronization candidate work completed so far is retained as valid infrastructure evidence under this rule. **Infrastructure proof does not determine current product sequencing.** D-033 now controls when Rifad resumes synchronization adoption work.
 
-Final **business/data-model freeze** still follows sufficient product-field discovery. Synchronization selection/proof does not freeze catalog, restaurant, inventory, tax, branch or other unfinished schemas.
+Final **business/data-model freeze** still follows sufficient product-field discovery. No sync proof freezes catalog, restaurant, shift, payment, tax, branch or other unfinished domain meanings.
 
-See `docs/architecture/BACK_OFFICE_CATALOG_BOUNDARY.md` and `docs/architecture/SYNC_CAPABILITY_BOUNDARY.md`.
+See `docs/architecture/BACK_OFFICE_CATALOG_BOUNDARY.md`, `docs/architecture/LOCAL_PERSISTENCE_AND_OUTBOX_BOUNDARY.md` and `docs/architecture/SYNC_CAPABILITY_BOUNDARY.md`.
 
 ## D-031 — Merchant pricing uses reusable option groups with sparse item overrides; add-ons support reusable and item-private scope
 
@@ -199,13 +199,11 @@ Legacy generated `CatalogVariant*` structures are staging migration compatibilit
 
 See `docs/ui/flows/BO-FLOW-002.md` and `docs/architecture/BACK_OFFICE_CATALOG_BOUNDARY.md`.
 
-## D-032 — Synchronization is an early cross-surface infrastructure gate, not a per-feature rewrite
+## D-032 — Synchronization behavior/adoption requirements remain binding; its old immediate sequencing is superseded
 
-Once the current POS/Back Office reference UI is locked enough to stop visual churn, **synchronization candidate selection and runtime proof precede completing the full Back Office/POS feature set**.
+The target remains one durable, replaceable synchronization capability that carries current and future authorized Rifad facts. Existing CouchDB/PowerSync candidate evidence is retained.
 
-The target is one durable, replaceable synchronization capability that carries current and future authorized Rifad facts.
-
-Binding rules:
+Binding synchronization rules remain:
 
 - connected synchronization is automatic/continuous by default;
 - Back Office changes reach relevant POS clients quickly;
@@ -215,11 +213,44 @@ Binding rules:
 - a manual Sync affordance is fallback/status/diagnostic, not the normal path;
 - ordinary additive fields/entities require normal schema/configuration evolution, **not synchronization-engine rewrites**;
 - LAN/future Branch Hub remains a separate capability and is not authorized merely by selecting cloud sync;
-- no vendor/technology is selected from README/documentation claims alone.
+- no vendor/technology is selected from README/documentation claims alone;
+- substantial/high-risk adoption still requires execution, source/test/failure inspection, license verification and Rifad conformance according to `docs/adoption/CAPABILITY_ADOPTION_WORKFLOW.md`.
 
-Synchronization is a high-risk adoption lane. Before selection, Rifad must execute and characterize at least two credible candidates, inspect source/tests/failure behavior where available, verify licensing/dependencies, and prove Windows + tablet/PWA offline/reconnect/restart/schema-evolution/security behavior.
+The earlier D-032 sentence that made synchronization the **immediate next implementation gate after visual lock** is no longer current. It is superseded by D-033 after MAP-00's full product-state review showed that shift/cash, authorization/configuration, sold-line truth, open-order/payment/refund lifecycle and production local persistence still materially define the facts that synchronization must eventually carry.
 
-Current research shortlist and exact proof matrix are recorded in:
+Current research/proof records remain under:
 
-- `docs/research/sync/RIFAD_SYNC_BENCHMARK_2026-08-18.md`;
+- `docs/research/sync/`;
 - `docs/architecture/SYNC_CAPABILITY_BOUNDARY.md`.
+
+## D-033 — Production-first operational POS core precedes synchronization re-entry
+
+Rifad now follows the dependency order in `docs/RIFAD_FINAL_IMPLEMENTATION_MAP.md`.
+
+The immediate sequence is:
+
+1. reconcile repository authority with executable reality (`MAP-00`);
+2. define/prove effective POS configuration and authorization (`MAP-01`);
+3. implement the cashier workday facts that materially change local truth: shift/cash/time-clock (`MAP-02`);
+4. complete sold-line truth for options/add-ons/discounts/taxes/fulfillment (`MAP-03`);
+5. complete open-ticket/order lifecycle and payment/receipt/refund lifecycle (`MAP-04` / `MAP-05`);
+6. adopt and prove the production local persistence implementation behind `LocalPersistenceContract` (`MAP-06`);
+7. prove packaged Windows offline/cold-start/crash behavior and the supported tablet/PWA local-first path (`MAP-07` / `MAP-09`), with physical POS hardware proof in its own gate (`MAP-08`);
+8. **only then reopen synchronization adoption/final selection** using the real Rifad operational facts (`MAP-10`);
+9. connect real Back Office ↔ POS product flows through the adopted Rifad sync/cloud path (`MAP-11`).
+
+This does **not** mean every future Rifad feature must be finished before synchronization. The re-entry threshold is the operational cashier core plus production local truth, not Advanced Inventory, every report, every delivery connector or every future product module.
+
+Existing synchronization evidence is preserved, but no candidate receives production status through sunk-cost momentum. No sync provider, donor schema or proof backend becomes Rifad's business contract.
+
+The role split is also explicit:
+
+- the **cashier/branch worker** creates branch-operational facts such as sales, shifts and cash movements under locally enforceable permission/configuration snapshots;
+- the **owner/manager** uses Back Office to administer merchant configuration and observe operational results;
+- owner-managed settings may be projected into the POS local database without requiring a mirrored cashier-management screen;
+- the ordinary offline-capable cashier path must remain usable without a live Back Office/cloud connection.
+
+See:
+
+- `docs/RIFAD_FINAL_IMPLEMENTATION_MAP.md`;
+- `docs/MAP_00_REALITY_AUTHORITY_RECONCILIATION.md`.
