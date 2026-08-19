@@ -91,7 +91,11 @@ const starterConfiguration = (branchId: string, deviceId: string): EffectivePosC
     {
       roleId: "role-cashier",
       roleName: "أمين صندوق",
-      permissions: ["accept-payment", "view-all-receipts"],
+      // Preserve the pre-MAP-01 demo behavior by default; merchant-managed
+      // roles may remove this permission and then the one-action override path
+      // becomes visible. The product rule is configurable authority, not a
+      // hard-coded restrictive cashier role.
+      permissions: ["accept-payment", "view-all-receipts", "reprint-resend-receipts"],
     },
     {
       roleId: "role-manager",
