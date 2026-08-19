@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ConfiguredPaymentMethodRail } from "./components/ConfiguredPaymentMethodRail";
 import { InlineCheckoutRail } from "./components/InlineCheckoutRail";
 import { LocalServiceEnhancer } from "./components/LocalServiceEnhancer";
+import { ManagerOverrideDialog } from "./components/ManagerOverrideDialog";
 import { TransactionOperationEnhancer } from "./components/TransactionOperationEnhancer";
 import { installQuantityKeypad } from "./quantity-keypad";
 import { createPosRuntimeAdapter } from "./runtime/posRuntimeAdapter";
@@ -18,9 +19,12 @@ import { SuccessScreen } from "./screens/SuccessScreen";
 import { CustomerFlowProvider } from "./state/CustomerFlowContext";
 import { useEffectivePosConfiguration } from "./state/useEffectivePosConfiguration";
 import { useLocalServiceFlow } from "./state/useLocalServiceFlow";
+import { useManagerOverrideGate } from "./state/useManagerOverrideGate";
 import { usePosFlow } from "./state/usePosFlow";
 
 prepareRestaurantServiceCompatibility();
+
+const commandId = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
 
 export default function App() {
   const legacyOrderTypeFixture = useRef(import.meta.env.MODE === "test" && window.localStorage.getItem(LEGACY_ORDER_TYPES_KEY) !== null).current;
@@ -28,6 +32,7 @@ export default function App() {
   const [restaurantService] = useState(createRestaurantServiceAdapter);
   const flow = usePosFlow(posRuntime);
   const effectiveConfiguration = useEffectivePosConfiguration(posRuntime, flow.device);
+  const managerOverride = useManagerOverrideGate(posRuntime, flow.employee, flow.device);
   const local = useLocalServiceFlow(flow, restaurantService);
   const lastSaleTicket = useRef(flow.ticket);
 
@@ -180,13 +185,37 @@ export default function App() {
   }
 
   if (flow.stage === "receipts") {
+    const printWithAuthorization = async (receiptId: string) => {
+      const approved = await managerOverride.requirePermission({
+        capability: "reprint-resend-receipts",
+        commandId: commandId("reprint-authorization"),
+        title: "إعادة طباعة الإيصال",
+        targetType: "receipt",
+        targetId: receiptId,
+      });
+      if (!approved) return "idle" as const;
+      return flow.printArchivedReceipt(receiptId);
+    };
+
     return (
-      <ReceiptsScreen
-        receipts={flow.receipts}
-        busy={flow.busy}
-        onBack={flow.returnToSales}
-        onPrint={flow.printArchivedReceipt}
-      />
+      <>
+        <ReceiptsScreen
+          receipts={flow.receipts}
+          busy={flow.busy}
+          onBack={flow.returnToSales}
+          onPrint={printWithAuthorization}
+        />
+        {managerOverride.request ? (
+          <ManagerOverrideDialog
+            request={managerOverride.request}
+            busy={managerOverride.busy}
+            errorMessage={managerOverride.errorMessage}
+            onDismissError={managerOverride.clearError}
+            onApprove={managerOverride.approve}
+            onCancel={managerOverride.cancel}
+          />
+        ) : null}
+      </>
     );
   }
 
