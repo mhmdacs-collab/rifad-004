@@ -1,6 +1,8 @@
 import {
   POS_FEATURE_KEYS,
   type PosFeatureKey,
+  type PosPaymentDirectImpact,
+  type PosPaymentMethodKind,
 } from "../../contracts/posConfiguration";
 import {
   MERCHANT_PERMISSION_KEYS,
@@ -17,6 +19,7 @@ import {
   type MerchantStore,
   type MerchantStoreDraft,
 } from "../../contracts/posConfigurationAdmin";
+import { createDefaultDeliveryConfiguration } from "./defaultDeliveryConfiguration";
 
 export class PosConfigurationAdminError extends Error {
   constructor(readonly code: string, message: string) {
@@ -32,6 +35,13 @@ const requiredName = (value: string, label: string) => {
 };
 
 const unique = <T extends string>(values: readonly T[]): T[] => [...new Set(values)];
+
+const impactForKind = (kind: PosPaymentMethodKind): PosPaymentDirectImpact => {
+  if (kind === "cash") return "cash";
+  if (kind === "card") return "bank";
+  if (kind === "customer-credit") return "customer-receivable";
+  return "bank";
+};
 
 const next = (
   current: MerchantPosConfiguration,
@@ -165,6 +175,8 @@ export const createDefaultMerchantPosConfiguration = (
       sortOrder: 10,
       availability: "offline-capable",
       storeIds: [],
+      directImpact: "cash",
+      systemDefault: "cash",
     },
     {
       id: "payment-card",
@@ -174,8 +186,22 @@ export const createDefaultMerchantPosConfiguration = (
       sortOrder: 20,
       availability: "online-required",
       storeIds: [],
+      directImpact: "bank",
+      systemDefault: "network",
+    },
+    {
+      id: "payment-credit",
+      name: "آجل",
+      kind: "customer-credit",
+      enabled: true,
+      sortOrder: 30,
+      availability: "offline-capable",
+      storeIds: [],
+      directImpact: "customer-receivable",
+      systemDefault: "credit",
     },
   ],
+  delivery: createDefaultDeliveryConfiguration(),
 });
 
 export const saveMerchantEmployee = (input: {
@@ -336,6 +362,8 @@ export const saveMerchantPaymentType = (input: {
     sortOrder: draft.sortOrder ?? existing?.sortOrder ?? maxOrder + 10,
     availability: draft.availability,
     storeIds: unique(draft.storeIds),
+    directImpact: draft.directImpact ?? existing?.directImpact ?? impactForKind(draft.kind),
+    systemDefault: draft.systemDefault ?? existing?.systemDefault ?? null,
   };
   return next(
     config,
