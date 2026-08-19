@@ -53,6 +53,17 @@ export default function App() {
     : null;
   const saleTicket = flow.ticket ?? (flow.stage === "success" ? lastSaleTicket.current : null);
 
+  const managerOverrideDialog = managerOverride.request ? (
+    <ManagerOverrideDialog
+      request={managerOverride.request}
+      busy={managerOverride.busy}
+      errorMessage={managerOverride.errorMessage}
+      onDismissError={managerOverride.clearError}
+      onApprove={managerOverride.approve}
+      onCancel={managerOverride.cancel}
+    />
+  ) : null;
+
   if (flow.stage === "sign-in") {
     return (
       <SignInScreen
@@ -87,100 +98,115 @@ export default function App() {
       void flow.newSale();
     };
 
+    const beginAuthorizedCheckout = async () => {
+      const approved = await managerOverride.requirePermission({
+        capability: "accept-payment",
+        commandId: commandId("accept-payment"),
+        title: "اعتماد الدفع",
+        targetType: "ticket",
+        targetId: saleTicket.id,
+      });
+      if (!approved) return;
+      await flow.beginCheckout();
+    };
+
     return (
-      <CustomerFlowProvider value={{
-        ticket: saleTicket,
-        updateCustomer: flow.updateCustomer,
-        applyLoyaltyRedemption: flow.applyLoyaltyRedemption,
-        loadLoyaltyStatus: flow.loadLoyaltyStatus,
-        quoteLoyaltyRedemption: flow.quoteLoyaltyRedemption,
-        loadCustomerPurchases: flow.loadCustomerPurchases,
-      }}>
-        <div className={`sale-flow-shell ${inlineCheckoutStage ? "sale-flow-shell--checkout" : ""}`}>
-          <SalesScreen
-            employee={flow.employee}
-            ticket={backgroundTicket}
-            products={flow.products}
-            allProducts={flow.allProducts}
-            salePages={flow.salePages}
-            activePageId={flow.activePageId}
-            query={flow.query}
-            busy={flow.busy}
-            errorMessage={inlineCheckoutStage ? null : flow.errorMessage}
-            lastTouchedLineId={flow.lastTouchedLineId}
-            onDismissError={flow.clearError}
-            onQueryChange={flow.setQuery}
-            onPageChange={flow.setActivePageId}
-            onCreatePage={flow.createSalePage}
-            onRenamePage={flow.renameSalePage}
-            onDeletePage={flow.deleteSalePage}
-            onMovePage={flow.moveSalePage}
-            onPlacePageProduct={(pageId, slotIndex, productId) => void flow.placeSalePageProduct(pageId, slotIndex, productId)}
-            onRemovePageProduct={(pageId, slotIndex) => void flow.removeSalePageProduct(pageId, slotIndex)}
-            onAddProduct={(id) => void flow.addProduct(id)}
-            onSetQuantity={(id, value) => void flow.setQuantity(id, value)}
-            onRemoveLine={(id) => void flow.removeLine(id)}
-            onSaveTicket={() => void flow.saveOpenTicket()}
-            onCheckout={() => void flow.beginCheckout()}
-            onOpenReceipts={() => void flow.openReceipts()}
-            onSearchCustomers={flow.searchCustomers}
-            onCreateCustomer={flow.createCustomer}
-            onSetTicketCustomer={flow.setTicketCustomer}
-            onLoadCustomerLedger={flow.loadCustomerLedger}
-            onChargeCredit={flow.chargeTicketToCustomer}
-            onSettleDebt={flow.settleCustomerDebt}
-          />
-
-          <TransactionOperationEnhancer
-            showClearCart={flow.stage === "sales" && saleTicket.lines.length > 0}
-            onClearCart={async () => {
-              await Promise.all(saleTicket.lines.map((line) => flow.removeLine(line.id)));
-            }}
-          />
-
-          <LocalServiceEnhancer ticket={saleTicket} local={local} legacyFixture={legacyOrderTypeFixture} />
-
-          {inlineCheckoutStage === "payment" ? (
-            <ConfiguredPaymentMethodRail
-              ticket={saleTicket}
-              paymentMethods={effectiveConfiguration.configuration?.paymentMethods ?? []}
-              configurationLoading={effectiveConfiguration.loading}
-              configurationError={effectiveConfiguration.errorMessage}
+      <>
+        <CustomerFlowProvider value={{
+          ticket: saleTicket,
+          updateCustomer: flow.updateCustomer,
+          applyLoyaltyRedemption: flow.applyLoyaltyRedemption,
+          loadLoyaltyStatus: flow.loadLoyaltyStatus,
+          quoteLoyaltyRedemption: flow.quoteLoyaltyRedemption,
+          loadCustomerPurchases: flow.loadCustomerPurchases,
+        }}>
+          <div className={`sale-flow-shell ${inlineCheckoutStage ? "sale-flow-shell--checkout" : ""}`}>
+            <SalesScreen
+              employee={flow.employee}
+              ticket={backgroundTicket}
+              products={flow.products}
+              allProducts={flow.allProducts}
+              salePages={flow.salePages}
+              activePageId={flow.activePageId}
+              query={flow.query}
               busy={flow.busy}
-              errorMessage={flow.errorMessage}
+              errorMessage={inlineCheckoutStage ? null : flow.errorMessage}
+              lastTouchedLineId={flow.lastTouchedLineId}
               onDismissError={flow.clearError}
-              onBackToSales={flow.returnToSales}
-              onCash={() => void flow.selectCash()}
-              onCard={() => void flow.selectCard()}
+              onQueryChange={flow.setQuery}
+              onPageChange={flow.setActivePageId}
+              onCreatePage={flow.createSalePage}
+              onRenamePage={flow.renameSalePage}
+              onDeletePage={flow.deleteSalePage}
+              onMovePage={flow.moveSalePage}
+              onPlacePageProduct={(pageId, slotIndex, productId) => void flow.placeSalePageProduct(pageId, slotIndex, productId)}
+              onRemovePageProduct={(pageId, slotIndex) => void flow.removeSalePageProduct(pageId, slotIndex)}
+              onAddProduct={(id) => void flow.addProduct(id)}
+              onSetQuantity={(id, value) => void flow.setQuantity(id, value)}
+              onRemoveLine={(id) => void flow.removeLine(id)}
+              onSaveTicket={() => void flow.saveOpenTicket()}
+              onCheckout={() => void beginAuthorizedCheckout()}
+              onOpenReceipts={() => void flow.openReceipts()}
+              onSearchCustomers={flow.searchCustomers}
+              onCreateCustomer={flow.createCustomer}
+              onSetTicketCustomer={flow.setTicketCustomer}
+              onLoadCustomerLedger={flow.loadCustomerLedger}
+              onChargeCredit={flow.chargeTicketToCustomer}
+              onSettleDebt={flow.settleCustomerDebt}
             />
-          ) : inlineCheckoutStage ? (
-            <InlineCheckoutRail
-              stage={inlineCheckoutStage}
-              ticket={saleTicket}
-              receipt={flow.receipt}
-              printStatus={flow.printStatus}
-              busy={flow.busy}
-              errorMessage={flow.errorMessage}
-              onDismissError={flow.clearError}
-              onBackToSales={flow.returnToSales}
-              onBackToPayment={flow.returnToPayment}
-              onCash={() => void flow.selectCash()}
-              onCard={() => void flow.selectCard()}
-              onCompleteCash={async (value) => {
-                local.markSettlementPending(saleTicket.sequence);
-                await flow.completeCash(value);
+
+            <TransactionOperationEnhancer
+              showClearCart={flow.stage === "sales" && saleTicket.lines.length > 0}
+              onClearCart={async () => {
+                await Promise.all(saleTicket.lines.map((line) => flow.removeLine(line.id)));
               }}
-              onCompleteCard={async () => {
-                local.markSettlementPending(saleTicket.sequence);
-                await flow.completeCard();
-              }}
-              onPrint={() => void flow.printReceipt()}
-              onEmailReceipt={flow.emailReceipt}
-              onNewSale={startFreshSale}
             />
-          ) : null}
-        </div>
-      </CustomerFlowProvider>
+
+            <LocalServiceEnhancer ticket={saleTicket} local={local} legacyFixture={legacyOrderTypeFixture} />
+
+            {inlineCheckoutStage === "payment" ? (
+              <ConfiguredPaymentMethodRail
+                ticket={saleTicket}
+                paymentMethods={effectiveConfiguration.configuration?.paymentMethods ?? []}
+                configurationLoading={effectiveConfiguration.loading}
+                configurationError={effectiveConfiguration.errorMessage}
+                busy={flow.busy}
+                errorMessage={flow.errorMessage}
+                onDismissError={flow.clearError}
+                onBackToSales={flow.returnToSales}
+                onCash={() => void flow.selectCash()}
+                onCard={() => void flow.selectCard()}
+              />
+            ) : inlineCheckoutStage ? (
+              <InlineCheckoutRail
+                stage={inlineCheckoutStage}
+                ticket={saleTicket}
+                receipt={flow.receipt}
+                printStatus={flow.printStatus}
+                busy={flow.busy}
+                errorMessage={flow.errorMessage}
+                onDismissError={flow.clearError}
+                onBackToSales={flow.returnToSales}
+                onBackToPayment={flow.returnToPayment}
+                onCash={() => void flow.selectCash()}
+                onCard={() => void flow.selectCard()}
+                onCompleteCash={async (value) => {
+                  local.markSettlementPending(saleTicket.sequence);
+                  await flow.completeCash(value);
+                }}
+                onCompleteCard={async () => {
+                  local.markSettlementPending(saleTicket.sequence);
+                  await flow.completeCard();
+                }}
+                onPrint={() => void flow.printReceipt()}
+                onEmailReceipt={flow.emailReceipt}
+                onNewSale={startFreshSale}
+              />
+            ) : null}
+          </div>
+        </CustomerFlowProvider>
+        {managerOverrideDialog}
+      </>
     );
   }
 
@@ -205,16 +231,7 @@ export default function App() {
           onBack={flow.returnToSales}
           onPrint={printWithAuthorization}
         />
-        {managerOverride.request ? (
-          <ManagerOverrideDialog
-            request={managerOverride.request}
-            busy={managerOverride.busy}
-            errorMessage={managerOverride.errorMessage}
-            onDismissError={managerOverride.clearError}
-            onApprove={managerOverride.approve}
-            onCancel={managerOverride.cancel}
-          />
-        ) : null}
+        {managerOverrideDialog}
       </>
     );
   }
