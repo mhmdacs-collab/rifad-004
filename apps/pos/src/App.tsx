@@ -172,6 +172,7 @@ export default function App() {
               <ConfiguredPaymentMethodRail
                 ticket={saleTicket}
                 paymentMethods={effectiveConfiguration.configuration?.paymentMethods ?? []}
+                delivery={effectiveConfiguration.configuration?.delivery}
                 configurationLoading={effectiveConfiguration.loading}
                 configurationError={effectiveConfiguration.errorMessage}
                 busy={flow.busy}
