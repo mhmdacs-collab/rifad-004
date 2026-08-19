@@ -1,4 +1,7 @@
-import type { EffectivePosPaymentMethod } from "../../../../contracts/posConfiguration";
+import type {
+  EffectivePosPaymentMethod,
+  PosPaymentDirectImpact,
+} from "../../../../contracts/posConfiguration";
 import type { Ticket } from "../domain/models";
 import { Icon } from "./Icon";
 import { InlineNotice } from "./InlineNotice";
@@ -15,9 +18,18 @@ type ConfiguredPaymentMethodRailProps = {
   onBackToSales: () => void;
   onCash: () => void;
   onCard: () => void;
+  onCredit: () => void;
 };
 
-const supportedKinds = new Set<EffectivePosPaymentMethod["kind"]>(["cash", "card"]);
+const supportedKinds = new Set<EffectivePosPaymentMethod["kind"]>(["cash", "card", "customer-credit"]);
+
+const directImpactFor = (method: EffectivePosPaymentMethod): PosPaymentDirectImpact => {
+  if (method.directImpact) return method.directImpact;
+  if (method.kind === "cash") return "cash";
+  if (method.kind === "card") return "bank";
+  if (method.kind === "customer-credit") return "customer-receivable";
+  return "bank";
+};
 
 function PaymentVisual({ kind }: { kind: EffectivePosPaymentMethod["kind"] }) {
   if (kind === "cash") {
@@ -39,14 +51,26 @@ function PaymentVisual({ kind }: { kind: EffectivePosPaymentMethod["kind"] }) {
     );
   }
 
-  return <span className="payment-method-visual" aria-hidden="true"><Icon name="card" size={30} /></span>;
+  if (kind === "customer-credit") {
+    return <span className="payment-method-visual payment-method-visual--credit" aria-hidden="true"><span>آجل</span></span>;
+  }
+
+  return <span className="payment-method-visual payment-method-visual--custom" aria-hidden="true"><Icon name="card" size={30} /></span>;
 }
 
+const impactLabel = (impact: PosPaymentDirectImpact) => {
+  if (impact === "cash") return "النقد";
+  if (impact === "bank") return "البنك";
+  if (impact === "customer-receivable") return "ذمة العميل";
+  return "منصة خارجية";
+};
+
 const descriptionFor = (method: EffectivePosPaymentMethod) => {
-  if (method.kind === "cash") return "استلام المبلغ وحساب الباقي";
-  if (method.kind === "card") return "بطاقة أو دفع لاتلامسي";
-  if (method.kind === "customer-credit") return "يتطلب مسار العميل الآجل";
-  return "طريقة دفع مخصصة";
+  const impact = impactLabel(directImpactFor(method));
+  if (method.kind === "cash") return `استلام المبلغ وحساب الباقي · الأثر: ${impact}`;
+  if (method.kind === "card") return `بطاقة أو دفع لاتلامسي · الأثر: ${impact}`;
+  if (method.kind === "customer-credit") return `اختيار العميل وتسجيل الذمة · الأثر: ${impact}`;
+  return `طريقة معرفة من التاجر · الأثر: ${impact}`;
 };
 
 export function ConfiguredPaymentMethodRail({
@@ -60,6 +84,7 @@ export function ConfiguredPaymentMethodRail({
   onBackToSales,
   onCash,
   onCard,
+  onCredit,
 }: ConfiguredPaymentMethodRailProps) {
   const methods = [...paymentMethods]
     .filter((method) => method.enabled)
@@ -68,7 +93,10 @@ export function ConfiguredPaymentMethodRail({
   const choose = (method: EffectivePosPaymentMethod) => {
     if (method.kind === "cash") onCash();
     if (method.kind === "card") onCard();
+    if (method.kind === "customer-credit") onCredit();
   };
+
+  const twoColumns = methods.length > 5;
 
   return (
     <aside className="inline-checkout-rail inline-checkout-rail--payment" aria-label="الدفع" data-screen-id="POS-SCREEN-007">
@@ -89,29 +117,36 @@ export function ConfiguredPaymentMethodRail({
         <section className="inline-payment-section" aria-labelledby="inline-payment-title">
           <div className="inline-section-heading">
             <strong id="inline-payment-title">طريقة الدفع</strong>
-            <span>الطرق المتاحة يحددها إعداد هذا الفرع والجهاز</span>
+            <span>الطرق المتاحة وترتيبها يحددهما إعداد المنشأة</span>
           </div>
 
           {configurationLoading ? <div className="inline-checkout-note"><span>جارٍ تحميل طرق الدفع المحلية…</span></div> : null}
           {!configurationLoading && methods.length === 0 ? <div className="inline-checkout-note"><span>لا توجد طريقة دفع مفعّلة لهذا الجهاز.</span></div> : null}
 
-          <div className="inline-payment-methods">
+          <div className={`inline-payment-methods ${twoColumns ? "inline-payment-methods--two-columns" : ""}`} data-payment-method-count={methods.length}>
             {methods.map((method) => {
               const supported = supportedKinds.has(method.kind);
-              const methodBusy = method.kind === "cash" ? busy === "cash-method" : method.kind === "card" ? busy === "card-method" : false;
+              const methodBusy = method.kind === "cash"
+                ? busy === "cash-method"
+                : method.kind === "card"
+                  ? busy === "card-method"
+                  : method.kind === "customer-credit"
+                    ? busy === "customer-credit"
+                    : false;
               return (
                 <button
                   type="button"
-                  className={`inline-payment-method ${method.kind === "cash" ? "inline-payment-method--cash" : method.kind === "card" ? "inline-payment-method--mada" : ""}`}
+                  className={`inline-payment-method ${method.kind === "cash" ? "inline-payment-method--cash" : method.kind === "card" ? "inline-payment-method--mada" : method.kind === "customer-credit" ? "inline-payment-method--credit" : "inline-payment-method--custom"}`}
                   key={method.id}
                   onClick={() => choose(method)}
                   disabled={!supported || methodBusy}
                   data-payment-method-id={method.id}
+                  data-payment-impact={directImpactFor(method)}
                 >
                   <PaymentVisual kind={method.kind} />
                   <span className="inline-payment-copy">
                     <strong>{method.name}</strong>
-                    <small>{supported ? descriptionFor(method) : `${descriptionFor(method)} — غير مدعومة في مسار الدفع الحالي`}</small>
+                    <small>{supported ? descriptionFor(method) : `${descriptionFor(method)} · الإتمام المالي لهذه الطريقة ضمن MAP-05`}</small>
                   </span>
                   <span className="inline-payment-chevron">‹</span>
                 </button>
@@ -120,7 +155,7 @@ export function ConfiguredPaymentMethodRail({
           </div>
         </section>
 
-        <div className="inline-checkout-note"><Icon name="wifi" size={17} /><span>إتاحة الطريقة وترتيبها من إعدادات رفاد الفعالة لهذا الجهاز، وليس من قائمة ثابتة داخل الواجهة.</span></div>
+        <div className="inline-checkout-note"><Icon name="wifi" size={17} /><span>نقدي، شبكة وآجل هي البداية الافتراضية؛ أي طريقة إضافية تأخذ مكانها تلقائيًا في نفس الشبكة دون تعديل الواجهة.</span></div>
       </div>
     </aside>
   );
