@@ -3,12 +3,12 @@ import type {
   EffectivePosConfigurationContract,
   ManagerOverrideContract,
 } from "../../../../contracts/posConfiguration";
+import type { DeliveryCollectionContract } from "../../../../contracts/deliveryCollection";
 import type { LoyaltyContract } from "./loyalty";
 import type {
   Customer,
   CustomerDetails,
   DebtLedgerEntry,
-  DeliveryCollectionContext,
   DeviceSession,
   EmployeeSession,
   Money,
@@ -55,11 +55,6 @@ export interface SalesContract {
   saveOpenTicket(input: { commandId: string; ticketId: string }): Promise<Ticket>;
   setCustomer(input: { commandId: string; ticketId: string; customerId: string | null }): Promise<Ticket>;
   setLoyaltyRedemption(input: { commandId: string; ticketId: string; amount: Money }): Promise<Ticket>;
-  setDeliveryCollection(input: {
-    commandId: string;
-    ticketId: string;
-    deliveryCollection: DeliveryCollectionContext | null;
-  }): Promise<Ticket>;
 }
 
 export interface SaleLayoutContract {
@@ -152,6 +147,7 @@ export interface PosRuntimeContract {
   effectiveConfiguration: EffectivePosConfigurationContract;
   authorization: AuthorizationContract;
   managerOverride: ManagerOverrideContract;
+  deliveryCollection: DeliveryCollectionContract;
   catalog: CatalogContract;
   saleLayout: SaleLayoutContract;
   sales: SalesContract;
@@ -164,10 +160,10 @@ export interface PosRuntimeContract {
 
 /**
  * Temporary compatibility alias for the existing legacy/mock business runtime.
- * Configuration/authorization are composed around it at the Rifad composition
- * root so the mock never becomes the owner of those policies.
+ * Configuration/authorization/delivery collection are composed around it at
+ * the Rifad composition root so the mock never becomes the owner of those policies.
  */
 export type MockPosRuntime = Omit<
   PosRuntimeContract,
-  "effectiveConfiguration" | "authorization" | "managerOverride"
+  "effectiveConfiguration" | "authorization" | "managerOverride" | "deliveryCollection"
 >;
