@@ -1,29 +1,35 @@
 export const POS_CONFIGURATION_CONTRACT_VERSION = 1 as const;
 
-export type PosFeatureKey =
-  | "shifts"
-  | "time-clock"
-  | "open-tickets"
-  | "restaurant-service"
-  | "place-management"
-  | "dining-options"
-  | "kitchen-routing"
-  | "customer-display";
+export const POS_FEATURE_KEYS = [
+  "shifts",
+  "time-clock",
+  "open-tickets",
+  "restaurant-service",
+  "place-management",
+  "dining-options",
+  "kitchen-routing",
+  "customer-display",
+] as const;
 
-export type PosPermissionKey =
-  | "accept-payment"
-  | "view-all-receipts"
-  | "reprint-resend-receipts"
-  | "apply-restricted-discounts"
-  | "change-sale-tax"
-  | "perform-returns"
-  | "manage-all-open-tickets"
-  | "void-saved-items"
-  | "view-shift-report"
-  | "open-cash-drawer-without-sale"
-  | "manage-pos-items"
-  | "view-item-cost"
-  | "change-device-settings";
+export type PosFeatureKey = (typeof POS_FEATURE_KEYS)[number];
+
+export const POS_PERMISSION_KEYS = [
+  "accept-payment",
+  "view-all-receipts",
+  "reprint-resend-receipts",
+  "apply-restricted-discounts",
+  "change-sale-tax",
+  "perform-returns",
+  "manage-all-open-tickets",
+  "void-saved-items",
+  "view-shift-report",
+  "open-cash-drawer-without-sale",
+  "manage-pos-items",
+  "view-item-cost",
+  "change-device-settings",
+] as const;
+
+export type PosPermissionKey = (typeof POS_PERMISSION_KEYS)[number];
 
 export type PosPaymentMethodKind = "cash" | "card" | "customer-credit" | "custom";
 
