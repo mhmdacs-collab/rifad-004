@@ -25,6 +25,8 @@ const methods: readonly EffectivePosPaymentMethod[] = [
   { id: "credit", name: "آجل", kind: "customer-credit", enabled: true, sortOrder: 30, availability: "offline-capable", directImpact: "customer-receivable" },
 ];
 
+const noDelivery = () => undefined;
+
 describe("POS-SCREEN-007 configured payment methods", () => {
   it("renders enabled methods in merchant order and dispatches cash/card/credit actions", async () => {
     const user = userEvent.setup();
@@ -45,6 +47,7 @@ describe("POS-SCREEN-007 configured payment methods", () => {
         onCash={onCash}
         onCard={onCard}
         onCredit={onCredit}
+        onDeliveryCollect={noDelivery}
       />,
     );
 
@@ -83,6 +86,7 @@ describe("POS-SCREEN-007 configured payment methods", () => {
         onCash={() => undefined}
         onCard={() => undefined}
         onCredit={() => undefined}
+        onDeliveryCollect={noDelivery}
       />,
     );
 
@@ -104,6 +108,7 @@ describe("POS-SCREEN-007 configured payment methods", () => {
         onCash={() => undefined}
         onCard={() => undefined}
         onCredit={() => undefined}
+        onDeliveryCollect={noDelivery}
       />,
     );
 
