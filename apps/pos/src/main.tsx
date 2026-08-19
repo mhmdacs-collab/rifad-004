@@ -61,6 +61,7 @@ import "./visual-pass-51.css";
 import "./visual-pass-52.css";
 import "./visual-pass-53.css";
 import "./local-service.css";
+import "./manager-override.css";
 
 installVisualPass18ProductPrices();
 
