@@ -19,10 +19,11 @@ describe("Back Office payment and delivery workspace", () => {
     render(<App catalog={getBackOfficeCatalogAdmin()} posConfiguration={admin} />);
     await user.click(screen.getByRole("button", { name: "الدفع والتوصيل" }));
 
-    expect(await screen.findByText("نقدًا")).toBeInTheDocument();
-    expect(screen.getByText("شبكة / مدى")).toBeInTheDocument();
-    expect(screen.getByText("آجل")).toBeInTheDocument();
-    expect(screen.getByText("ذمة العميل")).toBeInTheDocument();
+    const paymentTable = await screen.findByRole("table");
+    expect(within(paymentTable).getByText("نقدًا")).toBeInTheDocument();
+    expect(within(paymentTable).getByText("شبكة / مدى")).toBeInTheDocument();
+    expect(within(paymentTable).getAllByText("آجل").length).toBeGreaterThan(0);
+    expect(within(paymentTable).getByText("ذمة العميل")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "إضافة طريقة دفع" }));
     await user.type(screen.getByLabelText("اسم طريقة الدفع"), "تحويل بنكي");
