@@ -51,7 +51,20 @@ Require-Command docker
 Require-Command node
 Require-Command npm
 
-if (-not (docker info 2>$null)) {
+# Docker Desktop can emit non-fatal daemon warnings on stderr (for example
+# DOCKER_INSECURE_NO_IPTABLES_RAW) even when `docker info` exits successfully.
+# Windows PowerShell 5.1 turns native stderr into ErrorRecords and, with the
+# script-wide Stop preference, can incorrectly abort the field kit. Judge
+# Docker readiness by the native exit code while suppressing preflight output.
+$previousErrorActionPreference = $ErrorActionPreference
+try {
+  $ErrorActionPreference = 'Continue'
+  docker info *> $null
+  $dockerInfoExitCode = $LASTEXITCODE
+} finally {
+  $ErrorActionPreference = $previousErrorActionPreference
+}
+if ($dockerInfoExitCode -ne 0) {
   throw 'Docker is installed but not running. Start Docker Desktop, then run this script again.'
 }
 
