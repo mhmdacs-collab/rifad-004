@@ -1,153 +1,142 @@
 # MAP-01 — Effective POS Configuration + Authorization
 
-Status: **IN PROGRESS**
+Status: **PASS — 2026-08-20**
 
 Started: 2026-08-19
+
+Completed: 2026-08-20
 
 Repository: `mhmdacs-collab/rifad-004`
 
 Branch: `agent/pos-visual-pass-01`
 
-## Why this map item exists
+## Objective
 
-MAP-01 is the first production-operational bridge between the merchant-facing Back Office and the branch POS.
+Make owner-managed operational policy concrete and locally enforceable at the branch POS before shifts, refunds, protected ticket actions and production payment behavior are implemented.
 
-Rifad is not discovering this product area from zero. Loyverse is the primary functional/workflow baseline: the merchant administers employees, roles/access rights, feature switches, stores/POS devices and payment types from Back Office; the POS consumes the effective result and enforces it during cashier work. Rifad keeps that proven product split unless there is a documented reason to improve it.
+The completed vertical slice is:
 
-The architecture remains Rifad-owned. Loyverse behavior is the baseline; Loyverse code/schema is not a dependency. Storage, synchronization and LAN remain separate capabilities behind Rifad contracts.
+`Back Office merchant policy → Rifad-owned admin contract → pure branch/device projection → versioned local effective POS snapshot → local capability authorization → one-action manager override`
 
-MAP-01 must be complete before MAP-02 shifts/cash and before MAP-04/05 protected void/refund/payment behavior can become production-capable, because those operations need a concrete local authorization answer.
+Loyverse remains the functional/workflow baseline for the ownership split. Rifad owns the contracts, data meanings, adapters and UI.
 
-## Current repository truth at start
-
-- `MAP-00` is PASS.
-- Current POS already has device link + branch identity and four-digit PIN unlock.
-- Current `EmployeeSession` carries employee ID/name/role name only; role name is not sufficient authorization authority.
-- Current mock PIN implementation recognizes one fixed cashier PIN only.
-- Current checkout surface hard-codes Cash and mock Card/Mada rather than consuming merchant-configured enabled payment methods/order.
-- Current Back Office implements the catalog family only; Employees, Access Rights, Features, Stores, POS Devices and Payment Types are already reserved/mapped in the UI manifest but not executable.
-- `LocalPersistenceContract` already provides Rifad-owned versioned snapshots/revisions and can host a staging effective-configuration projection without selecting the production database.
-- Production sync selection remains paused until MAP-10. MAP-01 does not introduce a sync engine.
-
-## Loyverse parity baseline used by MAP-01
+## Completed product scope
 
 ### Back Office-owned
 
-1. Employees
-   - name/contact identity;
-   - role;
-   - unique PIN semantics;
-   - allowed stores/branches;
-   - account/back-office access where applicable later.
+MAP-01 implements the bounded administration family for:
 
-2. Access Rights
-   - Owner has full authority;
-   - non-owner roles are configurable;
-   - custom roles are allowed;
-   - store scope further limits where an employee can act;
-   - role display name alone never authorizes an action.
+1. **Employees**
+   - stable employee identity;
+   - name/contact staging fields;
+   - role assignment;
+   - allowed store scope;
+   - active state;
+   - four-digit staging PIN setup semantics.
 
-3. Features
+2. **Access Rights / Roles**
+   - immutable Owner authority;
+   - editable non-owner/custom roles;
+   - explicit POS and Back Office permission keys;
+   - no authorization by role display name.
+
+3. **Features**
    - shifts;
    - time clock;
    - open tickets;
-   - kitchen/customer-display/dining capabilities and other merchant feature switches as they enter approved Rifad scope.
+   - restaurant service;
+   - place management;
+   - dining options;
+   - kitchen routing;
+   - customer display.
 
-4. Stores / branches
-   - merchant-defined store identity and operational assignment.
+Feature switches are policy facts only. They do not mark their later operational map items complete.
 
-5. POS devices
-   - device identity and store assignment.
+4. **Stores**
+   - stable store identity;
+   - merchant-facing metadata;
+   - active state.
 
-6. Payment types
-   - merchant-defined enabled methods and display order;
-   - device/provider setup remains a separate device/integration concern.
+5. **POS Devices**
+   - stable device identity;
+   - one store assignment;
+   - pending-link / linked / disabled staging status.
 
-### POS-consumed / locally enforced
+6. **Payment Types**
+   - stable identity;
+   - name/kind;
+   - enabled state;
+   - merchant display order;
+   - offline-capable / online-required requirement;
+   - optional store scope.
 
-The POS must be able to answer concrete authorization questions from the last effective local snapshot without a cloud call during ordinary offline work.
+Real terminal/provider setup is not MAP-01.
 
-Initial capability keys required by current/forthcoming Rifad flows include:
+## Completed Rifad contract boundaries
 
-- accept payment;
-- view all receipts;
-- reprint/resend receipts;
-- apply restricted discounts;
-- change tax during sale;
-- perform returns;
-- manage all open tickets;
-- void previously saved items;
-- view sensitive shift report/totals;
-- open cash drawer without sale;
-- manage POS items where that surface is enabled;
-- view item cost where relevant;
-- change device settings.
+### `PosConfigurationAdminContract`
 
-Capabilities for future screens can exist as policy facts before the corresponding feature UI is implemented; they must not falsely mark the later feature itself complete.
+Owns merchant intent for the bounded Back Office family. Every mutation uses a stable command identity.
 
-### One-action manager override
+### `projectEffectivePosConfiguration()`
 
-When a cashier lacks a permission, a locally available eligible employee may authorize exactly the blocked action using PIN. The approval:
+Pure Rifad domain projection that:
 
-- does not change the active cashier session;
-- does not elevate subsequent actions;
-- records actor, approver, action/capability, time and target/command context where audit requires it;
-- never stores the raw PIN in audit evidence.
+- validates store/device relationship;
+- selects employees relevant to the branch;
+- carries explicit role/capability snapshots;
+- strips Back Office-only permissions from the POS projection;
+- filters enabled payment methods by branch scope;
+- preserves merchant payment order;
+- carries feature flags and source revision.
 
-## Rifad contract boundaries
+It performs no cloud, LAN, sync or database-provider work.
 
-MAP-01 will add small bounded contracts rather than hide authorization in components:
+### `EffectivePosConfigurationContract`
 
-- effective POS configuration reader;
-- authorization decision boundary;
-- one-action manager override boundary;
-- explicit revision/version identity for locally effective configuration.
+Reads the versioned branch/device-local effective snapshot needed by the POS.
 
-The POS aggregate runtime may expose these contracts through composition, but UI/domain code must not reach into adapter storage directly.
+### `AuthorizationContract`
 
-## Effective configuration projection
+Evaluates concrete capability against:
 
-The local projection is owner-managed configuration materialized for one branch/device. It is not the merchant-management source of truth.
+- employee existence/activity;
+- branch scope;
+- role existence;
+- explicit permission.
 
-Minimum MAP-01 projection:
+### `ManagerOverrideContract`
 
-- schema/version identity;
-- configuration revision;
-- effective timestamp;
-- branch/store ID;
-- POS device ID;
-- enabled feature flags;
-- enabled payment methods + stable IDs + order + availability requirements;
-- local employee authorization snapshots relevant to the branch;
-- role/capability set and branch scope.
+Allows one locally eligible employee to approve exactly one blocked command. Approval records actor/approver/capability/target/revision and never contains raw PIN. Approval does not change the active cashier session or permission set.
 
-Taxes, discounts, receipt configuration, dining/place configuration and other owner-managed facts remain part of the wider effective-configuration concept, but their executable business semantics are introduced in their dependency map items (`MAP-03`/`MAP-04`/`MAP-05`) rather than prematurely freezing incomplete sale/refund models here.
+## Completed implementation slices
 
-## Implementation slices
+### MAP-01A — authority / manifest readiness — PASS
 
-### MAP-01A — authority/manifest readiness
+- Added `BO-FLOW-003 — POS Operational Configuration and Access`.
+- Authorized only `BO-SCREEN-021`, `022`, `026`, `027`, `028`, `029` for this slice.
+- Kept Taxes, Discounts, Receipt settings, Open Tickets, Kitchen/Dining, Timecards and later families gated.
 
-- reconcile the mapped Loyverse screens/actions into one bounded ready configuration/access flow;
-- preserve stable existing screen IDs;
-- authorize only the visible behaviors actually implemented by MAP-01.
+### MAP-01B — contracts + local projection — PASS
 
-### MAP-01B — contracts + local projection
+- Added Rifad effective-configuration/authorization contracts.
+- Added owner-admin contract.
+- Added pure merchant-policy projection.
+- Added current staging local effective-config adapter behind `LocalPersistenceContract`.
 
-- add Rifad configuration/authorization types and contracts;
-- add a staging local adapter backed through the existing local-persistence boundary;
-- create deterministic starter configuration for current test/demo branch without selecting production storage.
+### MAP-01C — POS enforcement — PASS
 
-### MAP-01C — POS enforcement
+- POS loads locally effective configuration.
+- Payment rail follows enabled methods and merchant order.
+- Empty payment list fails safe instead of inventing defaults.
+- Receipt reprint uses `reprint-resend-receipts` authorization.
+- Visible **دفع** now evaluates `accept-payment` before entering checkout.
+- Missing permission blocks the action and opens the one-action manager PIN overlay.
+- A second checkout attempt requires a fresh approval; no session elevation occurs.
 
-- load the versioned effective configuration on POS startup;
-- derive payment-method availability/order from configuration rather than hard-coded display policy;
-- enforce current protected actions through authorization instead of role-name checks/component hacks;
-- add one-action manager override behavior and audit evidence;
-- preserve offline/restart behavior.
+### MAP-01D — Back Office management family — PASS
 
-### MAP-01D — Back Office management slice
-
-Activate, inside the existing locked Back Office shell and Loyverse interaction baseline:
+Inside the existing locked Back Office visual shell, the new **التشغيل والصلاحيات** area implements:
 
 - Employees;
 - Access Rights;
@@ -156,51 +145,67 @@ Activate, inside the existing locked Back Office shell and Loyverse interaction 
 - POS Devices;
 - Payment Types.
 
-All mutations must cross Rifad-owned contracts. The current browser/local transport can remain staging until real Back Office ↔ POS transport in MAP-11.
+Every merchant mutation crosses `PosConfigurationAdminContract`; component state remains draft/presentation state.
 
-### MAP-01E — verification + closeout
+### MAP-01E — verification / closeout — PASS
 
-Required evidence:
+The following exit behaviors are proven:
 
-1. owner-configured policy produces a versioned effective POS projection;
-2. POS can cold/restart from the local projection without cloud dependency;
-3. allowed cashier action succeeds;
-4. denied action is visibly denied;
-5. eligible manager PIN authorizes one blocked action only;
-6. active cashier identity is unchanged after override;
-7. payment methods shown by the POS follow enabled/order configuration;
-8. branch/device scope is enforced;
-9. tests cover contract behavior, restart/offline projection behavior and manager override;
-10. manifest, field register, UI progress, final map/current handoff and this file are reconciled before MAP-01 is marked PASS.
+1. owner policy produces a versioned effective POS projection;
+2. effective projection survives local POS restart;
+3. allowed cashier capability succeeds;
+4. denied capability is locally rejected;
+5. checkout is visibly blocked when `accept-payment` is absent;
+6. eligible manager PIN approves one blocked action only;
+7. active cashier identity/permissions are not elevated by override;
+8. payment methods shown by POS follow configured enabled/order policy;
+9. branch/device scope is enforced;
+10. admin commands are idempotent in current staging adapter;
+11. raw PIN is absent from merchant configuration and override audit facts;
+12. UI Manifest, POS and Back Office CI pass.
 
-## Explicit non-goals
+## Evidence
 
-MAP-01 does **not**:
+Key tests:
 
-- select the production local database;
-- restart synchronization-provider selection;
-- implement LAN/Branch Hub;
-- implement complete tax/discount calculation snapshots;
-- implement shift/cash/time-clock operation itself;
-- implement refund lifecycle;
-- implement real Mada/payment-terminal support;
-- implement ZATCA;
-- claim real cloud Back Office ↔ POS transport.
+- `apps/pos/src/effective-pos-configuration.test.ts`
+- `apps/pos/src/configured-payment-method-rail.test.tsx`
+- `apps/pos/src/manager-override-dialog.test.tsx`
+- `apps/pos/src/map01-owner-policy-integration.test.ts`
+- `apps/pos/src/accept-payment-authorization.test.tsx`
+- `apps/backoffice/src/pos-configuration-admin.test.ts`
+- `apps/backoffice/src/pos-configuration-projection.test.ts`
+- `apps/backoffice/src/pos-operational-config-flow.test.tsx`
 
-## Continuity rule for this work
+Final MAP-01 authorization slice passed GitHub Actions for:
 
-After every meaningful implementation slice, update this file (or a linked current execution status record) with:
+- UI Manifest Integrity;
+- POS application: install/typecheck/tests/build;
+- Back Office application: install/typecheck/tests/build.
 
-- what changed;
-- why it changed;
-- evidence/tests available;
-- remaining gaps;
-- next dependency-safe step.
+## Staging boundaries deliberately retained
 
-When MAP-01 reaches PASS, reconcile all higher-authority/current-state documents so a new AI/tool/session can recover the same project state without relying on chat history.
+These are explicit later gates, not hidden MAP-01 claims:
 
-## Current checkpoint
+- production-safe credential verifier, encrypted/host-secured credential material and brute-force/lockout policy;
+- production local database (MAP-06);
+- real Back Office ↔ POS transport (MAP-11);
+- synchronization provider (MAP-10);
+- LAN/Branch Hub;
+- tax/discount calculation snapshots (MAP-03);
+- shift/cash/time-clock operations (MAP-02);
+- full open-ticket lifecycle (MAP-04);
+- normalized payments/receipt detail/refunds (MAP-05);
+- real payment terminal;
+- ZATCA/fiscal;
+- real printer/KDS/CDS transport.
 
-**MAP-01A review complete; implementation work has started.**
+The current browser admin/local-persistence implementations are staging transports behind Rifad-owned contracts. They do not freeze production database topology or synchronization design.
 
-The first code slice is the Rifad-owned effective-configuration/authorization contract and local staging projection, followed by POS consumption/enforcement. No external coding agent is required for this slice; use Codex only if a later task cannot be safely completed through the available repository tools or needs a broader code transformation/test loop.
+## Result
+
+**MAP-01 PASS.**
+
+The dependency unlocked by this map item is **MAP-02 — Shift + Cash Drawer Ledger + Time Clock**.
+
+Stop after MAP-01 closeout for owner review. Do not begin MAP-02, production database selection or synchronization as part of this map item.
