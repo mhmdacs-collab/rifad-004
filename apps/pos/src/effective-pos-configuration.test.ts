@@ -56,19 +56,19 @@ describe("MAP-01 effective POS configuration + authorization", () => {
 
     await expect(authorization.evaluate({
       employeeId: "employee-001",
-      capability: "reprint-resend-receipts",
+      capability: "perform-returns",
       branchId: "branch-olaya",
     })).resolves.toMatchObject({ allowed: false, denyReason: "permission-missing" });
 
     await expect(authorization.evaluate({
       employeeId: "employee-manager-001",
-      capability: "reprint-resend-receipts",
+      capability: "perform-returns",
       branchId: "branch-olaya",
     })).resolves.toMatchObject({ allowed: true, denyReason: null });
 
     await expect(authorization.evaluate({
       employeeId: "employee-manager-001",
-      capability: "reprint-resend-receipts",
+      capability: "perform-returns",
       branchId: "branch-other",
     })).resolves.toMatchObject({ allowed: false, denyReason: "branch-out-of-scope" });
   });
@@ -83,9 +83,9 @@ describe("MAP-01 effective POS configuration + authorization", () => {
     await expect(override.approveOnce({
       actorEmployeeId: "employee-001",
       approverPin: "1234",
-      capability: "reprint-resend-receipts",
+      capability: "perform-returns",
       branchId: "branch-olaya",
-      commandId: "reprint-r-00001",
+      commandId: "refund-authorization-001",
       targetType: "receipt",
       targetId: "receipt-001",
     })).rejects.toMatchObject({ code: "OVERRIDE_NOT_AUTHORIZED" });
@@ -93,15 +93,15 @@ describe("MAP-01 effective POS configuration + authorization", () => {
     const first = await override.approveOnce({
       actorEmployeeId: "employee-001",
       approverPin: "4321",
-      capability: "reprint-resend-receipts",
+      capability: "perform-returns",
       branchId: "branch-olaya",
-      commandId: "reprint-r-00001",
+      commandId: "refund-authorization-001",
       targetType: "receipt",
       targetId: "receipt-001",
     });
     expect(first.actorEmployeeId).toBe("employee-001");
     expect(first.approverEmployeeId).toBe("employee-manager-001");
-    expect(first.capability).toBe("reprint-resend-receipts");
+    expect(first.capability).toBe("perform-returns");
     expect(JSON.stringify(first)).not.toContain("4321");
 
     const reopenedPersistence = createBrowserLocalPersistence(window.localStorage, key);
@@ -111,9 +111,9 @@ describe("MAP-01 effective POS configuration + authorization", () => {
     const duplicate = await reopenedOverride.approveOnce({
       actorEmployeeId: "employee-001",
       approverPin: "4321",
-      capability: "reprint-resend-receipts",
+      capability: "perform-returns",
       branchId: "branch-olaya",
-      commandId: "reprint-r-00001",
+      commandId: "refund-authorization-001",
       targetType: "receipt",
       targetId: "receipt-001",
     });
