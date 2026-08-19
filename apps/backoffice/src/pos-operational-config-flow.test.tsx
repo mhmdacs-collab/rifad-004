@@ -25,7 +25,7 @@ describe("BO-FLOW-003 POS operational configuration", () => {
     const timeClock = screen.getByRole("checkbox", { name: "ساعة الدوام" });
     expect(timeClock).not.toBeChecked();
     await user.click(timeClock);
-    expect(await screen.findByText("تم تفعيل ساعة الدوام")).toBeInTheDocument();
+    expect(await screen.findByRole("status")).toHaveTextContent("تم تفعيل ساعة الدوام");
     expect((await admin.read()).features["time-clock"]).toBe(true);
 
     await user.click(screen.getByRole("button", { name: "الفروع" }));
