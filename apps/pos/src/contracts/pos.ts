@@ -8,6 +8,7 @@ import type {
   Customer,
   CustomerDetails,
   DebtLedgerEntry,
+  DeliveryCollectionContext,
   DeviceSession,
   EmployeeSession,
   Money,
@@ -54,6 +55,11 @@ export interface SalesContract {
   saveOpenTicket(input: { commandId: string; ticketId: string }): Promise<Ticket>;
   setCustomer(input: { commandId: string; ticketId: string; customerId: string | null }): Promise<Ticket>;
   setLoyaltyRedemption(input: { commandId: string; ticketId: string; amount: Money }): Promise<Ticket>;
+  setDeliveryCollection(input: {
+    commandId: string;
+    ticketId: string;
+    deliveryCollection: DeliveryCollectionContext | null;
+  }): Promise<Ticket>;
 }
 
 export interface SaleLayoutContract {
