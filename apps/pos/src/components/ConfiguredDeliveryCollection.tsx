@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { EffectiveDeliveryChannel, EffectiveDeliveryConfiguration } from "../../../../contracts/posConfiguration";
 
 const executableChannel = (channel: EffectiveDeliveryChannel) =>
