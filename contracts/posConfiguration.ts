@@ -35,6 +35,24 @@ export type PosPaymentMethodKind = "cash" | "card" | "customer-credit" | "custom
 
 export type PosPaymentAvailability = "offline-capable" | "online-required";
 
+/**
+ * Financial destination immediately affected by a single payment method.
+ *
+ * This is intentionally independent from the payment method display name. For
+ * example STC Pay, Visa and a bank transfer can all affect `bank`, while a
+ * delivery platform can affect `external-platform` until its later settlement.
+ */
+export const POS_PAYMENT_DIRECT_IMPACTS = [
+  "cash",
+  "bank",
+  "customer-receivable",
+  "external-platform",
+] as const;
+
+export type PosPaymentDirectImpact = (typeof POS_PAYMENT_DIRECT_IMPACTS)[number];
+
+export type PosSystemDefaultPayment = "cash" | "network" | "credit";
+
 export type EffectivePosPaymentMethod = Readonly<{
   id: string;
   name: string;
@@ -42,6 +60,41 @@ export type EffectivePosPaymentMethod = Readonly<{
   enabled: boolean;
   sortOrder: number;
   availability: PosPaymentAvailability;
+  /**
+   * Optional for backwards compatibility with pre-extension local snapshots.
+   * Current projections/adapters fill it for all active methods.
+   */
+  directImpact?: PosPaymentDirectImpact;
+  /** Stable identity for the three starter methods. Hiding is not deletion. */
+  systemDefault?: PosSystemDefaultPayment | null;
+}>;
+
+export type DeliveryChannelKind = "platform" | "self-delivery" | "custom";
+export type DeliveryCodSettlement = "courier-pays-merchant" | "platform-settlement";
+export type SelfDeliveryFeeBeneficiary = "merchant" | "courier";
+
+export type EffectiveDeliveryChannel = Readonly<{
+  id: string;
+  name: string;
+  kind: DeliveryChannelKind;
+  brandKey: string;
+  enabled: boolean;
+  electronicPaymentEnabled: boolean;
+  cashOnDeliveryEnabled: boolean;
+  codSettlement: DeliveryCodSettlement;
+  /** Empty means all branches; projection strips channels outside this branch. */
+  storeIds: readonly string[];
+  selfDelivery: Readonly<{
+    feeMode: "manual";
+    defaultFeeHalalas: number;
+    allowPosFeeOverride: boolean;
+    feeBeneficiary: SelfDeliveryFeeBeneficiary;
+  }> | null;
+}>;
+
+export type EffectiveDeliveryConfiguration = Readonly<{
+  enabled: boolean;
+  channels: readonly EffectiveDeliveryChannel[];
 }>;
 
 export type PosRoleAuthorizationSnapshot = Readonly<{
@@ -68,6 +121,8 @@ export type EffectivePosConfiguration = Readonly<{
   deviceId: string;
   features: Readonly<Record<PosFeatureKey, boolean>>;
   paymentMethods: readonly EffectivePosPaymentMethod[];
+  /** Optional only for pre-extension local snapshots. */
+  delivery?: EffectiveDeliveryConfiguration;
   roles: readonly PosRoleAuthorizationSnapshot[];
   employees: readonly PosEmployeeAuthorizationSnapshot[];
 }>;
