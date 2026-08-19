@@ -1,3 +1,8 @@
+import type {
+  AuthorizationContract,
+  EffectivePosConfigurationContract,
+  ManagerOverrideContract,
+} from "../../../../contracts/posConfiguration";
 import type { LoyaltyContract } from "./loyalty";
 import type {
   Customer,
@@ -138,6 +143,9 @@ export interface PosRuntimeContract {
   restore(): RestoredPosState;
   deviceSession: DeviceSessionContract;
   employeeSession: EmployeeSessionContract;
+  effectiveConfiguration: EffectivePosConfigurationContract;
+  authorization: AuthorizationContract;
+  managerOverride: ManagerOverrideContract;
   catalog: CatalogContract;
   saleLayout: SaleLayoutContract;
   sales: SalesContract;
