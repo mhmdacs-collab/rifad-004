@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { EffectiveDeliveryChannel, EffectiveDeliveryConfiguration } from "../../../../contracts/posConfiguration";
+import type { DeliveryMerchantCollection } from "../../../../contracts/deliveryCollection";
 
 const executableChannel = (channel: EffectiveDeliveryChannel) =>
   channel.kind !== "self-delivery"
@@ -12,11 +13,10 @@ export const hasExecutableDeliveryCollection = (delivery: EffectiveDeliveryConfi
 type Props = {
   delivery: EffectiveDeliveryConfiguration;
   onBack: () => void;
-  onCash: () => void;
-  onCard: () => void;
+  onCollect: (channel: EffectiveDeliveryChannel, merchantCollection: DeliveryMerchantCollection) => void;
 };
 
-export function ConfiguredDeliveryCollection({ delivery, onBack, onCash, onCard }: Props) {
+export function ConfiguredDeliveryCollection({ delivery, onBack, onCollect }: Props) {
   const channels = delivery.channels.filter(executableChannel);
   const [selected, setSelected] = useState<EffectiveDeliveryChannel | null>(null);
 
@@ -47,8 +47,8 @@ export function ConfiguredDeliveryCollection({ delivery, onBack, onCash, onCard 
             <span>المندوب يسدد للمحل عند استلام الطلب، ثم يحصل القيمة من العميل عند التوصيل.</span>
           </div>
           <div className="delivery-collection-actions">
-            <button type="button" className="delivery-collection-action" onClick={onCash}><strong>نقدي</strong><small>الأثر المباشر: النقد</small></button>
-            <button type="button" className="delivery-collection-action" onClick={onCard}><strong>شبكة</strong><small>الأثر المباشر: البنك</small></button>
+            <button type="button" className="delivery-collection-action" onClick={() => onCollect(selected, "cash")}><strong>نقدي</strong><small>الأثر المباشر: النقد</small></button>
+            <button type="button" className="delivery-collection-action" onClick={() => onCollect(selected, "card")}><strong>شبكة</strong><small>الأثر المباشر: البنك</small></button>
           </div>
         </div>
       )}
