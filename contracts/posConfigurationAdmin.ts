@@ -1,30 +1,39 @@
-import type {
-  PosFeatureKey,
-  PosPaymentAvailability,
-  PosPaymentMethodKind,
-  PosPermissionKey,
+import {
+  POS_PERMISSION_KEYS,
+  type PosFeatureKey,
+  type PosPaymentAvailability,
+  type PosPaymentMethodKind,
+  type PosPermissionKey,
 } from "./posConfiguration";
 
 export const POS_CONFIGURATION_ADMIN_CONTRACT_VERSION = 1 as const;
 
-export type BackOfficePermissionKey =
-  | "access-back-office"
-  | "view-sales-reports"
-  | "cancel-receipts"
-  | "manage-items"
-  | "manage-inventory"
-  | "view-item-cost"
-  | "manage-employees"
-  | "manage-customers"
-  | "edit-general-settings"
-  | "manage-stores"
-  | "manage-pos-devices"
-  | "manage-payment-types"
-  | "manage-loyalty"
-  | "manage-taxes"
-  | "manage-kitchen-routing"
-  | "manage-dining-options"
-  | "manage-billing";
+export const BACK_OFFICE_PERMISSION_KEYS = [
+  "access-back-office",
+  "view-sales-reports",
+  "cancel-receipts",
+  "manage-items",
+  "manage-inventory",
+  "view-item-cost",
+  "manage-employees",
+  "manage-customers",
+  "edit-general-settings",
+  "manage-stores",
+  "manage-pos-devices",
+  "manage-payment-types",
+  "manage-loyalty",
+  "manage-taxes",
+  "manage-kitchen-routing",
+  "manage-dining-options",
+  "manage-billing",
+] as const;
+
+export type BackOfficePermissionKey = (typeof BACK_OFFICE_PERMISSION_KEYS)[number];
+
+export const MERCHANT_PERMISSION_KEYS = [
+  ...POS_PERMISSION_KEYS,
+  ...BACK_OFFICE_PERMISSION_KEYS,
+] as const;
 
 export type MerchantPermissionKey = PosPermissionKey | BackOfficePermissionKey;
 
