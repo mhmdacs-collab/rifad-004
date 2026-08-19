@@ -77,6 +77,8 @@ const starterConfiguration = (branchId: string, deviceId: string): EffectivePosC
       enabled: true,
       sortOrder: 10,
       availability: "offline-capable",
+      directImpact: "cash",
+      systemDefault: "cash",
     },
     {
       id: "payment-mada-mock",
@@ -85,8 +87,21 @@ const starterConfiguration = (branchId: string, deviceId: string): EffectivePosC
       enabled: true,
       sortOrder: 20,
       availability: "online-required",
+      directImpact: "bank",
+      systemDefault: "network",
+    },
+    {
+      id: "payment-credit",
+      name: "آجل",
+      kind: "customer-credit",
+      enabled: true,
+      sortOrder: 30,
+      availability: "offline-capable",
+      directImpact: "customer-receivable",
+      systemDefault: "credit",
     },
   ],
+  delivery: { enabled: false, channels: [] },
   roles: [
     {
       roleId: "role-cashier",
