@@ -157,7 +157,11 @@ export interface PosRuntimeContract {
 }
 
 /**
- * Temporary compatibility alias for the existing mock implementation.
- * New product/runtime code must depend on PosRuntimeContract instead.
+ * Temporary compatibility alias for the existing legacy/mock business runtime.
+ * Configuration/authorization are composed around it at the Rifad composition
+ * root so the mock never becomes the owner of those policies.
  */
-export type MockPosRuntime = PosRuntimeContract;
+export type MockPosRuntime = Omit<
+  PosRuntimeContract,
+  "effectiveConfiguration" | "authorization" | "managerOverride"
+>;
