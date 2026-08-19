@@ -1,6 +1,6 @@
 # Rifad POS UI Naming and Field Register
 
-Last updated: 2026-08-19
+Last updated: 2026-08-20
 
 ## Purpose
 
@@ -27,7 +27,7 @@ Use with `UI_EXECUTION_MANIFEST.json`, `DESIGN_AUTHORITY.md`, `UI_PROGRESS.md`, 
 | --- | --- | --- |
 | Touch/page grid | **شاشة لمس** | CURRENT |
 | Search/barcode-first | **البيع السريع** | CURRENT; internal `basic` compatibility may remain |
-| General checkout | **دفع** | CURRENT |
+| General checkout | **دفع** | CURRENT; MAP-01 now gates entry with `accept-payment` |
 | Restaurant local alternative | **محلي** | CURRENT-MOCK in POS-FLOW-002; simple → checkout, advanced → place selector |
 | Advanced open local orders | **طلبات مفتوحة** | CURRENT-MOCK; may display `طلبات مفتوحة · N` |
 | Update reopened advanced local order | **إرسال** | CURRENT-MOCK; mock kitchen revision/update only |
@@ -104,7 +104,7 @@ Merchant-facing terminology:
 | channel pricelist/product override | REQUIRED-GAP | delivery/channel pricing |
 | branch/store-specific availability/price | REQUIRED-GAP | future branch-aware catalog configuration |
 | cost / inventory tracking / low-stock threshold | REQUIRED-GAP | dedicated inventory/product flow required |
-| tax assignment | REQUIRED-GAP | MAP-01/MAP-03 configuration/sale-truth work |
+| tax assignment | REQUIRED-GAP | MAP-03 configuration/sale-truth work |
 | composite structure | REQUIRED-GAP | dedicated product flow |
 | production media asset/storage identity | REQUIRED-GAP | browser image Data URL is staging only |
 | `tone` | UI-ONLY | older prototype visual treatment |
@@ -186,8 +186,8 @@ These remain **CURRENT-MOCK** product evidence, not final production persistence
 
 | Field | Status | Meaning |
 | --- | --- | --- |
-| `restaurantServiceEnabled` | CURRENT-MOCK / production REQUIRED-GAP | enables restaurant semantics |
-| `placeManagementEnabled` | CURRENT-MOCK / production REQUIRED-GAP | enables exact place workflow |
+| `restaurantServiceEnabled` | CURRENT-MOCK / production REQUIRED-GAP | enables restaurant semantics; MAP-01 also carries an owner feature flag but the old prototype config is not yet migrated |
+| `placeManagementEnabled` | CURRENT-MOCK / production REQUIRED-GAP | enables exact place workflow; owner-managed full restaurant configuration remains later work |
 
 ## PlaceGroup
 
@@ -237,43 +237,65 @@ Production eventually needs durable loyalty transaction/audit evidence and owner
 
 ---
 
-# 7. Effective configuration / authorization — MAP-01
+# 7. Effective configuration / authorization — MAP-01 PASS
 
-This is now an explicit high-priority REQUIRED-GAP because owner-managed policy must be enforceable locally by the cashier POS.
+MAP-01 is no longer an undefined product-model gap. The Rifad-owned configuration/authorization meaning is established and executable with current browser staging transports. Production storage/transport/security remain later gates.
 
-## Owner/Back Office-owned configuration projected to POS
+## Owner/Back Office merchant configuration
 
-Required durable/effective meanings include:
+`MerchantPosConfiguration` / `PosConfigurationAdminContract` CURRENT at the contract/domain level and CURRENT-MOCK at the browser staging transport level.
 
 | Meaning | Status |
 | --- | --- |
-| branch/device scope | CURRENT identity foundation; effective configuration binding REQUIRED-GAP |
-| feature flags (shifts, time clock, open tickets, restaurant/place management, etc.) | REQUIRED-GAP; restaurant flags are CURRENT-MOCK staging only |
-| enabled payment methods | REQUIRED-GAP |
-| payment-method display order | REQUIRED-GAP |
-| tax rules needed for offline sale | REQUIRED-GAP |
-| discount definitions/restrictions needed for offline sale | REQUIRED-GAP |
-| receipt-print configuration | CURRENT local always-print preference; owner-managed effective config REQUIRED-GAP |
-| restaurant groups/places | CURRENT-MOCK staging; owner-managed production config REQUIRED-GAP |
-| cashier-visible sale layout scope | CURRENT-MOCK/runtime behavior; final owner/device scope REQUIRED-GAP |
+| configuration revision / updatedAt | CURRENT / CURRENT-MOCK transport |
+| Stores: id/name/address/phone/taxRegistrationNumber/description/active | CURRENT / CURRENT-MOCK transport |
+| POS Devices: id/name/storeId/status | CURRENT / CURRENT-MOCK transport |
+| Roles: id/name/explicit permissions/ownerRole | CURRENT / CURRENT-MOCK transport |
+| Employees: id/name/email/phone/roleId/storeIds/active/pinConfigured | CURRENT / CURRENT-MOCK transport |
+| feature flags | CURRENT / CURRENT-MOCK transport |
+| Payment Types: id/name/kind/enabled/sortOrder/availability/storeIds | CURRENT / CURRENT-MOCK transport |
+| raw employee PIN | **must not be merchant configuration**; current staging adapter stores only a low-entropy proof fingerprint separately |
+| production credential verifier/lockout/host security | REQUIRED-GAP before production host/storage security gate |
 
-The cashier does not need merchant-management screens for these facts. The POS needs a local effective projection that survives offline operation.
+`BO-FLOW-003` now provides executable Back Office administration for Employees, Access Rights, Features, Stores, POS Devices and Payment Types. Taxes/Discounts/Receipt/Open-ticket/Kitchen/Dining business semantics remain owned by their later map items even where feature keys already exist.
+
+## Effective POS projection
+
+`EffectivePosConfiguration` CURRENT contract/domain meaning and CURRENT-MOCK local staging persistence:
+
+- `contractVersion` / `schemaVersion`;
+- `revision` / `effectiveAt`;
+- `branchId` / `deviceId`;
+- feature flags;
+- enabled and branch-filtered payment methods + merchant order + availability;
+- branch-relevant employee snapshots;
+- POS-only role/capability snapshots.
+
+`projectEffectivePosConfiguration()` is pure Rifad domain logic. It validates store/device relation, filters branch scope and removes Back Office-only rights before the snapshot reaches POS.
+
+Real Back Office → POS transport is still REQUIRED-GAP for MAP-11. MAP-01 does not call its current test/staging assembly “synchronization”.
 
 ## Employee authorization
 
-CURRENT `EmployeeSession`: `employeeId`, `employeeName`, `roleName`.
+Legacy `EmployeeSession` remains CURRENT identity convenience: `employeeId`, `employeeName`, `roleName`. Role name is **not** authorization authority.
 
-REQUIRED-GAP:
+Authorization facts established by MAP-01:
 
-- effective permission/capability set;
-- store/branch scope;
-- permission snapshot/version/effective time where necessary;
-- one-action manager override identity;
-- approved action/command identity;
-- override timestamp and reason/context where required for audit;
-- safe local validation while offline.
+| Meaning | Status |
+| --- | --- |
+| concrete POS permission/capability set | CURRENT contract + CURRENT-MOCK local projection |
+| employee active state | CURRENT contract + CURRENT-MOCK local projection |
+| branch/store scope | CURRENT contract + CURRENT-MOCK local projection |
+| configuration revision/effective time | CURRENT contract + CURRENT-MOCK local projection |
+| local authorization decision + deny reason | CURRENT |
+| `accept-payment` visible checkout gate | CURRENT |
+| `reprint-resend-receipts` visible reprint gate | CURRENT |
+| one-action manager override request | CURRENT |
+| approval ID / actor / approver / capability / branch / command / target / approvedAt / configurationRevision | CURRENT contract + CURRENT-MOCK audit persistence |
+| raw manager PIN in approval/audit | forbidden; tests prove absence |
+| permanent cashier elevation after override | forbidden; tests prove next protected checkout requires a fresh approval |
 
-Role name alone must never be treated as authorization authority.
+Current local authorization can operate after restart from the effective snapshot without a live cloud call.
 
 ---
 
@@ -327,7 +349,7 @@ Shifts and time clock may be enabled independently by merchant configuration.
 
 # 9. Checkout / payments / settlement — MAP-05
 
-Current checkout includes checkout identity, ticket link, selected method and command/idempotency identity.
+Current checkout includes checkout identity, ticket link, selected method and command/idempotency identity. MAP-01 now requires local `accept-payment` authorization before checkout entry.
 
 Current methods:
 
@@ -371,7 +393,7 @@ CURRENT executable behavior:
 
 - sale-success receipt;
 - receipt list/history (`POS-SCREEN-016`);
-- reprint;
+- reprint, now locally protected by `reprint-resend-receipts`;
 - explicit confirmation after `delivery-unknown` before another print attempt;
 - email-receipt behavior in the current runtime.
 
@@ -437,10 +459,12 @@ CURRENT infrastructure facts:
 - updatedAt;
 - module-private snapshot value.
 
-Current private namespaces:
+Current private namespaces include:
 
 - `pos.runtime`, schema v1;
-- `restaurant.service`, schema v1.
+- `restaurant.service`, schema v1;
+- `pos.effective-configuration`, schema v1 — MAP-01 local policy snapshot;
+- `pos.authorization-audit`, schema v1 — MAP-01 manager-approval audit proof.
 
 Another module must not use another module's private snapshot/table as an integration API.
 
@@ -471,7 +495,8 @@ Current event families include:
 - `local-order.opened.v1`;
 - `local-order.updated.v1`;
 - `local-order.closed.v1`;
-- `print.attempted.v1`.
+- `print.attempted.v1`;
+- `authorization.manager-override-approved.v1`.
 
 These event shapes may evolve before production contract freeze. Stable identity/idempotency behavior is the invariant; physical local tables are not a Sync/Fiscal/LAN public API.
 
@@ -535,9 +560,9 @@ CURRENT local preference/proof behavior:
 - restaurant service ON/OFF CURRENT-MOCK;
 - place management ON/OFF CURRENT-MOCK.
 
-The legacy visible-order-type setting is superseded/hidden in normal current UI.
+MAP-01 CURRENT product authority now also includes a structured merchant configuration → effective POS configuration boundary for employee authorization, feature flags, branch/device scope and Payment Types. Its browser storage is staging transport only.
 
-MAP-01 replaces scattered staging configuration as product authority with a structured Rifad effective-configuration/authorization boundary while preserving useful current behavior.
+The legacy visible-order-type setting is superseded/hidden in normal current UI. The old restaurant prototype settings are not silently promoted into the new merchant-configuration model; their full migration belongs to the appropriate restaurant configuration lifecycle.
 
 ---
 
@@ -566,18 +591,22 @@ Do not classify merchant-selected category/group/item catalog colors or item ima
 
 # 17. Highest-priority production gaps — dependency order
 
-The current roadmap order is:
+Current checkpoint:
 
-1. **MAP-01:** structured owner→POS effective configuration and real authorization/manager override meaning;
-2. **MAP-02:** shift, cash ledger and time-clock facts;
-3. **MAP-03:** POS pricing-option/add-on chooser plus sold-line pricing/discount/tax/fulfillment snapshots;
-4. **MAP-04:** full open-ticket/open-order lifecycle and conflict/void/revision semantics;
-5. **MAP-05:** normalized payment records, split-ready model, receipt detail and refund lifecycle;
-6. **MAP-06:** production local persistence, real migrations, crash recovery and volume;
-7. **MAP-07/08/09:** packaged Windows, physical scanner/printer/cash drawer and supported tablet/PWA evidence;
-8. **MAP-10:** synchronization re-entry/final adoption using real Rifad operational facts;
-9. **MAP-11:** real owner Back Office ↔ cashier POS integration;
-10. later verticals: inventory, restaurant admin/KDS/CDS, delivery, fiscal, accounting and other approved capabilities.
+- **MAP-00 PASS** — repository reality/authority reconciliation;
+- **MAP-01 PASS** — owner→POS effective configuration + authorization/manager override.
+
+Next dependency order:
+
+1. **MAP-02:** shift, cash ledger and time-clock facts;
+2. **MAP-03:** POS pricing-option/add-on chooser plus sold-line pricing/discount/tax/fulfillment snapshots;
+3. **MAP-04:** full open-ticket/open-order lifecycle and conflict/void/revision semantics;
+4. **MAP-05:** normalized payment records, split-ready model, receipt detail and refund lifecycle;
+5. **MAP-06:** production local persistence, real migrations, crash recovery and volume;
+6. **MAP-07/08/09:** packaged Windows, physical scanner/printer/cash drawer and supported tablet/PWA evidence;
+7. **MAP-10:** synchronization re-entry/final adoption using real Rifad operational facts;
+8. **MAP-11:** real owner Back Office ↔ cashier POS integration;
+9. later verticals: inventory, restaurant admin/KDS/CDS, delivery, fiscal, accounting and other approved capabilities.
 
 Production media asset storage, branch/store product overrides, advanced inventory, delivery mappings, ZATCA and real payment-terminal evidence remain separately governed capabilities; they must not be smuggled into an unrelated map item.
 
