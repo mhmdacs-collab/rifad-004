@@ -9,7 +9,7 @@ afterEach(() => {
 });
 
 describe("MAP-01 restored device effective configuration", () => {
-  it("repairs LocalPersistence binding on restart so default Cash/Card remain available", async () => {
+  it("repairs LocalPersistence binding on restart so default Cash/Network/Credit remain available", async () => {
     const firstRuntime = createPosRuntimeAdapter();
     await firstRuntime.deviceSession.linkWithCredentials({
       commandId: "device-link-regression",
@@ -29,9 +29,10 @@ describe("MAP-01 restored device effective configuration", () => {
     const restartedRuntime = createPosRuntimeAdapter();
     const effective = await restartedRuntime.effectiveConfiguration.read();
 
-    expect(effective.paymentMethods.map((method) => [method.id, method.kind, method.enabled])).toEqual([
-      ["payment-cash", "cash", true],
-      ["payment-mada-mock", "card", true],
+    expect(effective.paymentMethods.map((method) => [method.id, method.kind, method.enabled, method.directImpact])).toEqual([
+      ["payment-cash", "cash", true, "cash"],
+      ["payment-mada-mock", "card", true, "bank"],
+      ["payment-credit", "customer-credit", true, "customer-receivable"],
     ]);
 
     const persistence = createBrowserLocalPersistence();
