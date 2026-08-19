@@ -1,442 +1,378 @@
-# Rifad UI Progress Record
+# Rifad UI / Product Progress
 
-Last updated: 2026-08-17
+Last updated: 2026-08-19
 
-This is the living execution record for the current Rifad interface phase. It records what is executable now, what the owner has visually accepted, what is still under visual review, and which production/data/integration gaps remain.
+Status: **MAP-00 reality-reconciled progress record**
 
 Use with:
 
-- `UI_EXECUTION_MANIFEST.json` — implementation scope/gates;
-- `POS_UI_NAMING_AND_FIELD_REGISTER.md` — canonical names and UI-to-data traceability;
-- `DESIGN_AUTHORITY.md` — interaction/visual authority;
-- `visual-decisions/` — accepted/current design decisions.
+- `PROJECT_RULES.md`;
+- `docs/architecture/CURRENT_DECISIONS.md`;
+- `docs/RIFAD_FINAL_IMPLEMENTATION_MAP.md`;
+- `docs/MAP_00_REALITY_AUTHORITY_RECONCILIATION.md`;
+- `UI_EXECUTION_MANIFEST.json`;
+- `POS_UI_NAMING_AND_FIELD_REGISTER.md`.
+
+This file reports what exists. It does not authorize new behavior outside the manifest gate and it does not turn mock/staging behavior into a production claim.
+
+---
 
 ## Status legend
 
-- ✅ implemented and behavior-tested
-- 👁 owner visually reviewed/accepted for the stated point
-- 🟡 implemented/directed but owner visual review still open
-- ⚠️ known production/data/integration gap
-- ⬜ not implemented
+- ✅ **Implemented/executable** — code exists in the current branch.
+- 🟡 **Executable proof/staging** — code exists and is testable but production transport/domain lifecycle is still incomplete.
+- 🧩 **Mapped/discovered** — product meaning exists in research/manifest but is not implemented.
+- ⛔ **Not claimed** — explicitly outside current production evidence.
 
 ---
 
-# Current working state
+# 1. Product surfaces
 
-- Repository: `mhmdacs-collab/rifad-004`
-- Branch: `agent/pos-visual-pass-01`
-- PR: **#2 — Open + Draft + not merged**
-- Base: `main`
-- Do not merge until explicit owner approval.
+| Surface | Current state |
+|---|---|
+| POS | ✅ substantial executable cashier application; operational core still has specific gaps before production local DB freeze |
+| Back Office | ✅ locked management shell + executable catalog family (`BO-FLOW-002`); other management families remain mapped |
+| Dashboard | 🧩 mapped/researched only |
+| KDS | 🧩 mapped/researched; current POS kitchen behavior is mock revision/dispatch state only |
+| CDS | 🧩 mapped/researched only |
 
-The executable POS is Rifad-owned React/TypeScript/Vite with mock/local adapters selected behind Rifad-owned composition roots. Current UI behavior does not imply a production database, sync engine, fiscal transport, real kitchen/KDS transport, real payment terminal, or delivery-platform connector.
-
----
-
-# Binding UX principle
-
-> **Touch first, then human visual clarity, then beauty.**
-
-Current rules include:
-
-- frequent controls target about 48px+ where possible; short screens retain about 44–48px important targets;
-- change layout/density/columns before shrinking important touch targets;
-- money and the next action must read at normal cashier distance;
-- large POS, 1366×768, tablet landscape, short-height, and mobile/narrow layouts matter;
-- repeated content absorbs scrolling before transaction-completion actions;
-- sale/payment/success share one stable two-slot operation card and one desktop/tablet rail width;
-- physical action slots stay fixed even when state-specific green priority changes;
-- repeated numeric touch entry prefers embedded POS keypads while preserving hardware keyboard support;
-- dynamic validation reserves stable geometry.
+Rifad remains one product with separate user roles/surfaces. The branch cashier uses POS; owner/management uses Back Office. The POS may consume owner-managed configuration locally without needing an equivalent cashier administration screen.
 
 ---
 
-# 1. Entry / employee session
+# 2. POS — executable reality
 
-Status: ✅
+## 2.1 Device and employee entry
 
-Implemented device/account sign-in shell, employee PIN unlock, transition to sales, and restoration of supported mock-local state. No production identity backend is claimed.
+✅ Account/device-link screen exists (`POS-SCREEN-001`).
 
----
+✅ Device session carries device and branch identity in the current runtime.
 
-# 2. Sales workspace
+✅ Four-digit employee PIN unlock exists (`POS-SCREEN-002`).
 
-Status: ✅ 👁
+🧩 Time clock is not implemented even though older naming grouped it with the PIN screen.
 
-Implemented/iterated:
+🧩 Effective permission/capability snapshots and one-action manager override are not implemented. Current `EmployeeSession` has employee identity/name/role name only.
 
-- RTL-first tablet/desktop shell;
-- touch product grid and configurable sale pages;
-- responsive/mobile ticket surface;
-- Saudi-riyal presentation;
-- whole product cards as touch targets;
-- editable ticket lines;
-- sale-page create/place/remove/rename/reorder/delete UI;
-- responsive product-grid behavior;
-- touch audit across header/cards/tabs/ticket/actions.
+## 2.2 Sales workspace
 
-Accepted direction:
+✅ Arabic RTL/touch-first sales workspace exists.
 
-- product card carries identity/name and unit price;
-- basket emphasizes `quantity × product name → row total`;
-- repeated product addition emphasizes quantity feedback;
-- active action is obvious without moving footer geometry;
-- density never wins over finger reliability.
+✅ Tablet/wide catalog + ticket composition exists; narrow behavior uses a different composition rather than shrinking every target.
 
-## Sales modes
+✅ Touch pages and Quick Sale/search-first mode exist.
 
-- **شاشة لمس** — touch/page-grid sales;
-- **البيع السريع** — search/barcode-first sales.
+✅ Catalog category loading/search exists.
 
-Legacy cashier-facing **شاشة أساسية** is removed; internal `basic` compatibility may remain.
+✅ Product-card addition exists.
 
-## Quick Sale
+✅ Ticket line quantity edit and embedded keypad exist, including high-quantity behavior.
 
-Status: ✅ 👁 / barcode data ⚠️
+✅ Line removal and one-touch Clear Cart behavior exist.
 
-Search is primary, whole rows are touch targets, long names wrap, result scrolling is isolated, and scanner/keyboard focus is preserved/restored.
+✅ Stable transaction-footer/rail geometry is implemented across adjacent sale/payment/success states.
 
-⚠️ Product still lacks real SKU/barcode identity; mock search is not production scanner evidence.
+✅ Sale-page editing currently includes create, rename, delete, move/reorder, product placement and removal.
 
----
+🧩 Open-value/weighed-item entry is not implemented.
 
-# 3. Basket / quantity / Clear Cart
+🧩 Option-priced items are intentionally hidden from the default cashier catalog until `POS-SCREEN-005` is authorized/implemented. This is a safety boundary, not a missing fallback.
 
-Status: ✅ 👁
+🧩 Add-on selection/pricing and required/min/max rules are not implemented in POS.
 
-Accepted:
+🧩 Durable discount/tax/fulfillment sold-line snapshots are not complete.
 
-- row = `quantity × product → row total`;
-- large quantities such as `1000×` remain readable;
-- long names may use a second line;
-- only the item list scrolls;
-- totals/required context/transaction footer remain reachable;
-- **مسح السلة** appears from first item inside basket body after ticket header and before product lines;
-- visible Clear Cart copy is delete icon + **مسح السلة** only;
-- Clear Cart never changes header/footer geometry.
+## 2.3 Customer / credit / loyalty
 
-Quantity editor includes large `+ / −`, direct numeric entry, embedded `1–9 / 0 / 00 / backspace`, hardware keyboard support, separated destructive delete, and one confirmation write.
+✅ Customer search exists.
 
----
+✅ Customer creation and editing exist in the current POS runtime/UI.
 
-# 4. Restaurant local service — POS-FLOW-002
+✅ Current Saudi local mobile validation exists for the customer proof.
 
-Status: ✅ behavior-tested mock / 🟡 iterative owner visual review / ⚠️ production persistence + kitchen transport
+✅ Attach/remove customer behavior exists.
 
-The old visible **محلي / سفري / توصيل** selector is no longer the target interaction. Its legacy implementation remains only for compatibility tests and is hidden/migrated in the current local-service UI.
+✅ Customer profile exists.
 
-Rifad has two independent restaurant configuration layers in the executable mock:
+✅ Purchase history exists.
 
-## Restaurant service OFF
+✅ Customer credit sale exists as executable Rifad proof behavior.
 
-- retail/direct POS;
-- restaurant wording is hidden from the normal sale path;
-- direct **دفع** remains usable.
+✅ Debt ledger and debt settlement exist.
 
-## Restaurant service ON + place management OFF
+✅ Current duplicate-submit/idempotency behavior is exercised by tests where applicable.
 
-Simple restaurant:
+✅ Loyalty status/balance, redemption quote/application, earning and purchase linkage exist as executable proof behavior.
 
-- non-empty basket: **محلي | دفع**;
-- direct **دفع** is operationally **سفري** without an extra tap;
-- **محلي** enters the existing checkout in one touch;
-- no place selector.
+🟡 Customer/credit/loyalty are still backed by the current mock/staging runtime and are not a claim of cloud production storage, final permissions, aging/limits or accounting integration.
 
-## Restaurant service ON + place management ON
+## 2.4 Checkout and payments
 
-Advanced restaurant:
+✅ Checkout preserves cashier spatial context instead of navigating to a generic disconnected page.
 
-- non-empty basket: **محلي | دفع**;
-- **محلي** opens **مجموعة → مكان**;
-- default prototype has exactly one group: **الطاولات**;
-- default places are **طاولة 1** through **طاولة 6**;
-- **الغرف** and **الجلسات** are not seeded by default;
-- future Back Office configuration may create arbitrary groups and place names;
-- selecting an available place stores a mock local open order, records mock kitchen revision 1, shows kitchen-send feedback, and clears the working basket;
-- payment may happen later by reopening the place.
+✅ Payment-method selection exists.
 
-The Rifad place domain is generic: `PlaceGroup → ServicePlace`. There is no required `table | room | session` enum.
+✅ Cash payment exists with exact/over tender and visible change.
 
-## Open-order state
+✅ Sale completion uses exact Rifad Money/halala semantics in the current contract.
 
-Empty basket + advanced open orders:
+🟡 Mock card/Mada UX and mock card completion are executable.
 
-> **طلبات مفتوحة · N | دفع**
+⛔ This is **not** real terminal/provider support. No production terminal, provider lifecycle, reconciliation, refund or PCI-sensitive data claim exists.
 
-- Open Orders becomes green in the fixed right slot;
-- Pay remains in the fixed left slot, neutral/disabled;
-- footer geometry does not move.
+🧩 Split payment is not implemented. Current receipt shape still carries one payment-method value and therefore is not the final split-payment-ready model.
 
-Reopening a **محجوزة** place reconstructs its stored order into the current working ticket and exposes:
+## 2.5 Sale success / receipts / printing
 
-> **إرسال | دفع**
+✅ Sale-success state exists.
 
-- **إرسال** updates the stored open order, increments the mock kitchen revision, and clears the working basket;
-- **دفع** uses the existing checkout; successful payment releases the stored place.
+✅ Email-receipt behavior exists in the current runtime.
 
-Place cards now use cashier-facing states **متاحة / محجوزة**. A reserved card uses a very light warm-red treatment; the order total is large/bold/green, place name is clear, elapsed time is secondary, and item count is intentionally omitted.
+✅ Receipt history/list exists and now uses stable manifest identity `POS-SCREEN-016`.
 
-Open local orders prevent disabling restaurant service/place management until those orders are closed.
+✅ Reprint exists.
 
-### Restaurant adapter readiness
+✅ Reprint handles `delivery-unknown` by requiring explicit confirmation rather than blind duplicate printing.
 
-The local-service path now uses a replaceable Rifad-owned `RestaurantServiceContract` V1:
+🟡 Current printing transport is mock/staging; no real printer support claim.
 
-- `useLocalServiceFlow` receives the contract through dependency injection;
-- concrete adapter selection is isolated in `apps/pos/src/runtime/restaurantServiceAdapter.ts`;
-- components/state do not instantiate or import the concrete restaurant adapter;
-- domain terminology is `PlaceGroup / ServicePlace / OpenLocalOrder` rather than donor schema names;
-- mock-specific legacy preference migration is isolated at the composition root;
-- payment completion no longer depends on reading mock POS/restaurant storage from the restaurant flow;
-- earlier mock snapshots using `serviceAreaId/serviceAreaName` are normalized on read.
+🧩 Receipt detail lifecycle is not complete.
 
-This means a future external restaurant/table implementation can be connected by writing an adapter that conforms to the Rifad contract instead of rewriting the local-service UI.
+🧩 Refund lifecycle is not implemented.
 
-See `docs/architecture/RESTAURANT_SERVICE_ADAPTER_BOUNDARY.md`.
+## 2.6 Open tickets / restaurant local service
 
-### Explicit prototype boundary
+✅ Generic `SalesContract.saveOpenTicket` behavior exists for the current working ticket.
 
-The current concrete restaurant adapter is still mock/local. This does not prove a production open-order database, multi-device synchronization, conflict resolution, real KDS/printer transport or an external donor/API integration.
+🧩 The full general Open Tickets family — list/reopen/move/merge/split/bill/void rules — is not complete.
 
-Persistent restaurant/place configuration is expected to move to Back Office later.
+✅ `POS-FLOW-002` implements restaurant service OFF, simple local service and advanced place management as a bounded local/mock proof.
+
+✅ Generic `PlaceGroup → ServicePlace` model exists.
+
+✅ Current default configuration has group `الطاولات` with six places.
+
+✅ Advanced local flow can create an open local order, clear the working basket, reopen an occupied place, update/send additions, increment mock kitchen revision and release the place after successful payment.
+
+🟡 Current restaurant config/open orders persist through current staging/local runtime evidence.
+
+⛔ No production multi-device table locking, real KDS/printer transport, final restaurant persistence, advanced floor plan or delivery-platform integration is claimed.
 
 ---
 
-# 5. Inline checkout / transaction continuity
+# 3. Back Office — executable reality
 
-Status: ✅ 👁
+The Back Office visual shell is locked for the current product cycle. Broad redesign is closed; future capabilities inherit the locked hierarchy and Rifad visual authority.
 
-Accepted progression:
+## 3.1 Executable catalog family (`BO-FLOW-002`)
 
-> `basket → payment methods → cash/card → success`
+✅ Item list.
 
-Catalog remains visible but frozen during checkout. Sale basket and checkout/success rail share one desktop/tablet width, removing the visual jump after **بيع جديد**.
+✅ Search by name, SKU or barcode.
 
-Current operation geometry remains physically stable. Depending on current mode/state the sale-side pair may be:
+✅ Category filter.
 
-- restaurant basket: **محلي | دفع**;
-- advanced empty basket + open orders: **طلبات مفتوحة · N | دفع**;
-- reopened advanced local order: **إرسال | دفع**;
-- Quick Sale empty ticket: **سداد | دفع**;
-- cash: **إلغاء الفاتورة | سداد**;
-- mock card: **إلغاء الفاتورة | تم الدفع**;
-- success: **طباعة | بيع جديد**.
+✅ Add/edit item.
 
-The older generic **حفظ | دفع** remains legacy/prototype behavior outside the current restaurant local-service presentation; it is not the target restaurant meaning.
+✅ Name, description, category, SKU, barcode and available-for-sale.
 
----
+✅ Fixed pricing.
 
-# 6. Payment methods
+✅ Reusable **مجموعات الخيارات** with direct default option prices.
 
-Status: ✅ cash / ✅ mock card UX / ⚠️ production terminal
+✅ Item inheritance from reusable option group.
 
-Current methods: **نقدًا** and **شبكة / مدى** as large recognition surfaces.
+✅ Sparse item-specific price overrides while retaining group identity.
 
-Cash direction is owner-reviewed: received amount strongest, predictable quick tender values, embedded keypad, calm change result, and reachable **سداد**.
+✅ Item-private multiple-price choices.
 
-The card path completes a mock transaction and records `paymentMethod: "card"`. It does not prove terminal discovery, acquirer connectivity, approvals/RRN, reconciliation, refunds, or production payment security.
+✅ Reusable general add-on groups.
 
----
+✅ Item-private add-on groups/options.
 
-# 7. Sale success / receipts / printing
+✅ Category create/rename.
 
-Status: ✅ 👁 / durable print history ⚠️
+✅ Merchant-selected category accent color.
 
-- success remains in transaction rail context;
-- cash change is hero fact when applicable;
-- **طباعة | بيع جديد** uses exact transaction geometry;
-- always-print preference is a scannable printer row;
-- receipt history is newest-first;
-- mock print/reprint exists;
-- `delivery-unknown` requires explicit confirmation before retry.
+✅ Reusable option-group accent color.
 
-⚠️ Durable per-receipt print-job history is not implemented.
+✅ Reusable add-on-group accent color.
 
----
+✅ Item POS visual representation by color/shape or image staging.
 
-# 8. Customer system
+✅ Explicit Save/Cancel workflow.
 
-Status: ✅ 👁
+Current catalog staging implementation is `BrowserCatalogAdapter` **schema v4**.
 
-Implemented attach/remove, search, create/edit, Saudi 10-digit local mobile rule, optional address in quick create, and additional fields in **three real desktop columns / one mobile column**.
+🟡 Browser local storage is staging only. `imageDataUrl` is staging media transport only.
 
-Current mock preserves email/address/city/region/postal/country/customer code/note/tax number. Tax-number presence does not itself prove ZATCA compliance.
+🟡 SKU/barcode identity now exists in the executable catalog slice and current POS staging search. Production scanner hardware, option-level barcode identity, production persistence and synchronization remain separate gaps.
 
----
+🧩 Category delete/reorder, item delete/import/export, cost, stock, taxes, weight/volume, composites, branch/store overrides and permissions remain outside the current catalog slice.
 
-# 9. Credit / debt
+## 3.2 Other Back Office families
 
-Status: ✅ behavior / 🟡 remaining scope
+🧩 Dashboard/reporting.
 
-Quick Sale:
+🧩 Advanced inventory.
 
-- items → **آجل**;
-- empty → **سداد**.
+🧩 Employees and access rights.
 
-Debt settlement includes full/default settlement, partial embedded keypad, hardware keyboard, exact halala parsing, invalid/over-balance prevention, duplicate-submit protection, stable feedback geometry, and a readable before/paid/remaining result retained until explicit **تم**.
+🧩 Timecards/total hours.
 
-Still unscoped: settlement payment method, due dates/aging, credit limits, permissions, statement export.
+🧩 Customers management.
 
----
+🧩 Feature settings.
 
-# 10. Loyalty
+🧩 Stores and POS-device administration.
 
-Status: ✅ contract/model direction / 🟡 visual completeness
+🧩 Payment types.
 
-Current concepts include program configuration, status/balance, redemption quote, applied redemption, earned value and purchase history. Production should eventually use durable loyalty transactions rather than mutable balance alone.
+🧩 Taxes.
 
----
+🧩 Loyalty administration.
 
-# 11. Delivery channels / APIs / online-order UX
+🧩 Receipt settings.
 
-Status: 🟡 researched direction / ⬜ no Rifad production connector
+🧩 Open-ticket settings.
 
-Research: `docs/research/restaurant-pos/DELIVERY_PLATFORM_INTEGRATION_BENCHMARK_2026-08-17.md`.
+🧩 Kitchen printers/displays.
 
-Current direction:
+🧩 Dining options.
 
-- support direct platform adapters and aggregator adapters behind one Rifad-owned capability contract;
-- one cashier online-order experience regardless of adapter source;
-- API-connected orders arrive with channel/reference/sold prices/payment-collection state where supplied;
-- cashier does not reselect the platform or retype the order;
-- branch may later support auto-accept + auto-send to kitchen;
-- prepaid platform order must not trigger a second cash/Mada collection;
-- cash/card on delivery/pickup stays unpaid until actual collection;
-- manual platform tiles remain fallback/unconnected-entry tools;
-- channel selling price remains separate from platform commission/settlement.
+🧩 Billing/subscription.
 
-No production delivery connector is claimed.
+These are not reasons to make POS wait for a complete Back Office. MAP-01 will first define the owner-managed configuration facts the operational POS actually needs.
 
 ---
 
-# 12. Configuration ownership
+# 4. Current Rifad-owned architecture evidence
 
-Executable staging preferences/config now include:
+## 4.1 POS runtime boundary
 
-- sale mode;
-- restaurant service enabled/disabled;
-- advanced place management enabled/disabled;
-- print receipt always.
+✅ `PosRuntimeContract` is injected through the composition root.
 
-The old generic visible-order-type preference is superseded by the restaurant model and hidden in the normal current UI.
+✅ Current aggregate runtime contains device session, employee session, catalog, sale layout, sales, customer credit, loyalty, checkout, receipts and printing boundaries.
 
-Future structured Back Office configuration should own persistent restaurant groups/places, channels/pricelists, connector/store mapping, credentials, and online-order policies. Ordinary cashiers should not control sensitive production configuration.
+✅ UI/state code is not supposed to import donor/provider internals directly.
 
----
+✅ Runtime conformance/injection tests protect this boundary.
 
-# 13. Adapter readiness and highest-priority production/data gaps
+## 4.2 Restaurant boundary
 
-## A. General POS runtime adapter readiness
+✅ `RestaurantServiceContract` isolates current config/place/open-local-order behavior.
 
-Status: ✅ architecture boundary implemented / ⚠️ production adapters not selected
+✅ `useLocalServiceFlow` receives the contract by dependency injection.
 
-The general POS now follows the same composition-root rule as restaurant local service:
+✅ Generic place terminology avoids freezing donor-specific table/floor models.
 
-- public aggregate type is `PosRuntimeContract`;
-- `apps/pos/src/runtime/posRuntimeAdapter.ts` is the single current POS runtime composition point;
-- `App.tsx` creates the selected runtime once and injects it into `usePosFlow(posRuntime)`;
-- `usePosFlow` no longer imports or constructs `createMockPosRuntime()`;
-- the old `MockPosRuntime` name remains compatibility-only for existing mock code;
-- `apps/pos/src/testing/posRuntimeConformance.ts` provides a reusable Rifad-owned behavior probe;
-- automated coverage proves that an injected runtime can replace catalog behavior observed by React state.
+## 4.3 Local persistence/outbox boundary
 
-See `docs/architecture/POS_RUNTIME_ADAPTER_BOUNDARY.md` and D-028.
+✅ `LocalPersistenceContract` V1 exists.
 
-What remains is no longer “make the POS adapter-ready”; it is **select and prove production implementations behind the boundary**.
+✅ Stable installation identity exists.
 
-## B. Restaurant production gaps
+✅ Branch and device binding are separate facts.
 
-1. choose/prove the first production restaurant-service implementation or donor adapter behind `RestaurantServiceContract` V1;
-2. durable authoritative order model with `fulfillmentMode` and place snapshots;
-3. production group/place/open-order persistence;
-4. Back Office group/place CRUD and permissions;
-5. multi-device reservation/open-order synchronization and conflict policy;
-6. offline/restart behavior for open local orders;
-7. durable kitchen dispatch/revision/delta/idempotency/outbox semantics;
-8. real KDS/printer transport.
+✅ Private versioned snapshots/revisions exist.
 
-## C. General POS production adapter/data gaps
+✅ Snapshot + outbox event commit semantics exist in the current staging implementation.
 
-1. choose/prove the first production `PosRuntimeContract` implementation strategy: Rifad-native, donor-backed, external API, or hybrid composition;
-2. durable local authoritative sales/order/customer/payment store;
-3. offline/restart and sync semantics behind runtime capabilities;
-4. stable employee/branch/device identity and permissions;
-5. real SKU/barcode identity/search;
-6. durable checkout/payment records and idempotency;
-7. print-job persistence and real printer transport;
-8. legitimate Mada/card references without prohibited sensitive card data;
-9. production migration/rollback and adapter capability matrices.
+✅ Stable domain-event identity/deduplication exists.
 
-## D. Delivery/channel production gaps
+✅ Retry/failure bookkeeping and acknowledgement exist.
 
-1. `salesChannelId` and channel configuration;
-2. channel-aware pricelist/product overrides + effective sold-price evidence;
-3. delivery adapter contract implementation + connector onboarding;
-4. external order IDs/mappings/payment-collection/webhook idempotency;
-5. platform settlement/reconciliation separate from till payment.
+✅ Current private namespaces include `pos.runtime` and `restaurant.service`.
+
+✅ Current staging event families include sale completion, open ticket, customer changes/credit/debt, local-order lifecycle and print attempts.
+
+✅ Clean cold reconstruction from Rifad namespace state is tested for current operational state.
+
+🟡 Current `BrowserLocalPersistence` transport is explicitly staging.
+
+🧩 Production local engine, real forward migrations, crash-write recovery, realistic volume, Windows installer/process behavior and supported PWA engine proof remain pending.
 
 ---
 
-# 14. Automated evidence
+# 5. Current major product-model gaps driving the roadmap
 
-Current branch coverage includes:
+These are the gaps that materially change durable local truth and therefore precede production local database/sync freeze:
 
-- normal cash sale;
-- sale-page editing;
-- legacy order-type compatibility gate;
-- always-print/receipt recovery;
-- customer details/tax persistence;
-- Saudi mobile constraint;
-- Quick Sale focus;
-- debt settlement and duplicate-submit protection;
-- mock card completion;
-- quantity keypad entry of 1000;
-- Clear Cart placement/minimal copy/footer isolation;
-- unpaid checkout cancellation;
-- stable transaction geometry;
-- **POS-FLOW-002 simple local: one-touch Local checkout without place selection**;
-- **POS-FLOW-002 advanced local: one default Tables group / six tables → place selection → open order → clear working basket**;
-- **advanced Open Orders → reserved place → reopen → Send or Pay**;
-- **sending additions increments mock kitchen revision while retaining one open place**;
-- **successful payment releases the open place**;
-- **retail/off mode hides restaurant language**;
-- **restaurant flow compiles against injected `RestaurantServiceContract` rather than constructing its concrete adapter in state/UI code**;
-- **general POS flow consumes injected `PosRuntimeContract` rather than constructing the concrete mock runtime**;
-- **reusable POS runtime conformance probe exercises catalog → sale → checkout → cash completion → idempotent duplicate completion → receipt listing**;
-- **React-state injection proof observes data supplied by an injected runtime catalog**.
-
-Every new branch head must pass UI-manifest integrity, TypeScript, Vitest and production build before being called technically clean. CI does not prove visual correctness.
+1. **Effective configuration + authorization** — feature flags, payment availability/order, tax/discount policy, employee capabilities, branch/device scope and manager one-action override.
+2. **Shift + cash + time clock** — opening cash, active shift, pay-in/pay-out, expected/actual cash, close summary/report and clock state where enabled.
+3. **Complete sold-line truth** — selected pricing option, selected add-ons, exact resolved price, discounts, taxes, fulfillment and historical snapshots.
+4. **Open ticket/order lifecycle** — durable status/revision/ownership plus list/reopen/void/move/merge/split/bill rules as approved.
+5. **Payments/receipts/refunds** — normalized payment records, split-ready totals, receipt detail, refund/return facts and audit/authorization evidence.
+6. **Production local persistence** — replace browser staging behind the existing contract after the operational facts above are sufficiently defined.
 
 ---
 
-# 15. Manifest status
+# 6. Offline / host / device status
 
-- `POS-FLOW-001` — original retail cash slice: implemented.
-- `POS-FLOW-002` — Restaurant Local Service Prototype: **implemented mock/local; iterative owner review**.
-- `POS-FLOW-006` — tablet sale-page layout: implemented.
+✅ Current staging runtime proves clean restart reconstruction of key local POS/restaurant state.
 
-Still pending separate authorization/production proof:
+⛔ No production Windows local database is selected.
 
-1. real integrated-card/Mada capability;
-2. production restaurant persistence/KDS/printer/multi-device semantics beyond POS-FLOW-002 mock scope;
-3. incoming online-order/manual-delivery fallback flow and delivery connector contract;
-4. first production implementations behind `PosRuntimeContract` and `RestaurantServiceContract`.
+⛔ No packaged Windows cold-start/crash-recovery claim yet.
 
----
+⛔ No production tablet/PWA offline-engine claim yet.
 
-# Other Rifad surfaces
+⛔ No real scanner/printer/cash-drawer matrix yet.
 
-- Back Office: ⬜ — future owner of restaurant/place/channel/pricing/connector configuration.
-- Dashboard: ⬜ — future channel/settlement reporting.
-- KDS: ⬜ — current POS-FLOW-002 only records mock preparation revision; no real KDS transport.
-- CDS: ⬜
+⛔ No real integrated payment-terminal claim.
+
+These are MAP-06..09, not reasons to restart synchronization now.
 
 ---
 
-# Exact current checkpoint
+# 7. Synchronization status
 
-Rifad is **not UI-complete** and not production-backend-complete.
+Existing synchronization candidate evidence is preserved under `docs/research/sync/` and the existing test/workflow directories.
+
+It proved useful technical behaviors such as offline/reconnect/retry/identity/security scenarios for candidate comparison.
+
+However:
+
+- no synchronization provider is production-selected;
+- no provider schema is Rifad domain truth;
+- candidate proof tables are not the production business model;
+- additional synchronization adoption/debugging is paused until `MAP-10`;
+- D-032's behavioral requirements remain, while D-033 supersedes the old immediate sync-first sequencing.
+
+---
+
+# 8. Current execution order
+
+The single roadmap is `docs/RIFAD_FINAL_IMPLEMENTATION_MAP.md`.
 
 Current checkpoint:
 
-> **A substantial touch-first POS prototype with owner-accepted sales/basket/payment spatial continuity, Clear Cart, customer/debt workflows and mock card validation, plus an executable Restaurant Local Service prototype with retail/off, simple Local checkout, generic PlaceGroup → ServicePlace selection, six default tables, Open Orders, reserved-place reopen/send-update, and place release after payment. Both restaurant local service and the general POS runtime are now dependency-injected behind Rifad-owned contracts and isolated from concrete mock implementations. The next architecture/product step is no longer adapter separation; it is to select and prove the first production implementations behind those boundaries, beginning with the local-first sales/order persistence and restaurant-service engine.**
+- **MAP-00:** reality + authority reconciliation — in progress in this change set.
+- **Next after MAP-00 PASS:** `MAP-01 Effective POS Configuration + Authorization`.
+
+Then:
+
+`MAP-02 shift/cash/time clock → MAP-03 complete sale-line truth → MAP-04/05 open-order/payment/refund lifecycle → MAP-06 production local persistence → MAP-07/08/09 real hosts/devices → MAP-10 sync re-entry → MAP-11 real Back Office ↔ POS integration`.
+
+Do not skip dependency gates merely because a later integration is technically interesting.
+
+---
+
+# 9. Do-not-claim list
+
+Do not claim production readiness for:
+
+- production local DB;
+- synchronization provider selection;
+- branch/cloud synchronization;
+- LAN/Branch Hub;
+- real Mada/card terminal;
+- ZATCA/Fatoora production integration;
+- real printer/KDS/CDS dispatch;
+- restaurant multi-device locking;
+- delivery-platform connectors;
+- accounting integration;
+- production media storage/sync;
+- final business/database schema.
+
+The Back Office visual shell is locked; this does not mean every future capability-specific screen is already designed or implemented.
