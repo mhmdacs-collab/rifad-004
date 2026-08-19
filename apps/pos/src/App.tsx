@@ -284,7 +284,7 @@ export default function App() {
                   setPaymentContextError(null);
                   flow.clearError();
                 }}
-                onBackToSales={flow.returnToSales}
+                onBackToSales={() => void returnPaymentToSales()}
                 onBackToPayment={flow.returnToPayment}
                 onCash={() => void switchCheckoutMethod("cash")}
                 onCard={() => void switchCheckoutMethod("card")}
