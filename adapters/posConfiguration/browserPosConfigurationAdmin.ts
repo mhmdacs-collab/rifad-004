@@ -18,6 +18,8 @@ import {
 } from "../../core/posConfiguration/configurationAdminRules";
 import { createDefaultDeliveryConfiguration } from "../../core/posConfiguration/defaultDeliveryConfiguration";
 
+export { createDefaultDeliveryConfiguration } from "../../core/posConfiguration/defaultDeliveryConfiguration";
+
 export const BROWSER_POS_CONFIGURATION_ADMIN_STORAGE_KEY = "rifad.pos-configuration-admin.staging.v1";
 export const BROWSER_POS_CONFIGURATION_ADMIN_SCHEMA_VERSION = 1 as const;
 
