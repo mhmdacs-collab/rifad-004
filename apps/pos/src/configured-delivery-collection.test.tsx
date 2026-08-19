@@ -49,10 +49,9 @@ const delivery: EffectiveDeliveryConfiguration = {
 };
 
 describe("configured delivery collection from payment surface", () => {
-  it("shows one Delivery hub and routes courier-paid COD to real Cash/Network actions", async () => {
+  it("shows one Delivery hub and returns channel + courier-paid merchant collection", async () => {
     const user = userEvent.setup();
-    const onCash = vi.fn();
-    const onCard = vi.fn();
+    const onDeliveryCollect = vi.fn();
 
     render(
       <ConfiguredPaymentMethodRail
@@ -69,9 +68,10 @@ describe("configured delivery collection from payment surface", () => {
         errorMessage={null}
         onDismissError={() => undefined}
         onBackToSales={() => undefined}
-        onCash={onCash}
-        onCard={onCard}
+        onCash={() => undefined}
+        onCard={() => undefined}
         onCredit={() => undefined}
+        onDeliveryCollect={onDeliveryCollect}
       />,
     );
 
@@ -82,8 +82,12 @@ describe("configured delivery collection from payment surface", () => {
     await user.click(screen.getByRole("button", { name: /HungerStation/ }));
     expect(screen.getByText("كيف استلم المحل المبلغ؟")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /نقدي.*الأثر المباشر: النقد/ }));
-    expect(onCash).toHaveBeenCalledTimes(1);
-    expect(onCard).not.toHaveBeenCalled();
+
+    expect(onDeliveryCollect).toHaveBeenCalledTimes(1);
+    expect(onDeliveryCollect).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "delivery-hungerstation", name: "HungerStation", kind: "platform" }),
+      "cash",
+    );
   });
 
   it("does not expose a fake Delivery button when every enabled channel still needs a later financial lifecycle", () => {
@@ -110,6 +114,7 @@ describe("configured delivery collection from payment surface", () => {
         onCash={() => undefined}
         onCard={() => undefined}
         onCredit={() => undefined}
+        onDeliveryCollect={() => undefined}
       />,
     );
 
