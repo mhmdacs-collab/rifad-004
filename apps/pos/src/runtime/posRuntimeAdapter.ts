@@ -50,7 +50,29 @@ export const createPosRuntimeAdapter = (): PosRuntimeContract => {
     legacyStorageKey: LEGACY_POS_RUNTIME_STORAGE_KEY,
   });
   const legacyRuntime = createMockPosRuntime();
-  const effectiveConfiguration = createEffectivePosConfigurationAdapter(persistence);
+  const persistedEffectiveConfiguration = createEffectivePosConfigurationAdapter(persistence);
+
+  // A previously linked browser can restore the legacy device before the newer
+  // Rifad LocalPersistence root exists (for example after upgrading from the
+  // pre-MAP-01 build or after local staging storage was cleared). Ensure the
+  // local node binding is repaired at the exact configuration-read boundary so
+  // a real restart cannot leave Payment Methods/permissions permanently empty.
+  const effectiveConfiguration = {
+    read: async () => {
+      const restoredDevice = legacyRuntime.restore().device;
+      if (restoredDevice) {
+        const context = await persistence.getNodeContext();
+        if (context.branchId !== restoredDevice.branchId || context.deviceId !== restoredDevice.deviceId) {
+          await persistence.bindDevice({
+            branchId: restoredDevice.branchId,
+            deviceId: restoredDevice.deviceId,
+          });
+        }
+      }
+      return persistedEffectiveConfiguration.read();
+    },
+  };
+
   const authorization = createAuthorizationAdapter(effectiveConfiguration);
   const managerOverride = createManagerOverrideAdapter(effectiveConfiguration, authorization, persistence);
   const runtime: PosRuntimeContract = {
