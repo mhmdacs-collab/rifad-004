@@ -5,7 +5,10 @@ These rules are binding for implementation work in this repository.
 ## 1. Product ownership
 
 - Rifad is the product. No donor project owns Rifad's architecture.
-- Loyverse is a functional/workflow and ergonomic reference, not a source-code dependency or Rifad's visual identity.
+- Loyverse is the primary functional/workflow and ergonomic baseline for the POS/Back Office product split, not a source-code dependency or Rifad's visual identity.
+- Start from the frontier, not from zero: before inventing a product workflow or substantial technical capability, identify the mature product/standard/implementation that already solved the closest problem and begin from the best proven state reached there.
+- For ordinary POS/Back Office ownership questions, inspect the documented Loyverse behavior first. Do not repeatedly ask whether a mature cashier/admin responsibility belongs in POS or Back Office when the baseline already resolves it.
+- Deviate from the proven baseline only for an explicit Rifad reason such as Saudi regulation, a real market need, lower total cost, stronger offline/reliability behavior, security, performance or a demonstrably better user experience.
 - FloCafe, Odoo, ERPNext and other projects may be donors only unless an explicit architecture decision says otherwise.
 - Do not expose donor names, schemas or internal IDs through Rifad public contracts.
 
@@ -105,3 +108,11 @@ A UI slice additionally requires manifest-linked visual, interaction, responsive
 - Do not create a second implementation stack without a concrete capability need.
 - Do not change architecture to solve a local module problem.
 - Prefer deletion/replacement of a bad adapter over years of compensating patches.
+
+## 10. Execution continuity
+
+- Every meaningful implementation slice must leave a repository record of what changed, why it was done, what evidence exists, what remains and the next dependency-safe step.
+- `docs/implementation/CURRENT_EXECUTION_STATUS.md` is the rolling execution checkpoint while a map item is in progress; capability-specific plans/evidence may link from it.
+- When a map item reaches PASS, reconcile the canonical/current-state documents that describe product reality, including the UI manifest/field register/progress/architecture decisions/final map/handoff where applicable. Do not leave completion knowledge only in chat history.
+- A new AI, coding agent or human reading the repository should be able to recover the same current project state and rationale without relying on a previous conversation.
+- Use an external coding agent such as Codex only for a scoped task that cannot be safely or efficiently completed through the currently available repository tools. When escalation is needed, provide the exact objective, authority files, allowed scope, tests and stop conditions rather than asking the agent to “continue the project” broadly.
