@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ConfiguredPaymentMethodRail } from "./components/ConfiguredPaymentMethodRail";
+import { CustomerCreditDialog } from "./components/CustomerCreditDialog";
 import { InlineCheckoutRail } from "./components/InlineCheckoutRail";
 import { LocalServiceEnhancer } from "./components/LocalServiceEnhancer";
 import { ManagerOverrideDialog } from "./components/ManagerOverrideDialog";
@@ -30,6 +31,7 @@ export default function App() {
   const legacyOrderTypeFixture = useRef(import.meta.env.MODE === "test" && window.localStorage.getItem(LEGACY_ORDER_TYPES_KEY) !== null).current;
   const [posRuntime] = useState(createPosRuntimeAdapter);
   const [restaurantService] = useState(createRestaurantServiceAdapter);
+  const [creditPaymentOpen, setCreditPaymentOpen] = useState(false);
   const flow = usePosFlow(posRuntime);
   const effectiveConfiguration = useEffectivePosConfiguration(posRuntime, flow.device);
   const managerOverride = useManagerOverrideGate(posRuntime, flow.employee, flow.device);
@@ -44,6 +46,7 @@ export default function App() {
 
   useEffect(() => {
     if (flow.stage !== "success") return;
+    setCreditPaymentOpen(false);
     const printButton = document.querySelector<HTMLButtonElement>(".inline-success-print");
     printButton?.setAttribute("aria-label", "طباعة الإيصال");
   }, [flow.stage, flow.printStatus]);
@@ -95,6 +98,7 @@ export default function App() {
     const startFreshSale = () => {
       local.abandonActiveResume();
       local.clearCheckoutContext();
+      setCreditPaymentOpen(false);
       void flow.newSale();
     };
 
@@ -176,6 +180,7 @@ export default function App() {
                 onBackToSales={flow.returnToSales}
                 onCash={() => void flow.selectCash()}
                 onCard={() => void flow.selectCard()}
+                onCredit={() => setCreditPaymentOpen(true)}
               />
             ) : inlineCheckoutStage ? (
               <InlineCheckoutRail
@@ -205,6 +210,22 @@ export default function App() {
             ) : null}
           </div>
         </CustomerFlowProvider>
+        {creditPaymentOpen && flow.stage === "payment" ? (
+          <CustomerCreditDialog
+            mode="credit"
+            ticketTotal={saleTicket.total}
+            busy={flow.busy === "customer-create" || flow.busy === "customer-credit" || flow.busy === "customer-settlement"}
+            onClose={() => setCreditPaymentOpen(false)}
+            onSearch={flow.searchCustomers}
+            onCreateCustomer={(name, mobile) => flow.createCustomer(name, mobile)}
+            onChargeCredit={async (customerId) => {
+              const result = await flow.chargeTicketToCustomer(customerId);
+              if (result) setCreditPaymentOpen(false);
+              return result;
+            }}
+            onSettleDebt={flow.settleCustomerDebt}
+          />
+        ) : null}
         {managerOverrideDialog}
       </>
     );
