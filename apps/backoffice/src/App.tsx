@@ -12,7 +12,7 @@ const BACK_OFFICE_AREA_KEY = "rifad.backoffice.active-area.v1";
 
 const initialArea = (): BackOfficeArea => {
   const stored = window.localStorage.getItem(BACK_OFFICE_AREA_KEY);
-  return stored === "catalog" || stored === "operations" ? stored : "operations";
+  return stored === "catalog" || stored === "operations" ? stored : "catalog";
 };
 
 export default function App({
@@ -45,7 +45,7 @@ export default function App({
           type="button"
           onClick={() => openArea("operations")}
         >
-          الموظفون والإعدادات
+          إدارة الموظفين والإعدادات
         </button>
       </div>
       {area === "catalog" ? <BackOfficeApp catalog={catalog} /> : <PosOperationalConfigApp admin={posConfiguration} />}
