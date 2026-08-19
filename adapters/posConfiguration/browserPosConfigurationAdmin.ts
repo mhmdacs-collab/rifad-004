@@ -1,6 +1,5 @@
 import type { PosPaymentDirectImpact, PosPaymentMethodKind } from "../../contracts/posConfiguration";
 import type {
-  MerchantDeliveryConfiguration,
   MerchantPaymentType,
   MerchantPosConfiguration,
   PosConfigurationAdminContract,
@@ -17,6 +16,7 @@ import {
   setMerchantFeature,
   PosConfigurationAdminError,
 } from "../../core/posConfiguration/configurationAdminRules";
+import { createDefaultDeliveryConfiguration } from "../../core/posConfiguration/defaultDeliveryConfiguration";
 
 export const BROWSER_POS_CONFIGURATION_ADMIN_STORAGE_KEY = "rifad.pos-configuration-admin.staging.v1";
 export const BROWSER_POS_CONFIGURATION_ADMIN_SCHEMA_VERSION = 1 as const;
@@ -43,65 +43,6 @@ const impactForKind = (kind: PosPaymentMethodKind): PosPaymentDirectImpact => {
   if (kind === "customer-credit") return "customer-receivable";
   return "bank";
 };
-
-export const createDefaultDeliveryConfiguration = (): MerchantDeliveryConfiguration => ({
-  enabled: false,
-  channels: [
-    {
-      id: "delivery-hungerstation",
-      name: "HungerStation",
-      kind: "platform",
-      brandKey: "hungerstation",
-      enabled: false,
-      electronicPaymentEnabled: true,
-      cashOnDeliveryEnabled: true,
-      codSettlement: "courier-pays-merchant",
-      storeIds: [],
-      selfDelivery: null,
-    },
-    {
-      id: "delivery-keeta",
-      name: "Keeta",
-      kind: "platform",
-      brandKey: "keeta",
-      enabled: false,
-      electronicPaymentEnabled: true,
-      cashOnDeliveryEnabled: true,
-      codSettlement: "courier-pays-merchant",
-      storeIds: [],
-      selfDelivery: null,
-    },
-    {
-      id: "delivery-jahez",
-      name: "Jahez",
-      kind: "platform",
-      brandKey: "jahez",
-      enabled: false,
-      electronicPaymentEnabled: true,
-      cashOnDeliveryEnabled: true,
-      codSettlement: "courier-pays-merchant",
-      storeIds: [],
-      selfDelivery: null,
-    },
-    {
-      id: "delivery-self",
-      name: "التوصيل الذاتي",
-      kind: "self-delivery",
-      brandKey: "self-delivery",
-      enabled: false,
-      electronicPaymentEnabled: false,
-      cashOnDeliveryEnabled: true,
-      codSettlement: "courier-pays-merchant",
-      storeIds: [],
-      selfDelivery: {
-        feeMode: "manual",
-        defaultFeeHalalas: 0,
-        allowPosFeeOverride: true,
-        feeBeneficiary: "merchant",
-      },
-    },
-  ],
-});
 
 const normalizedDefaultPayment = (payment: MerchantPaymentType): MerchantPaymentType => {
   const systemDefault = payment.systemDefault
@@ -235,16 +176,7 @@ export const createBrowserPosConfigurationAdmin = (
     savePaymentType: async ({ commandId, paymentType }) => {
       if (completed(commandId)) return read();
       const id = paymentType.id ?? newId("payment-type");
-      const existing = state.configuration.paymentTypes.find((payment) => payment.id === id);
-      const configuration = saveMerchantPaymentType({ config: state.configuration, draft: paymentType, id, updatedAt: now() });
-      const directImpact = paymentType.directImpact ?? existing?.directImpact ?? impactForKind(paymentType.kind);
-      const systemDefault = paymentType.systemDefault ?? existing?.systemDefault ?? null;
-      return commit(commandId, {
-        ...configuration,
-        paymentTypes: configuration.paymentTypes.map((payment) => payment.id === id
-          ? { ...payment, directImpact, systemDefault }
-          : payment),
-      });
+      return commit(commandId, saveMerchantPaymentType({ config: state.configuration, draft: paymentType, id, updatedAt: now() }));
     },
     reorderPaymentTypes: async ({ commandId, orderedIds }) => {
       if (completed(commandId)) return read();
