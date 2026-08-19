@@ -2,6 +2,8 @@ import {
   POS_CONFIGURATION_CONTRACT_VERSION,
   POS_PERMISSION_KEYS,
   type EffectivePosConfiguration,
+  type PosPaymentDirectImpact,
+  type PosPaymentMethodKind,
   type PosPermissionKey,
 } from "../../contracts/posConfiguration";
 import type {
@@ -19,6 +21,13 @@ export class PosConfigurationProjectionError extends Error {
 const POS_PERMISSION_SET = new Set<string>(POS_PERMISSION_KEYS);
 const isPosPermissionKey = (permission: MerchantPermissionKey): permission is PosPermissionKey =>
   POS_PERMISSION_SET.has(permission);
+
+const impactForKind = (kind: PosPaymentMethodKind): PosPaymentDirectImpact => {
+  if (kind === "cash") return "cash";
+  if (kind === "card") return "bank";
+  if (kind === "customer-credit") return "customer-receivable";
+  return "bank";
+};
 
 /**
  * Projects owner-managed merchant policy into the exact branch/device-local
@@ -97,7 +106,16 @@ export const projectEffectivePosConfiguration = (input: {
       enabled: true,
       sortOrder: method.sortOrder,
       availability: method.availability,
+      directImpact: method.directImpact ?? impactForKind(method.kind),
+      systemDefault: method.systemDefault ?? null,
     }));
+
+  const delivery = source.delivery ? {
+    enabled: source.delivery.enabled,
+    channels: source.delivery.channels
+      .filter((channel) => channel.enabled && (channel.storeIds.length === 0 || channel.storeIds.includes(branchId)))
+      .map((channel) => ({ ...channel, storeIds: [...channel.storeIds] })),
+  } : undefined;
 
   return {
     contractVersion: POS_CONFIGURATION_CONTRACT_VERSION,
@@ -108,6 +126,7 @@ export const projectEffectivePosConfiguration = (input: {
     deviceId,
     features: { ...source.features },
     paymentMethods,
+    delivery,
     roles,
     employees,
   };
