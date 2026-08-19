@@ -1,9 +1,11 @@
 import { useState } from "react";
 import type {
+  EffectiveDeliveryChannel,
   EffectiveDeliveryConfiguration,
   EffectivePosPaymentMethod,
   PosPaymentDirectImpact,
 } from "../../../../contracts/posConfiguration";
+import type { DeliveryMerchantCollection } from "../../../../contracts/deliveryCollection";
 import type { Ticket } from "../domain/models";
 import { ConfiguredDeliveryCollection, hasExecutableDeliveryCollection } from "./ConfiguredDeliveryCollection";
 import { Icon } from "./Icon";
@@ -23,6 +25,7 @@ type ConfiguredPaymentMethodRailProps = {
   onCash: () => void;
   onCard: () => void;
   onCredit: () => void;
+  onDeliveryCollect: (channel: EffectiveDeliveryChannel, merchantCollection: DeliveryMerchantCollection) => void;
 };
 
 const supportedKinds = new Set<EffectivePosPaymentMethod["kind"]>(["cash", "card", "customer-credit"]);
@@ -90,6 +93,7 @@ export function ConfiguredPaymentMethodRail({
   onCash,
   onCard,
   onCredit,
+  onDeliveryCollect,
 }: ConfiguredPaymentMethodRailProps) {
   const [deliveryOpen, setDeliveryOpen] = useState(false);
   const methods = [...paymentMethods]
@@ -126,8 +130,7 @@ export function ConfiguredPaymentMethodRail({
           <ConfiguredDeliveryCollection
             delivery={delivery}
             onBack={() => setDeliveryOpen(false)}
-            onCash={onCash}
-            onCard={onCard}
+            onCollect={onDeliveryCollect}
           />
         ) : (
           <>
