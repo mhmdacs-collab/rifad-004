@@ -15,6 +15,7 @@ import { SalesScreen } from "./screens/SalesScreen";
 import { SignInScreen } from "./screens/SignInScreen";
 import { SuccessScreen } from "./screens/SuccessScreen";
 import { CustomerFlowProvider } from "./state/CustomerFlowContext";
+import { useEffectivePosConfiguration } from "./state/useEffectivePosConfiguration";
 import { useLocalServiceFlow } from "./state/useLocalServiceFlow";
 import { usePosFlow } from "./state/usePosFlow";
 
@@ -25,6 +26,7 @@ export default function App() {
   const [posRuntime] = useState(createPosRuntimeAdapter);
   const [restaurantService] = useState(createRestaurantServiceAdapter);
   const flow = usePosFlow(posRuntime);
+  const effectiveConfiguration = useEffectivePosConfiguration(posRuntime, flow.device);
   const local = useLocalServiceFlow(flow, restaurantService);
   const lastSaleTicket = useRef(flow.ticket);
 
@@ -140,6 +142,8 @@ export default function App() {
               printStatus={flow.printStatus}
               busy={flow.busy}
               errorMessage={flow.errorMessage}
+              configurationError={effectiveConfiguration.errorMessage}
+              paymentMethods={effectiveConfiguration.configuration?.paymentMethods ?? []}
               onDismissError={flow.clearError}
               onBackToSales={flow.returnToSales}
               onBackToPayment={flow.returnToPayment}
