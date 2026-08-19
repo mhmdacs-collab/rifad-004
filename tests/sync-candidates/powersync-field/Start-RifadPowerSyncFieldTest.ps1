@@ -77,6 +77,7 @@ $CliRoot = Join-Path $WorkRoot 'powersync-cli'
 $Example = Join-Path $CliRoot 'examples\self-hosted\local-postgres-node'
 $DockerDir = Join-Path $Example 'powersync\docker'
 $ComposeFile = Join-Path $DockerDir 'docker-compose.yaml'
+$SourceDatabaseComposeFile = Join-Path $DockerDir 'modules\database-postgres\postgres.database.compose.yaml'
 
 New-Item -ItemType Directory -Path $WorkRoot -Force | Out-Null
 
@@ -152,12 +153,15 @@ Write-Utf8NoBom (Join-Path $Example 'powersync\sync-config.yaml') $syncConfig
 
 $composeText = [System.IO.File]::ReadAllText($ComposeFile)
 $composeText = $composeText.Replace('journeyapps/powersync-service:latest', $PowerSyncImage)
-# The proof backend runs on Windows. Keep its PostgreSQL host port away from the
-# conventional 5432 because a developer machine may already have another
-# PostgreSQL listener there. PowerSync itself still reaches pg-db:5432 inside
-# the isolated Docker network.
-$composeText = $composeText.Replace('${PS_DATABASE_PORT}:${PS_DATABASE_PORT}', ([string]$SourceHostPort + ':${PS_DATABASE_PORT}'))
 Write-Utf8NoBom $ComposeFile $composeText
+
+# The source database port is declared in an included Compose module, not in
+# the root compose file. Keep the PostgreSQL host port away from the conventional
+# 5432 because a developer machine may already have another listener there.
+# PowerSync itself still reaches pg-db:5432 inside the isolated Docker network.
+$sourceComposeText = [System.IO.File]::ReadAllText($SourceDatabaseComposeFile)
+$sourceComposeText = $sourceComposeText.Replace('${PS_DATABASE_PORT}:${PS_DATABASE_PORT}', ([string]$SourceHostPort + ':${PS_DATABASE_PORT}'))
+Write-Utf8NoBom $SourceDatabaseComposeFile $sourceComposeText
 
 if ($Reset) {
   Write-Host 'Resetting only the isolated Rifad field-proof Docker volumes...'
