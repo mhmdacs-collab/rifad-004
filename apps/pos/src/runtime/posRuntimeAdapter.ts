@@ -111,12 +111,53 @@ export const createPosRuntimeAdapter = (): PosRuntimeContract => {
   const authorization = createAuthorizationAdapter(effectiveConfiguration);
   const managerOverride = createManagerOverrideAdapter(effectiveConfiguration, authorization, persistence);
   const deliveryCollection = createDeliveryCollectionAdapter(persistence);
+
+  // The legacy checkout engine remains payment-only. This composition layer
+  // associates a completed receipt with the independently persisted delivery
+  // context without making the mock the owner of channel semantics.
+  const checkoutTicketIds = new Map<string, string>();
+  const checkout: PosRuntimeContract["checkout"] = {
+    ...legacyRuntime.checkout,
+    begin: async (input) => {
+      const result = await legacyRuntime.checkout.begin(input);
+      checkoutTicketIds.set(result.checkoutId, input.ticketId);
+      return result;
+    },
+    completeCashSale: async (input) => {
+      const receipt = await legacyRuntime.checkout.completeCashSale(input);
+      const ticketId = checkoutTicketIds.get(input.checkoutId);
+      if (ticketId) {
+        await deliveryCollection.attachReceipt({
+          commandId: `delivery-receipt:${input.commandId}`,
+          ticketId,
+          receiptId: receipt.id,
+        });
+        checkoutTicketIds.delete(input.checkoutId);
+      }
+      return receipt;
+    },
+    completeCardSale: async (input) => {
+      const receipt = await legacyRuntime.checkout.completeCardSale(input);
+      const ticketId = checkoutTicketIds.get(input.checkoutId);
+      if (ticketId) {
+        await deliveryCollection.attachReceipt({
+          commandId: `delivery-receipt:${input.commandId}`,
+          ticketId,
+          receiptId: receipt.id,
+        });
+        checkoutTicketIds.delete(input.checkoutId);
+      }
+      return receipt;
+    },
+  };
+
   const runtime: PosRuntimeContract = {
     ...legacyRuntime,
     effectiveConfiguration,
     authorization,
     managerOverride,
     deliveryCollection,
+    checkout,
   };
   return withLocalPersistenceJournal(runtime, persistence, snapshotBridge);
 };
