@@ -34,7 +34,7 @@ export function ReceiptsScreen({ receipts, busy, onBack, onPrint }: ReceiptsScre
   };
 
   return (
-    <main className="receipts-screen" data-screen-id="POS-SCREEN-012">
+    <main className="receipts-screen" data-screen-id="POS-SCREEN-016">
       <header className="receipts-header">
         <button type="button" className="appbar-icon" onClick={onBack} aria-label="العودة إلى المبيعات"><Icon name="arrow" /></button>
         <strong>الإيصالات</strong>
