@@ -1,9 +1,14 @@
 import {
   POS_PERMISSION_KEYS,
+  type DeliveryChannelKind,
+  type DeliveryCodSettlement,
   type PosFeatureKey,
   type PosPaymentAvailability,
+  type PosPaymentDirectImpact,
   type PosPaymentMethodKind,
   type PosPermissionKey,
+  type PosSystemDefaultPayment,
+  type SelfDeliveryFeeBeneficiary,
 } from "./posConfiguration";
 
 export const POS_CONFIGURATION_ADMIN_CONTRACT_VERSION = 1 as const;
@@ -82,6 +87,33 @@ export type MerchantPaymentType = Readonly<{
   sortOrder: number;
   availability: PosPaymentAvailability;
   storeIds: readonly string[];
+  /** Optional only for persisted MAP-01 staging records created before this field existed. */
+  directImpact?: PosPaymentDirectImpact;
+  /** Stable starter identity; the merchant may hide it without deleting historical meaning. */
+  systemDefault?: PosSystemDefaultPayment | null;
+}>;
+
+export type MerchantDeliveryChannel = Readonly<{
+  id: string;
+  name: string;
+  kind: DeliveryChannelKind;
+  brandKey: string;
+  enabled: boolean;
+  electronicPaymentEnabled: boolean;
+  cashOnDeliveryEnabled: boolean;
+  codSettlement: DeliveryCodSettlement;
+  storeIds: readonly string[];
+  selfDelivery: Readonly<{
+    feeMode: "manual";
+    defaultFeeHalalas: number;
+    allowPosFeeOverride: boolean;
+    feeBeneficiary: SelfDeliveryFeeBeneficiary;
+  }> | null;
+}>;
+
+export type MerchantDeliveryConfiguration = Readonly<{
+  enabled: boolean;
+  channels: readonly MerchantDeliveryChannel[];
 }>;
 
 export type MerchantPosConfiguration = Readonly<{
@@ -94,6 +126,8 @@ export type MerchantPosConfiguration = Readonly<{
   roles: readonly MerchantRole[];
   employees: readonly MerchantEmployee[];
   paymentTypes: readonly MerchantPaymentType[];
+  /** Optional only for pre-extension staging snapshots. Browser adapter migrates it on read. */
+  delivery?: MerchantDeliveryConfiguration;
 }>;
 
 export type MerchantEmployeeDraft = Omit<MerchantEmployee, "id" | "pinConfigured"> & Readonly<{
@@ -112,9 +146,14 @@ export type MerchantPosDeviceDraft = Omit<MerchantPosDevice, "id"> & Readonly<{
   id?: string;
 }>;
 
-export type MerchantPaymentTypeDraft = Omit<MerchantPaymentType, "id" | "sortOrder"> & Readonly<{
+/**
+ * directImpact is optional in the draft so older Back Office editors keep
+ * compiling; adapters derive a safe default from kind when it is omitted.
+ */
+export type MerchantPaymentTypeDraft = Omit<MerchantPaymentType, "id" | "sortOrder" | "directImpact"> & Readonly<{
   id?: string;
   sortOrder?: number;
+  directImpact?: PosPaymentDirectImpact;
 }>;
 
 /**
@@ -141,4 +180,6 @@ export interface PosConfigurationAdminContract {
   saveDevice(input: { commandId: string; device: MerchantPosDeviceDraft }): Promise<MerchantPosConfiguration>;
   savePaymentType(input: { commandId: string; paymentType: MerchantPaymentTypeDraft }): Promise<MerchantPosConfiguration>;
   reorderPaymentTypes(input: { commandId: string; orderedIds: readonly string[] }): Promise<MerchantPosConfiguration>;
+  /** Optional for compatibility with non-browser proof adapters created before delivery settings existed. */
+  saveDeliveryConfiguration?(input: { commandId: string; delivery: MerchantDeliveryConfiguration }): Promise<MerchantPosConfiguration>;
 }
