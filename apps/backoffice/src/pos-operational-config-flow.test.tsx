@@ -41,9 +41,10 @@ describe("BO-FLOW-003 POS operational configuration", () => {
     const table = screen.getByRole("table");
     expect(within(table).getByRole("button", { name: "نقدًا" })).toBeInTheDocument();
     expect(within(table).getByRole("button", { name: "شبكة / مدى" })).toBeInTheDocument();
+    expect(within(table).getByRole("button", { name: "آجل" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "خفض نقدًا" }));
     const reordered = [...(await admin.read()).paymentTypes].sort((a, b) => a.sortOrder - b.sortOrder);
-    expect(reordered.map((payment) => payment.id)).toEqual(["payment-card", "payment-cash"]);
+    expect(reordered.map((payment) => payment.id)).toEqual(["payment-card", "payment-cash", "payment-credit"]);
   });
 });
