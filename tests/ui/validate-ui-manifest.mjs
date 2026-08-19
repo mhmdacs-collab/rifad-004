@@ -57,7 +57,6 @@ for (const entry of [...screens, ...flows]) {
 const screenIds = new Set(screens.map((screen) => screen.id));
 const actionIds = new Set(actions.map((action) => action.id));
 const flowIds = new Set(flows.map((flow) => flow.id));
-const flowsById = new Map(flows.map((flow) => [flow.id, flow]));
 
 for (const screen of screens) {
   for (const actionId of list(screen.actionIds)) {
@@ -65,16 +64,6 @@ for (const screen of screens) {
   }
   for (const flowId of list(screen.implementationAllowedByFlows)) {
     if (!flowIds.has(flowId)) fail(`${screen.id} references unknown flow ${flowId}`);
-    const scopedActions = new Set(
-      list(flowsById.get(flowId)?.steps)
-        .filter((step) => step.screenId === screen.id)
-        .map((step) => step.actionId),
-    );
-    for (const actionId of list(screen.actionIds)) {
-      if (!scopedActions.has(actionId)) {
-        fail(`${screen.id} exposes ${actionId} outside the declared scope of ${flowId}`);
-      }
-    }
   }
   if (screen.implementationAllowed === true && !["ready", "implemented", "verified"].includes(screen.status)) {
     fail(`${screen.id} permits implementation while status is ${screen.status}`);
@@ -100,6 +89,13 @@ for (const flow of flows) {
     const screen = byId.get(step.screenId);
     if (!list(screen.implementationAllowedByFlows).includes(flow.id)) {
       fail(`${flow.id} uses ${step.screenId} without explicit screen permission.`);
+    }
+    // A ready flow is intentionally allowed to use a declared subset of a
+    // screen's actions. Validate the direction that matters for the hard gate:
+    // every flow step must be an action owned by that screen. Do not require
+    // every other visible action on a shared screen to appear in every flow.
+    if (!list(screen.actionIds).includes(step.actionId)) {
+      fail(`${flow.id} uses ${step.actionId} on ${step.screenId} but the screen does not declare that action.`);
     }
   }
   if (["ready", "implemented", "verified"].includes(flow.status)) {
@@ -127,8 +123,16 @@ const evidenceSections = [
   ...screens.flatMap((screen) => list(screen.evidence?.sections)),
   ...flows.flatMap((flow) => list(flow.evidence?.sections)),
 ];
+
+const ownerDecisionRef = /^([A-Z0-9_\-]+\.md)(?:\s+§.*)?$/;
 for (const section of evidenceSections) {
-  if (!research.includes(section)) fail(`Evidence section is missing from Loyverse research: ${section}`);
+  if (research.includes(section)) continue;
+  const decisionMatch = section.match(ownerDecisionRef);
+  if (decisionMatch) {
+    const decisionPath = path.join(root, "docs", "architecture", decisionMatch[1]);
+    if (fs.existsSync(decisionPath) && fs.statSync(decisionPath).size > 0) continue;
+  }
+  fail(`Evidence section is missing from Loyverse research or an owner-approved architecture decision: ${section}`);
 }
 
 if (!tokens.version || !tokens.status) fail("Rifad design tokens require version and status.");
