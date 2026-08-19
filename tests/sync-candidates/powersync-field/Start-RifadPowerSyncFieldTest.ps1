@@ -78,6 +78,7 @@ $Example = Join-Path $CliRoot 'examples\self-hosted\local-postgres-node'
 $DockerDir = Join-Path $Example 'powersync\docker'
 $ComposeFile = Join-Path $DockerDir 'docker-compose.yaml'
 $SourceDatabaseComposeFile = Join-Path $DockerDir 'modules\database-postgres\postgres.database.compose.yaml'
+$ServiceConfigFile = Join-Path $Example 'powersync\service.yaml'
 
 New-Item -ItemType Directory -Path $WorkRoot -Force | Out-Null
 
@@ -150,6 +151,19 @@ streams:
       - SELECT * FROM sales
 '@
 Write-Utf8NoBom (Join-Path $Example 'powersync\sync-config.yaml') $syncConfig
+
+# The proof API returns one PowerSync endpoint for both the native Windows client
+# and the second browser device. The pinned upstream self-host template accepts
+# only localhost audiences by default, so add this machine's LAN endpoint to the
+# demo-only JWT audience allowlist before starting the service.
+$serviceText = [System.IO.File]::ReadAllText($ServiceConfigFile)
+$defaultAudience = "audience: ['http://localhost:8080', 'http://127.0.0.1:8080']"
+$lanAudience = "audience: ['http://localhost:8080', 'http://127.0.0.1:8080', 'http://${LanIp}:8080']"
+if (-not $serviceText.Contains($defaultAudience)) {
+  throw 'Pinned PowerSync service template no longer contains the expected demo audience line.'
+}
+$serviceText = $serviceText.Replace($defaultAudience, $lanAudience)
+Write-Utf8NoBom $ServiceConfigFile $serviceText
 
 $composeText = [System.IO.File]::ReadAllText($ComposeFile)
 $composeText = $composeText.Replace('journeyapps/powersync-service:latest', $PowerSyncImage)
