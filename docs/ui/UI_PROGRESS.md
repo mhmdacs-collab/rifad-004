@@ -1,367 +1,314 @@
 # Rifad UI / Product Progress
 
-Last updated: 2026-08-19
+Last updated: 2026-08-20
 
-Status: **MAP-00 reality-reconciled progress record**
+Status: **MAP-01 PASS — effective configuration/authorization vertical slice implemented**
 
 Use with:
 
 - `PROJECT_RULES.md`;
 - `docs/architecture/CURRENT_DECISIONS.md`;
 - `docs/RIFAD_FINAL_IMPLEMENTATION_MAP.md`;
-- `docs/MAP_00_REALITY_AUTHORITY_RECONCILIATION.md`;
+- `docs/implementation/CURRENT_EXECUTION_STATUS.md`;
+- `docs/implementation/MAP_01_IMPLEMENTATION_PLAN.md`;
 - `UI_EXECUTION_MANIFEST.json`;
 - `POS_UI_NAMING_AND_FIELD_REGISTER.md`.
 
-This file reports what exists. It does not authorize new behavior outside the manifest gate and it does not turn mock/staging behavior into a production claim.
+This file reports current executable reality. It does not turn staging storage/transports into production claims.
 
 ---
 
 ## Status legend
 
-- ✅ **Implemented/executable** — code exists in the current branch.
-- 🟡 **Executable proof/staging** — code exists and is testable but production transport/domain lifecycle is still incomplete.
-- 🧩 **Mapped/discovered** — product meaning exists in research/manifest but is not implemented.
+- ✅ **Implemented/executable** — code exists in the current branch and the applicable current tests/build pass.
+- 🟡 **Executable proof/staging** — behavior exists and is testable but production persistence/transport/security/hardware remains incomplete.
+- 🧩 **Mapped/discovered** — product meaning exists but is not yet executable.
 - ⛔ **Not claimed** — explicitly outside current production evidence.
 
 ---
 
-# 1. Product surfaces
+# 1. Current map checkpoint
+
+- `MAP-00` — ✅ PASS.
+- `MAP-01` — ✅ PASS.
+- `MAP-02` — next dependency; **not started by MAP-01 closeout**.
+
+Current dependency order remains:
+
+`MAP-02 shift/cash/time clock → MAP-03 sold-line truth → MAP-04 open orders → MAP-05 payments/receipts/refunds → MAP-06 production local persistence → MAP-07/08/09 host/hardware → MAP-10 sync re-entry → MAP-11 real Back Office ↔ POS transport`.
+
+---
+
+# 2. Product surfaces
 
 | Surface | Current state |
 |---|---|
-| POS | ✅ substantial executable cashier application; operational core still has specific gaps before production local DB freeze |
-| Back Office | ✅ locked management shell + executable catalog family (`BO-FLOW-002`); other management families remain mapped |
+| POS | ✅ substantial executable cashier application + MAP-01 local configuration/authorization enforcement |
+| Back Office | ✅ locked management shell + catalog family (`BO-FLOW-002`) + operational configuration/access family (`BO-FLOW-003`) |
 | Dashboard | 🧩 mapped/researched only |
-| KDS | 🧩 mapped/researched; current POS kitchen behavior is mock revision/dispatch state only |
+| KDS | 🧩 mapped/researched; current kitchen revision/dispatch is mock only |
 | CDS | 🧩 mapped/researched only |
 
-Rifad remains one product with separate user roles/surfaces. The branch cashier uses POS; owner/management uses Back Office. The POS may consume owner-managed configuration locally without needing an equivalent cashier administration screen.
+Rifad is one product with distinct role contexts. Owner/management configures merchant policy in Back Office; cashier POS consumes the relevant effective local projection instead of duplicating administration screens.
 
 ---
 
-# 2. POS — executable reality
+# 3. POS — current executable reality
 
-## 2.1 Device and employee entry
+## 3.1 Device / employee entry
 
-✅ Account/device-link screen exists (`POS-SCREEN-001`).
+✅ Account/device-link entry exists (`POS-SCREEN-001`).
 
-✅ Device session carries device and branch identity in the current runtime.
+✅ Device session carries device and branch identity.
 
 ✅ Four-digit employee PIN unlock exists (`POS-SCREEN-002`).
 
-🧩 Time clock is not implemented even though older naming grouped it with the PIN screen.
+✅ MAP-01 adds capability-based authorization outside the legacy `EmployeeSession`; role display name is not authority.
 
-🧩 Effective permission/capability snapshots and one-action manager override are not implemented. Current `EmployeeSession` has employee identity/name/role name only.
+✅ Branch scope and employee active state are evaluated locally from the effective configuration.
 
-## 2.2 Sales workspace
+🟡 Current base employee unlock and manager-PIN verifier still use staging credential fixtures. Production credential storage, brute-force/lockout and host security are later requirements.
 
-✅ Arabic RTL/touch-first sales workspace exists.
+🧩 Time clock operation itself remains MAP-02.
 
-✅ Tablet/wide catalog + ticket composition exists; narrow behavior uses a different composition rather than shrinking every target.
+## 3.2 Sales workspace
 
-✅ Touch pages and Quick Sale/search-first mode exist.
+✅ Arabic RTL/touch-first sales workspace.
 
-✅ Catalog category loading/search exists.
+✅ Tablet/wide catalog + ticket composition; constrained layouts adapt rather than shrink important targets.
 
-✅ Product-card addition exists.
+✅ Quick Sale/search mode, catalog/category search and product-card addition.
 
-✅ Ticket line quantity edit and embedded keypad exist, including high-quantity behavior.
+✅ Quantity edit/keypad, line removal and Clear Cart.
 
-✅ Line removal and one-touch Clear Cart behavior exist.
+✅ Editable sale pages: create/rename/delete/move/place/remove.
 
-✅ Stable transaction-footer/rail geometry is implemented across adjacent sale/payment/success states.
+✅ Stable transaction operation geometry across sale/payment/success.
 
-✅ Sale-page editing currently includes create, rename, delete, move/reorder, product placement and removal.
+✅ **دفع** now evaluates MAP-01 `accept-payment` locally before checkout.
 
-🧩 Open-value/weighed-item entry is not implemented.
+✅ If the cashier lacks `accept-payment`, checkout is visibly blocked and the manager one-action PIN overlay is shown.
 
-🧩 Option-priced items are intentionally hidden from the default cashier catalog until `POS-SCREEN-005` is authorized/implemented. This is a safety boundary, not a missing fallback.
+✅ A successful manager approval allows only that checkout command; a later checkout requires a fresh approval.
 
-🧩 Add-on selection/pricing and required/min/max rules are not implemented in POS.
+🧩 Open-value/weighed-item entry remains unimplemented.
 
-🧩 Durable discount/tax/fulfillment sold-line snapshots are not complete.
+🧩 Option-priced items stay hidden until MAP-03 cashier chooser/sold snapshot work.
 
-## 2.3 Customer / credit / loyalty
+🧩 Add-ons, discount/tax and fulfillment sold-line snapshots remain MAP-03.
 
-✅ Customer search exists.
+## 3.3 Effective POS configuration — MAP-01
 
-✅ Customer creation and editing exist in the current POS runtime/UI.
+✅ `EffectivePosConfigurationContract` exists.
 
-✅ Current Saudi local mobile validation exists for the customer proof.
+✅ Effective snapshot carries:
 
-✅ Attach/remove customer behavior exists.
+- branch/device identity;
+- configuration revision/effective time;
+- feature flags;
+- enabled payment methods/order/connectivity requirement;
+- branch-relevant employee snapshots;
+- POS capability snapshots.
 
-✅ Customer profile exists.
+✅ Pure merchant-policy projection validates store/device relationship and strips Back Office-only rights.
 
-✅ Purchase history exists.
+✅ Effective configuration is reconstructed from current local staging persistence after restart.
 
-✅ Customer credit sale exists as executable Rifad proof behavior.
+✅ Payment-method selection renders enabled methods in merchant-defined order rather than a hard-coded display list.
 
-✅ Debt ledger and debt settlement exist.
+✅ No-enabled-payment state is safe and visible.
 
-✅ Current duplicate-submit/idempotency behavior is exercised by tests where applicable.
+🟡 Browser local persistence remains staging; production engine is MAP-06.
 
-✅ Loyalty status/balance, redemption quote/application, earning and purchase linkage exist as executable proof behavior.
+🟡 Real Back Office → POS transport remains MAP-11. Current tests explicitly assemble the projection locally without calling it synchronization.
 
-🟡 Customer/credit/loyalty are still backed by the current mock/staging runtime and are not a claim of cloud production storage, final permissions, aging/limits or accounting integration.
+## 3.4 Authorization / manager override — MAP-01
 
-## 2.4 Checkout and payments
+✅ `AuthorizationContract` evaluates concrete capability, employee activity, branch scope and role/capability relationship.
 
-✅ Checkout preserves cashier spatial context instead of navigating to a generic disconnected page.
+✅ `ManagerOverrideContract` approves one blocked command only.
 
-✅ Payment-method selection exists.
+✅ Approval audit fact carries actor/approver/capability/branch/command/target/revision without raw PIN.
 
-✅ Cash payment exists with exact/over tender and visible change.
+✅ Receipt reprint is protected by `reprint-resend-receipts`.
 
-✅ Sale completion uses exact Rifad Money/halala semantics in the current contract.
+✅ Checkout is protected by `accept-payment`.
 
-🟡 Mock card/Mada UX and mock card completion are executable.
+✅ Visible manager overlay collects four digits without switching the active employee.
 
-⛔ This is **not** real terminal/provider support. No production terminal, provider lifecycle, reconciliation, refund or PCI-sensitive data claim exists.
+✅ Restart/integration tests prove the effective permission state persists while override does not create lasting elevation.
 
-🧩 Split payment is not implemented. Current receipt shape still carries one payment-method value and therefore is not the final split-payment-ready model.
+## 3.5 Customers / credit / loyalty
 
-## 2.5 Sale success / receipts / printing
+✅ Customer search/create/edit/attach/profile/purchase history.
 
-✅ Sale-success state exists.
+✅ Customer credit sale, debt ledger and settlement proof.
 
-✅ Email-receipt behavior exists in the current runtime.
+✅ Loyalty status/redemption/earning/purchase linkage proof.
 
-✅ Receipt history/list exists and now uses stable manifest identity `POS-SCREEN-016`.
+🟡 These still use current mock/staging runtime and are not claims of production cloud persistence, final permissions, aging/limits or accounting integration.
 
-✅ Reprint exists.
+## 3.6 Checkout / payments
 
-✅ Reprint handles `delivery-unknown` by requiring explicit confirmation rather than blind duplicate printing.
+✅ Cash payment, exact/over tender and change.
 
-🟡 Current printing transport is mock/staging; no real printer support claim.
+✅ Rifad Money/halala semantics in current flow.
 
-🧩 Receipt detail lifecycle is not complete.
+✅ Payment method display/order comes from MAP-01 effective config.
 
-🧩 Refund lifecycle is not implemented.
+🟡 Card/Mada remains mock UX only.
 
-## 2.6 Open tickets / restaurant local service
+⛔ No real terminal/provider/reconciliation/refund claim.
 
-✅ Generic `SalesContract.saveOpenTicket` behavior exists for the current working ticket.
+🧩 Split-ready durable payment records remain MAP-05.
 
-🧩 The full general Open Tickets family — list/reopen/move/merge/split/bill/void rules — is not complete.
+## 3.7 Receipts / printing
 
-✅ `POS-FLOW-002` implements restaurant service OFF, simple local service and advanced place management as a bounded local/mock proof.
+✅ Sale success.
 
-✅ Generic `PlaceGroup → ServicePlace` model exists.
+✅ Receipt list/history (`POS-SCREEN-016`).
 
-✅ Current default configuration has group `الطاولات` with six places.
+✅ Reprint + delivery-unknown confirmation.
 
-✅ Advanced local flow can create an open local order, clear the working basket, reopen an occupied place, update/send additions, increment mock kitchen revision and release the place after successful payment.
+✅ MAP-01 reprint authorization/manager override.
 
-🟡 Current restaurant config/open orders persist through current staging/local runtime evidence.
+✅ Current email receipt behavior.
 
-⛔ No production multi-device table locking, real KDS/printer transport, final restaurant persistence, advanced floor plan or delivery-platform integration is claimed.
+🟡 Printing transport is mock/staging.
+
+🧩 Receipt detail/refund lifecycle remains MAP-05.
+
+## 3.8 Restaurant local-service proof
+
+✅ `POS-FLOW-002` still proves service OFF/simple/advanced place modes.
+
+✅ Generic `PlaceGroup → ServicePlace` and local open-order create/reopen/update/send/close proof.
+
+🟡 Restaurant configuration and kitchen revision remain staging/mock. MAP-01 introduced owner feature-policy authority but does not falsely migrate the full restaurant configuration/lifecycle ahead of its later map work.
+
+⛔ No production multi-device locking, real KDS/printer dispatch or delivery connector claim.
 
 ---
 
-# 3. Back Office — executable reality
+# 4. Back Office — current executable reality
 
-The Back Office visual shell is locked for the current product cycle. Broad redesign is closed; future capabilities inherit the locked hierarchy and Rifad visual authority.
+The broad visual shell remains locked for the current cycle. MAP-01 extended capabilities inside it without reopening a redesign.
 
-## 3.1 Executable catalog family (`BO-FLOW-002`)
+## 4.1 Catalog — `BO-FLOW-002`
 
-✅ Item list.
+✅ Item list/search/filter.
 
-✅ Search by name, SKU or barcode.
-
-✅ Category filter.
-
-✅ Add/edit item.
-
-✅ Name, description, category, SKU, barcode and available-for-sale.
+✅ Add/edit item, category, SKU/barcode, available-for-sale.
 
 ✅ Fixed pricing.
 
-✅ Reusable **مجموعات الخيارات** with direct default option prices.
+✅ Reusable pricing option groups, inherited prices and sparse item overrides.
 
-✅ Item inheritance from reusable option group.
+✅ Item-private multiple price choices.
 
-✅ Sparse item-specific price overrides while retaining group identity.
+✅ Reusable/private add-ons.
 
-✅ Item-private multiple-price choices.
+✅ Merchant colors/item appearance staging.
 
-✅ Reusable general add-on groups.
+🟡 `BrowserCatalogAdapter` schema v4 and `imageDataUrl` remain staging transports.
 
-✅ Item-private add-on groups/options.
+## 4.2 Operational configuration/access — `BO-FLOW-003` / MAP-01
 
-✅ Category create/rename.
+✅ **Employees (`BO-SCREEN-021`)** — list/create/edit, role, allowed stores, active state, staging PIN setup.
 
-✅ Merchant-selected category accent color.
+✅ **Access Rights (`BO-SCREEN-022`)** — explicit POS + Back Office capabilities; Owner authority immutable.
 
-✅ Reusable option-group accent color.
+✅ **Features (`BO-SCREEN-026`)** — merchant feature switches.
 
-✅ Reusable add-on-group accent color.
+✅ **Stores (`BO-SCREEN-027`)** — list/create/edit/active state.
 
-✅ Item POS visual representation by color/shape or image staging.
+✅ **POS Devices (`BO-SCREEN-028`)** — list/create/edit/store assignment/link status.
 
-✅ Explicit Save/Cancel workflow.
+✅ **Payment Types (`BO-SCREEN-029`)** — list/create/edit, kind, enabled, availability, store scope and ordering.
 
-Current catalog staging implementation is `BrowserCatalogAdapter` **schema v4**.
+✅ All mutations cross `PosConfigurationAdminContract` with stable command identity.
 
-🟡 Browser local storage is staging only. `imageDataUrl` is staging media transport only.
+✅ Staging PIN uniqueness/non-leakage and payment ordering are covered by tests.
 
-🟡 SKU/barcode identity now exists in the executable catalog slice and current POS staging search. Production scanner hardware, option-level barcode identity, production persistence and synchronization remain separate gaps.
+🟡 `BrowserPosConfigurationAdmin` is staging storage. It defines product meaning but is not production Back Office/cloud topology.
 
-🧩 Category delete/reorder, item delete/import/export, cost, stock, taxes, weight/volume, composites, branch/store overrides and permissions remain outside the current catalog slice.
+## 4.3 Other Back Office families
 
-## 3.2 Other Back Office families
+🧩 Reports / inventory / customers administration.
 
-🧩 Dashboard/reporting.
+🧩 Timecards/total hours — MAP-02 dependency.
 
-🧩 Advanced inventory.
+🧩 Taxes and Discounts — MAP-03 business semantics.
 
-🧩 Employees and access rights.
+🧩 Receipt settings / refund-related policy — later MAP-05 work.
 
-🧩 Timecards/total hours.
+🧩 Open-ticket settings — MAP-04.
 
-🧩 Customers management.
-
-🧩 Feature settings.
-
-🧩 Stores and POS-device administration.
-
-🧩 Payment types.
-
-🧩 Taxes.
-
-🧩 Loyalty administration.
-
-🧩 Receipt settings.
-
-🧩 Open-ticket settings.
-
-🧩 Kitchen printers/displays.
-
-🧩 Dining options.
-
-🧩 Billing/subscription.
-
-These are not reasons to make POS wait for a complete Back Office. MAP-01 will first define the owner-managed configuration facts the operational POS actually needs.
+🧩 Kitchen printers/displays, Dining Options configuration, billing and later verticals remain separately gated.
 
 ---
 
-# 4. Current Rifad-owned architecture evidence
+# 5. Rifad-owned architecture evidence
 
-## 4.1 POS runtime boundary
+## POS runtime
 
-✅ `PosRuntimeContract` is injected through the composition root.
+✅ `PosRuntimeContract` remains injected through composition.
 
-✅ Current aggregate runtime contains device session, employee session, catalog, sale layout, sales, customer credit, loyalty, checkout, receipts and printing boundaries.
+✅ MAP-01 adds `effectiveConfiguration`, `authorization`, `managerOverride` as Rifad-owned capabilities outside the legacy mock runtime.
 
-✅ UI/state code is not supposed to import donor/provider internals directly.
+## Merchant configuration
 
-✅ Runtime conformance/injection tests protect this boundary.
+✅ `PosConfigurationAdminContract` owns merchant operational policy.
 
-## 4.2 Restaurant boundary
+✅ `projectEffectivePosConfiguration()` is provider/storage/sync-independent pure domain logic.
 
-✅ `RestaurantServiceContract` isolates current config/place/open-local-order behavior.
+## Local persistence/outbox
 
-✅ `useLocalServiceFlow` receives the contract by dependency injection.
+✅ `LocalPersistenceContract` remains separate from Sync/LAN/Fiscal.
 
-✅ Generic place terminology avoids freezing donor-specific table/floor models.
+✅ Stable installation/branch/device identity, private versioned snapshots, atomic snapshot+event semantics, retry bookkeeping and acknowledgement.
 
-## 4.3 Local persistence/outbox boundary
+✅ MAP-01 adds current staging namespaces:
 
-✅ `LocalPersistenceContract` V1 exists.
+- `pos.effective-configuration`;
+- `pos.authorization-audit`.
 
-✅ Stable installation identity exists.
+✅ MAP-01 adds event proof:
 
-✅ Branch and device binding are separate facts.
+- `authorization.manager-override-approved.v1`.
 
-✅ Private versioned snapshots/revisions exist.
-
-✅ Snapshot + outbox event commit semantics exist in the current staging implementation.
-
-✅ Stable domain-event identity/deduplication exists.
-
-✅ Retry/failure bookkeeping and acknowledgement exist.
-
-✅ Current private namespaces include `pos.runtime` and `restaurant.service`.
-
-✅ Current staging event families include sale completion, open ticket, customer changes/credit/debt, local-order lifecycle and print attempts.
-
-✅ Clean cold reconstruction from Rifad namespace state is tested for current operational state.
-
-🟡 Current `BrowserLocalPersistence` transport is explicitly staging.
-
-🧩 Production local engine, real forward migrations, crash-write recovery, realistic volume, Windows installer/process behavior and supported PWA engine proof remain pending.
+🟡 Physical browser storage is still staging; production crash/volume/migration/host proof belongs to MAP-06/07/09.
 
 ---
 
-# 5. Current major product-model gaps driving the roadmap
+# 6. MAP-01 verification evidence
 
-These are the gaps that materially change durable local truth and therefore precede production local database/sync freeze:
+Final MAP-01 behavior is covered by tests including:
 
-1. **Effective configuration + authorization** — feature flags, payment availability/order, tax/discount policy, employee capabilities, branch/device scope and manager one-action override.
-2. **Shift + cash + time clock** — opening cash, active shift, pay-in/pay-out, expected/actual cash, close summary/report and clock state where enabled.
-3. **Complete sold-line truth** — selected pricing option, selected add-ons, exact resolved price, discounts, taxes, fulfillment and historical snapshots.
-4. **Open ticket/order lifecycle** — durable status/revision/ownership plus list/reopen/void/move/merge/split/bill rules as approved.
-5. **Payments/receipts/refunds** — normalized payment records, split-ready totals, receipt detail, refund/return facts and audit/authorization evidence.
-6. **Production local persistence** — replace browser staging behind the existing contract after the operational facts above are sufficiently defined.
+- `effective-pos-configuration.test.ts`;
+- `configured-payment-method-rail.test.tsx`;
+- `manager-override-dialog.test.tsx`;
+- `map01-owner-policy-integration.test.ts`;
+- `accept-payment-authorization.test.tsx`;
+- `pos-configuration-admin.test.ts`;
+- `pos-configuration-projection.test.ts`;
+- `pos-operational-config-flow.test.tsx`.
 
----
+Verified CI after the final visible checkout authorization slice:
 
-# 6. Offline / host / device status
+- ✅ UI Manifest Integrity;
+- ✅ POS typecheck/tests/build;
+- ✅ Back Office typecheck/tests/build.
 
-✅ Current staging runtime proves clean restart reconstruction of key local POS/restaurant state.
-
-⛔ No production Windows local database is selected.
-
-⛔ No packaged Windows cold-start/crash-recovery claim yet.
-
-⛔ No production tablet/PWA offline-engine claim yet.
-
-⛔ No real scanner/printer/cash-drawer matrix yet.
-
-⛔ No real integrated payment-terminal claim.
-
-These are MAP-06..09, not reasons to restart synchronization now.
+Automatic sync-candidate workflows may also run on pushes. Their success/failure does not change current sequencing and does not select a synchronization provider.
 
 ---
 
-# 7. Synchronization status
-
-Existing synchronization candidate evidence is preserved under `docs/research/sync/` and the existing test/workflow directories.
-
-It proved useful technical behaviors such as offline/reconnect/retry/identity/security scenarios for candidate comparison.
-
-However:
-
-- no synchronization provider is production-selected;
-- no provider schema is Rifad domain truth;
-- candidate proof tables are not the production business model;
-- additional synchronization adoption/debugging is paused until `MAP-10`;
-- D-032's behavioral requirements remain, while D-033 supersedes the old immediate sync-first sequencing.
-
----
-
-# 8. Current execution order
-
-The single roadmap is `docs/RIFAD_FINAL_IMPLEMENTATION_MAP.md`.
-
-Current checkpoint:
-
-- **MAP-00:** reality + authority reconciliation — in progress in this change set.
-- **Next after MAP-00 PASS:** `MAP-01 Effective POS Configuration + Authorization`.
-
-Then:
-
-`MAP-02 shift/cash/time clock → MAP-03 complete sale-line truth → MAP-04/05 open-order/payment/refund lifecycle → MAP-06 production local persistence → MAP-07/08/09 real hosts/devices → MAP-10 sync re-entry → MAP-11 real Back Office ↔ POS integration`.
-
-Do not skip dependency gates merely because a later integration is technically interesting.
-
----
-
-# 9. Do-not-claim list
+# 7. Explicit non-claims after MAP-01
 
 Do not claim production readiness for:
 
+- production credential verifier/security;
 - production local DB;
 - synchronization provider selection;
 - branch/cloud synchronization;
@@ -375,4 +322,14 @@ Do not claim production readiness for:
 - production media storage/sync;
 - final business/database schema.
 
-The Back Office visual shell is locked; this does not mean every future capability-specific screen is already designed or implemented.
+MAP-01 PASS means the **product ownership and local authorization boundary is proven**, not that later transports/infrastructure are already production-ready.
+
+---
+
+# 8. Next dependency-safe product work
+
+**MAP-02 — Shift + Cash Drawer Ledger + Time Clock.**
+
+It must build on the MAP-01 feature flags and permission model, including at least `shifts`, `time-clock`, `view-shift-report` and `open-cash-drawer-without-sale`, rather than introducing an independent role/authorization mechanism.
+
+MAP-02 has not been started by this closeout.
