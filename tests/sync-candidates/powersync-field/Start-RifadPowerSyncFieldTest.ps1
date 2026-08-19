@@ -11,6 +11,7 @@ $PowerSyncCliCommit = '0eaf3629fb5f7e2ad9d0b70142004aaabab0a7a3'
 $PowerSyncImage = 'journeyapps/powersync-service@sha256:0fc9f65e693c07f1206007acddb87141402c09ef20589e29a0dfe20d57ce80b6'
 $AuthKey = 'ZGV2LXNoYXJlZC1zZWNyZXQtZm9yLWRlbW8tb25seS0zMmI'
 $ComposeProject = 'rifad-powersync-field'
+$SourceHostPort = 55432
 
 function Require-Command([string]$Name) {
   if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
@@ -151,6 +152,11 @@ Write-Utf8NoBom (Join-Path $Example 'powersync\sync-config.yaml') $syncConfig
 
 $composeText = [System.IO.File]::ReadAllText($ComposeFile)
 $composeText = $composeText.Replace('journeyapps/powersync-service:latest', $PowerSyncImage)
+# The proof backend runs on Windows. Keep its PostgreSQL host port away from the
+# conventional 5432 because a developer machine may already have another
+# PostgreSQL listener there. PowerSync itself still reaches pg-db:5432 inside
+# the isolated Docker network.
+$composeText = $composeText.Replace('${PS_DATABASE_PORT}:${PS_DATABASE_PORT}', ([string]$SourceHostPort + ':${PS_DATABASE_PORT}'))
 Write-Utf8NoBom $ComposeFile $composeText
 
 if ($Reset) {
@@ -188,13 +194,14 @@ if ($isAdmin) {
 }
 
 $env:POWERSYNC_URL = "http://${LanIp}:8080"
-$env:PG_URL = 'postgresql://postgres:changeme@127.0.0.1:5432/postgres'
+$env:PG_URL = "postgresql://postgres:changeme@127.0.0.1:${SourceHostPort}/postgres"
 $env:PS_CLIENT_AUTH_KEY = $AuthKey
 $env:RIFAD_PROOF_API_PORT = '8787'
 $env:RIFAD_BIND_HOST = '0.0.0.0'
 $env:RIFAD_FIELD_API_URL = "http://${LanIp}:8787"
 $env:RIFAD_FIELD_DEVICE_ID = 'win11-native'
 
+Write-Host "Using isolated PostgreSQL host port $SourceHostPort for the Rifad proof backend."
 Write-Host 'Starting Rifad proof API and browser client host...'
 $backendProcess = Start-Process -FilePath 'cmd.exe' -ArgumentList '/k', 'node backend.mjs' -WorkingDirectory $ProofDir -PassThru
 $webProcess = Start-Process -FilePath 'cmd.exe' -ArgumentList '/k', 'npm run dev' -WorkingDirectory $ProofDir -PassThru
