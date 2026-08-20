@@ -1,0 +1,129 @@
+/* Owner visual review — fixed Credit/Delivery actions should read as members of the
+ * same payment-card family, while remaining pinned below the scrollable methods. */
+
+.payment-special-actions {
+  gap: 9px !important;
+  margin-top: 10px !important;
+  padding-top: 10px !important;
+}
+
+.payment-special-action {
+  min-height: 84px !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+  border-radius: 15px !important;
+  padding: 10px 11px !important;
+  overflow: hidden;
+  text-align: start;
+  box-shadow: 0 1px 5px rgba(28, 52, 43, .05) !important;
+}
+
+.payment-special-action > span:not(.payment-method-art) {
+  flex: 1 1 auto;
+  align-content: center;
+  gap: 2px !important;
+}
+
+.payment-special-action strong {
+  font-size: 16.5px !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+}
+
+.payment-special-action small {
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  line-height: 1.2 !important;
+}
+
+.payment-special-action .payment-method-art {
+  flex: 0 0 58px !important;
+  width: 58px !important;
+  min-width: 58px !important;
+  height: 52px !important;
+  border-radius: 13px !important;
+  box-shadow: none !important;
+}
+
+.payment-special-action .payment-method-art svg {
+  width: 55px !important;
+  height: 46px !important;
+}
+
+.payment-special-action--credit,
+.payment-special-action--delivery {
+  flex: 1 1 0 !important;
+}
+
+.payment-special-action--credit {
+  border: 1px solid #d5dadb !important;
+  background: linear-gradient(100deg, #ffffff 18%, #eef0f1 100%) !important;
+  color: #354047 !important;
+}
+
+.payment-special-action--credit:hover {
+  border-color: #bcc4c7 !important;
+  background: linear-gradient(100deg, #ffffff 12%, #e9ecee 100%) !important;
+  box-shadow: 0 5px 13px rgba(55, 65, 70, .08) !important;
+}
+
+.payment-special-action--credit small {
+  color: #6b7479 !important;
+}
+
+.payment-special-action--credit .payment-method-art {
+  color: #68757b !important;
+  border: 1px solid #e1e5e6 !important;
+  background: #f1f3f3 !important;
+}
+
+.payment-special-action--delivery {
+  border: 1px solid #e4a15f !important;
+  background: linear-gradient(100deg, #fffdf9 16%, #fbe7d0 100%) !important;
+  color: #7d4818 !important;
+}
+
+.payment-special-action--delivery:hover {
+  border-color: #d98b40 !important;
+  background: linear-gradient(100deg, #fffdf9 10%, #f8dfc2 100%) !important;
+  box-shadow: 0 5px 13px rgba(178, 97, 24, .11) !important;
+  filter: none !important;
+}
+
+.payment-special-action--delivery small {
+  color: #a1652e !important;
+}
+
+.payment-special-action--delivery .payment-method-art {
+  color: #b86b20 !important;
+  border: 1px solid #f2d4b4 !important;
+  background: #f8e5cc !important;
+}
+
+@media (max-width: 720px) {
+  .payment-special-action {
+    min-height: 78px !important;
+    padding: 9px 9px !important;
+    gap: 8px !important;
+  }
+
+  .payment-special-action .payment-method-art {
+    flex-basis: 52px !important;
+    width: 52px !important;
+    min-width: 52px !important;
+    height: 48px !important;
+  }
+
+  .payment-special-action .payment-method-art svg {
+    width: 49px !important;
+    height: 42px !important;
+  }
+
+  .payment-special-action strong {
+    font-size: 15.5px !important;
+  }
+
+  .payment-special-action small {
+    font-size: 11px !important;
+  }
+}
