@@ -63,6 +63,7 @@ import "./visual-pass-53.css";
 import "./local-service.css";
 import "./manager-override.css";
 import "./payment-methods-v2.css";
+import "./payment-methods-v3.css";
 
 installVisualPass18ProductPrices();
 
