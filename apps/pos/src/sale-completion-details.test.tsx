@@ -60,21 +60,23 @@ const renderDetails = (input: {
 );
 
 describe("sale completion details", () => {
-  it("keeps a completed cash sale compact and avoids tender/change repetition", () => {
+  it("promotes the collected amount and keeps the receipt number as a quiet reference", () => {
     const { container } = renderDetails();
 
     expect(screen.getByRole("heading", { name: "تمت عملية البيع بنجاح" })).toBeInTheDocument();
-    expect(screen.getByText("R-00121")).toBeInTheDocument();
     expect(screen.getByText("المبلغ المدفوع")).toBeInTheDocument();
+    expect(screen.getByText("R-00121")).toBeInTheDocument();
     expect(screen.getByText("نقدي")).toBeInTheDocument();
     expect(screen.getByText("Cash")).toBeInTheDocument();
     expect(screen.getByText("محفوظ محليًا")).toBeInTheDocument();
     expect(screen.queryByText("المستلم")).not.toBeInTheDocument();
     expect(screen.queryByText("الباقي")).not.toBeInTheDocument();
+    expect(container.querySelector(".sale-completion-amount-hero")).toBeInTheDocument();
+    expect(container.querySelector(".sale-completion-receipt-meta")).toBeInTheDocument();
     expect(container.querySelector('[data-completion-method="settled"]')).toBeInTheDocument();
   });
 
-  it("shows the linked delivery channel instead of flattening delivery into cash/card", () => {
+  it("shows merchant collection on delivery completion without exposing the order platform", () => {
     const deliveryContext: DeliveryCollectionRecord = {
       contractVersion: 1,
       ticketId: "ticket-1",
@@ -89,22 +91,45 @@ describe("sale completion details", () => {
       updatedAt: "2026-08-20T15:00:00.000Z",
     };
 
-    const { container } = renderDetails({ deliveryContext });
+    renderDetails({ deliveryContext });
 
-    expect(screen.getByText("قناة التوصيل")).toBeInTheDocument();
-    expect(screen.getByText("HungerStation")).toBeInTheDocument();
-    expect(screen.getByText("تحصيل نقدي")).toBeInTheDocument();
-    expect(container.querySelector('[data-completion-method="delivery"]')).toBeInTheDocument();
+    expect(screen.getByText("نقدي")).toBeInTheDocument();
+    expect(screen.getByText("Cash")).toBeInTheDocument();
+    expect(screen.queryByText("HungerStation")).not.toBeInTheDocument();
+    expect(screen.queryByText("قناة التوصيل")).not.toBeInTheDocument();
   });
 
-  it("keeps credit visually distinct and preserves the customer identity", () => {
+  it("maps delivery card collection to the same network result used by direct sales", () => {
+    const deliveryContext: DeliveryCollectionRecord = {
+      contractVersion: 1,
+      ticketId: "ticket-1",
+      receiptId: "receipt-card",
+      channelId: "keeta",
+      channelName: "Keeta",
+      channelKind: "platform",
+      paymentMode: "cash-on-delivery",
+      settlement: "courier-pays-merchant",
+      merchantCollection: "card",
+      createdAt: "2026-08-20T15:00:00.000Z",
+      updatedAt: "2026-08-20T15:00:00.000Z",
+    };
+
+    renderDetails({ paymentMethod: "card", deliveryContext });
+
+    expect(screen.getByText("شبكة / مدى")).toBeInTheDocument();
+    expect(screen.getByText("Card")).toBeInTheDocument();
+    expect(screen.queryByText("Keeta")).not.toBeInTheDocument();
+  });
+
+  it("keeps credit visually distinct and does not call it paid money", () => {
     const { container } = renderDetails({ paymentMethod: "credit" });
 
     expect(screen.getByRole("heading", { name: "تم تسجيل البيع الآجل بنجاح" })).toBeInTheDocument();
     expect(screen.getByText("طريقة الإنهاء")).toBeInTheDocument();
     expect(screen.getByText("آجل")).toBeInTheDocument();
     expect(screen.getByText("محمد علي")).toBeInTheDocument();
-    expect(screen.getByText("قيمة البيع")).toBeInTheDocument();
+    expect(screen.getByText("قيمة البيع الآجل")).toBeInTheDocument();
+    expect(screen.queryByText("المبلغ المدفوع")).not.toBeInTheDocument();
     expect(container.querySelector('[data-completion-method="credit"]')).toBeInTheDocument();
   });
 
