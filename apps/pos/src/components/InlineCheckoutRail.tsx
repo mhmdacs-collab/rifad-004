@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import type { DeliveryCollectionRecord } from "../../../../contracts/deliveryCollection";
 import { Icon } from "./Icon";
 import { InlineNotice } from "./InlineNotice";
 import { MoneyAmount } from "./MoneyAmount";
+import { SaleCompletionDetails } from "./SaleCompletionDetails";
 import { formatMoneyAmount, money, parseRiyalsToHalalas, suggestedCashHalalas } from "../domain/money";
 import { readPrintReceiptAlways, writePrintReceiptAlways } from "../domain/posPreferences";
 import type { PrintDeliveryStatus, Receipt, Ticket } from "../domain/models";
@@ -12,6 +14,7 @@ type InlineCheckoutRailProps = {
   stage: InlineCheckoutStage;
   ticket: Ticket;
   receipt: Receipt | null;
+  deliveryContext?: DeliveryCollectionRecord | null;
   printStatus: PrintDeliveryStatus;
   busy: string | null;
   errorMessage: string | null;
@@ -25,14 +28,6 @@ type InlineCheckoutRailProps = {
   onPrint: () => void;
   onEmailReceipt: (email: string) => Promise<boolean>;
   onNewSale: () => void;
-};
-
-const printMessages: Record<PrintDeliveryStatus, string | null> = {
-  idle: null,
-  queued: "أُرسلت مهمة الطباعة إلى الطابعة.",
-  printed: "تمت طباعة الإيصال.",
-  failed: "تعذرت الطباعة. البيع محفوظ ويمكن إعادة المحاولة.",
-  "delivery-unknown": "حالة الطابعة غير مؤكدة. تحقق من الورق قبل إعادة الطباعة.",
 };
 
 function CashPaymentVisual() {
@@ -58,6 +53,7 @@ export function InlineCheckoutRail({
   stage,
   ticket,
   receipt,
+  deliveryContext,
   printStatus,
   busy,
   errorMessage,
@@ -303,60 +299,22 @@ export function InlineCheckoutRail({
 
   const completed = receipt;
   if (!completed) return null;
-  const isCredit = completed.paymentMethod === "credit";
-  const isCard = completed.paymentMethod === "card";
-  const resolvedEmail = email || completed.customer?.details.email || "";
 
   return (
     <aside className="inline-checkout-rail inline-checkout-rail--success" aria-label="اكتملت عملية البيع">
-      <div className="inline-success-body">
-        <div className="inline-success-mark"><Icon name="check" size={35} strokeWidth={2.4} /></div>
-        <div className="inline-success-copy">
-          <span>اكتملت العملية</span>
-          <h1>{isCredit ? "تم تسجيل البيع الآجل بنجاح" : "تمت عملية البيع بنجاح"}</h1>
-          <p>{isCredit ? "حُفظت الفاتورة على حساب العميل." : isCard ? "تم تأكيد الدفع عبر شبكة / مدى وحُفظت العملية." : "حُفظت العملية محليًا وهي جاهزة للمزامنة."}</p>
-          <span className="inline-success-local"><i />محفوظ محليًا</span>
-        </div>
-
-        <section className="inline-success-summary" aria-label="ملخص العملية">
-          <div><span>رقم الإيصال</span><strong dir="ltr">{completed.number}</strong></div>
-          <div><span>الإجمالي</span><strong><MoneyAmount value={completed.total} /></strong></div>
-          {isCredit ? (
-            <>
-              <div><span>طريقة الإنهاء</span><strong>آجل</strong></div>
-              <div className="inline-success-highlight"><span>العميل</span><strong>{completed.customer?.name ?? "—"}</strong></div>
-            </>
-          ) : isCard ? (
-            <>
-              <div><span>طريقة الدفع</span><strong>شبكة / مدى</strong></div>
-              <div className="inline-success-highlight"><span>المبلغ المدفوع</span><strong><MoneyAmount value={completed.total} /></strong></div>
-            </>
-          ) : (
-            <>
-              <div><span>المستلم</span><strong><MoneyAmount value={completed.tendered} /></strong></div>
-              <div className="inline-success-highlight"><span>الباقي</span><strong><MoneyAmount value={completed.change} /></strong></div>
-            </>
-          )}
-        </section>
-
-        {completed.customer ? (
-          <section className="inline-success-email" aria-label="إرسال الإيصال للعميل">
-            <label><span>إرسال الإيصال إلى العميل</span><input dir="ltr" type="email" value={resolvedEmail} onChange={(event) => setEmail(event.target.value)} placeholder="customer@example.com" /></label>
-            <button type="button" onClick={() => void sendEmail()} disabled={busy !== null || emailSending || !resolvedEmail.trim()}>{emailSending ? "جارٍ الإرسال…" : "إرسال الإيصال"}</button>
-            {emailMessage ? <small role="status">{emailMessage}</small> : null}
-          </section>
-        ) : null}
-
-        {completed.customer && completed.loyaltyEarned.halalas > 0 ? <div className="inline-success-loyalty">النقاط المكتسبة: <strong>{formatMoneyAmount(completed.loyaltyEarned)}</strong></div> : null}
-
-        {printMessages[printStatus] ? <div className={`inline-print-status inline-print-status--${printStatus}`} role="status"><Icon name="printer" size={17} />{printMessages[printStatus]}</div> : null}
-
-        <label className="inline-print-always">
-          <input type="checkbox" checked={printAlways} onChange={(event) => updatePrintAlways(event.target.checked)} />
-          <span className="inline-print-always-icon" aria-hidden="true"><Icon name="printer" size={22} /></span>
-          <span className="inline-print-always-copy"><strong>طباعة الإيصال دائمًا</strong><small>في العمليات القادمة</small></span>
-        </label>
-      </div>
+      <SaleCompletionDetails
+        receipt={completed}
+        deliveryContext={deliveryContext}
+        printStatus={printStatus}
+        busy={busy !== null}
+        email={email}
+        emailMessage={emailMessage}
+        emailSending={emailSending}
+        printAlways={printAlways}
+        onEmailChange={setEmail}
+        onSendEmail={() => void sendEmail()}
+        onPrintAlwaysChange={updatePrintAlways}
+      />
 
       <footer className="inline-success-actions inline-operation-footer transaction-operation-card" aria-label="إجراءات العملية">
         <button type="button" className="inline-success-print" onClick={onPrint} disabled={busy !== null}><Icon name="printer" size={19} />{printStatus === "failed" ? "إعادة الطباعة" : "طباعة"}</button>
