@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import type { EffectiveDeliveryChannel } from "../../../contracts/posConfiguration";
 import type { DeliveryMerchantCollection } from "../../../contracts/deliveryCollection";
 import { ConfiguredPaymentMethodRail } from "./components/ConfiguredPaymentMethodRail";
-import { CustomerCreditDialog } from "./components/CustomerCreditDialog";
 import { InlineCheckoutRail } from "./components/InlineCheckoutRail";
 import { LocalServiceEnhancer } from "./components/LocalServiceEnhancer";
 import { ManagerOverrideDialog } from "./components/ManagerOverrideDialog";
@@ -33,7 +32,6 @@ export default function App() {
   const legacyOrderTypeFixture = useRef(import.meta.env.MODE === "test" && window.localStorage.getItem(LEGACY_ORDER_TYPES_KEY) !== null).current;
   const [posRuntime] = useState(createPosRuntimeAdapter);
   const [restaurantService] = useState(createRestaurantServiceAdapter);
-  const [creditPaymentOpen, setCreditPaymentOpen] = useState(false);
   const [paymentContextError, setPaymentContextError] = useState<string | null>(null);
   const flow = usePosFlow(posRuntime);
   const effectiveConfiguration = useEffectivePosConfiguration(posRuntime, flow.device);
@@ -49,7 +47,6 @@ export default function App() {
 
   useEffect(() => {
     if (flow.stage !== "success") return;
-    setCreditPaymentOpen(false);
     setPaymentContextError(null);
     const printButton = document.querySelector<HTMLButtonElement>(".inline-success-print");
     printButton?.setAttribute("aria-label", "طباعة الإيصال");
@@ -159,13 +156,14 @@ export default function App() {
       }
     };
 
-    const openCreditPayment = async () => {
+    const chargeCreditInline = async (customerId: string) => {
       setPaymentContextError(null);
       try {
         await clearDeliveryForDirectPayment();
-        setCreditPaymentOpen(true);
+        return await flow.chargeTicketToCustomer(customerId);
       } catch (error) {
         setPaymentContextError(error instanceof Error ? error.message : "تعذر تجهيز البيع الآجل.");
+        return null;
       }
     };
 
@@ -182,7 +180,6 @@ export default function App() {
     const startFreshSale = () => {
       local.abandonActiveResume();
       local.clearCheckoutContext();
-      setCreditPaymentOpen(false);
       setPaymentContextError(null);
       void flow.newSale();
     };
@@ -269,7 +266,9 @@ export default function App() {
                 onBackToSales={() => void returnPaymentToSales()}
                 onCash={() => void selectDirectPayment("cash")}
                 onCard={() => void selectDirectPayment("card")}
-                onCredit={() => void openCreditPayment()}
+                onSearchCustomers={flow.searchCustomers}
+                onCreateCustomer={(name, mobile) => flow.createCustomer(name, mobile)}
+                onChargeCredit={chargeCreditInline}
                 onDeliveryCollect={(channel, merchantCollection) => void selectDeliveryCollection(channel, merchantCollection)}
               />
             ) : inlineCheckoutStage ? (
@@ -303,22 +302,6 @@ export default function App() {
             ) : null}
           </div>
         </CustomerFlowProvider>
-        {creditPaymentOpen && flow.stage === "payment" ? (
-          <CustomerCreditDialog
-            mode="credit"
-            ticketTotal={saleTicket.total}
-            busy={flow.busy === "customer-create" || flow.busy === "customer-credit" || flow.busy === "customer-settlement"}
-            onClose={() => setCreditPaymentOpen(false)}
-            onSearch={flow.searchCustomers}
-            onCreateCustomer={(name, mobile) => flow.createCustomer(name, mobile)}
-            onChargeCredit={async (customerId) => {
-              const result = await flow.chargeTicketToCustomer(customerId);
-              if (result) setCreditPaymentOpen(false);
-              return result;
-            }}
-            onSettleDebt={flow.settleCustomerDebt}
-          />
-        ) : null}
         {managerOverrideDialog}
       </>
     );
