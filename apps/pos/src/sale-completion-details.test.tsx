@@ -81,7 +81,7 @@ describe("sale completion details", () => {
       receiptId: "receipt-cash",
       channelId: "hungerstation",
       channelName: "HungerStation",
-      channelKind: "external-platform",
+      channelKind: "platform",
       paymentMode: "cash-on-delivery",
       settlement: "courier-pays-merchant",
       merchantCollection: "cash",
