@@ -96,6 +96,7 @@ export function TicketWorkspaceEnhancer({
   const serviceEnabled = local.config.restaurantServiceEnabled;
   const advancedRestaurant = serviceEnabled && local.config.placeManagementEnabled;
   const activeOpenOrder = local.activeOpenOrder;
+  const hasUnsentChanges = local.hasUnsentOpenOrderChanges;
   const openCount = local.openLocalOrders.length;
   const localBusy = local.localBusy !== null;
   const customerBusy = busy === "customer-credit" || busy === "customer-settlement" || busy === "ticket-customer" || busy === "customer-create";
@@ -134,6 +135,7 @@ export function TicketWorkspaceEnhancer({
         setAttr(second, "aria-hidden", null);
         setClass(container, "ticket-workspace-actions--single", false);
         setClass(container, "ticket-workspace-actions--restaurant", false);
+        setClass(container, "ticket-workspace-actions--unsent", false);
 
         const basic = workspace.classList.contains("sale-screen-basic");
         const touchRestaurant = !basic && serviceEnabled;
@@ -142,12 +144,18 @@ export function TicketWorkspaceEnhancer({
           setClass(container, "ticket-workspace-actions--restaurant", true);
 
           if (activeOpenOrder) {
-            setText(first, "إرسال");
+            setText(first, localBusy === true && local.localBusy === "send-order-update" ? "جارٍ الإرسال…" : "إرسال");
             setText(second, "دفع");
-            setDisabled(first, itemCount === 0 || localBusy);
-            setDisabled(second, itemCount === 0 || localBusy);
+            setDisabled(first, !hasUnsentChanges || localBusy);
+            setDisabled(second, itemCount === 0 || hasUnsentChanges || localBusy);
             setClass(first, "ticket-workspace-action--send", true);
-            setAttr(first, "aria-label", `إرسال تحديث ${activeOpenOrder.servicePlaceName} للمطبخ`);
+            setClass(container, "ticket-workspace-actions--unsent", hasUnsentChanges);
+            setAttr(first, "aria-label", hasUnsentChanges
+              ? `إرسال تغييرات ${activeOpenOrder.servicePlaceName} للمطبخ`
+              : `لا توجد تغييرات غير مرسلة في ${activeOpenOrder.servicePlaceName}`);
+            setAttr(second, "aria-label", hasUnsentChanges
+              ? "الدفع غير متاح حتى إرسال تغييرات المطبخ"
+              : `دفع وإغلاق ${activeOpenOrder.servicePlaceName}`);
             continue;
           }
 
@@ -253,8 +261,8 @@ export function TicketWorkspaceEnhancer({
       }
 
       if (activeOpenOrder) {
-        if (index === 0) void local.sendOpenOrderUpdate();
-        else if (index === 1) void onRestaurantDirectCheckout();
+        if (index === 0 && hasUnsentChanges) void local.sendOpenOrderUpdate();
+        else if (index === 1 && !hasUnsentChanges && itemCount > 0) void onRestaurantDirectCheckout();
         return;
       }
 
@@ -284,6 +292,7 @@ export function TicketWorkspaceEnhancer({
     busy,
     creditEnabled,
     customerBusy,
+    hasUnsentChanges,
     itemCount,
     legacyFixture,
     local,

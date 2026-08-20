@@ -8,7 +8,9 @@ import type { LoyaltyContract } from "./loyalty";
 import type {
   Customer,
   CustomerDetails,
+  DebtCollectionMethod,
   DebtLedgerEntry,
+  DebtSettlementResult,
   DeviceSession,
   EmployeeSession,
   Money,
@@ -108,6 +110,15 @@ export interface CustomerCreditContract {
   }): Promise<Customer>;
 }
 
+export interface DebtCollectionContract {
+  settle(input: {
+    commandId: string;
+    customerId: string;
+    amount: Money;
+    collectionMethod: DebtCollectionMethod;
+  }): Promise<DebtSettlementResult>;
+}
+
 export interface CheckoutContract {
   begin(input: { commandId: string; ticketId: string }): Promise<{ checkoutId: string }>;
   selectPaymentMethod(input: { checkoutId: string; method: "cash" | "card" }): Promise<void>;
@@ -148,6 +159,7 @@ export interface PosRuntimeContract {
   authorization: AuthorizationContract;
   managerOverride: ManagerOverrideContract;
   deliveryCollection: DeliveryCollectionContract;
+  debtCollection: DebtCollectionContract;
   catalog: CatalogContract;
   saleLayout: SaleLayoutContract;
   sales: SalesContract;
@@ -160,10 +172,10 @@ export interface PosRuntimeContract {
 
 /**
  * Temporary compatibility alias for the existing legacy/mock business runtime.
- * Configuration/authorization/delivery collection are composed around it at
- * the Rifad composition root so the mock never becomes the owner of those policies.
+ * Configuration/authorization/delivery/debt collection are composed around it
+ * at the Rifad composition root so the mock never becomes the owner of those policies.
  */
 export type MockPosRuntime = Omit<
   PosRuntimeContract,
-  "effectiveConfiguration" | "authorization" | "managerOverride" | "deliveryCollection"
+  "effectiveConfiguration" | "authorization" | "managerOverride" | "deliveryCollection" | "debtCollection"
 >;

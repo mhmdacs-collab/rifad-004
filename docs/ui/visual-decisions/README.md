@@ -1,6 +1,6 @@
 # Approved and Current Visual Decisions
 
-Last updated: 2026-08-18
+Last updated: 2026-08-21
 
 Approved/current records:
 
@@ -11,6 +11,7 @@ Approved/current records:
 - `VISUAL-DECISION-005-PRIMARY-ACTION-SPATIAL-CONTINUITY.md` — stable transaction operation-card geometry, Clear Cart placement and zero-jump rail width.
 - `VISUAL-DECISION-006-RESTAURANT-SERVICE-OPEN-ORDERS.md` — restaurant service/simple-local/advanced-place/online-order direction. The `POS-FLOW-002` local-service mock subset is executable and behavior-tested; real kitchen transport, production restaurant persistence and online-order integration remain separate gaps.
 - `VISUAL-DECISION-007-BACK-OFFICE-LOYVERSE-HIERARCHY.md` — owner-approved Back Office structural reference based on supplied Loyverse screenshots. Current direction emphasizes calm hierarchy, Cairo-first readability, Rifad color identity, flat/light management surfaces, one completion area, minimal effects and protection against polish layers changing shell geometry. Final visual acceptance is still pending runtime review.
+- `VISUAL-DECISION-009-FRONT-OFFICE-VISUAL-CONSOLIDATION.md` — owner-authorized Front Office consolidation boundary. New cashier visual work stops extending numbered `visual-pass-*` files, converges on named Rifad-owned styling/component structure, preserves MAP-01 payment/delivery meaning, and keeps runtime visual acceptance as an explicit checkpoint.
 
 Additional current catalog-visual decision:
 

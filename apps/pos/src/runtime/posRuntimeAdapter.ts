@@ -66,8 +66,8 @@ const normalizeEffectiveConfiguration = (configuration: EffectivePosConfiguratio
  * this bridge without changing UI/state contracts.
  *
  * MAP-01 configuration, authorization and delivery collection are composed here
- * as independent Rifad-owned capabilities. They do not live inside the legacy
- * mock and they do not select a synchronization provider or production DB.
+ * as independent Rifad-owned capabilities. Debt collection is added at the
+ * journal boundary so its receipt and debt mutation share one durable commit.
  */
 export const POS_RUNTIME_ADAPTER_INFO: PosRuntimeAdapterInfo = {
   id: "rifad-mock-pos",
@@ -151,7 +151,7 @@ export const createPosRuntimeAdapter = (): PosRuntimeContract => {
     },
   };
 
-  const runtime: PosRuntimeContract = {
+  const runtime: Omit<PosRuntimeContract, "debtCollection"> = {
     ...legacyRuntime,
     effectiveConfiguration,
     authorization,

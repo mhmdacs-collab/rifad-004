@@ -13,10 +13,13 @@ import { Icon } from "./Icon";
 import { InlineNotice } from "./InlineNotice";
 import { MoneyAmount } from "./MoneyAmount";
 
+type CheckoutServiceMode = "takeaway" | "dine_in" | null;
+
 type ConfiguredPaymentMethodRailProps = {
   ticket: Ticket;
   paymentMethods: readonly EffectivePosPaymentMethod[];
   delivery?: EffectiveDeliveryConfiguration;
+  serviceMode?: CheckoutServiceMode;
   configurationLoading: boolean;
   configurationError: string | null;
   busy: string | null;
@@ -169,6 +172,7 @@ export function ConfiguredPaymentMethodRail({
   ticket,
   paymentMethods,
   delivery,
+  serviceMode = null,
   configurationLoading,
   configurationError,
   busy,
@@ -189,6 +193,7 @@ export function ConfiguredPaymentMethodRail({
   const creditMethod = enabledMethods.find((method) => method.kind === "customer-credit") ?? null;
   const methods = enabledMethods.filter((method) => method.kind !== "customer-credit");
   const deliveryExecutable = hasExecutableDeliveryCollection(delivery);
+  const allowDelivery = serviceMode !== "dine_in";
 
   const choose = (method: EffectivePosPaymentMethod) => {
     if (method.kind === "cash") onCash();
@@ -199,7 +204,12 @@ export function ConfiguredPaymentMethodRail({
   const headerEnglish = specialFlow === "delivery" ? "Delivery collection" : specialFlow === "credit" ? "Credit sale" : "Choose payment method";
 
   return (
-    <aside className="inline-checkout-rail inline-checkout-rail--payment" aria-label="الدفع" data-screen-id="POS-SCREEN-007">
+    <aside
+      className="inline-checkout-rail inline-checkout-rail--payment"
+      aria-label="الدفع"
+      data-screen-id="POS-SCREEN-007"
+      data-service-mode={serviceMode ?? "direct"}
+    >
       <header className="inline-checkout-head">
         <button
           type="button"
@@ -224,7 +234,7 @@ export function ConfiguredPaymentMethodRail({
         <InlineNotice message={errorMessage} onDismiss={onDismissError} />
         <InlineNotice message={configurationError} onDismiss={() => undefined} />
 
-        {specialFlow === "delivery" ? (
+        {specialFlow === "delivery" && allowDelivery ? (
           <ConfiguredDeliveryCollection
             delivery={delivery ?? EMPTY_DELIVERY}
             onBack={() => setSpecialFlow(null)}
@@ -290,17 +300,19 @@ export function ConfiguredPaymentMethodRail({
                   <span><strong>آجل</strong><small lang="en" dir="ltr">Credit</small></span>
                 </button>
               ) : null}
-              <button
-                type="button"
-                className="payment-special-action payment-special-action--delivery"
-                onClick={() => setSpecialFlow("delivery")}
-                aria-label="توصيل — Delivery"
-                data-special-payment-flow="delivery"
-                data-delivery-ready={deliveryExecutable ? "true" : "false"}
-              >
-                <DeliveryArtwork />
-                <span><strong>توصيل</strong><small lang="en" dir="ltr">Delivery</small></span>
-              </button>
+              {allowDelivery ? (
+                <button
+                  type="button"
+                  className="payment-special-action payment-special-action--delivery"
+                  onClick={() => setSpecialFlow("delivery")}
+                  aria-label="توصيل — Delivery"
+                  data-special-payment-flow="delivery"
+                  data-delivery-ready={deliveryExecutable ? "true" : "false"}
+                >
+                  <DeliveryArtwork />
+                  <span><strong>توصيل</strong><small lang="en" dir="ltr">Delivery</small></span>
+                </button>
+              ) : null}
             </div>
           </section>
         )}

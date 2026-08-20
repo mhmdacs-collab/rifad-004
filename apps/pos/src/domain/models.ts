@@ -72,6 +72,32 @@ export type Customer = Readonly<{
   debt: Money;
 }>;
 
+export type DebtCollectionMethod = "cash" | "card";
+
+export type DebtCollectionReceipt = Readonly<{
+  id: string;
+  number: string;
+  customerId: string;
+  customerName: string;
+  amount: Money;
+  collectionMethod: DebtCollectionMethod;
+  previousDebt: Money;
+  remainingDebt: Money;
+  collectedAt: string;
+  employeeId: string | null;
+  employeeName: string;
+  branchName: string;
+}>;
+
+/**
+ * Deliberately remains structurally compatible with Customer so legacy callers
+ * can consume the updated customer while the Rifad debt flow also receives the
+ * independent collection receipt.
+ */
+export type DebtSettlementResult = Readonly<Customer & {
+  receipt: DebtCollectionReceipt;
+}>;
+
 export type DebtLedgerEntry = Readonly<{
   id: string;
   customerId: string;
@@ -80,6 +106,9 @@ export type DebtLedgerEntry = Readonly<{
   amount: Money;
   createdAt: string;
   ticketSequence: number | null;
+  collectionMethod?: DebtCollectionMethod;
+  collectionReceiptId?: string;
+  collectionReceiptNumber?: string;
 }>;
 
 export type EmployeeSession = Readonly<{

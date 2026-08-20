@@ -7,7 +7,9 @@ import { readPrintReceiptAlways } from "../domain/posPreferences";
 import type {
   Customer,
   CustomerDetails,
+  DebtCollectionMethod,
   DebtLedgerEntry,
+  DebtSettlementResult,
   DeviceSession,
   EmployeeSession,
   PrintDeliveryStatus,
@@ -369,11 +371,24 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
     }
   }, [completeCustomerLoyalty, finalizeCompletedReceipt, runtime, ticket]);
 
-  const settleCustomerDebt = useCallback(async (customerId: string, amountHalalas: number): Promise<Customer | null> => {
+  const settleCustomerDebt = useCallback(async (
+    customerId: string,
+    amountHalalas: number,
+    collectionMethod?: DebtCollectionMethod,
+  ): Promise<DebtSettlementResult | null> => {
+    if (!collectionMethod) {
+      setErrorMessage("اختر طريقة تحصيل السداد.");
+      return null;
+    }
     setBusy("customer-settlement");
     setErrorMessage(null);
     try {
-      return await runtime.customerCredit.settle({ commandId: commandId("customer-settlement"), customerId, amount: money(amountHalalas) });
+      return await runtime.debtCollection.settle({
+        commandId: commandId("customer-settlement"),
+        customerId,
+        amount: money(amountHalalas),
+        collectionMethod,
+      });
     } catch (error) {
       setErrorMessage(messageFrom(error));
       return null;

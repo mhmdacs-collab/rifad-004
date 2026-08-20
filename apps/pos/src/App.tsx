@@ -311,6 +311,7 @@ export default function App() {
                 ticket={saleTicket}
                 paymentMethods={effectiveConfiguration.configuration?.paymentMethods ?? []}
                 delivery={effectiveConfiguration.configuration?.delivery}
+                serviceMode={local.checkoutServiceContext?.mode ?? null}
                 configurationLoading={effectiveConfiguration.loading}
                 configurationError={effectiveConfiguration.errorMessage}
                 busy={flow.busy}
