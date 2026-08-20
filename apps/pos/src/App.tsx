@@ -7,7 +7,6 @@ import { LocalServiceEnhancer } from "./components/LocalServiceEnhancer";
 import { ManagerOverrideDialog } from "./components/ManagerOverrideDialog";
 import { TicketWorkspaceEnhancer } from "./components/TicketWorkspaceEnhancer";
 import { TransactionOperationEnhancer } from "./components/TransactionOperationEnhancer";
-import { readPrintReceiptAlways } from "./domain/posPreferences";
 import { installQuantityKeypad } from "./quantity-keypad";
 import { createPosRuntimeAdapter } from "./runtime/posRuntimeAdapter";
 import {
@@ -36,7 +35,6 @@ export default function App() {
   const [restaurantService] = useState(createRestaurantServiceAdapter);
   const [paymentContextError, setPaymentContextError] = useState<string | null>(null);
   const [completedDelivery, setCompletedDelivery] = useState<DeliveryCollectionRecord | null>(null);
-  const autoPrintedReceiptId = useRef<string | null>(null);
   const flow = usePosFlow(posRuntime);
   const effectiveConfiguration = useEffectivePosConfiguration(posRuntime, flow.device);
   const managerOverride = useManagerOverrideGate(posRuntime, flow.employee, flow.device);
@@ -69,18 +67,6 @@ export default function App() {
     const printButton = document.querySelector<HTMLButtonElement>(".inline-success-print");
     printButton?.setAttribute("aria-label", "طباعة الإيصال");
   }, [flow.stage, flow.printStatus]);
-
-  useEffect(() => {
-    const receiptId = flow.receipt?.id ?? null;
-    if (flow.stage !== "success" || !receiptId || !readPrintReceiptAlways()) return;
-    if (autoPrintedReceiptId.current === receiptId) return;
-
-    autoPrintedReceiptId.current = receiptId;
-    void (async () => {
-      await flow.printReceipt();
-      await flow.newSale();
-    })();
-  }, [flow.stage, flow.receipt?.id, flow.printReceipt, flow.newSale]);
 
   const inlineCheckoutStage = flow.stage === "payment" || flow.stage === "cash" || flow.stage === "card" || flow.stage === "success"
     ? flow.stage
