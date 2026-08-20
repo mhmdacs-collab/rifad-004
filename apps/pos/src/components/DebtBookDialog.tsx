@@ -1,21 +1,23 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { MoneyAmount } from "./MoneyAmount";
-import type { Customer, DebtLedgerEntry, Money } from "../domain/models";
+import type {
+  Customer,
+  DebtCollectionMethod,
+  DebtCollectionReceipt,
+  DebtLedgerEntry,
+  DebtSettlementResult,
+} from "../domain/models";
 
 type DebtBookDialogProps = {
   busy: boolean;
   onClose: () => void;
   onSearch: (query: string) => Promise<readonly Customer[]>;
   onLoadLedger: (customerId: string) => Promise<readonly DebtLedgerEntry[]>;
-  onSettleDebt: (customerId: string, amountHalalas: number) => Promise<Customer | null>;
-};
-
-type SettlementSuccess = {
-  customerName: string;
-  previousHalalas: number;
-  paidHalalas: number;
-  remainingHalalas: number;
-  currency: Money["currency"];
+  onSettleDebt: (
+    customerId: string,
+    amountHalalas: number,
+    collectionMethod: DebtCollectionMethod,
+  ) => Promise<DebtSettlementResult | null>;
 };
 
 const formatHalalasForInput = (halalas: number) => {
@@ -35,8 +37,12 @@ const parseSarInputToHalalas = (value: string): number | null => {
   return Number.isSafeInteger(halalas) ? halalas : null;
 };
 
+const collectionMethodLabel = (method: DebtCollectionMethod) => method === "cash" ? "نقدي" : "شبكة / مدى";
+
 const ledgerLabel = (entry: DebtLedgerEntry) => {
-  if (entry.kind === "payment") return "سداد";
+  if (entry.kind === "payment") {
+    return entry.collectionMethod ? `سداد · ${collectionMethodLabel(entry.collectionMethod)}` : "سداد";
+  }
   if (entry.kind === "credit-sale") return entry.ticketSequence ? `بيع آجل · تذكرة #${entry.ticketSequence}` : "بيع آجل";
   return "رصيد افتتاحي";
 };
@@ -71,9 +77,10 @@ export function DebtBookDialog({
   const [editingAmount, setEditingAmount] = useState(false);
   const [amountInput, setAmountInput] = useState("");
   const [amountFresh, setAmountFresh] = useState(true);
+  const [collectionMethod, setCollectionMethod] = useState<DebtCollectionMethod | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState<SettlementSuccess | null>(null);
+  const [success, setSuccess] = useState<DebtCollectionReceipt | null>(null);
   const searchSequence = useRef(0);
   const ledgerSequence = useRef(0);
   const actionLocked = useRef(false);
@@ -103,6 +110,7 @@ export function DebtBookDialog({
     setAmountInput(formatHalalasForInput(customer.debt.halalas));
     setAmountFresh(true);
     setEditingAmount(false);
+    setCollectionMethod(null);
     setMessage(null);
     const sequence = ++ledgerSequence.current;
     setLoadingLedger(true);
@@ -121,6 +129,7 @@ export function DebtBookDialog({
     setEditingAmount(false);
     setAmountInput("");
     setAmountFresh(true);
+    setCollectionMethod(null);
     setMessage(null);
   };
 
@@ -180,27 +189,19 @@ export function DebtBookDialog({
     : 0;
 
   const submitSettlement = async () => {
-    if (!selected || settlementInvalid || settlementHalalas === null || actionLocked.current) return;
+    if (!selected || !collectionMethod || settlementInvalid || settlementHalalas === null || actionLocked.current) return;
     actionLocked.current = true;
     setSubmitting(true);
     setMessage(null);
-    const previousHalalas = selected.debt.halalas;
-    const paidHalalas = settlementHalalas;
-    const updated = await onSettleDebt(selected.id, paidHalalas);
-    if (!updated) {
+    const result = await onSettleDebt(selected.id, settlementHalalas, collectionMethod);
+    if (!result) {
       actionLocked.current = false;
       setSubmitting(false);
       setMessage("تعذر تسجيل السداد.");
       return;
     }
 
-    setSuccess({
-      customerName: updated.name,
-      previousHalalas,
-      paidHalalas,
-      remainingHalalas: updated.debt.halalas,
-      currency: updated.debt.currency,
-    });
+    setSuccess(result.receipt);
     setSubmitting(false);
   };
 
@@ -209,13 +210,13 @@ export function DebtBookDialog({
     : "تأكيد السداد";
 
   return (
-    <div className="dialog-backdrop customer-credit-backdrop" role="presentation" onClick={() => { if (!submitting) onClose(); }}>
-      <section className={`customer-credit-dialog debt-book-dialog${selected ? " debt-book-dialog--selected" : ""}${success ? " debt-book-dialog--success" : ""}`} role="dialog" aria-modal="true" aria-labelledby="debt-book-title" onClick={(event) => event.stopPropagation()}>
+    <div className="dialog-backdrop customer-credit-backdrop" role="presentation">
+      <section className={`customer-credit-dialog debt-book-dialog${selected ? " debt-book-dialog--selected" : ""}${success ? " debt-book-dialog--success" : ""}`} role="dialog" aria-modal="true" aria-labelledby="debt-book-title">
         <header>
           <button type="button" onClick={onClose} aria-label="إغلاق" disabled={submitting}>×</button>
           <div>
             <h2 id="debt-book-title">دفتر الديون</h2>
-            <span>{success ? "ملخص السداد" : "ابحث عن العميل وسجّل السداد."}</span>
+            <span>{success ? "سند قبض السداد" : "ابحث عن العميل وسجّل السداد."}</span>
           </div>
         </header>
 
@@ -224,30 +225,35 @@ export function DebtBookDialog({
             <div className="debt-book-success-main">
               <div className="debt-book-success-mark" aria-hidden="true">✓</div>
               <div className="debt-book-success-copy">
-                <span>تم</span>
-                <strong>تم تسجيل السداد</strong>
+                <span>تم تسجيل السداد</span>
+                <strong>سند قبض {success.number}</strong>
                 <small>{success.customerName}</small>
+              </div>
+
+              <div className="debt-book-success-receipt-meta" aria-label="بيانات سند القبض">
+                <span><b>طريقة التحصيل</b><strong>{collectionMethodLabel(success.collectionMethod)}</strong></span>
+                <span><b>التاريخ والوقت</b><strong>{ledgerDate(success.collectedAt)}</strong></span>
+                <span><b>الكاشير</b><strong>{success.employeeName}</strong></span>
+                {success.branchName ? <span><b>الفرع</b><strong>{success.branchName}</strong></span> : null}
               </div>
 
               <div className="debt-book-success-summary" aria-label="ملخص سداد الدين">
                 <div>
-                  <span>الرصيد قبل السداد</span>
-                  <strong><MoneyAmount value={{ halalas: success.previousHalalas, currency: success.currency }} /></strong>
+                  <span>الدين قبل السداد</span>
+                  <strong><MoneyAmount value={success.previousDebt} /></strong>
                 </div>
                 <div>
-                  <span>المبلغ المسدد</span>
-                  <strong><MoneyAmount value={{ halalas: success.paidHalalas, currency: success.currency }} /></strong>
+                  <span>المبلغ المقبوض</span>
+                  <strong><MoneyAmount value={success.amount} /></strong>
                 </div>
                 <div className="debt-book-success-remaining">
-                  <span>{success.remainingHalalas > 0 ? "المتبقي على العميل" : "الرصيد المتبقي"}</span>
-                  <strong><MoneyAmount value={{ halalas: success.remainingHalalas, currency: success.currency }} /></strong>
+                  <span>{success.remainingDebt.halalas > 0 ? "المتبقي على العميل" : "الرصيد المتبقي"}</span>
+                  <strong><MoneyAmount value={success.remainingDebt} /></strong>
                 </div>
               </div>
 
               <div className="debt-book-success-note">
-                {success.remainingHalalas > 0
-                  ? "يمكن إبلاغ العميل بالمبلغ المتبقي مباشرة من هذا الملخص."
-                  : "تم سداد كامل الدين ولا يوجد رصيد مستحق على العميل."}
+                هذا سند قبض لحركة تحصيل الدين، وليس فاتورة بيع جديدة.
               </div>
             </div>
 
@@ -272,7 +278,7 @@ export function DebtBookDialog({
               <div className="debt-book-summary">
                 <span>{searching ? "جارٍ البحث…" : `${results.length} مدين`}</span>
                 <strong><MoneyAmount value={{ halalas: debtorsTotal, currency: "SAR" }} /></strong>
-                <small>إجمالي الرصيد الظاهر</small>
+                <small>إجمالي الدين الظاهر</small>
               </div>
             </div>
 
@@ -298,7 +304,7 @@ export function DebtBookDialog({
                 <div className="debt-account-view">
                   <div className="debt-account-head">
                     <span><strong>{selected.name}</strong><small dir="ltr">{selected.mobile}</small></span>
-                    <div><span>الرصيد الحالي</span><strong><MoneyAmount value={selected.debt} /></strong></div>
+                    <div><span>الدين الحالي</span><strong><MoneyAmount value={selected.debt} /></strong></div>
                     <button type="button" className="debt-change-customer" onClick={clearSelectedCustomer} disabled={submitting}>تغيير العميل</button>
                   </div>
 
@@ -383,20 +389,45 @@ export function DebtBookDialog({
                           </div>
                           <small>
                             {settlementInvalid
-                              ? "أدخل مبلغًا أكبر من صفر ولا يتجاوز الرصيد الحالي."
+                              ? "أدخل مبلغًا أكبر من صفر ولا يتجاوز الدين الحالي."
                               : settlementPreviewHalalas === 0
                                 ? "سيتم سداد كامل الدين."
-                                : "هذا هو الرصيد الذي سيبقى على العميل بعد السداد."}
+                                : "هذا هو الدين الذي سيبقى على العميل بعد السداد."}
                           </small>
                         </div>
                       </>
                     ) : null}
 
+                    <div className="debt-collection-method" role="group" aria-label="طريقة تحصيل سداد الدين">
+                      <strong>طريقة التحصيل</strong>
+                      <div>
+                        <button
+                          type="button"
+                          className={collectionMethod === "cash" ? "active" : ""}
+                          aria-pressed={collectionMethod === "cash"}
+                          onClick={() => { setCollectionMethod("cash"); setMessage(null); }}
+                          disabled={submitting}
+                        >
+                          نقدي
+                        </button>
+                        <button
+                          type="button"
+                          className={collectionMethod === "card" ? "active" : ""}
+                          aria-pressed={collectionMethod === "card"}
+                          onClick={() => { setCollectionMethod("card"); setMessage(null); }}
+                          disabled={submitting}
+                        >
+                          شبكة / مدى
+                        </button>
+                      </div>
+                      <small>{collectionMethod ? `سيُسجل التحصيل على ${collectionMethodLabel(collectionMethod)}.` : "اختر أين تم استلام المبلغ قبل التأكيد."}</small>
+                    </div>
+
                     <button
                       type="button"
                       className="primary-button debt-settlement-submit"
                       onClick={() => void submitSettlement()}
-                      disabled={busy || submitting || settlementInvalid}
+                      disabled={busy || submitting || settlementInvalid || !collectionMethod}
                     >
                       {submitting ? "جارٍ تسجيل السداد…" : confirmationLabel}
                     </button>
@@ -405,7 +436,7 @@ export function DebtBookDialog({
               ) : (
                 <div className="debt-book-placeholder">
                   <strong>اختر عميلًا من دفتر الديون</strong>
-                  <span>سيظهر الرصيد والحركات وإجراء السداد هنا.</span>
+                  <span>سيظهر الدين والحركات وإجراء السداد هنا.</span>
                 </div>
               )}
             </div>
