@@ -17,7 +17,7 @@ type DebtBookDialogProps = {
     customerId: string,
     amountHalalas: number,
     collectionMethod: DebtCollectionMethod,
-  ) => Promise<DebtSettlementResult | null>;
+  ) => Promise<Customer | DebtSettlementResult | null>;
 };
 
 const formatHalalasForInput = (halalas: number) => {
@@ -198,6 +198,12 @@ export function DebtBookDialog({
       actionLocked.current = false;
       setSubmitting(false);
       setMessage("تعذر تسجيل السداد.");
+      return;
+    }
+    if (!("receipt" in result)) {
+      actionLocked.current = false;
+      setSubmitting(false);
+      setMessage("تم تحديث الدين لكن تعذر إنشاء سند القبض؛ لم تُغلق العملية كنجاح.");
       return;
     }
 
