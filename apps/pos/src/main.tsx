@@ -67,6 +67,7 @@ import "./payment-methods-v3.css";
 import "./payment-methods-v4.css";
 import "./cash-payment-bilingual.css";
 import "./sale-completion.css";
+import "./ticket-workspace.css";
 
 installVisualPass18ProductPrices();
 
