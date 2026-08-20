@@ -52,11 +52,12 @@ describe("POS-SCREEN-007 configured payment methods", () => {
     );
 
     const buttons = screen.getAllByRole("button").filter((button) => button.hasAttribute("data-payment-method-id"));
-    expect(buttons.map((button) => button.getAttribute("data-payment-method-id"))).toEqual(["cash", "mada", "credit"]);
+    expect(buttons.map((button) => button.getAttribute("data-payment-method-id"))).toEqual(["cash", "mada", "credit", "delivery-hub"]);
     expect(screen.queryByText("طريقة متوقفة")).not.toBeInTheDocument();
     expect(screen.getByText("Cash")).toBeInTheDocument();
     expect(screen.getByText("Card")).toBeInTheDocument();
     expect(screen.getByText("Credit")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /توصيل — Delivery/ })).toHaveAttribute("data-delivery-ready", "false");
     expect(screen.queryByText(/استلام المبلغ/)).not.toBeInTheDocument();
     expect(screen.queryByText(/اختيار العميل وتسجيل الذمة/)).not.toBeInTheDocument();
 
@@ -103,7 +104,7 @@ describe("POS-SCREEN-007 configured payment methods", () => {
     expect(screen.getByRole("button", { name: /تحويل — Transfer/ })).toBeDisabled();
   });
 
-  it("shows a safe no-method state instead of falling back to hard-coded payment choices", () => {
+  it("shows a safe no-method state while keeping Delivery as a separate visible family", () => {
     render(
       <ConfiguredPaymentMethodRail
         ticket={ticket}
@@ -122,6 +123,7 @@ describe("POS-SCREEN-007 configured payment methods", () => {
     );
 
     expect(screen.getByText("لا توجد طريقة دفع مفعّلة لهذا الجهاز.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /توصيل — Delivery/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /نقدًا/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /شبكة/ })).not.toBeInTheDocument();
   });
