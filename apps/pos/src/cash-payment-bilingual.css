@@ -1,0 +1,96 @@
+/* Cash payment bilingual polish — Arabic remains the visual primary language. */
+
+.inline-checkout-rail--cash .inline-checkout-head strong::after {
+  content: "Cash Payment";
+  display: block;
+  margin-top: 1px;
+  color: #7a8782;
+  font-family: Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.1;
+  letter-spacing: .01em;
+  direction: ltr;
+}
+
+.inline-checkout-rail--cash .inline-checkout-total-card > span::after {
+  content: " · Total";
+  color: rgba(255, 255, 255, .72);
+  font-family: Arial, sans-serif;
+  font-size: .76em;
+  font-weight: 650;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.inline-checkout-rail--cash .inline-cash-entry-heading strong::after {
+  content: " · Amount Received";
+  color: #72807a;
+  font-family: Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 650;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.inline-checkout-rail--cash .inline-cash-suggestions {
+  position: relative;
+}
+
+.inline-checkout-rail--cash .inline-cash-suggestions::before {
+  content: "مبالغ سريعة  ·  Quick amounts";
+  position: absolute;
+  inset-inline-start: 2px;
+  top: -15px;
+  color: #7a8782;
+  font-size: 9px;
+  font-weight: 650;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.inline-checkout-rail--cash .inline-change-card > span::after {
+  content: " · Change";
+  color: currentColor;
+  font-family: Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 650;
+  opacity: .72;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.inline-checkout-rail--cash .inline-complete-sale > span,
+.inline-checkout-rail--cash .inline-cancel-sale {
+  line-height: 1.05;
+}
+
+.inline-checkout-rail--cash .inline-complete-sale > span::after {
+  content: "Pay";
+  display: block;
+  margin-top: 2px;
+  font-family: Arial, sans-serif;
+  font-size: 9.5px;
+  font-weight: 650;
+  opacity: .78;
+  direction: ltr;
+}
+
+.inline-checkout-rail--cash .inline-cancel-sale::after {
+  content: "Cancel";
+  display: block;
+  margin-top: 3px;
+  font-family: Arial, sans-serif;
+  font-size: 9px;
+  font-weight: 650;
+  opacity: .62;
+  direction: ltr;
+}
+
+/* Keep Arabic typography untouched; English should never compete for attention. */
+.inline-checkout-rail--cash .inline-checkout-head strong,
+.inline-checkout-rail--cash .inline-checkout-total-card > span,
+.inline-checkout-rail--cash .inline-cash-entry-heading strong,
+.inline-checkout-rail--cash .inline-change-card > span {
+  font-size: inherit;
+}
