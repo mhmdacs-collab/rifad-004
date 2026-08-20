@@ -3,7 +3,8 @@ import type { EffectiveDeliveryChannel, EffectiveDeliveryConfiguration } from ".
 import type { DeliveryMerchantCollection } from "../../../../contracts/deliveryCollection";
 
 const executableChannel = (channel: EffectiveDeliveryChannel) =>
-  channel.kind !== "self-delivery"
+  channel.enabled
+  && channel.kind !== "self-delivery"
   && channel.cashOnDeliveryEnabled
   && channel.codSettlement === "courier-pays-merchant";
 
