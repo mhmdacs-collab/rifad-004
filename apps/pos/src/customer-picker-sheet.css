@@ -49,7 +49,9 @@
   grid-template-columns: 1fr;
   gap: 16px;
   margin: 0;
+  max-height: calc(100% - 10px);
   padding: 20px 22px 22px;
+  overflow: hidden;
   border: 1px solid #dbe5e0;
   border-bottom: 0;
   border-radius: 18px 18px 0 0;
@@ -191,13 +193,14 @@
   .customer-create-sheet {
     right: -14px;
     left: -14px;
-    padding: 16px 14px 18px;
+    gap: 11px;
+    padding: 14px 14px 16px;
     border-radius: 16px 16px 0 0;
   }
 
   .customer-new-fields {
-    grid-template-columns: 1fr;
-    gap: 9px !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px 10px !important;
   }
 
   .customer-new-fields input {
@@ -206,6 +209,13 @@
 
   .customer-create-sheet .customer-create-actions {
     grid-template-columns: 1fr 1.25fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .customer-new-fields {
+    grid-template-columns: 1fr;
+    gap: 7px !important;
   }
 }
 
@@ -248,6 +258,30 @@
 
   .customer-create-sheet .customer-create-actions > button {
     min-height: 38px;
+  }
+}
+
+@media (max-width: 480px) and (max-height: 680px) {
+  .customer-create-sheet {
+    gap: 6px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .customer-new-fields {
+    gap: 5px !important;
+  }
+
+  .customer-new-fields label {
+    gap: 2px;
+  }
+
+  .customer-new-fields input {
+    min-height: 34px;
+  }
+
+  .customer-create-sheet .customer-create-actions > button {
+    min-height: 36px;
   }
 }
 
