@@ -1,5 +1,5 @@
 /* Sale completion — owner-reviewed compact success state.
- * Keep the screen fast: success, receipt, amount, method/channel, future auto-print preference.
+ * Keep the screen fast: success, amount, collection result, receipt reference, future auto-print preference.
  */
 
 .inline-checkout-rail--success {
@@ -25,7 +25,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: clamp(138px, 18vh, 176px);
+  min-height: clamp(132px, 17vh, 168px);
   padding: 10px clamp(86px, 8vw, 112px) 4px;
   text-align: center;
 }
@@ -38,7 +38,7 @@
   margin-bottom: 8px;
   border-radius: 50%;
   background: #e5f4ea;
-  color: #24633f;
+  color: var(--brand);
   box-shadow: inset 0 0 0 1px rgba(38, 108, 67, .08);
 }
 
@@ -82,51 +82,57 @@
   box-shadow: 0 0 0 3px rgba(63, 139, 94, .11);
 }
 
-.sale-completion-facts {
-  display: grid;
-  grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr);
-  gap: 9px;
-}
-
-.sale-completion-receipt,
-.sale-completion-amount {
+/* The paid/sale amount is the primary operational fact after success. */
+.sale-completion-amount-hero {
   display: flex;
+  min-height: clamp(94px, 11.5vh, 118px);
   flex-direction: column;
-  justify-content: center;
-  min-height: clamp(78px, 9.5vh, 96px);
-  padding: 12px 14px;
-  border: 1px solid #e2e9e5;
-  border-radius: 16px;
-  background: #fbfcfb;
-}
-
-.sale-completion-receipt span,
-.sale-completion-amount span {
-  color: #76827d;
-  font-size: 11px;
-  font-weight: 750;
-}
-
-.sale-completion-receipt strong {
-  margin-top: 5px;
-  color: #26372f;
-  font-family: Arial, sans-serif;
-  font-size: clamp(18px, 1.25vw, 23px);
-  font-weight: 800;
-}
-
-.sale-completion-amount {
   align-items: center;
+  justify-content: center;
+  padding: clamp(12px, 1.35vw, 17px);
+  border: 1px solid #d8e8df;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fbfefc 0%, #eef8f2 100%);
   text-align: center;
 }
 
-.sale-completion-amount strong {
-  margin-top: 3px;
-  color: #173c29;
-  font-size: clamp(27px, 1.9vw, 36px);
+.sale-completion-amount-hero > span {
+  color: #687970;
+  font-size: clamp(11px, .72vw, 13px);
+  font-weight: 800;
+}
+
+.sale-completion-amount-hero > strong {
+  margin-top: 5px;
+  color: #153d28;
+  font-size: clamp(39px, 2.8vw, 52px);
   font-weight: 900;
-  line-height: 1.05;
+  line-height: 1;
   white-space: nowrap;
+}
+
+/* Receipt number remains available, but is a quiet reference rather than a hero card. */
+.sale-completion-receipt-meta {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 4px;
+  color: #75817b;
+}
+
+.sale-completion-receipt-meta > span {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sale-completion-receipt-meta > strong {
+  color: #506159;
+  font-family: Arial, sans-serif;
+  font-size: clamp(14px, .92vw, 17px);
+  font-weight: 750;
+  letter-spacing: .01em;
 }
 
 .sale-completion-method {
@@ -152,12 +158,6 @@
   color: #8a2f37;
 }
 
-.sale-completion-method--delivery {
-  border-color: #e7bd89;
-  background: linear-gradient(105deg, #fffdf9 6%, #f7e3c6 100%);
-  color: #8b551d;
-}
-
 .sale-completion-method-art {
   flex: 0 0 clamp(62px, 5vw, 74px);
   width: clamp(62px, 5vw, 74px);
@@ -168,13 +168,6 @@
   background: rgba(255, 255, 255, .68);
   border: 1px solid rgba(255, 255, 255, .88);
   box-shadow: inset 0 0 0 1px rgba(35, 67, 52, .04);
-}
-
-.sale-completion-method-art b {
-  font-family: Arial, sans-serif;
-  font-size: clamp(17px, 1.2vw, 22px);
-  font-weight: 900;
-  letter-spacing: .02em;
 }
 
 .sale-completion-method-copy {
@@ -355,8 +348,8 @@
 }
 
 .sale-completion-print-always.active .sale-completion-check {
-  border-color: #3f875b;
-  background: #3f875b;
+  border-color: var(--brand);
+  background: var(--brand);
   color: #fff;
 }
 
@@ -373,9 +366,16 @@
   font-weight: 850 !important;
 }
 
+/* Reuse the exact primary POS brand green; completion does not own a lighter variant. */
 .inline-success-actions .inline-new-sale,
 .success-actions--touch .primary-button {
-  background: #2f7d4d !important;
+  background: var(--brand) !important;
+  color: #fff !important;
+}
+
+.inline-success-actions .inline-new-sale:hover:not(:disabled),
+.success-actions--touch .primary-button:hover:not(:disabled) {
+  background: var(--brand-dark) !important;
 }
 
 .success-card:has(.sale-completion-body) {
@@ -395,7 +395,7 @@
   }
 
   .sale-completion-hero {
-    min-height: 118px;
+    min-height: 112px;
   }
 
   .sale-completion-mark {
@@ -404,9 +404,16 @@
     margin-bottom: 5px;
   }
 
-  .sale-completion-receipt,
-  .sale-completion-amount {
-    min-height: 68px;
+  .sale-completion-amount-hero {
+    min-height: 82px;
+  }
+
+  .sale-completion-amount-hero > strong {
+    font-size: clamp(34px, 4.8vh, 43px);
+  }
+
+  .sale-completion-receipt-meta {
+    min-height: 34px;
   }
 
   .sale-completion-method {
@@ -424,7 +431,7 @@
   }
 
   .sale-completion-hero {
-    min-height: 132px;
+    min-height: 126px;
     padding-inline: 60px;
   }
 
@@ -434,23 +441,12 @@
     font-size: 10px;
   }
 
-  .sale-completion-facts {
-    grid-template-columns: 1fr;
+  .sale-completion-amount-hero {
+    min-height: 88px;
   }
 
-  .sale-completion-receipt,
-  .sale-completion-amount {
-    min-height: 66px;
-  }
-
-  .sale-completion-receipt {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .sale-completion-receipt strong {
-    margin-top: 0;
+  .sale-completion-amount-hero > strong {
+    font-size: clamp(35px, 8vw, 46px);
   }
 
   .sale-completion-method {
