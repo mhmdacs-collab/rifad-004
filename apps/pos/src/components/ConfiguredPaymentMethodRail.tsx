@@ -29,6 +29,7 @@ type ConfiguredPaymentMethodRailProps = {
 };
 
 const supportedKinds = new Set<EffectivePosPaymentMethod["kind"]>(["cash", "card", "customer-credit"]);
+const EMPTY_DELIVERY: EffectiveDeliveryConfiguration = { enabled: false, channels: [] };
 
 const directImpactFor = (method: EffectivePosPaymentMethod): PosPaymentDirectImpact => {
   if (method.directImpact) return method.directImpact;
@@ -178,15 +179,13 @@ export function ConfiguredPaymentMethodRail({
   const methods = [...paymentMethods]
     .filter((method) => method.enabled)
     .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "ar"));
-  const deliveryAvailable = hasExecutableDeliveryCollection(delivery);
+  const deliveryExecutable = hasExecutableDeliveryCollection(delivery);
 
   const choose = (method: EffectivePosPaymentMethod) => {
     if (method.kind === "cash") onCash();
     if (method.kind === "card") onCard();
     if (method.kind === "customer-credit") onCredit();
   };
-
-  const visibleChoiceCount = methods.length + (deliveryAvailable ? 1 : 0);
 
   return (
     <aside className="inline-checkout-rail inline-checkout-rail--payment" aria-label="الدفع" data-screen-id="POS-SCREEN-007">
@@ -207,19 +206,19 @@ export function ConfiguredPaymentMethodRail({
         <InlineNotice message={errorMessage} onDismiss={onDismissError} />
         <InlineNotice message={configurationError} onDismiss={() => undefined} />
 
-        {deliveryOpen && delivery ? (
+        {deliveryOpen ? (
           <ConfiguredDeliveryCollection
-            delivery={delivery}
+            delivery={delivery ?? EMPTY_DELIVERY}
             onBack={() => setDeliveryOpen(false)}
             onCollect={onDeliveryCollect}
           />
         ) : (
           <section className="inline-payment-section" aria-label="طرق الدفع">
             {configurationLoading ? <div className="inline-checkout-note"><span>جارٍ تحميل طرق الدفع المحلية…</span></div> : null}
-            {!configurationLoading && visibleChoiceCount === 0 ? <div className="inline-checkout-note"><span>لا توجد طريقة دفع مفعّلة لهذا الجهاز.</span></div> : null}
+            {!configurationLoading && methods.length === 0 ? <div className="inline-checkout-note"><span>لا توجد طريقة دفع مفعّلة لهذا الجهاز.</span></div> : null}
 
             <div
-              className={`inline-payment-methods ${deliveryAvailable ? "inline-payment-methods--with-delivery" : ""}`}
+              className="inline-payment-methods inline-payment-methods--with-delivery"
               data-payment-method-count={methods.length}
               data-payment-layout="scroll-list"
             >
@@ -255,24 +254,23 @@ export function ConfiguredPaymentMethodRail({
               })}
             </div>
 
-            {deliveryAvailable ? (
-              <div className="payment-delivery-zone">
-                <button
-                  type="button"
-                  className="payment-delivery-launcher"
-                  onClick={() => setDeliveryOpen(true)}
-                  aria-label="توصيل — Delivery"
-                  data-payment-method-id="delivery-hub"
-                >
-                  <DeliveryArtwork />
-                  <span className="inline-payment-copy">
-                    <strong>توصيل</strong>
-                    <span className="inline-payment-english" lang="en" dir="ltr">Delivery</span>
-                  </span>
-                  <span className="inline-payment-chevron" aria-hidden="true">‹</span>
-                </button>
-              </div>
-            ) : null}
+            <div className="payment-delivery-zone">
+              <button
+                type="button"
+                className="payment-delivery-launcher"
+                onClick={() => setDeliveryOpen(true)}
+                aria-label="توصيل — Delivery"
+                data-payment-method-id="delivery-hub"
+                data-delivery-ready={deliveryExecutable ? "true" : "false"}
+              >
+                <DeliveryArtwork />
+                <span className="inline-payment-copy">
+                  <strong>توصيل</strong>
+                  <span className="inline-payment-english" lang="en" dir="ltr">Delivery</span>
+                </span>
+                <span className="inline-payment-chevron" aria-hidden="true">‹</span>
+              </button>
+            </div>
           </section>
         )}
       </div>
