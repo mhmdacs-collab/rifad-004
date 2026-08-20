@@ -89,8 +89,12 @@ export type DebtCollectionReceipt = Readonly<{
   branchName: string;
 }>;
 
-export type DebtSettlementResult = Readonly<{
-  customer: Customer;
+/**
+ * Deliberately remains structurally compatible with Customer so legacy callers
+ * can consume the updated customer while the Rifad debt flow also receives the
+ * independent collection receipt.
+ */
+export type DebtSettlementResult = Readonly<Customer & {
   receipt: DebtCollectionReceipt;
 }>;
 
