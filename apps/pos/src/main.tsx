@@ -65,6 +65,7 @@ import "./manager-override.css";
 import "./payment-methods-v2.css";
 import "./payment-methods-v3.css";
 import "./payment-methods-v4.css";
+import "./cash-payment-bilingual.css";
 
 installVisualPass18ProductPrices();
 
