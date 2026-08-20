@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { EffectiveDeliveryChannel } from "../../../contracts/posConfiguration";
-import type { DeliveryMerchantCollection } from "../../../contracts/deliveryCollection";
+import type { DeliveryCollectionRecord, DeliveryMerchantCollection } from "../../../contracts/deliveryCollection";
 import { ConfiguredPaymentMethodRail } from "./components/ConfiguredPaymentMethodRail";
 import { InlineCheckoutRail } from "./components/InlineCheckoutRail";
 import { LocalServiceEnhancer } from "./components/LocalServiceEnhancer";
@@ -33,6 +33,7 @@ export default function App() {
   const [posRuntime] = useState(createPosRuntimeAdapter);
   const [restaurantService] = useState(createRestaurantServiceAdapter);
   const [paymentContextError, setPaymentContextError] = useState<string | null>(null);
+  const [completedDelivery, setCompletedDelivery] = useState<DeliveryCollectionRecord | null>(null);
   const flow = usePosFlow(posRuntime);
   const effectiveConfiguration = useEffectivePosConfiguration(posRuntime, flow.device);
   const managerOverride = useManagerOverrideGate(posRuntime, flow.employee, flow.device);
@@ -44,6 +45,20 @@ export default function App() {
   }
 
   useEffect(() => installQuantityKeypad(), []);
+
+  useEffect(() => {
+    let active = true;
+    if (flow.stage !== "success" || !flow.receipt) {
+      setCompletedDelivery(null);
+      return () => { active = false; };
+    }
+
+    void posRuntime.deliveryCollection.readForReceipt({ receiptId: flow.receipt.id })
+      .then((record) => { if (active) setCompletedDelivery(record); })
+      .catch(() => { if (active) setCompletedDelivery(null); });
+
+    return () => { active = false; };
+  }, [flow.stage, flow.receipt?.id, posRuntime]);
 
   useEffect(() => {
     if (flow.stage !== "success") return;
@@ -276,6 +291,7 @@ export default function App() {
                 stage={inlineCheckoutStage}
                 ticket={saleTicket}
                 receipt={flow.receipt}
+                deliveryContext={completedDelivery}
                 printStatus={flow.printStatus}
                 busy={flow.busy}
                 errorMessage={paymentContextError ?? flow.errorMessage}
@@ -337,6 +353,7 @@ export default function App() {
     return (
       <SuccessScreen
         receipt={flow.receipt}
+        deliveryContext={completedDelivery}
         printStatus={flow.printStatus}
         busy={flow.busy !== null}
         onPrint={() => void flow.printReceipt()}
