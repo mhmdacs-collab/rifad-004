@@ -1,3 +1,5 @@
+@import "./sale-total-consistency.css";
+
 /* Owner visual review — fixed Credit/Delivery actions should read as members of the
  * same payment-card family, while remaining pinned below the scrollable methods. */
 
