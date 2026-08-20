@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { EffectiveDeliveryConfiguration } from "../../../contracts/posConfiguration";
 import { ConfiguredPaymentMethodRail } from "./components/ConfiguredPaymentMethodRail";
 import { money } from "./domain/money";
-import type { Ticket } from "./domain/models";
+import type { Customer, Ticket } from "./domain/models";
 
 const ticket: Ticket = {
   id: "ticket-delivery",
@@ -48,8 +48,11 @@ const delivery: EffectiveDeliveryConfiguration = {
   ],
 };
 
+const emptyCustomerSearch = async (): Promise<readonly Customer[]> => [];
+const noCustomerMutation = async (): Promise<Customer | null> => null;
+
 describe("configured delivery collection from payment surface", () => {
-  it("shows one Delivery hub and returns channel + courier-paid merchant collection", async () => {
+  it("shows fixed Delivery action and returns channel + courier-paid merchant collection", async () => {
     const user = userEvent.setup();
     const onDeliveryCollect = vi.fn();
 
@@ -70,7 +73,9 @@ describe("configured delivery collection from payment surface", () => {
         onBackToSales={() => undefined}
         onCash={() => undefined}
         onCard={() => undefined}
-        onCredit={() => undefined}
+        onSearchCustomers={emptyCustomerSearch}
+        onCreateCustomer={noCustomerMutation}
+        onChargeCredit={noCustomerMutation}
         onDeliveryCollect={onDeliveryCollect}
       />,
     );
@@ -117,14 +122,16 @@ describe("configured delivery collection from payment surface", () => {
         onBackToSales={() => undefined}
         onCash={() => undefined}
         onCard={() => undefined}
-        onCredit={() => undefined}
+        onSearchCustomers={emptyCustomerSearch}
+        onCreateCustomer={noCustomerMutation}
+        onChargeCredit={noCustomerMutation}
         onDeliveryCollect={onDeliveryCollect}
       />,
     );
 
     const deliveryHub = screen.getByRole("button", { name: /توصيل — Delivery/ });
     expect(deliveryHub).toHaveAttribute("data-delivery-ready", "false");
-    expect(screen.getByText("لا توجد طريقة دفع مفعّلة لهذا الجهاز.")).toBeInTheDocument();
+    expect(screen.getByText("لا توجد طريقة تحصيل مباشرة مفعّلة لهذا الجهاز.")).toBeInTheDocument();
 
     await user.click(deliveryHub);
     expect(screen.getByText("لا توجد قناة توصيل متاحة حاليًا")).toBeInTheDocument();
