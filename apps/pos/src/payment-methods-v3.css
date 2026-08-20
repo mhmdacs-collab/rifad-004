@@ -20,13 +20,39 @@
 
 .inline-payment-method,
 .payment-delivery-launcher {
-  border: 1px solid #e1e8e5 !important;
-  border-inline-start: 1px solid #e1e8e5 !important;
+  --payment-card-tint: #f6f8f7;
+  --payment-circle-tint: #e8eeeb;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--payment-accent) 14%, #dfe7e3) !important;
+  border-inline-start: 1px solid color-mix(in srgb, var(--payment-accent) 14%, #dfe7e3) !important;
   border-radius: 16px !important;
-  background:
-    radial-gradient(circle at 91% 50%, color-mix(in srgb, var(--payment-accent) 10%, transparent) 0 9%, transparent 36%),
-    #fff !important;
-  box-shadow: 0 2px 8px rgba(28, 52, 43, .055) !important;
+  background: linear-gradient(112deg, #fff 4%, var(--payment-card-tint) 100%) !important;
+  box-shadow: 0 2px 8px rgba(28, 52, 43, .05) !important;
+}
+
+.inline-payment-method::before,
+.payment-delivery-launcher::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  inset-inline-start: auto;
+  inset-inline-end: -43px;
+  width: 118px;
+  height: 118px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  background: radial-gradient(circle at 42% 50%, rgba(255, 255, 255, .75) 0 17%, var(--payment-circle-tint) 70%, color-mix(in srgb, var(--payment-accent) 14%, #fff) 100%);
+  opacity: .88;
+  pointer-events: none;
+}
+
+.inline-payment-method > *,
+.payment-delivery-launcher > * {
+  position: relative;
+  z-index: 1;
 }
 
 .inline-payment-method {
@@ -36,14 +62,32 @@
   cursor: pointer;
 }
 
+.inline-payment-method--cash {
+  --payment-card-tint: #f0faf4;
+  --payment-circle-tint: #d9efe2;
+}
+
+.inline-payment-method--mada {
+  --payment-card-tint: #f0f6fe;
+  --payment-circle-tint: #dce8f8;
+}
+
+.inline-payment-method--credit {
+  --payment-card-tint: #fbf2f7;
+  --payment-circle-tint: #efdeE8;
+}
+
+.inline-payment-method--custom {
+  --payment-card-tint: #f3f7f5;
+  --payment-circle-tint: #e1eae6;
+}
+
 .inline-payment-method:not(:disabled):hover,
 .payment-delivery-launcher:hover {
   transform: translateY(-1px) scale(1.003) !important;
-  border-color: color-mix(in srgb, var(--payment-accent) 28%, #dfe7e3) !important;
-  background:
-    radial-gradient(circle at 91% 50%, color-mix(in srgb, var(--payment-accent) 13%, transparent) 0 10%, transparent 38%),
-    #fff !important;
-  box-shadow: 0 7px 18px rgba(28, 52, 43, .09) !important;
+  border-color: color-mix(in srgb, var(--payment-accent) 30%, #dfe7e3) !important;
+  background: linear-gradient(112deg, #fff 0%, color-mix(in srgb, var(--payment-accent) 9%, #fff) 100%) !important;
+  box-shadow: 0 7px 18px rgba(28, 52, 43, .085) !important;
 }
 
 .inline-payment-method:not(:disabled):active,
@@ -53,13 +97,13 @@
 }
 
 .payment-method-art {
-  flex: 0 0 78px !important;
-  width: 78px !important;
-  min-width: 78px !important;
-  height: 64px !important;
-  border: 0 !important;
-  border-radius: 19px 11px 19px 11px !important;
-  box-shadow: none !important;
+  flex: 0 0 76px !important;
+  width: 76px !important;
+  min-width: 76px !important;
+  height: 62px !important;
+  border: 1px solid rgba(255, 255, 255, .72) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 3px 9px rgba(28, 52, 43, .045) !important;
 }
 
 .payment-method-art::after {
@@ -67,28 +111,28 @@
 }
 
 .payment-method-art svg {
-  width: 76px !important;
-  height: 59px !important;
+  width: 73px !important;
+  height: 57px !important;
 }
 
 .payment-method-art--cash {
-  background: color-mix(in srgb, #dff4e8 84%, #fff 16%) !important;
+  background: #def2e6 !important;
 }
 
 .payment-method-art--card {
-  background: color-mix(in srgb, #e3efff 86%, #fff 14%) !important;
+  background: #e0ebfb !important;
 }
 
 .payment-method-art--credit {
-  background: color-mix(in srgb, #f7e7ef 86%, #fff 14%) !important;
+  background: #f3e2eb !important;
 }
 
 .payment-method-art--transfer {
-  background: color-mix(in srgb, #e7f0ed 86%, #fff 14%) !important;
+  background: #e5eeeb !important;
 }
 
 .payment-method-art--platform {
-  background: color-mix(in srgb, #eee9f8 86%, #fff 14%) !important;
+  background: #ebe5f5 !important;
 }
 
 .inline-payment-copy {
@@ -122,6 +166,8 @@
 
 .payment-delivery-launcher {
   --payment-accent: #a66a28;
+  --payment-card-tint: #fff7eb;
+  --payment-circle-tint: #f5dfbc;
   min-height: 82px !important;
   padding: 9px 14px !important;
   gap: 13px !important;
@@ -132,12 +178,12 @@
   width: 70px !important;
   min-width: 70px !important;
   height: 58px !important;
-  border-radius: 18px 10px 18px 10px !important;
+  border-radius: 15px !important;
 }
 
 .payment-delivery-launcher .payment-method-art svg {
-  width: 68px !important;
-  height: 53px !important;
+  width: 67px !important;
+  height: 52px !important;
 }
 
 .payment-delivery-launcher .inline-payment-copy strong {
@@ -151,16 +197,23 @@
     gap: 11px !important;
   }
 
+  .inline-payment-method::before,
+  .payment-delivery-launcher::before {
+    inset-inline-end: -38px;
+    width: 104px;
+    height: 104px;
+  }
+
   .payment-method-art {
-    flex-basis: 70px !important;
-    width: 70px !important;
-    min-width: 70px !important;
-    height: 58px !important;
+    flex-basis: 68px !important;
+    width: 68px !important;
+    min-width: 68px !important;
+    height: 56px !important;
   }
 
   .payment-method-art svg {
-    width: 68px !important;
-    height: 53px !important;
+    width: 65px !important;
+    height: 50px !important;
   }
 
   .inline-payment-copy strong {
