@@ -26,13 +26,6 @@ const printMessages: Record<PrintDeliveryStatus, string | null> = {
   "delivery-unknown": "حالة الطابعة غير مؤكدة. تحقق من الورق قبل إعادة الطباعة.",
 };
 
-const channelMark = (name: string) => {
-  const compact = name.trim().replace(/\s+/g, " ");
-  const words = compact.split(" ").filter(Boolean);
-  if (words.length > 1) return `${words[0]?.[0] ?? ""}${words[1]?.[0] ?? ""}`.toUpperCase();
-  return compact.slice(0, 2).toUpperCase();
-};
-
 export function SaleCompletionDetails({
   receipt,
   deliveryContext,
@@ -47,17 +40,13 @@ export function SaleCompletionDetails({
   onPrintAlwaysChange,
 }: SaleCompletionDetailsProps) {
   const isCredit = receipt.paymentMethod === "credit";
-  const isCard = receipt.paymentMethod === "card";
-  const isDelivery = Boolean(deliveryContext);
-  const variant = isDelivery ? "delivery" : isCredit ? "credit" : "settled";
-  const methodLabel = deliveryContext?.channelName ?? (isCredit ? "آجل" : isCard ? "شبكة / مدى" : "نقدي");
-  const methodHeading = isDelivery ? "قناة التوصيل" : isCredit ? "طريقة الإنهاء" : "طريقة الدفع";
-  const methodSecondary = deliveryContext
-    ? deliveryContext.merchantCollection === "cash" ? "تحصيل نقدي" : "تحصيل شبكة / مدى"
-    : isCredit
-      ? receipt.customer?.name ?? "عميل"
-      : isCard ? "Card" : "Cash";
-  const amountLabel = isCredit ? "قيمة البيع" : "المبلغ المدفوع";
+  const collectionMethod = deliveryContext?.merchantCollection ?? (receipt.paymentMethod === "card" ? "card" : "cash");
+  const isCardCollection = !isCredit && collectionMethod === "card";
+  const variant = isCredit ? "credit" : "settled";
+  const methodLabel = isCredit ? "آجل" : isCardCollection ? "شبكة / مدى" : "نقدي";
+  const methodHeading = isCredit ? "طريقة الإنهاء" : "طريقة الدفع";
+  const methodSecondary = isCredit ? receipt.customer?.name ?? "عميل" : isCardCollection ? "Card" : "Cash";
+  const amountLabel = isCredit ? "قيمة البيع الآجل" : "المبلغ المدفوع";
   const resolvedEmail = email || receipt.customer?.details.email || "";
 
   return (
@@ -69,24 +58,21 @@ export function SaleCompletionDetails({
         <h1 id="sale-completion-title">{isCredit ? "تم تسجيل البيع الآجل بنجاح" : "تمت عملية البيع بنجاح"}</h1>
       </section>
 
-      <section className="sale-completion-facts" aria-label="ملخص العملية">
-        <div className="sale-completion-receipt">
-          <span>رقم الإيصال</span>
-          <strong dir="ltr">{receipt.number}</strong>
-        </div>
-        <div className="sale-completion-amount">
-          <span>{amountLabel}</span>
-          <strong><MoneyAmount value={receipt.total} /></strong>
-        </div>
+      <section className="sale-completion-amount-hero" aria-label={amountLabel}>
+        <span>{amountLabel}</span>
+        <strong><MoneyAmount value={receipt.total} /></strong>
       </section>
+
+      <div className="sale-completion-receipt-meta">
+        <span>رقم الإيصال</span>
+        <strong dir="ltr">{receipt.number}</strong>
+      </div>
 
       <section className={`sale-completion-method sale-completion-method--${variant}`} aria-label={`${methodHeading}: ${methodLabel}`}>
         <span className="sale-completion-method-art" aria-hidden="true">
-          {deliveryContext ? (
-            <b>{channelMark(deliveryContext.channelName)}</b>
-          ) : isCredit ? (
+          {isCredit ? (
             <Icon name="user" size={30} strokeWidth={2} />
-          ) : isCard ? (
+          ) : isCardCollection ? (
             <Icon name="card" size={31} strokeWidth={2} />
           ) : (
             <Icon name="cash" size={31} strokeWidth={2} />
@@ -95,7 +81,7 @@ export function SaleCompletionDetails({
         <span className="sale-completion-method-copy">
           <small>{methodHeading}</small>
           <strong>{methodLabel}</strong>
-          <span lang={deliveryContext || isCredit ? undefined : "en"} dir={deliveryContext || isCredit ? undefined : "ltr"}>{methodSecondary}</span>
+          <span lang={isCredit ? undefined : "en"} dir={isCredit ? undefined : "ltr"}>{methodSecondary}</span>
         </span>
       </section>
 
