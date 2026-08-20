@@ -80,7 +80,6 @@ export function CustomerPickerDialog({
   const [selected, setSelected] = useState<Customer | null>(null);
   const [searching, setSearching] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
-  const [extraOpen, setExtraOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newMobile, setNewMobile] = useState("");
   const [newDetails, setNewDetails] = useState<CustomerDetails>(EMPTY_DETAILS);
@@ -160,7 +159,6 @@ export function CustomerPickerDialog({
 
   const resetCreate = () => {
     setCreateOpen(false);
-    setExtraOpen(false);
     setNewName("");
     setNewMobile("");
     setNewDetails(EMPTY_DETAILS);
@@ -462,7 +460,14 @@ export function CustomerPickerDialog({
 
           {selected ? (
             <div className="customer-account-card customer-picker-selection">
-              <div className="customer-account-head"><span><strong>{selected.name}</strong><small dir="ltr">{selected.mobile}</small></span><button type="button" onClick={() => setSelected(null)}>تغيير</button></div>
+              <div className="customer-account-head customer-picker-selection-head">
+                <span><strong>{selected.name}</strong><small dir="ltr">{selected.mobile}</small></span>
+                {purpose === "attach" ? (
+                  <button type="button" className="primary-button customer-attach-inline" onClick={() => void submitAttach()} disabled={busy || submitting}>{submitting ? "جارٍ الإضافة…" : "إضافة إلى التذكرة"}</button>
+                ) : (
+                  <button type="button" onClick={() => setSelected(null)}>تغيير</button>
+                )}
+              </div>
               {purpose === "credit" ? (
                 <>
                   <div className="customer-balance-row"><span>الدين الحالي</span><strong><MoneyAmount value={selected.debt} /></strong></div>
@@ -470,38 +475,24 @@ export function CustomerPickerDialog({
                   {debtAfterCredit ? <div className="customer-balance-row customer-balance-row--total"><span>الدين بعد العملية</span><strong><MoneyAmount value={debtAfterCredit} /></strong></div> : null}
                   <button type="button" className="primary-button customer-touch-primary" onClick={() => void submitCredit()} disabled={busy || submitting}>تسجيل آجل</button>
                 </>
-              ) : (
-                <>
-                  <div className="ticket-customer-purpose"><strong>سيتم ربط العميل بالتذكرة</strong><span>الولاء وسجل المشتريات سيستخدمان نفس العميل. الدين لا يظهر هنا.</span></div>
-                  <button type="button" className="primary-button customer-touch-primary" onClick={() => void submitAttach()} disabled={busy || submitting}>إضافة إلى التذكرة</button>
-                </>
-              )}
+              ) : null}
             </div>
           ) : <div className="customer-account-placeholder"><strong>اختر عميلًا</strong><span>أو أضف عميلًا جديدًا.</span></div>}
         </div>
 
         <div className="customer-create-section">
           {!createOpen ? <button type="button" className="customer-create-toggle customer-touch-create" onClick={() => { setCreateOpen(true); setNewMobile(cleanMobileDraft(query)); }} disabled={submitting}>+ إضافة عميل جديد</button> : (
-            <form className="customer-create-form customer-create-form--expanded" onSubmit={(event) => void submitCreate(event)}>
-              <strong>عميل جديد</strong>
-              <div className="customer-quick-fields">
-                <label><span>اسم العميل</span><input value={newName} onChange={(event) => setNewName(event.target.value)} required /></label>
-                <label><span>رقم الجوال</span><input dir="ltr" inputMode="numeric" minLength={10} maxLength={10} pattern="05[0-9]{8}" value={newMobile} onChange={(event) => setNewMobile(cleanMobileDraft(event.target.value))} placeholder="05XXXXXXXX" required /><small className="customer-field-hint">10 أرقام تبدأ بـ05</small></label>
-                <label className="customer-quick-address"><span>العنوان (اختياري)</span><input value={newDetails.address} onChange={(event) => updateNewDetail("address", event.target.value)} placeholder="مثال: حي العليا، طريق الملك فهد" /></label>
+            <form className="customer-create-form customer-create-form--expanded customer-create-sheet" onSubmit={(event) => void submitCreate(event)}>
+              <div className="customer-create-sheet-head">
+                <strong>إضافة عميل جديد</strong>
+                <button type="button" className="customer-create-sheet-close" onClick={resetCreate} aria-label="إغلاق إضافة العميل">×</button>
               </div>
-              <label className="customer-extra-toggle"><input type="checkbox" checked={extraOpen} onChange={(event) => setExtraOpen(event.target.checked)} /><span><strong>معلومات إضافية</strong><small>البريد والرقم الضريبي وبقية بيانات العميل.</small></span></label>
-              {extraOpen ? (
-                <div className="customer-extra-fields">
-                  <label><span>البريد الإلكتروني</span><input dir="ltr" type="email" value={newDetails.email} onChange={(event) => updateNewDetail("email", event.target.value)} /></label>
-                  <label><span>الرقم الضريبي</span><input dir="ltr" inputMode="numeric" maxLength={20} value={newDetails.taxNumber ?? ""} onChange={(event) => updateNewDetail("taxNumber", cleanTaxNumberDraft(event.target.value))} /></label>
-                  <label><span>رمز العميل</span><input dir="ltr" value={newDetails.customerCode} onChange={(event) => updateNewDetail("customerCode", event.target.value)} /></label>
-                  <label><span>المدينة</span><input value={newDetails.city} onChange={(event) => updateNewDetail("city", event.target.value)} /></label>
-                  <label><span>المنطقة</span><input value={newDetails.region} onChange={(event) => updateNewDetail("region", event.target.value)} /></label>
-                  <label><span>الرمز البريدي</span><input dir="ltr" value={newDetails.postalCode} onChange={(event) => updateNewDetail("postalCode", event.target.value)} /></label>
-                  <label><span>الدولة</span><input value={newDetails.country} onChange={(event) => updateNewDetail("country", event.target.value)} placeholder="السعودية" /></label>
-                  <label className="customer-extra-note"><span>ملاحظات</span><textarea value={newDetails.note} onChange={(event) => updateNewDetail("note", event.target.value)} /></label>
-                </div>
-              ) : null}
+              <div className="customer-new-fields">
+                <label><span>اسم العميل</span><input autoFocus value={newName} onChange={(event) => setNewName(event.target.value)} required /></label>
+                <label><span>رقم الجوال</span><input dir="ltr" inputMode="numeric" minLength={10} maxLength={10} pattern="05[0-9]{8}" value={newMobile} onChange={(event) => setNewMobile(cleanMobileDraft(event.target.value))} placeholder="05XXXXXXXX" required /><small className="customer-field-hint">10 أرقام تبدأ بـ05</small></label>
+                <label><span>الرقم الضريبي (اختياري)</span><input dir="ltr" inputMode="numeric" maxLength={20} value={newDetails.taxNumber ?? ""} onChange={(event) => updateNewDetail("taxNumber", cleanTaxNumberDraft(event.target.value))} /></label>
+                <label><span>العنوان (اختياري)</span><input value={newDetails.address} onChange={(event) => updateNewDetail("address", event.target.value)} placeholder="مثال: حي العليا، طريق الملك فهد" /></label>
+              </div>
               <div className="customer-create-actions"><button type="button" onClick={resetCreate}>إلغاء</button><button type="submit" className="primary-button">إنشاء العميل</button></div>
             </form>
           )}
