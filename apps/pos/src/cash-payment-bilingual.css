@@ -48,7 +48,7 @@
 }
 
 .inline-checkout-rail--cash .inline-checkout-total-card::after {
-  content: "Total Amount";
+  content: "Sale Total";
   grid-area: english;
   justify-self: start;
   color: rgba(255, 255, 255, .82);
