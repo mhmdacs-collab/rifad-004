@@ -13,6 +13,9 @@ type OrderType = "dine-in" | "takeaway" | "delivery";
 
 const SALE_SCREEN_MODE_KEY = "rifad.pos.sale-screen-mode.v1";
 const ORDER_TYPES_KEY = "rifad.pos.visible-order-types.v1";
+const SETTINGS_OPEN_EVENT = "rifad:pos-settings-open";
+const SETTINGS_SAVE_EVENT = "rifad:pos-settings-save";
+const SETTINGS_CANCEL_EVENT = "rifad:pos-settings-cancel";
 
 const ORDER_TYPE_OPTIONS: readonly { id: OrderType; label: string }[] = [
   { id: "dine-in", label: "محلي" },
@@ -96,6 +99,9 @@ export function SalesScreen(props: SalesScreenProps) {
   const [visibleOrderTypes, setVisibleOrderTypes] = useState<readonly OrderType[]>(readVisibleOrderTypes);
   const [selectedOrderType, setSelectedOrderType] = useState<OrderType | null>(null);
   const [printReceiptAlways, setPrintReceiptAlways] = useState(readPrintReceiptAlways);
+  const [draftScreenMode, setDraftScreenMode] = useState<SalesScreenMode>(screenMode);
+  const [draftVisibleOrderTypes, setDraftVisibleOrderTypes] = useState<readonly OrderType[]>(visibleOrderTypes);
+  const [draftPrintReceiptAlways, setDraftPrintReceiptAlways] = useState(printReceiptAlways);
   const [customerPickerPurpose, setCustomerPickerPurpose] = useState<CustomerPickerPurpose | null>(null);
   const [debtBookOpen, setDebtBookOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -155,6 +161,7 @@ export function SalesScreen(props: SalesScreenProps) {
   const orderTypeRequired = showTicketOrderType && visibleOrderTypes.length > 1 && !effectiveOrderType;
   const draftQuantity = Number(draftQuantityInput);
   const validDraftQuantity = Number.isSafeInteger(draftQuantity) && draftQuantity >= 1;
+  const draftQuantityChanged = Boolean(editingLine) && validDraftQuantity && draftQuantity !== editingLine?.quantity;
 
   useEffect(() => {
     if (!isBasicMode) return;
@@ -228,14 +235,35 @@ export function SalesScreen(props: SalesScreenProps) {
   };
 
   const toggleVisibleOrderType = (orderType: OrderType) => {
-    setVisibleOrderTypes((current) => current.includes(orderType)
+    setDraftVisibleOrderTypes((current) => current.includes(orderType)
       ? current.filter((value) => value !== orderType)
       : ORDER_TYPE_OPTIONS.map((option) => option.id).filter((value) => value === orderType || current.includes(value)));
   };
 
-  const updatePrintReceiptAlways = (enabled: boolean) => {
-    setPrintReceiptAlways(enabled);
-    writePrintReceiptAlways(enabled);
+  const openSettings = () => {
+    setDraftScreenMode(screenMode);
+    setDraftVisibleOrderTypes(visibleOrderTypes);
+    setDraftPrintReceiptAlways(printReceiptAlways);
+    setSettingsOpen(true);
+    window.dispatchEvent(new Event(SETTINGS_OPEN_EVENT));
+  };
+
+  const cancelSettings = () => {
+    setDraftScreenMode(screenMode);
+    setDraftVisibleOrderTypes(visibleOrderTypes);
+    setDraftPrintReceiptAlways(printReceiptAlways);
+    setSettingsOpen(false);
+    window.dispatchEvent(new Event(SETTINGS_CANCEL_EVENT));
+  };
+
+  const saveSettings = () => {
+    setScreenMode(draftScreenMode);
+    setVisibleOrderTypes(draftVisibleOrderTypes);
+    setPrintReceiptAlways(draftPrintReceiptAlways);
+    writePrintReceiptAlways(draftPrintReceiptAlways);
+    onQueryChange("");
+    setSettingsOpen(false);
+    window.dispatchEvent(new Event(SETTINGS_SAVE_EVENT));
   };
 
   const renderOrderTypeSelector = () => showTicketOrderType ? (
@@ -418,7 +446,7 @@ export function SalesScreen(props: SalesScreenProps) {
       </section>
 
       <div className="ticket-column">
-        <TicketPanel ticket={ticket} editable lastTouchedLineId={lastTouchedLineId} onEditLine={openLineEditor} onCustomerClick={openCustomerPicker} />
+        <TicketPanel ticket={ticket} editable lastTouchedLineId={lastTouchedLineId} onEditLine={openLineEditor} onRemoveLine={onRemoveLine} onCustomerClick={openCustomerPicker} />
         {renderOrderTypeSelector()}
         {renderTicketActions()}
       </div>
@@ -426,7 +454,7 @@ export function SalesScreen(props: SalesScreenProps) {
       {mobileTicketOpen ? (
         <section className="mobile-ticket-surface" aria-label="التذكرة الحالية على الهاتف">
           <button className="mobile-ticket-close" type="button" onClick={() => setMobileTicketOpen(false)}><Icon name="arrow" size={19} /> العودة إلى المنتجات</button>
-          <TicketPanel ticket={ticket} editable lastTouchedLineId={lastTouchedLineId} onEditLine={openLineEditor} onCustomerClick={openCustomerPicker} />
+          <TicketPanel ticket={ticket} editable lastTouchedLineId={lastTouchedLineId} onEditLine={openLineEditor} onRemoveLine={onRemoveLine} onCustomerClick={openCustomerPicker} />
           {renderOrderTypeSelector()}
           {renderTicketActions()}
         </section>
@@ -440,36 +468,37 @@ export function SalesScreen(props: SalesScreenProps) {
             <button type="button" onClick={() => { setMenuOpen(false); onOpenReceipts(); }}><Icon name="receipt" />الإيصالات</button>
             <button type="button" disabled>الوردية</button>
             <button type="button" disabled>العناصر</button>
-            <button type="button" onClick={() => { setMenuOpen(false); setSettingsOpen(true); }}><Icon name="settings" />الإعدادات</button>
+            <button type="button" onClick={() => { setMenuOpen(false); openSettings(); }}><Icon name="settings" />الإعدادات</button>
           </aside>
         </div>
       ) : null}
 
       {settingsOpen ? (
-        <div className="dialog-backdrop" role="presentation" onClick={() => setSettingsOpen(false)}>
+        <div className="dialog-backdrop" role="presentation">
           <section className="layout-dialog pos-device-settings" role="dialog" aria-modal="true" aria-labelledby="pos-settings-title" onClick={(event) => event.stopPropagation()}>
-            <header><button type="button" onClick={() => setSettingsOpen(false)} aria-label="إغلاق">×</button><h2 id="pos-settings-title">إعدادات نقطة البيع</h2></header>
+            <header><button type="button" onClick={cancelSettings} aria-label="إلغاء وإغلاق">×</button><h2 id="pos-settings-title">إعدادات نقطة البيع</h2></header>
             <div className="device-settings-section">
               <div className="device-settings-copy"><strong>نمط شاشة البيع</strong><span>هذا الإعداد خاص بهذا الجهاز ويمكن أن يختلف بين أجهزة نفس المنشأة.</span></div>
               <div className="screen-mode-options">
-                <button type="button" className={screenMode === "touch" ? "active" : ""} onClick={() => { setScreenMode("touch"); onQueryChange(""); }}><span className="screen-mode-icon"><Icon name="grid" size={24} /></span><strong>شاشة لمس</strong><small>شبكة أصناف وصفحات سريعة للمس.</small></button>
-                <button type="button" className={screenMode === "basic" ? "active" : ""} onClick={() => { setScreenMode("basic"); onQueryChange(""); }}><span className="screen-mode-icon"><Icon name="search" size={24} /></span><strong>البيع السريع</strong><small>بحث وباركود أولًا للبيع بالتجزئة.</small></button>
+                <button type="button" className={draftScreenMode === "touch" ? "active" : ""} onClick={() => setDraftScreenMode("touch")}><span className="screen-mode-icon"><Icon name="grid" size={24} /></span><strong>شاشة لمس</strong><small>شبكة أصناف وصفحات سريعة للمس.</small></button>
+                <button type="button" className={draftScreenMode === "basic" ? "active" : ""} onClick={() => setDraftScreenMode("basic")}><span className="screen-mode-icon"><Icon name="search" size={24} /></span><strong>البيع السريع</strong><small>بحث وباركود أولًا للبيع بالتجزئة.</small></button>
               </div>
             </div>
             <div className="device-settings-section device-settings-section--order-types">
               <div className="device-settings-copy"><strong>أنواع الطلب في شاشة اللمس</strong><span>اختر الأنواع التي تريد إظهارها للكاشير. إذا فعّلت أكثر من نوع يجب اختيار أحدها بعد إضافة أول صنف. إذا فعّلت نوعًا واحدًا يُحدد تلقائيًا. اتركها كلها غير مفعلة لإخفاء الخيار.</span></div>
               <div className="order-type-settings">
                 {ORDER_TYPE_OPTIONS.map((option) => {
-                  const enabled = visibleOrderTypes.includes(option.id);
+                  const enabled = draftVisibleOrderTypes.includes(option.id);
                   return <button type="button" key={option.id} className={enabled ? "active" : ""} aria-pressed={enabled} onClick={() => toggleVisibleOrderType(option.id)}><span>{enabled ? <Icon name="check" size={18} /> : null}</span><strong>{option.label}</strong></button>;
                 })}
               </div>
             </div>
             <div className="device-settings-section">
               <div className="device-settings-copy"><strong>الإيصالات</strong><span>تحكم بسلوك الطباعة بعد إكمال البيع على هذا الجهاز.</span></div>
-              <label className="print-always-toggle"><input type="checkbox" checked={printReceiptAlways} onChange={(event) => updatePrintReceiptAlways(event.target.checked)} /><span><strong>طباعة الإيصال دائمًا</strong><small>بعد الدفع يُرسل الإيصال للطابعة ويبدأ بيع جديد مباشرة بدون إظهار ملخص العملية.</small></span></label>
+              <label className="print-always-toggle"><input type="checkbox" checked={draftPrintReceiptAlways} onChange={(event) => setDraftPrintReceiptAlways(event.target.checked)} /><span><strong>طباعة الإيصال دائمًا</strong><small>بعد الدفع يُرسل الإيصال للطابعة ويبدأ بيع جديد مباشرة بدون إظهار ملخص العملية.</small></span></label>
             </div>
-            <button className="primary-button settings-done" type="button" onClick={() => setSettingsOpen(false)}>تم</button>
+            <button className="settings-cancel" type="button" onClick={cancelSettings}>إلغاء</button>
+            <button className="primary-button settings-done" type="button" onClick={saveSettings}>حفظ</button>
           </section>
         </div>
       ) : null}
@@ -540,7 +569,7 @@ export function SalesScreen(props: SalesScreenProps) {
             </div>
             <div className="line-editor-actions">
               <button type="button" className="delete-line" onClick={() => { onRemoveLine(editingLine.id); setEditingLine(null); }}><Icon name="trash" size={18} />حذف</button>
-              <button type="button" className="primary-button" disabled={!validDraftQuantity} onClick={() => { if (!validDraftQuantity) return; onSetQuantity(editingLine.id, draftQuantity); setEditingLine(null); }}>حفظ</button>
+              <button type="button" className="primary-button" disabled={!draftQuantityChanged} onClick={() => { if (!draftQuantityChanged) return; onSetQuantity(editingLine.id, draftQuantity); setEditingLine(null); }}>حفظ</button>
             </div>
           </section>
         </div>
