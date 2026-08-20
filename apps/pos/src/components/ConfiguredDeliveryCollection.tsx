@@ -17,7 +17,7 @@ type Props = {
 };
 
 export function ConfiguredDeliveryCollection({ delivery, onBack, onCollect }: Props) {
-  const channels = delivery.channels.filter(executableChannel);
+  const channels = delivery.enabled ? delivery.channels.filter(executableChannel) : [];
   const [selected, setSelected] = useState<EffectiveDeliveryChannel | null>(null);
 
   return (
@@ -26,11 +26,18 @@ export function ConfiguredDeliveryCollection({ delivery, onBack, onCollect }: Pr
         <button type="button" onClick={() => selected ? setSelected(null) : onBack()} aria-label="رجوع">→</button>
         <div>
           <strong>{selected ? selected.name : "توصيل"}</strong>
-          <small>{selected ? "كيف استلم المحل المبلغ؟" : "اختر تطبيق أو قناة التوصيل"}</small>
+          <small>{selected ? "كيف استلم المحل المبلغ؟" : "Delivery · اختر تطبيق أو قناة التوصيل"}</small>
         </div>
       </div>
 
-      {!selected ? (
+      {!selected && channels.length === 0 ? (
+        <div className="delivery-collection-empty" role="status">
+          <span className="delivery-empty-mark" aria-hidden="true">⌁</span>
+          <strong>لا توجد قناة توصيل متاحة حاليًا</strong>
+          <span>فعّل قناة توصيل لاحقًا لتظهر هنا.</span>
+          <small lang="en" dir="ltr">No delivery channels are available on this POS yet.</small>
+        </div>
+      ) : !selected ? (
         <div className="delivery-channel-choice-grid">
           {channels.map((channel) => (
             <button type="button" key={channel.id} className="delivery-channel-choice" onClick={() => setSelected(channel)}>
