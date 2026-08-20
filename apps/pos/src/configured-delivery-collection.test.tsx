@@ -75,7 +75,9 @@ describe("configured delivery collection from payment surface", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: /توصيل/ }));
+    const deliveryHub = screen.getByRole("button", { name: /توصيل — Delivery/ });
+    expect(deliveryHub).toHaveAttribute("data-delivery-ready", "true");
+    await user.click(deliveryHub);
     expect(screen.getByRole("button", { name: /HungerStation/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /التوصيل الذاتي/ })).not.toBeInTheDocument();
 
@@ -90,7 +92,9 @@ describe("configured delivery collection from payment surface", () => {
     );
   });
 
-  it("does not expose a fake Delivery button when every enabled channel still needs a later financial lifecycle", () => {
+  it("keeps Delivery visible but blocks fake collection when channels still need a later lifecycle", async () => {
+    const user = userEvent.setup();
+    const onDeliveryCollect = vi.fn();
     const settlementOnly: EffectiveDeliveryConfiguration = {
       enabled: true,
       channels: [{
@@ -114,11 +118,17 @@ describe("configured delivery collection from payment surface", () => {
         onCash={() => undefined}
         onCard={() => undefined}
         onCredit={() => undefined}
-        onDeliveryCollect={() => undefined}
+        onDeliveryCollect={onDeliveryCollect}
       />,
     );
 
-    expect(screen.queryByRole("button", { name: /توصيل/ })).not.toBeInTheDocument();
+    const deliveryHub = screen.getByRole("button", { name: /توصيل — Delivery/ });
+    expect(deliveryHub).toHaveAttribute("data-delivery-ready", "false");
     expect(screen.getByText("لا توجد طريقة دفع مفعّلة لهذا الجهاز.")).toBeInTheDocument();
+
+    await user.click(deliveryHub);
+    expect(screen.getByText("لا توجد قناة توصيل متاحة حاليًا")).toBeInTheDocument();
+    expect(screen.getByText("No delivery channels are available on this POS yet.")).toBeInTheDocument();
+    expect(onDeliveryCollect).not.toHaveBeenCalled();
   });
 });
