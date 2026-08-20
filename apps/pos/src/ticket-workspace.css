@@ -1,0 +1,262 @@
+/* Ticket workspace — cashier tasks replace the basket column without covering the catalog.
+ * Keep touch targets and Arabic text human-sized; never shrink content just to fit the rail.
+ */
+
+.ticket-column,
+.mobile-ticket-surface {
+  position: relative;
+}
+
+.ticket-workspace-host--active {
+  overflow: hidden !important;
+}
+
+.ticket-workspace-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: #fff;
+  direction: rtl;
+}
+
+.ticket-workspace-overlay > .dialog-backdrop,
+.ticket-workspace-overlay > .local-service-backdrop {
+  position: absolute !important;
+  inset: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  background: #fff !important;
+  backdrop-filter: none !important;
+}
+
+.ticket-workspace-overlay .customer-credit-dialog,
+.ticket-workspace-overlay .local-service-dialog {
+  width: 100% !important;
+  max-width: none !important;
+  height: 100% !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: #fff !important;
+  overflow: hidden !important;
+}
+
+/* The close affordance becomes the one navigation action: back to basket. */
+.ticket-workspace-overlay .customer-touch-header > button:first-child,
+.ticket-workspace-overlay .customer-credit-dialog > header > button:first-child,
+.ticket-workspace-overlay .debt-book-dialog > header > button:first-child,
+.ticket-workspace-overlay .local-service-head > button:last-child {
+  width: 46px !important;
+  min-width: 46px !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  border-radius: 12px !important;
+  font-size: 0 !important;
+}
+
+.ticket-workspace-overlay .customer-touch-header > button:first-child::before,
+.ticket-workspace-overlay .customer-credit-dialog > header > button:first-child::before,
+.ticket-workspace-overlay .debt-book-dialog > header > button:first-child::before,
+.ticket-workspace-overlay .local-service-head > button:last-child::before {
+  content: "←";
+  font-family: Arial, sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Large readable type in the work rail. */
+.ticket-workspace-overlay h2,
+.ticket-workspace-overlay .customer-touch-header h2,
+.ticket-workspace-overlay .local-service-head h2 {
+  font-size: clamp(20px, 1.35vw, 25px) !important;
+  line-height: 1.35 !important;
+}
+
+.ticket-workspace-overlay h3 {
+  font-size: clamp(18px, 1.15vw, 22px) !important;
+}
+
+.ticket-workspace-overlay input,
+.ticket-workspace-overlay textarea,
+.ticket-workspace-overlay select {
+  min-height: 50px !important;
+  font-size: clamp(14px, .9vw, 16px) !important;
+  border-radius: 11px !important;
+}
+
+.ticket-workspace-overlay button {
+  min-height: 48px;
+  font-size: clamp(14px, .92vw, 16px);
+}
+
+.ticket-workspace-overlay small,
+.ticket-workspace-overlay label > span,
+.ticket-workspace-overlay .customer-field-hint {
+  font-size: clamp(12px, .76vw, 14px) !important;
+  line-height: 1.55 !important;
+}
+
+.ticket-workspace-overlay .customer-picker-list button,
+.ticket-workspace-overlay .customer-result-list button,
+.ticket-workspace-overlay .debtors-list button {
+  min-height: 62px !important;
+}
+
+/* Customer/credit views become a single-column rail instead of a desktop modal. */
+.ticket-workspace-overlay .customer-credit-dialog,
+.ticket-workspace-overlay .customer-profile-dialog,
+.ticket-workspace-overlay .customer-credit-confirm-dialog,
+.ticket-workspace-overlay .debt-book-dialog {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.ticket-workspace-overlay .customer-profile-shell,
+.ticket-workspace-overlay .customer-history-shell,
+.ticket-workspace-overlay .customer-redeem-shell,
+.ticket-workspace-overlay .customer-profile-edit-form,
+.ticket-workspace-overlay .customer-account-card,
+.ticket-workspace-overlay .customer-credit-body,
+.ticket-workspace-overlay .customer-picker-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.ticket-workspace-overlay .customer-profile-stats {
+  grid-template-columns: 1fr !important;
+}
+
+.ticket-workspace-overlay .customer-profile-actions {
+  grid-template-columns: 1fr !important;
+}
+
+.ticket-workspace-overlay .customer-profile-edit-form {
+  grid-template-columns: 1fr !important;
+  padding-bottom: 18px !important;
+}
+
+/* Debt settlement stays readable in the narrow basket rail. */
+.ticket-workspace-overlay .debt-book-toolbar,
+.ticket-workspace-overlay .debt-book-body {
+  grid-template-columns: 1fr !important;
+}
+
+.ticket-workspace-overlay .debt-book-dialog > header {
+  flex: 0 0 auto;
+}
+
+.ticket-workspace-overlay .debt-book-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto !important;
+}
+
+.ticket-workspace-overlay .debtors-list,
+.ticket-workspace-overlay .debt-account-view {
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+.ticket-workspace-overlay .debt-ledger {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+/* Place selection uses the basket column, with large cards and one column when needed. */
+.ticket-workspace-overlay .local-service-dialog {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.ticket-workspace-overlay .local-place-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  padding: 12px !important;
+}
+
+.ticket-workspace-overlay .local-place-card {
+  min-height: 104px !important;
+  padding: 13px !important;
+}
+
+.ticket-workspace-overlay .local-place-card > strong {
+  font-size: clamp(16px, 1vw, 19px) !important;
+}
+
+.ticket-workspace-overlay .local-service-foot {
+  flex: 0 0 auto;
+}
+
+/* Footer actions: restaurant classifies the order first; retail exposes credit only when configured. */
+.ticket-actions > .ticket-workspace-action--hidden {
+  display: none !important;
+}
+
+.ticket-actions.ticket-workspace-actions--single > button:not(.ticket-workspace-action--hidden) {
+  flex: 1 1 100% !important;
+  width: 100% !important;
+}
+
+.ticket-actions > button {
+  min-height: clamp(58px, 6.6vh, 68px) !important;
+  font-size: clamp(15px, 1vw, 18px) !important;
+  font-weight: 850 !important;
+}
+
+.ticket-actions > .ticket-workspace-action--takeaway,
+.ticket-actions > button[aria-label="دفع"] {
+  color: #fff !important;
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
+}
+
+.ticket-actions > .ticket-workspace-action--takeaway:hover:not(:disabled),
+.ticket-actions > button[aria-label="دفع"]:hover:not(:disabled) {
+  background: var(--brand-dark) !important;
+}
+
+.ticket-actions > .ticket-workspace-action--local {
+  color: var(--brand-dark) !important;
+  background: #fff !important;
+  border: 1px solid #9fc3b5 !important;
+}
+
+.ticket-actions > .ticket-workspace-action--credit {
+  color: #5d665f !important;
+  background: #f3f5f4 !important;
+  border: 1px solid #d5dcda !important;
+}
+
+.ticket-actions > .ticket-workspace-action--settlement,
+.ticket-actions > .ticket-workspace-action--open,
+.ticket-actions > .ticket-workspace-action--send {
+  color: var(--brand-dark) !important;
+  background: var(--brand-soft) !important;
+  border: 1px solid #b8d4c9 !important;
+}
+
+@media (max-width: 720px) {
+  .ticket-workspace-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 160;
+  }
+
+  .ticket-workspace-overlay .local-place-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
