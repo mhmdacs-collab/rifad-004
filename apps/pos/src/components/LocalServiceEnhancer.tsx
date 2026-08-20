@@ -21,8 +21,19 @@ const syncBadge = (parent: HTMLElement, className: string, label: string | null)
   if (badge.textContent !== label) badge.textContent = label;
 };
 
+const ensureReturnSlot = (tools: HTMLElement) => {
+  const existing = directChild(tools, "local-open-order-return-slot");
+  if (existing) return existing;
+  const slot = document.createElement("span");
+  slot.className = "local-open-order-return-slot";
+  slot.dataset.localServiceSlot = "owned";
+  tools.prepend(slot);
+  return slot;
+};
+
 export function LocalServiceEnhancer({ local, legacyFixture = false }: Props) {
   const [settingsTargets, setSettingsTargets] = useState<readonly HTMLElement[]>([]);
+  const [returnTargets, setReturnTargets] = useState<readonly HTMLElement[]>([]);
 
   const serviceEnabled = local.config.restaurantServiceEnabled;
   const openCount = local.openLocalOrders.length;
@@ -51,6 +62,7 @@ export function LocalServiceEnhancer({ local, legacyFixture = false }: Props) {
   useEffect(() => {
     if (legacyFixture) {
       setSettingsTargets([]);
+      setReturnTargets([]);
       return;
     }
 
@@ -82,6 +94,14 @@ export function LocalServiceEnhancer({ local, legacyFixture = false }: Props) {
       for (const parent of document.querySelectorAll<HTMLElement>(".inline-checkout-head > div, .inline-success-copy")) {
         syncBadge(parent, "local-checkout-context", checkoutLabel);
       }
+
+      if (activeServiceLabel) {
+        const slots = Array.from(document.querySelectorAll<HTMLElement>(".ticket-panel--sale .ticket-header-tools")).map(ensureReturnSlot);
+        setReturnTargets((current) => sameTargets(current, slots) ? current : slots);
+      } else {
+        document.querySelectorAll<HTMLElement>(".local-open-order-return-slot[data-local-service-slot=\"owned\"]").forEach((slot) => slot.remove());
+        setReturnTargets((current) => current.length === 0 ? current : []);
+      }
     };
 
     sync();
@@ -91,6 +111,7 @@ export function LocalServiceEnhancer({ local, legacyFixture = false }: Props) {
       observer.disconnect();
       document.querySelectorAll<HTMLElement>("[data-local-service-slot=\"owned\"]").forEach((slot) => slot.remove());
       setSettingsTargets([]);
+      setReturnTargets([]);
     };
   }, [activeServiceLabel, checkoutLabel, legacyFixture]);
 
@@ -117,6 +138,20 @@ export function LocalServiceEnhancer({ local, legacyFixture = false }: Props) {
         <button type="button" className={`local-setting-row local-setting-row--nested ${local.config.placeManagementEnabled ? "active" : ""}`} onClick={() => void togglePlaces()} disabled={!serviceEnabled || busy || (hasOpen && local.config.placeManagementEnabled)} aria-pressed={local.config.placeManagementEnabled}><span><strong>تحديد الطاولات والجلسات</strong><small>{local.config.placeManagementEnabled ? "محلي متقدم · اختيار مكان وطلبات مفتوحة" : "محلي بسيط · بدون اختيار مكان"}</small></span><i className="local-setting-switch" aria-hidden="true"><b /></i></button>
         {hasOpen ? <small className="local-setting-lock-note">يوجد {openCount} طلب محلي مفتوح؛ أغلقها قبل إيقاف الإعدادات.</small> : null}
       </section>, target))}
+    {returnTargets.map((target, index) => createPortal(
+      <button
+        type="button"
+        className="local-open-order-return"
+        key={`local-return-${index}`}
+        onClick={() => void local.leaveOpenOrder()}
+        disabled={busy}
+        aria-label="الرجوع لشاشة البيع مع إبقاء الطاولة مفتوحة"
+      >
+        الرجوع لشاشة البيع
+      </button>,
+      target,
+      `local-return-${index}`,
+    ))}
     {local.localNotice ? <div className="local-service-toast local-service-toast--success" role="status">{local.localNotice}</div> : null}
     {local.localError ? <button type="button" className="local-service-toast local-service-toast--error" onClick={local.clearLocalError} role="alert">{local.localError}</button> : null}
   </>;
