@@ -8,7 +8,9 @@ import type { LoyaltyContract } from "./loyalty";
 import type {
   Customer,
   CustomerDetails,
+  DebtCollectionMethod,
   DebtLedgerEntry,
+  DebtSettlementResult,
   DeviceSession,
   EmployeeSession,
   Money,
@@ -105,7 +107,8 @@ export interface CustomerCreditContract {
     commandId: string;
     customerId: string;
     amount: Money;
-  }): Promise<Customer>;
+    collectionMethod: DebtCollectionMethod;
+  }): Promise<DebtSettlementResult>;
 }
 
 export interface CheckoutContract {
