@@ -41,10 +41,34 @@
   touch-action: manipulation;
 }
 
+.sale-screen-touch .workspace-header,
+.sale-screen-touch .sales-catalog,
+.sale-screen-touch .ticket-column,
+.sale-screen-touch .ticket-actions,
+.inline-checkout-rail {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sale-screen-touch input,
+.sale-screen-touch textarea,
+.sale-screen-touch [contenteditable="true"],
+.inline-checkout-rail input,
+.inline-checkout-rail textarea,
+.inline-checkout-rail [contenteditable="true"] {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
 .sale-screen-touch button,
 .inline-checkout-rail button {
   user-select: none;
   -webkit-user-select: none;
+}
+
+.sale-flow-shell button:disabled,
+.inline-checkout-rail button:disabled {
+  cursor: default;
 }
 
 .sale-screen-touch.loyverse-shell {
@@ -157,6 +181,55 @@
   color: var(--fo-muted);
 }
 
+.sale-screen-touch .local-ticket-context,
+.inline-checkout-rail .local-checkout-context {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 30px;
+  margin-top: 5px;
+  padding: 4px 10px;
+  border: 1px solid #cfe1d9;
+  border-radius: 999px;
+  color: var(--fo-brand-strong);
+  background: var(--fo-brand-soft);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.sale-screen-touch .ticket-header-tools {
+  gap: 8px;
+}
+
+.sale-screen-touch .local-open-order-return-slot {
+  display: inline-flex;
+  align-items: center;
+}
+
+.sale-screen-touch .local-open-order-return {
+  min-height: 38px;
+  padding: 7px 11px;
+  border: 1px solid var(--fo-border-strong);
+  border-radius: 10px;
+  color: #405048;
+  background: var(--fo-surface);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  white-space: nowrap;
+  transition: transform .08s ease, background .1s ease, border-color .1s ease;
+}
+
+.sale-screen-touch .local-open-order-return:hover:not(:disabled) {
+  border-color: #b4c4bc;
+  background: var(--fo-surface-soft);
+}
+
+.sale-screen-touch .local-open-order-return:active:not(:disabled) {
+  transform: scale(.975);
+}
+
 .sale-screen-touch .ticket-customer-button {
   min-height: 44px;
   border-radius: 11px;
@@ -216,6 +289,9 @@
 
 /* Clear Cart is a basket utility, never a third transaction button. */
 .sale-screen-touch .ticket-clear-cart {
+  min-width: 84px;
+  min-height: 38px;
+  padding-inline: 11px !important;
   color: var(--fo-danger) !important;
   background: var(--fo-danger-soft) !important;
   border-color: #f0d0d0 !important;
@@ -246,6 +322,30 @@
 .sale-screen-touch .transaction-operation-card > button:active:not(:disabled),
 .inline-checkout-rail .transaction-operation-card > button:active:not(:disabled) {
   transform: scale(.985);
+}
+
+/* An open table has one legal primary action at a time: send changes, then pay. */
+.sale-screen-touch .ticket-workspace-actions--restaurant .ticket-workspace-action--send:not(:disabled) {
+  color: #fff !important;
+  background: var(--fo-brand) !important;
+  border-color: var(--fo-brand) !important;
+  box-shadow: 0 4px 12px rgb(10 113 78 / 18%) !important;
+}
+
+.sale-screen-touch .ticket-workspace-actions--restaurant.ticket-workspace-actions--unsent > button:last-child:disabled {
+  color: #8b9691 !important;
+  background: #eef1ef !important;
+  border-color: #dde3e0 !important;
+  box-shadow: none !important;
+  opacity: 1;
+}
+
+.sale-screen-touch .ticket-workspace-actions--restaurant .ticket-workspace-action--send:disabled {
+  color: #8a9690 !important;
+  background: #f3f5f4 !important;
+  border-color: var(--fo-border) !important;
+  box-shadow: none !important;
+  opacity: 1;
 }
 
 /* ---------- Checkout / payment ---------- */
@@ -293,6 +393,14 @@
 .inline-checkout-rail .inline-payment-method:active:not(:disabled),
 .inline-checkout-rail .payment-special-action:active:not(:disabled) {
   transform: scale(.985);
+}
+
+.inline-checkout-rail .inline-payment-method:disabled,
+.inline-checkout-rail .payment-special-action:disabled,
+.inline-checkout-rail .inline-operation-footer > button:disabled {
+  transform: none !important;
+  box-shadow: none !important;
+  opacity: .55;
 }
 
 /* Flatten older decorative payment gradients without changing payment meaning. */
@@ -380,6 +488,11 @@
   .mobile-ticket-surface,
   .inline-checkout-rail {
     background: var(--fo-surface);
+  }
+
+  .sale-screen-touch .local-open-order-return {
+    min-height: 42px;
+    font-size: 12px;
   }
 }
 
