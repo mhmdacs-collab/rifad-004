@@ -1,16 +1,16 @@
 /* Owner visual review — payment selection refinement only.
- * This layer deliberately changes presentation, not payment configuration or behavior.
+ * Calm commercial POS treatment: text first, artwork second, color as a subtle cue.
  */
 
 .inline-checkout-rail--payment .inline-checkout-head > div > span {
   font-size: 11px !important;
   font-weight: 650 !important;
-  opacity: .9;
+  opacity: .82;
 }
 
 .inline-checkout-rail--payment .inline-checkout-total-card {
   border-radius: 15px !important;
-  box-shadow: 0 7px 20px rgba(3, 91, 62, .12) !important;
+  box-shadow: 0 5px 16px rgba(3, 91, 62, .10) !important;
 }
 
 .inline-payment-methods {
@@ -20,16 +20,15 @@
 
 .inline-payment-method,
 .payment-delivery-launcher {
-  --payment-card-tint: #f6f8f7;
-  --payment-circle-tint: #e8eeeb;
+  --payment-card-tint: #fafcfb;
+  --payment-circle-tint: #edf2ef;
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--payment-accent) 14%, #dfe7e3) !important;
-  border-inline-start: 1px solid color-mix(in srgb, var(--payment-accent) 14%, #dfe7e3) !important;
-  border-radius: 16px !important;
-  background: linear-gradient(112deg, #fff 4%, var(--payment-card-tint) 100%) !important;
-  box-shadow: 0 2px 8px rgba(28, 52, 43, .05) !important;
+  border: 1px solid color-mix(in srgb, var(--payment-accent) 9%, #dfe6e2) !important;
+  border-radius: 15px !important;
+  background: linear-gradient(100deg, #fff 22%, var(--payment-card-tint) 100%) !important;
+  box-shadow: 0 1px 5px rgba(28, 52, 43, .045) !important;
 }
 
 .inline-payment-method::before,
@@ -38,14 +37,13 @@
   position: absolute;
   z-index: 0;
   top: 50%;
-  inset-inline-start: auto;
-  inset-inline-end: -43px;
-  width: 118px;
-  height: 118px;
+  inset-inline-end: -29px;
+  width: 76px;
+  height: 76px;
   border-radius: 50%;
   transform: translateY(-50%);
-  background: radial-gradient(circle at 42% 50%, rgba(255, 255, 255, .75) 0 17%, var(--payment-circle-tint) 70%, color-mix(in srgb, var(--payment-accent) 14%, #fff) 100%);
-  opacity: .88;
+  background: var(--payment-circle-tint);
+  opacity: .36;
   pointer-events: none;
 }
 
@@ -56,54 +54,53 @@
 }
 
 .inline-payment-method {
-  min-height: 90px !important;
-  padding: 10px 14px !important;
+  min-height: 88px !important;
+  padding: 10px 13px !important;
   gap: 13px !important;
   cursor: pointer;
 }
 
 .inline-payment-method--cash {
-  --payment-card-tint: #f0faf4;
-  --payment-circle-tint: #d9efe2;
+  --payment-card-tint: #f8fcf9;
+  --payment-circle-tint: #e8f4ed;
 }
 
 .inline-payment-method--mada {
-  --payment-card-tint: #f0f6fe;
-  --payment-circle-tint: #dce8f8;
+  --payment-card-tint: #f8fbff;
+  --payment-circle-tint: #e7eef9;
 }
 
 .inline-payment-method--credit {
-  --payment-card-tint: #fbf2f7;
-  --payment-circle-tint: #efdeE8;
+  --payment-card-tint: #fdf9fb;
+  --payment-circle-tint: #f4e8ee;
 }
 
 .inline-payment-method--custom {
-  --payment-card-tint: #f3f7f5;
-  --payment-circle-tint: #e1eae6;
+  --payment-card-tint: #fafcfa;
+  --payment-circle-tint: #edf2ef;
 }
 
 .inline-payment-method:not(:disabled):hover,
 .payment-delivery-launcher:hover {
-  transform: translateY(-1px) scale(1.003) !important;
-  border-color: color-mix(in srgb, var(--payment-accent) 30%, #dfe7e3) !important;
-  background: linear-gradient(112deg, #fff 0%, color-mix(in srgb, var(--payment-accent) 9%, #fff) 100%) !important;
-  box-shadow: 0 7px 18px rgba(28, 52, 43, .085) !important;
+  transform: translateY(-1px) !important;
+  border-color: color-mix(in srgb, var(--payment-accent) 20%, #dce4e0) !important;
+  box-shadow: 0 5px 13px rgba(28, 52, 43, .07) !important;
 }
 
 .inline-payment-method:not(:disabled):active,
 .payment-delivery-launcher:active {
-  transform: scale(.992) !important;
-  box-shadow: 0 2px 6px rgba(28, 52, 43, .07) !important;
+  transform: scale(.994) !important;
+  box-shadow: 0 1px 4px rgba(28, 52, 43, .06) !important;
 }
 
 .payment-method-art {
-  flex: 0 0 76px !important;
-  width: 76px !important;
-  min-width: 76px !important;
-  height: 62px !important;
-  border: 1px solid rgba(255, 255, 255, .72) !important;
-  border-radius: 16px !important;
-  box-shadow: 0 3px 9px rgba(28, 52, 43, .045) !important;
+  flex: 0 0 70px !important;
+  width: 70px !important;
+  min-width: 70px !important;
+  height: 56px !important;
+  border: 1px solid rgba(255, 255, 255, .88) !important;
+  border-radius: 14px !important;
+  box-shadow: none !important;
 }
 
 .payment-method-art::after {
@@ -111,47 +108,47 @@
 }
 
 .payment-method-art svg {
-  width: 73px !important;
-  height: 57px !important;
+  width: 66px !important;
+  height: 51px !important;
 }
 
 .payment-method-art--cash {
-  background: #def2e6 !important;
+  background: #e8f4ec !important;
 }
 
 .payment-method-art--card {
-  background: #e0ebfb !important;
+  background: #e9f0fa !important;
 }
 
 .payment-method-art--credit {
-  background: #f3e2eb !important;
+  background: #f3e8ee !important;
 }
 
 .payment-method-art--transfer {
-  background: #e5eeeb !important;
+  background: #edf2ef !important;
 }
 
 .payment-method-art--platform {
-  background: #ebe5f5 !important;
+  background: #f0ecf6 !important;
 }
 
 .inline-payment-copy {
-  gap: 1px !important;
+  gap: 2px !important;
 }
 
 .inline-payment-copy strong {
-  color: #15221d !important;
+  color: #18241f !important;
   font-size: 18px !important;
   font-weight: 800 !important;
-  line-height: 1.25 !important;
+  line-height: 1.2 !important;
 }
 
 .inline-payment-english {
-  color: color-mix(in srgb, var(--payment-accent) 58%, #53615b) !important;
-  font-size: 14px !important;
-  font-weight: 700 !important;
+  color: #68736e !important;
+  font-size: 12.5px !important;
+  font-weight: 650 !important;
   line-height: 1.25 !important;
-  letter-spacing: .01em !important;
+  letter-spacing: .005em !important;
 }
 
 .inline-payment-chevron {
@@ -166,10 +163,10 @@
 
 .payment-delivery-launcher {
   --payment-accent: #a66a28;
-  --payment-card-tint: #fff7eb;
-  --payment-circle-tint: #f5dfbc;
-  min-height: 82px !important;
-  padding: 9px 14px !important;
+  --payment-card-tint: #fffaf4;
+  --payment-circle-tint: #f7ead6;
+  min-height: 88px !important;
+  padding: 10px 13px !important;
   gap: 13px !important;
 }
 
@@ -177,13 +174,14 @@
   flex-basis: 70px !important;
   width: 70px !important;
   min-width: 70px !important;
-  height: 58px !important;
-  border-radius: 15px !important;
+  height: 56px !important;
+  border-radius: 14px !important;
+  background: #f6ead8 !important;
 }
 
 .payment-delivery-launcher .payment-method-art svg {
-  width: 67px !important;
-  height: 52px !important;
+  width: 66px !important;
+  height: 51px !important;
 }
 
 .payment-delivery-launcher .inline-payment-copy strong {
@@ -191,36 +189,40 @@
 }
 
 @media (max-width: 720px) {
-  .inline-payment-method {
-    min-height: 84px !important;
+  .inline-payment-method,
+  .payment-delivery-launcher {
+    min-height: 82px !important;
     padding: 9px 11px !important;
     gap: 11px !important;
   }
 
   .inline-payment-method::before,
   .payment-delivery-launcher::before {
-    inset-inline-end: -38px;
-    width: 104px;
-    height: 104px;
+    inset-inline-end: -26px;
+    width: 68px;
+    height: 68px;
   }
 
-  .payment-method-art {
-    flex-basis: 68px !important;
-    width: 68px !important;
-    min-width: 68px !important;
-    height: 56px !important;
+  .payment-method-art,
+  .payment-delivery-launcher .payment-method-art {
+    flex-basis: 64px !important;
+    width: 64px !important;
+    min-width: 64px !important;
+    height: 52px !important;
   }
 
-  .payment-method-art svg {
-    width: 65px !important;
-    height: 50px !important;
+  .payment-method-art svg,
+  .payment-delivery-launcher .payment-method-art svg {
+    width: 60px !important;
+    height: 47px !important;
   }
 
-  .inline-payment-copy strong {
+  .inline-payment-copy strong,
+  .payment-delivery-launcher .inline-payment-copy strong {
     font-size: 17px !important;
   }
 
   .inline-payment-english {
-    font-size: 13px !important;
+    font-size: 12px !important;
   }
 }
