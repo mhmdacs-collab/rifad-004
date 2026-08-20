@@ -374,8 +374,12 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
   const settleCustomerDebt = useCallback(async (
     customerId: string,
     amountHalalas: number,
-    collectionMethod: DebtCollectionMethod,
+    collectionMethod?: DebtCollectionMethod,
   ): Promise<DebtSettlementResult | null> => {
+    if (!collectionMethod) {
+      setErrorMessage("اختر طريقة تحصيل السداد.");
+      return null;
+    }
     setBusy("customer-settlement");
     setErrorMessage(null);
     try {
