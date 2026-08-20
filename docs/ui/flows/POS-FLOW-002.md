@@ -1,6 +1,6 @@
 # POS-FLOW-002 — Restaurant Local Service Prototype
 
-Last updated: 2026-08-17
+Last updated: 2026-08-20
 
 ## Status
 
@@ -12,11 +12,27 @@ This executable subset proves the local-service interaction, open-place lifecycl
 
 Restaurant service and place management are separate configuration layers:
 
-1. **Restaurant service OFF** — retail/direct-sale mode. Do not force `محلي / سفري` wording into the cashier path.
-2. **Restaurant service ON + place management OFF** — simple restaurant. Direct **دفع** is operationally takeaway; **محلي** enters the normal checkout in one touch without asking for a place.
-3. **Restaurant service ON + place management ON** — advanced restaurant. **محلي** opens group/place selection and creates an open local order.
+1. **Restaurant service OFF** — retail/direct-sale mode. Do not force `محلي / سفري` wording into the cashier path. Touch and Basic use the retail ticket actions; Credit/settlement appears only when the effective POS configuration enables customer credit.
+2. **Restaurant service ON + place management OFF** — simple restaurant. A non-empty Touch basket exposes **`محلي | سفري`**. `محلي` marks dine-in and enters payment selection in one touch; `سفري` marks takeaway and enters payment selection in one touch. There is no redundant intermediate **دفع** button.
+3. **Restaurant service ON + place management ON** — advanced restaurant. A non-empty Touch basket still exposes **`محلي | سفري`**. `محلي` replaces the basket column with group/place selection and creates an open local order; `سفري` enters payment selection directly.
+4. **Basic / البيع السريع** — restaurant interaction and restaurant staging settings are not part of the cashier path. The mode remains retail/search-first even if restaurant service is enabled for the Touch screen on the same device.
 
-The current settings live in the POS only as UI-first staging configuration. Persistent business ownership is expected to move to Back Office later.
+The current restaurant settings live in the POS only as UI-first staging configuration. Persistent business ownership is expected to move to Back Office later.
+
+## Basket workspace rule
+
+The cashier keeps the catalog visible and focused. Operational subtasks replace the **ticket/basket column**, not the whole sales screen.
+
+Current basket-workspace tasks include:
+
+- customer search/profile/attachment;
+- Credit customer selection and confirmation;
+- customer debt settlement;
+- restaurant place selection and open-place recovery.
+
+A task exposes one back-to-basket affordance. Successful task completion returns to the basket automatically when another confirmation is not operationally necessary. Creating a customer from the attach flow saves and attaches that customer without a second "add to ticket" step.
+
+This is presentation/orchestration only: customer, credit, debt and restaurant mutations continue through their existing Rifad-owned contracts.
 
 ## Place grouping model
 
@@ -41,28 +57,35 @@ The Rifad domain does **not** require a hard-coded `table | room | session` type
 
 ## Advanced local flow
 
-`build basket → محلي → choose group/place → mock kitchen revision 1 → clear working basket → طلبات مفتوحة`
+`build basket → محلي → basket-column place selection → choose group/place → mock kitchen revision 1 → clear working basket → طلبات مفتوحة`
+
+Takeaway:
+
+`build basket → سفري → payment methods`
 
 Reopening:
 
-`empty basket → طلبات مفتوحة · N → reserved place → reconstruct order → edit → إرسال or دفع`
+`empty basket → طلبات مفتوحة · N → basket-column occupied-place view → reconstruct order → edit → إرسال or دفع`
 
 - **إرسال** updates the stored open order, increments the mock kitchen revision and clears the working basket again.
-- **دفع** uses the existing checkout flow. When payment succeeds, the matching open place is released.
+- **دفع** on a reopened dine-in order uses the existing checkout flow. When payment succeeds, the matching open place is released.
 - Cancelling checkout does not delete the stored local order.
+- Customer-credit completion of a reopened local order participates in the same pending-settlement closeout signal as Cash/Card; the place must not remain occupied merely because the payment method was Credit.
 
 ## Visual rules
 
 - Existing ticket header/footer geometry remains stable.
-- With a non-empty normal restaurant basket: **محلي | دفع**.
-- Empty basket + open local orders: **طلبات مفتوحة · N | دفع**; Open Orders becomes green while disabled Pay remains in its fixed slot.
+- With a non-empty normal restaurant Touch basket: **محلي | سفري**.
+- There is no third **دفع** button between order classification and the payment-method page.
+- Empty basket + advanced open local orders: **طلبات مفتوحة · N** is the single operational action.
 - Reopened order: **إرسال | دفع**.
 - Group tabs and place cards are large touch targets.
 - Place cards show their configured name directly; they do not repeat a hard-coded kind label.
 - cashier-facing place state is **متاحة / محجوزة**;
 - a **محجوزة** place uses a very light warm-red treatment while the order total remains the strongest green value;
 - item count is intentionally not shown;
-- wide layouts use a readable place grid; mobile uses readable cards instead of shrinking a desktop floor plan.
+- wide layouts use a readable place grid; mobile uses readable cards instead of shrinking a desktop floor plan;
+- basket-workspace forms keep human-sized Arabic type and touch targets; constrained height scrolls content instead of shrinking important text.
 
 ## Replaceable adapter boundary
 
@@ -106,15 +129,19 @@ See `docs/architecture/RESTAURANT_SERVICE_ADAPTER_BOUNDARY.md`.
 
 Automated coverage must prove at minimum:
 
+- simple restaurant presents **محلي | سفري**, not **محلي | دفع**;
 - simple local reaches checkout without a place-selection step;
+- Safari/takeaway reaches payment selection directly;
 - advanced local starts with exactly one **الطاولات** group and six default tables;
 - **الغرف** and **الجلسات** are not seeded by default;
+- advanced local place selection is rendered inside the basket column while the catalog remains visible;
 - advanced local selects an available place and clears the main basket;
 - open-order action appears on an empty basket;
-- a reserved place can be reopened;
+- a reserved place can be reopened from the basket column;
 - sending additions increments the mock kitchen revision while keeping one open place;
 - paying a reopened local order releases the place;
 - retail/off mode hides restaurant language;
+- Basic mode does not expose restaurant task actions or restaurant staging settings;
 - open orders prevent disabling the settings that own them;
 - TypeScript accepts the restaurant flow only through `RestaurantServiceContract` at the state boundary.
 
