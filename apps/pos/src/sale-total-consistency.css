@@ -1,0 +1,56 @@
+/* POS terminology consistency — the approved Arabic label "إجمالي البيع" maps to "Sale Total".
+ * Keep Arabic copy untouched; English is positional support only.
+ */
+
+.inline-checkout-rail--payment .inline-checkout-total-card {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+  grid-template-areas: "english amount arabic" !important;
+  align-items: center !important;
+  column-gap: clamp(8px, 1vw, 14px) !important;
+  padding-inline: clamp(13px, 1.35vw, 20px) !important;
+  direction: ltr !important;
+}
+
+.inline-checkout-rail--payment .inline-checkout-total-card > span {
+  grid-area: arabic;
+  justify-self: end;
+  direction: rtl;
+  white-space: nowrap;
+}
+
+.inline-checkout-rail--payment .inline-checkout-total-card > span > small {
+  display: none !important;
+}
+
+.inline-checkout-rail--payment .inline-checkout-total-card > h1 {
+  grid-area: amount;
+  justify-self: center;
+  margin: 0 !important;
+  direction: rtl;
+  white-space: nowrap;
+}
+
+.inline-checkout-rail--payment .inline-checkout-total-card::after {
+  content: "Sale Total";
+  grid-area: english;
+  justify-self: start;
+  color: rgba(255, 255, 255, .82);
+  font-family: Arial, sans-serif;
+  font-size: clamp(10.5px, .68vw, 12.5px);
+  font-weight: 650;
+  line-height: 1.2;
+  direction: ltr;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .inline-checkout-rail--payment .inline-checkout-total-card {
+    column-gap: 6px !important;
+    padding-inline: 10px !important;
+  }
+
+  .inline-checkout-rail--payment .inline-checkout-total-card::after {
+    font-size: 10px !important;
+  }
+}
