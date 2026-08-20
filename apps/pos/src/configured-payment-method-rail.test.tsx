@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { EffectivePosPaymentMethod } from "../../../contracts/posConfiguration";
 import { ConfiguredPaymentMethodRail } from "./components/ConfiguredPaymentMethodRail";
 import { money } from "./domain/money";
-import type { Ticket } from "./domain/models";
+import type { Customer, Ticket } from "./domain/models";
 
 const ticket: Ticket = {
   id: "ticket-map01",
@@ -26,13 +26,15 @@ const methods: readonly EffectivePosPaymentMethod[] = [
 ];
 
 const noDelivery = () => undefined;
+const emptyCustomerSearch = async (): Promise<readonly Customer[]> => [];
+const noCreateCustomer = async (): Promise<Customer | null> => null;
+const noChargeCredit = async (): Promise<Customer | null> => null;
 
 describe("POS-SCREEN-007 configured payment methods", () => {
-  it("renders enabled methods in merchant order with bilingual labels and dispatches cash/card/credit actions", async () => {
+  it("keeps direct tenders above and pins Credit + Delivery as separate special flows", async () => {
     const user = userEvent.setup();
     const onCash = vi.fn();
     const onCard = vi.fn();
-    const onCredit = vi.fn();
 
     render(
       <ConfiguredPaymentMethodRail
@@ -46,29 +48,33 @@ describe("POS-SCREEN-007 configured payment methods", () => {
         onBackToSales={() => undefined}
         onCash={onCash}
         onCard={onCard}
-        onCredit={onCredit}
+        onSearchCustomers={emptyCustomerSearch}
+        onCreateCustomer={noCreateCustomer}
+        onChargeCredit={noChargeCredit}
         onDeliveryCollect={noDelivery}
       />,
     );
 
-    const buttons = screen.getAllByRole("button").filter((button) => button.hasAttribute("data-payment-method-id"));
-    expect(buttons.map((button) => button.getAttribute("data-payment-method-id"))).toEqual(["cash", "mada", "credit", "delivery-hub"]);
+    const directButtons = screen.getAllByRole("button").filter((button) => button.hasAttribute("data-payment-method-id"));
+    expect(directButtons.map((button) => button.getAttribute("data-payment-method-id"))).toEqual(["cash", "mada"]);
     expect(screen.queryByText("طريقة متوقفة")).not.toBeInTheDocument();
     expect(screen.getByText("Cash")).toBeInTheDocument();
     expect(screen.getByText("Card")).toBeInTheDocument();
-    expect(screen.getByText("Credit")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /آجل — Credit/ })).toHaveAttribute("data-special-payment-flow", "credit");
+    expect(screen.getByRole("button", { name: /توصيل — Delivery/ })).toHaveAttribute("data-special-payment-flow", "delivery");
     expect(screen.getByRole("button", { name: /توصيل — Delivery/ })).toHaveAttribute("data-delivery-ready", "false");
-    expect(screen.queryByText(/استلام المبلغ/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/اختيار العميل وتسجيل الذمة/)).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /نقدًا — Cash/ }));
-    await user.click(screen.getByRole("button", { name: /آجل — Credit/ }));
     expect(onCash).toHaveBeenCalledTimes(1);
-    expect(onCredit).toHaveBeenCalledTimes(1);
     expect(onCard).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: /آجل — Credit/ }));
+    expect(screen.getByText("بيع آجل")).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "بحث العميل للبيع الآجل" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /توصيل — Delivery/ })).not.toBeInTheDocument();
   });
 
-  it("keeps one full-width column and uses a scroll-list contract when many methods are enabled", () => {
+  it("keeps one full-width scroll column for many direct methods", () => {
     const sixMethods: EffectivePosPaymentMethod[] = Array.from({ length: 6 }, (_, index) => ({
       id: `method-${index + 1}`,
       name: index === 2 ? "تحويل" : `طريقة ${index + 1}`,
@@ -91,7 +97,9 @@ describe("POS-SCREEN-007 configured payment methods", () => {
         onBackToSales={() => undefined}
         onCash={() => undefined}
         onCard={() => undefined}
-        onCredit={() => undefined}
+        onSearchCustomers={emptyCustomerSearch}
+        onCreateCustomer={noCreateCustomer}
+        onChargeCredit={noChargeCredit}
         onDeliveryCollect={noDelivery}
       />,
     );
@@ -102,9 +110,11 @@ describe("POS-SCREEN-007 configured payment methods", () => {
     expect(list).toHaveAttribute("data-payment-layout", "scroll-list");
     expect(screen.getByText("Transfer")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /تحويل — Transfer/ })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /آجل — Credit/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /توصيل — Delivery/ })).toBeInTheDocument();
   });
 
-  it("shows a safe no-method state while keeping Delivery as a separate visible family", () => {
+  it("shows a safe direct-method empty state while keeping Delivery visible", () => {
     render(
       <ConfiguredPaymentMethodRail
         ticket={ticket}
@@ -117,13 +127,16 @@ describe("POS-SCREEN-007 configured payment methods", () => {
         onBackToSales={() => undefined}
         onCash={() => undefined}
         onCard={() => undefined}
-        onCredit={() => undefined}
+        onSearchCustomers={emptyCustomerSearch}
+        onCreateCustomer={noCreateCustomer}
+        onChargeCredit={noChargeCredit}
         onDeliveryCollect={noDelivery}
       />,
     );
 
-    expect(screen.getByText("لا توجد طريقة دفع مفعّلة لهذا الجهاز.")).toBeInTheDocument();
+    expect(screen.getByText("لا توجد طريقة تحصيل مباشرة مفعّلة لهذا الجهاز.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /توصيل — Delivery/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /آجل — Credit/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /نقدًا/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /شبكة/ })).not.toBeInTheDocument();
   });
