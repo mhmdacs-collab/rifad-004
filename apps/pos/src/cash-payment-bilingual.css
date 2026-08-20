@@ -1,6 +1,8 @@
-/* Cash payment bilingual polish — Arabic stays primary; English is positional context only. */
+/* Cash payment bilingual polish — preserve the approved Arabic copy exactly.
+ * English is positional support only. Sizing is viewport-responsive for desktop and tablet POS.
+ */
 
-/* Do not translate the obvious page title or action buttons. */
+/* Do not translate obvious page/action controls. */
 .inline-checkout-rail--cash .inline-checkout-head strong::after,
 .inline-checkout-rail--cash .inline-complete-sale > span::after,
 .inline-checkout-rail--cash .inline-cancel-sale::after,
@@ -8,13 +10,15 @@
   content: none !important;
 }
 
-/* Total: Arabic right — amount center — English left. */
+/* Total: existing Arabic label right — amount center — English left. */
 .inline-checkout-rail--cash .inline-checkout-total-card {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
   grid-template-areas: "english amount arabic" !important;
   align-items: center !important;
-  column-gap: 10px !important;
+  min-height: clamp(72px, 8.2vh, 92px) !important;
+  column-gap: clamp(8px, 1vw, 14px) !important;
+  padding-inline: clamp(13px, 1.35vw, 20px) !important;
   direction: ltr !important;
 }
 
@@ -22,19 +26,13 @@
   grid-area: arabic;
   justify-self: end;
   direction: rtl;
-  font-size: 0 !important;
+  font-size: clamp(12px, .82vw, 14px) !important;
+  font-weight: 800 !important;
+  line-height: 1.2;
   white-space: nowrap;
 }
 
-.inline-checkout-rail--cash .inline-checkout-total-card > span::before {
-  content: "إجمالي المبلغ";
-  color: inherit;
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 750;
-  line-height: 1.2;
-}
-
+.inline-checkout-rail--cash .inline-checkout-total-card > span::before,
 .inline-checkout-rail--cash .inline-checkout-total-card > span::after {
   content: none !important;
 }
@@ -45,26 +43,29 @@
   margin: 0 !important;
   direction: rtl;
   white-space: nowrap;
+  font-size: clamp(30px, 2vw, 40px) !important;
+  line-height: 1 !important;
 }
 
 .inline-checkout-rail--cash .inline-checkout-total-card::after {
   content: "Total Amount";
   grid-area: english;
   justify-self: start;
-  color: rgba(255, 255, 255, .76);
+  color: rgba(255, 255, 255, .82);
   font-family: Arial, sans-serif;
-  font-size: 10.5px;
+  font-size: clamp(10.5px, .68vw, 12.5px);
   font-weight: 650;
   line-height: 1.2;
   direction: ltr;
   white-space: nowrap;
 }
 
-/* Amount received: Arabic on the right, English on the left. */
+/* Amount received: approved Arabic on the right, English on the left. */
 .inline-checkout-rail--cash .inline-cash-entry-heading {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
   align-items: end !important;
+  min-height: clamp(24px, 3vh, 32px);
   direction: ltr !important;
 }
 
@@ -72,6 +73,11 @@
   grid-column: 2;
   justify-self: end;
   direction: rtl;
+}
+
+.inline-checkout-rail--cash .inline-cash-entry-heading strong {
+  font-size: clamp(12px, .78vw, 14px) !important;
+  font-weight: 800 !important;
 }
 
 .inline-checkout-rail--cash .inline-cash-entry-heading strong::after {
@@ -83,22 +89,63 @@
   grid-column: 1;
   grid-row: 1;
   justify-self: start;
-  color: #7a8782;
+  color: #74817b;
   font-family: Arial, sans-serif;
-  font-size: 10px;
+  font-size: clamp(10px, .65vw, 12px);
   font-weight: 650;
   line-height: 1.2;
   direction: ltr;
   white-space: nowrap;
 }
 
-/* Change: Arabic right — amount center — English left. */
+.inline-checkout-rail--cash .inline-cash-input {
+  min-height: clamp(68px, 8.4vh, 88px) !important;
+}
+
+.inline-checkout-rail--cash .inline-cash-input input {
+  font-size: clamp(34px, 2.35vw, 46px) !important;
+  font-weight: 850 !important;
+}
+
+.inline-checkout-rail--cash .inline-cash-input > span {
+  font-size: clamp(12px, .8vw, 15px) !important;
+  font-weight: 800 !important;
+}
+
+/* Use the available vertical room for touch targets on taller cashier screens. */
+.inline-checkout-rail--cash .inline-cash-suggestions {
+  position: static !important;
+  gap: clamp(6px, .55vw, 9px) !important;
+}
+
+.inline-checkout-rail--cash .inline-cash-suggestions button {
+  min-height: clamp(46px, 5.5vh, 60px) !important;
+  font-size: clamp(11px, .75vw, 14px) !important;
+}
+
+.inline-checkout-rail--cash .inline-keypad {
+  gap: clamp(6px, .55vw, 9px) !important;
+}
+
+.inline-checkout-rail--cash .inline-keypad button {
+  min-height: clamp(52px, 6.3vh, 68px) !important;
+  font-size: clamp(18px, 1.25vw, 24px) !important;
+  font-weight: 800 !important;
+}
+
+.inline-checkout-rail--cash .inline-keypad-backspace {
+  font-size: clamp(21px, 1.4vw, 27px) !important;
+}
+
+/* Change: existing Arabic label right — amount center — English left. */
 .inline-checkout-rail--cash .inline-change-card {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
   grid-template-areas: "english amount arabic" !important;
   align-items: center !important;
-  column-gap: 10px !important;
+  min-height: clamp(72px, 8.4vh, 94px) !important;
+  column-gap: clamp(8px, 1vw, 14px) !important;
+  padding-inline: clamp(13px, 1.35vw, 20px) !important;
   direction: ltr !important;
 }
 
@@ -106,19 +153,13 @@
   grid-area: arabic;
   justify-self: end;
   direction: rtl;
-  font-size: 0 !important;
+  font-size: clamp(13px, .86vw, 15px) !important;
+  font-weight: 800 !important;
+  line-height: 1.2;
   white-space: nowrap;
 }
 
-.inline-checkout-rail--cash .inline-change-card > span::before {
-  content: "المتبقي للعميل";
-  color: inherit;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 800;
-  line-height: 1.2;
-}
-
+.inline-checkout-rail--cash .inline-change-card > span::before,
 .inline-checkout-rail--cash .inline-change-card > span::after {
   content: none !important;
 }
@@ -128,6 +169,8 @@
   justify-self: center;
   direction: rtl;
   white-space: nowrap;
+  font-size: clamp(28px, 1.9vw, 38px) !important;
+  line-height: 1 !important;
 }
 
 .inline-checkout-rail--cash .inline-change-card::before {
@@ -136,15 +179,64 @@
   justify-self: start;
   color: currentColor;
   font-family: Arial, sans-serif;
-  font-size: 10.5px;
+  font-size: clamp(10.5px, .68vw, 12.5px);
   font-weight: 650;
   line-height: 1.2;
-  opacity: .72;
+  opacity: .74;
   direction: ltr;
   white-space: nowrap;
 }
 
-/* Keep the keypad, quick amounts and footer visually untouched. */
-.inline-checkout-rail--cash .inline-cash-suggestions {
-  position: static !important;
+/* Shorter screens and tablets: retain touchability but compress vertical rhythm before overflow. */
+@media (max-height: 820px) {
+  .inline-checkout-rail--cash .inline-checkout-total-card {
+    min-height: 70px !important;
+  }
+
+  .inline-checkout-rail--cash .inline-cash-input {
+    min-height: 66px !important;
+  }
+
+  .inline-checkout-rail--cash .inline-cash-suggestions button {
+    min-height: 44px !important;
+  }
+
+  .inline-checkout-rail--cash .inline-keypad button {
+    min-height: 50px !important;
+  }
+
+  .inline-checkout-rail--cash .inline-change-card {
+    min-height: 68px !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .inline-checkout-rail--cash .inline-checkout-total-card,
+  .inline-checkout-rail--cash .inline-change-card {
+    column-gap: 6px !important;
+    padding-inline: 10px !important;
+  }
+
+  .inline-checkout-rail--cash .inline-checkout-total-card > span,
+  .inline-checkout-rail--cash .inline-change-card > span {
+    font-size: 12px !important;
+  }
+
+  .inline-checkout-rail--cash .inline-checkout-total-card::after,
+  .inline-checkout-rail--cash .inline-change-card::before,
+  .inline-checkout-rail--cash .inline-cash-entry-heading::before {
+    font-size: 10px !important;
+  }
+
+  .inline-checkout-rail--cash .inline-checkout-total-card > h1 {
+    font-size: clamp(27px, 4vw, 34px) !important;
+  }
+
+  .inline-checkout-rail--cash .inline-cash-input input {
+    font-size: clamp(32px, 5vw, 40px) !important;
+  }
+
+  .inline-checkout-rail--cash .inline-change-card > strong {
+    font-size: clamp(27px, 4vw, 34px) !important;
+  }
 }
