@@ -1,0 +1,51 @@
+/*
+ * Rifad POS — Visual Pass 33
+ * Cash touch refinement: the tender starts at the exact total already, so the
+ * redundant exact-total shortcut is removed visually and the remaining quick
+ * amounts get wider, easier touch targets.
+ */
+
+.inline-cash-suggestions {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.inline-cash-suggestions > button:first-child {
+  display: none;
+}
+
+.inline-cash-suggestions button {
+  height: 46px;
+  padding-inline: 6px;
+  font-size: .68rem;
+}
+
+.inline-keypad {
+  gap: 8px;
+}
+
+.inline-keypad button {
+  min-height: 56px;
+  height: 56px;
+  font-size: 1.12rem;
+}
+
+@media (min-width: 781px) and (max-height: 820px) {
+  .inline-cash-suggestions {
+    gap: 6px;
+  }
+
+  .inline-cash-suggestions button {
+    height: 39px;
+    font-size: .62rem;
+  }
+
+  .inline-keypad {
+    gap: 6px;
+  }
+
+  .inline-keypad button {
+    min-height: 44px;
+    height: 44px;
+  }
+}

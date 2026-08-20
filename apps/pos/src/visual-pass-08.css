@@ -1,0 +1,278 @@
+/*
+ * Rifad POS — Visual Pass 08
+ * Hard-isolates checkout ticket geometry from the sale basket styles.
+ */
+
+/* Checkout column is a physical left-side audit surface on wide RTL POS screens. */
+.checkout-workspace > .checkout-ticket {
+  display: flex;
+  min-width: 0;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  direction: rtl;
+  background: #fff;
+  border-inline-end: 1px solid #e2e7e4;
+}
+
+.checkout-workspace > .checkout-ticket > .ticket-panel--checkout {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  background: #fff;
+}
+
+.checkout-workspace .ticket-panel--checkout > .ticket-header {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.checkout-workspace .ticket-panel--checkout > .ticket-lines {
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  padding: 4px 18px 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  box-sizing: border-box;
+}
+
+/*
+ * IMPORTANT: the legacy sale basket defines .ticket-line as a three-column grid
+ * whose first column is only 11px wide. Checkout rows are a completely different
+ * geometry, so reset that parent here. Without this reset the entire checkout row
+ * gets auto-placed into the legacy 11px column and appears visually empty.
+ */
+.checkout-workspace .ticket-panel--checkout .ticket-line {
+  display: block !important;
+  grid-template-columns: none !important;
+  grid-template-rows: none !important;
+  gap: 0 !important;
+  align-items: stretch !important;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  padding: 0 !important;
+  overflow: visible;
+  box-sizing: border-box;
+  border-bottom: 1px solid #edf0ee;
+}
+
+/* Checkout line: name/meta are one compact block on the right; total is a strong audit value on the left. */
+.checkout-ticket-row {
+  width: 100%;
+  min-width: 0;
+  min-height: 82px;
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr);
+  grid-template-areas: "total copy";
+  align-items: center;
+  column-gap: 14px;
+  padding: 11px 2px;
+  direction: ltr;
+  box-sizing: border-box;
+}
+
+.checkout-ticket-row-copy {
+  grid-area: copy;
+  min-width: 0;
+  width: 100%;
+  display: grid;
+  align-content: center;
+  justify-items: end;
+  gap: 4px;
+  direction: rtl;
+  text-align: right;
+  overflow: hidden;
+}
+
+.checkout-ticket-row-name {
+  min-width: 0;
+  width: 100%;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #122019;
+  font-size: 1.04rem;
+  font-weight: 800;
+  line-height: 1.38;
+}
+
+.checkout-ticket-row-meta {
+  min-width: 0;
+  width: max-content;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  justify-self: end;
+  gap: 6px;
+  direction: ltr;
+  color: #6b7772;
+  font-size: .78rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.checkout-ticket-row-meta b {
+  color: var(--brand);
+  font-size: .84rem;
+  font-weight: 900;
+}
+
+.checkout-ticket-row-total {
+  grid-area: total;
+  align-self: center;
+  justify-self: start;
+  min-width: 0;
+  width: 108px;
+  overflow: hidden;
+  direction: ltr;
+  text-align: left;
+  white-space: nowrap;
+  color: #0d1814;
+  font-size: 1.08rem;
+  font-weight: 900;
+  letter-spacing: -.01em;
+}
+
+.checkout-ticket-row-total .money-amount {
+  width: 100%;
+  justify-content: flex-start;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+/* Footer is part of the grid, never part of the scrolling line list. */
+.checkout-workspace .ticket-panel--checkout > .ticket-totals--audit {
+  position: relative;
+  inset: auto;
+  z-index: 2;
+  align-self: end;
+  width: calc(100% - 28px);
+  min-width: 0;
+  max-width: calc(100% - 28px);
+  margin: 10px 14px 12px !important;
+  padding: 0 !important;
+  overflow: hidden;
+  box-sizing: border-box;
+  background: #fff;
+}
+
+.checkout-workspace .ticket-panel--checkout > .ticket-totals--audit > div {
+  min-width: 0;
+  width: 100%;
+  display: grid !important;
+  grid-template-columns: 108px minmax(0, 1fr);
+  grid-template-areas: "value label";
+  align-items: center;
+  gap: 14px;
+  direction: ltr;
+  box-sizing: border-box;
+}
+
+.checkout-workspace .ticket-panel--checkout > .ticket-totals--audit > div > :first-child {
+  grid-area: label;
+  min-width: 0;
+  direction: rtl;
+  text-align: right;
+}
+
+.checkout-workspace .ticket-panel--checkout > .ticket-totals--audit > div > :last-child {
+  grid-area: value;
+  min-width: 0;
+  direction: ltr;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.checkout-workspace .ticket-panel--checkout .ticket-tax-row {
+  min-height: 54px;
+}
+
+.checkout-workspace .ticket-panel--checkout .ticket-grand-total {
+  min-height: 68px;
+  font-size: 1.14rem !important;
+}
+
+/* Make manual tender visually unmistakable. */
+.cash-input-wrap::after {
+  content: "يمكنك كتابة أي مبلغ يدويًا — مثال: 105.00";
+  display: block;
+  margin-top: 7px;
+  color: #66736d;
+  font-size: .72rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+/* Sale basket: slightly calmer product name, stronger row total. */
+.ticket-panel--sale .ticket-product-name {
+  font-size: 1.04rem !important;
+  line-height: 1.48;
+  font-weight: 800;
+}
+
+.ticket-panel--sale .ticket-line-total {
+  color: #0f1b16;
+  font-size: 1.08rem !important;
+  font-weight: 900 !important;
+}
+
+.ticket-panel--sale .ticket-line-total .money-amount {
+  font-size: 1em !important;
+  font-weight: inherit;
+}
+
+@media (min-width: 1500px) {
+  .checkout-ticket-row {
+    grid-template-columns: 116px minmax(0, 1fr);
+    grid-template-areas: "total copy";
+    min-height: 86px;
+    column-gap: 16px;
+    padding-block: 12px;
+  }
+
+  .checkout-ticket-row-total {
+    width: 116px;
+    font-size: 1.12rem;
+  }
+
+  .checkout-ticket-row-name {
+    font-size: 1.06rem;
+  }
+
+  .checkout-workspace .ticket-panel--checkout > .ticket-totals--audit > div {
+    grid-template-columns: 116px minmax(0, 1fr);
+  }
+
+  .ticket-panel--sale .ticket-product-name {
+    font-size: 1.06rem !important;
+  }
+
+  .ticket-panel--sale .ticket-line-total {
+    font-size: 1.12rem !important;
+  }
+}
+
+@media (max-width: 1180px) and (min-width: 781px) {
+  .checkout-ticket-row {
+    grid-template-columns: 94px minmax(0, 1fr);
+  }
+
+  .checkout-ticket-row-total {
+    width: 94px;
+    font-size: 1rem;
+  }
+
+  .checkout-workspace .ticket-panel--checkout > .ticket-totals--audit > div {
+    grid-template-columns: 94px minmax(0, 1fr);
+  }
+}

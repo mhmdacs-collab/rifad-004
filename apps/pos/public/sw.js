@@ -1,5 +1,21 @@
-const CACHE_NAME = "rifad-pos-shell-v1";
-const SHELL = ["/", "/manifest.webmanifest", "/brand/rifad-logo-light.png", "/brand/rifad-logo-dark.png"];
+const CACHE_NAME = "rifad-pos-shell-v2";
+const SHELL = [
+  "/",
+  "/manifest.webmanifest",
+  "/brand/rifad-logo-light.png",
+  "/brand/rifad-logo-dark.png",
+  "/fonts/cairo/cairo-arabic-400-normal.woff2",
+  "/fonts/cairo/cairo-arabic-500-normal.woff2",
+  "/fonts/cairo/cairo-arabic-600-normal.woff2",
+  "/fonts/cairo/cairo-arabic-700-normal.woff2",
+  "/fonts/cairo/cairo-arabic-800-normal.woff2",
+  "/fonts/cairo/cairo-latin-400-normal.woff2",
+  "/fonts/cairo/cairo-latin-500-normal.woff2",
+  "/fonts/cairo/cairo-latin-600-normal.woff2",
+  "/fonts/cairo/cairo-latin-700-normal.woff2",
+  "/fonts/cairo/cairo-latin-800-normal.woff2",
+  "/fonts/cairo/OFL-1.1.txt",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL)));

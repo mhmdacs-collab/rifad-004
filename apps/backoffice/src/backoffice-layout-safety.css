@@ -1,0 +1,81 @@
+/* Layout safety layer.
+   Keeps the 2026 visual treatment without allowing the polish layer to change
+   the proven Back Office shell geometry. Load this file last. */
+
+.bo-shell {
+  display: block !important;
+  min-height: 100vh;
+  padding-top: 62px !important;
+}
+
+.bo-topbar {
+  position: fixed !important;
+  inset: 0 0 auto 0 !important;
+  width: auto !important;
+  z-index: 60 !important;
+}
+
+.bo-sidebar--modern {
+  position: fixed !important;
+  top: 62px !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: auto !important;
+  width: 286px !important;
+  height: auto !important;
+  max-height: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  z-index: 40 !important;
+}
+
+.bo-main {
+  min-width: 0;
+  min-height: calc(100vh - 62px) !important;
+  margin: 0 286px 0 0 !important;
+  padding: 0 !important;
+}
+
+.bo-modal-backdrop {
+  top: 62px !important;
+  right: 286px !important;
+}
+
+@media (max-width: 1150px) and (min-width: 781px) {
+  .bo-sidebar--modern {
+    width: 250px !important;
+  }
+
+  .bo-main {
+    margin-right: 250px !important;
+  }
+
+  .bo-modal-backdrop {
+    right: 250px !important;
+  }
+}
+
+@media (max-width: 780px) {
+  .bo-shell {
+    padding-top: 62px !important;
+  }
+
+  .bo-sidebar--modern {
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    border-left: 0 !important;
+    border-bottom: 1px solid var(--bo26-line) !important;
+  }
+
+  .bo-main {
+    margin: 0 !important;
+    min-height: auto !important;
+  }
+
+  .bo-modal-backdrop {
+    top: 62px !important;
+    right: 0 !important;
+  }
+}

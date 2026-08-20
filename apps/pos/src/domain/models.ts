@@ -33,14 +33,53 @@ export type TicketLine = Readonly<{
   tone: ProductTone;
 }>;
 
+export type CustomerDetails = Readonly<{
+  email: string;
+  address: string;
+  city: string;
+  region: string;
+  postalCode: string;
+  country: string;
+  customerCode: string;
+  taxNumber?: string;
+  note: string;
+}>;
+
+export type CustomerReference = Readonly<{
+  id: string;
+  name: string;
+  mobile: string;
+  details: CustomerDetails;
+}>;
+
 export type Ticket = Readonly<{
   id: string;
   sequence: number;
   lines: readonly TicketLine[];
+  customer: CustomerReference | null;
   subtotal: Money;
+  loyaltyRedemption: Money;
   taxIncluded: Money;
   total: Money;
   updatedAt: string;
+}>;
+
+export type Customer = Readonly<{
+  id: string;
+  name: string;
+  mobile: string;
+  details: CustomerDetails;
+  debt: Money;
+}>;
+
+export type DebtLedgerEntry = Readonly<{
+  id: string;
+  customerId: string;
+  kind: "opening" | "credit-sale" | "payment";
+  direction: "debit" | "credit";
+  amount: Money;
+  createdAt: string;
+  ticketSequence: number | null;
 }>;
 
 export type EmployeeSession = Readonly<{
@@ -57,15 +96,30 @@ export type DeviceSession = Readonly<{
   linkedEmail: string;
 }>;
 
+export type ReceiptItem = Readonly<{
+  productId: string;
+  name: string;
+  quantity: number;
+  unitPrice: Money;
+  lineTotal: Money;
+}>;
+
 export type Receipt = Readonly<{
   id: string;
   number: string;
+  paymentMethod: "cash" | "card" | "credit";
+  items: readonly ReceiptItem[];
+  subtotal: Money;
+  loyaltyRedemption: Money;
+  taxIncluded: Money;
   total: Money;
   tendered: Money;
   change: Money;
+  loyaltyEarned: Money;
   completedAt: string;
   employeeName: string;
   branchName: string;
+  customer: CustomerReference | null;
 }>;
 
 export type PrintDeliveryStatus = "idle" | "queued" | "printed" | "failed" | "delivery-unknown";

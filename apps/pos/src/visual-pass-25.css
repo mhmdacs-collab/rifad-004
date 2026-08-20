@@ -1,0 +1,39 @@
+/*
+ * Rifad POS — Visual Pass 25
+ * Arabic-safe app-bar title metrics for the touch sale screen.
+ * The earlier app-bar pass used line-height: 1 together with overflow: hidden;
+ * that can clip Arabic ascenders/descenders even when horizontal space is fine.
+ */
+
+.sale-screen-touch .current-page-title,
+.sale-screen-touch .layout-title {
+  box-sizing: border-box;
+  line-height: 1.65 !important;
+  min-height: 38px;
+  padding-block: 4px 5px;
+}
+
+.sale-screen-touch .current-page-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Compact cashier displays still need enough vertical glyph clearance. */
+@media (min-width: 781px) and (max-height: 760px) {
+  .sale-screen-touch .current-page-title,
+  .sale-screen-touch .layout-title {
+    min-height: 36px;
+    padding-block: 3px 4px;
+    line-height: 1.6 !important;
+  }
+}
+
+@media (max-width: 780px) {
+  .sale-screen-touch .current-page-title,
+  .sale-screen-touch .layout-title {
+    min-height: 36px;
+    padding-block: 3px 4px;
+    line-height: 1.6 !important;
+  }
+}

@@ -1,0 +1,186 @@
+/* Rifad POS — Visual Pass 12
+ * Always-print device preference + receipt history/reprint surface.
+ */
+
+.print-always-toggle {
+  min-height: 72px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid #dce3df;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.print-always-toggle input {
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--brand);
+  flex: 0 0 auto;
+}
+
+.print-always-toggle > span {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.print-always-toggle strong {
+  color: #16251e;
+  font-size: .88rem;
+}
+
+.print-always-toggle small {
+  color: #6b7772;
+  font-size: .7rem;
+  line-height: 1.75;
+}
+
+.print-always-toggle--summary {
+  margin-top: 16px;
+  text-align: right;
+}
+
+.receipts-screen {
+  min-height: 100vh;
+  direction: rtl;
+  background: #f5f7f6;
+}
+
+.receipts-header {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 22px;
+  color: #fff;
+  background: var(--brand);
+}
+
+.receipts-header strong {
+  font-size: .95rem;
+}
+
+.receipts-content {
+  width: min(100% - 32px, 980px);
+  margin: 28px auto;
+}
+
+.receipts-list {
+  display: grid;
+  gap: 10px;
+}
+
+.receipt-row {
+  min-height: 96px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 140px minmax(150px, 210px);
+  align-items: center;
+  gap: 18px;
+  padding: 16px 18px;
+  background: #fff;
+  border: 1px solid #dfe5e2;
+  border-radius: 10px;
+}
+
+.receipt-row-main {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.receipt-row-main strong {
+  justify-self: start;
+  color: #14231c;
+  font-size: .94rem;
+}
+
+.receipt-row-main span,
+.receipt-row-main small {
+  color: #6a7771;
+  font-size: .7rem;
+}
+
+.receipt-row-total {
+  direction: ltr;
+  text-align: center;
+  color: #14231c;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.receipt-row-print {
+  display: grid;
+  gap: 6px;
+  justify-items: stretch;
+}
+
+.receipt-row-print button {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: var(--brand-dark);
+  background: #fff;
+  border: 1px solid #b9cbc3;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: .76rem;
+  font-weight: 800;
+}
+
+.receipt-row-print button:hover:not(:disabled) {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+
+.receipt-row-print button:disabled {
+  opacity: .55;
+  cursor: wait;
+}
+
+.receipt-print-warning,
+.receipt-print-failed,
+.receipt-print-ok {
+  font-size: .63rem;
+  line-height: 1.55;
+}
+
+.receipt-print-warning { color: #8a5a21; }
+.receipt-print-failed { color: #9a4138; }
+.receipt-print-ok { color: var(--brand); }
+
+.receipts-empty {
+  min-height: 58vh;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  text-align: center;
+  color: #6b7772;
+}
+
+.receipts-empty svg { color: var(--brand); }
+.receipts-empty strong { color: #1b2923; font-size: 1.05rem; }
+.receipts-empty span { max-width: 500px; font-size: .76rem; line-height: 1.8; }
+
+@media (max-width: 780px) {
+  .receipts-content {
+    width: calc(100% - 20px);
+    margin: 14px auto;
+  }
+
+  .receipt-row {
+    grid-template-columns: minmax(0, 1fr) 100px;
+    gap: 10px;
+  }
+
+  .receipt-row-print {
+    grid-column: 1 / -1;
+  }
+}

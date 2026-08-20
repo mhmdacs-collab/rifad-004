@@ -1,67 +1,256 @@
 # Current Rifad Decisions
 
-These decisions supersede earlier architecture proposals stored under `docs/research/historical-proposals/` when they conflict.
+Last updated: 2026-08-19
+
+These decisions supersede earlier architecture proposals under `docs/research/historical-proposals/` when they conflict. Detailed capability documents remain authoritative for the implementation boundary of their respective capability.
 
 ## D-001 — Rifad owns the core
 
-Rifad is not built as a branded shell over a donor POS/ERP. External systems may supply modules, algorithms or adapters, but they do not define Rifad's contracts or product ownership.
+Rifad is not a branded shell over a donor POS/ERP. External systems may supply modules, algorithms or adapters but do not define Rifad contracts or product ownership.
 
 ## D-002 — UI-first
 
-The UI phase target is the complete interactive product shell: POS, Back Office, Dashboard, KDS and CDS. It is delivered through manifest-gated vertical flows. Missing backend capabilities are represented by mock adapters behind real Rifad contracts.
+Build the interactive product shell through Rifad-owned contracts and replaceable adapters while exposing the durable data/contract requirements production will need.
+
+UI-first does not mean infrastructure must wait until every screen is complete; reusable infrastructure may be proved earlier when it is required to validate a real vertical product flow and does not freeze unfinished domain meanings.
 
 ## D-003 — Primary UI stack
 
-Use React + TypeScript + Vite for the primary interface. The same product UI is hosted in a desktop application shell on Windows and installed as a PWA on supported tablet/mobile platforms.
+Use React + TypeScript + Vite. Windows hosts the same product UI in an application shell; supported tablet/mobile uses an installable PWA-class path unless a later proven host is adopted behind the same Rifad contracts.
 
-## D-004 — Loyverse as functional/workflow reference
+## D-004 — Loyverse as primary functional baseline
 
-Loyverse is the primary functional/workflow reference for screen inventory, interaction meaning, states, prerequisites and operational flows. Rifad independently implements the experience using Rifad branding and Rifad-owned code/contracts.
+Loyverse is the primary workflow/ergonomic reference for screen inventory, interaction meaning, states, prerequisites and operational flows. Rifad independently owns its implementation, data, branding and contracts.
+
+For synchronization, Loyverse is a **behavioral baseline** only: connected changes are expected to propagate quickly, offline sales remain durable locally and replay after reconnect, and permissions determine allowed mutations. Its proprietary internal sync technology is not known and must not be invented from observation.
 
 ## D-005 — Puzzle modules
 
-Capabilities are replaceable modules behind stable contracts. Donor language/framework does not determine Rifad architecture.
+Capabilities are replaceable modules behind stable Rifad-owned contracts. Donor language/framework does not determine Rifad architecture.
 
 ## D-006 — Donor projects are not repaired for their own sake
 
-If extracting a useful capability requires broad donor repairs, evaluate another donor or reimplement the characterized behavior.
+If extracting one capability requires broad donor repair, evaluate another donor or reimplement characterized behavior.
 
 ## D-007 — Local-first
 
-Offline-capable POS operation, durable local state, idempotency and synchronization are core design requirements. Exact implementation is selected behind Rifad-owned contracts.
+Offline-capable POS operation, durable local state, idempotency and synchronization are core product requirements. Exact implementation remains behind Rifad-owned boundaries.
 
 ## D-008 — ZATCA is core
 
-Saudi fiscal compliance is a first-class Rifad domain. It may use/adapt proven implementations and official specifications but remains behind a Rifad fiscal contract.
+Saudi fiscal compliance is first-class Rifad domain work behind a Rifad fiscal contract/state model.
 
 ## D-009 — Accounting is replaceable
 
-Odoo, ERPNext or other accounting/ERP engines may be connected through adapters. None is the owner of the finalized Rifad local sale contract by default.
+Odoo, ERPNext or another accounting engine may connect through adapters. None owns finalized Rifad sale truth by default.
 
 ## D-010 — Historical research stays available
 
-Existing Loyverse and open-source material is retained under `docs/research/` as research evidence. Statements such as “Odoo is the fixed core” are historical proposals, not current binding architecture.
+Older Odoo/hybrid/open-source proposals remain research evidence, not binding architecture.
 
 ## D-011 — Donor composition happens inside Rifad
 
-When multiple donors solve different parts of a capability, their selected logic is composed behind Rifad-owned contracts/core/adapters. One donor is never promoted to the integration base merely because it supplied the first implementation.
+Multiple proven donor capabilities may be composed behind Rifad contracts. The first donor never becomes the hidden integration base.
 
 ## D-012 — Existing code is an accelerator, not authority
 
-Rifad starts from proven implementations, tests, protocols and failure evidence whenever practical. A donor slice is adopted only after execution, source/test inspection, license verification and Rifad conformance validation.
+Adopt proven implementations/tests/protocols where practical only after execution, source/test inspection, failure characterization, license verification and Rifad conformance review.
 
 ## D-013 — Support is a tested capability matrix
 
-Rifad does not promise “any device” or “any integration” without evidence. Hardware and external-system support is published as explicit protocol/model/capability combinations backed by tests. Generic standards support and certified devices are reported separately.
+Do not claim generic device/integration support without evidence. Publish supported protocol/model/capability combinations and distinguish standards from certified/tested devices.
 
 ## D-014 — UI implementation is manifest-gated
 
-Every screen, action, state and end-to-end flow receives a stable ID linked to source evidence. Code may start only for a `ready` screen or the explicitly bounded subset of a `ready` flow. Missing behavior is resolved in the manifest before implementation.
+Every screen/action/state/flow receives stable IDs. Implement only ready screens/flows or explicitly bounded subsets and update the manifest when behavior changes.
 
 ## D-015 — Rifad owns visual authority
 
-Rifad's design system owns final visual tokens, assets and component styling. Loyverse remains the functional/workflow and ergonomic baseline. Another interface may influence a narrow pattern only after an explicit visual decision; it cannot silently change logic or flows.
+Rifad owns final visual tokens/assets/component styling. External interfaces may be direct execution references for approved hierarchy/interaction decisions without becoming source-code or brand dependencies.
 
 ## D-016 — Build vertical flows, not disconnected screen museums
 
-Implementation milestones prove an end-to-end user outcome through mocks. The first authorized milestone is `POS-FLOW-001`, a retail cash sale slice spanning entry, PIN, sales, cash payment, success and a new sale.
+Milestones prove end-to-end outcomes through Rifad contracts/adapters.
+
+Current executable ready flows include:
+
+- `POS-FLOW-001` — retail cash sale slice;
+- `POS-FLOW-002` — restaurant local-service prototype;
+- `POS-FLOW-006` — tablet sale-page layout;
+- `BO-FLOW-002` — bounded Back Office catalog management slice.
+
+MAP-00 additionally records already-existing executable customer/credit/loyalty, receipt/reprint and mock-card behavior that outgrew older manifest wording. That reconciliation does not automatically authorize future scope expansion.
+
+## D-017 — POS is touch-first and human-scaled
+
+> **Touch first, then human visual clarity, then beauty.**
+
+Constrained screens change layout/density/wrapping/scrolling/columns before shrinking important targets.
+
+## D-018 — Every visible durable field must be traceable
+
+`docs/ui/POS_UI_NAMING_AND_FIELD_REGISTER.md` records canonical terminology, current fields, gaps, reserved integration facts, derived values and UI-only state. Update it whenever product/UI work exposes new durable meaning.
+
+## D-019 — Checkout preserves cashier spatial context
+
+Accepted progression is `basket → payment methods → cash/card → success`. The catalog remains visible as frozen context while the transaction rail changes state.
+
+## D-020 — Mock payment UX is not production terminal support
+
+Mock **شبكة / مدى** validates UX/data shape only. Production support requires a proven provider/terminal adapter, durable payment records, decline/recovery, reconciliation/refund scope, security review and capability evidence.
+
+## D-021 — Frequent primary actions stay outside scrolling content
+
+Completion actions such as **دفع / سداد / طباعة / بيع جديد** occupy stable action/footer regions whenever practical. Repeatable content absorbs scrolling first.
+
+## D-022 — Transaction operation card keeps one stable two-slot geometry
+
+Rifad keeps the same two physical transaction slots, width, padding, gap, touch height and bottom placement across adjacent sale/payment/success states. Ordinary RTL meaning keeps secondary/state action on the right and active completion on the left unless an approved visual decision says otherwise.
+
+Current examples include restaurant `محلي | دفع`, reopened local order `إرسال | دفع`, cash `إلغاء الفاتورة | سداد`, and success `طباعة | بيع جديد`.
+
+## D-023 — Fulfillment, sales channel and payment/collection are separate durable meanings
+
+Do not overload one field with restaurant fulfillment, delivery platform and payment state.
+
+- fulfillment: takeaway / dine-in / delivery;
+- sales channel: direct POS / Keeta / HungerStation / Jahez / Ninja / future channels;
+- payment/collection/settlement: cash/Mada/customer credit/platform prepaid/due on delivery/platform settlement.
+
+Fast UI may combine defaults while durable reporting/accounting retains the distinctions.
+
+## D-024 — Restaurant service classification and place management are separate configuration layers
+
+Restaurant semantics are optional and must not leak into retail/direct workflows.
+
+- restaurant service OFF: ordinary direct sale;
+- restaurant service ON + place management OFF: `محلي` can complete dine-in without exact place;
+- restaurant service ON + place management ON: choose `PlaceGroup → ServicePlace`, keep/reopen an open local order, send preparation state and release the place after successful payment.
+
+Current `POS-FLOW-002` is a local/mock UI proof only. Persistent configuration belongs primarily in Back Office. It does not claim final multi-device table sync, real KDS/printer transport or production persistence.
+
+## D-025 — Product pricing can vary by sales channel without making channel only a payment method
+
+Support base price plus authorized branch/channel/pricelist overrides. Manual channel choice must show recalculated total before completion. API-originated orders preserve actual sold-price snapshots. Platform commission/settlement fee is separate from customer-facing price.
+
+## D-026 — Kitchen dispatch is order state, not a universal payment side effect
+
+Preparation dispatch follows fulfillment/order lifecycle and later requires durable dispatch identity, delta/revision semantics, idempotency/outbox and real printer/KDS transport evidence. Current restaurant behavior proves only mock state transitions.
+
+## D-027 — Delivery integrations are capability-based adapters; direct and aggregator modes are both valid
+
+Delivery provider schemas never become Rifad public contracts. Direct adapters and aggregator adapters are both valid according to proven capabilities/onboarding economics.
+
+API-originated orders should arrive with channel, fulfillment, sold prices and payment/collection state already normalized. The preferred cashier concept is one online-orders queue with many adapters behind it.
+
+See `docs/research/restaurant-pos/DELIVERY_PLATFORM_INTEGRATION_BENCHMARK_2026-08-17.md`.
+
+## D-028 — General POS runtime is dependency-injected behind a Rifad-owned contract
+
+`PosRuntimeContract` is the aggregate runtime boundary. The composition root selects an implementation and injects it into POS flows. Donor/mock/runtime details stop at the adapter boundary and replacement runtimes must pass reusable conformance probes.
+
+See `docs/architecture/POS_RUNTIME_ADAPTER_BOUNDARY.md`.
+
+## D-029 — Local persistence and transactional outbox are Rifad-owned and separate from LAN, Sync and fiscal
+
+`LocalPersistenceContract` owns stable installation identity, branch/device context, module-private versioned snapshots, revision metadata, transactional outbox semantics, stable event identity/deduplication, retry/failure bookkeeping and acknowledgement.
+
+A completed offline-capable sale becomes a durable Rifad fact before downstream work. Retry must never create a second sale.
+
+`BrowserLocalPersistence` and historical localStorage compatibility are staging evidence, not production database selection. LAN, cloud Sync and ZATCA/Fatoora remain separate capabilities.
+
+See `docs/architecture/LOCAL_PERSISTENCE_AND_OUTBOX_BOUNDARY.md`.
+
+## D-030 — Product/UI field discovery precedes final production data-model freeze, not all infrastructure proof
+
+Rifad does not freeze its final production SQL/database model merely because adapter/local-persistence foundations exist.
+
+Current UI/product work must continue discovering durable meanings through bounded vertical slices and tracing them in `docs/ui/POS_UI_NAMING_AND_FIELD_REGISTER.md`.
+
+Reusable infrastructure may be researched or proved before full feature completion when all of the following are true:
+
+1. it enables a real product/architecture question that otherwise cannot be evaluated;
+2. it is replaceable behind a Rifad-owned contract;
+3. it tolerates future schema/field growth through normal schema/configuration evolution;
+4. it does not force unfinished provider/database shapes to become Rifad domain truth.
+
+The synchronization candidate work completed so far is retained as valid infrastructure evidence under this rule. **Infrastructure proof does not determine current product sequencing.** D-033 now controls when Rifad resumes synchronization adoption work.
+
+Final **business/data-model freeze** still follows sufficient product-field discovery. No sync proof freezes catalog, restaurant, shift, payment, tax, branch or other unfinished domain meanings.
+
+See `docs/architecture/BACK_OFFICE_CATALOG_BOUNDARY.md`, `docs/architecture/LOCAL_PERSISTENCE_AND_OUTBOX_BOUNDARY.md` and `docs/architecture/SYNC_CAPABILITY_BOUNDARY.md`.
+
+## D-031 — Merchant pricing uses reusable option groups with sparse item overrides; add-ons support reusable and item-private scope
+
+The merchant-facing concept is **مجموعات الخيارات**, not repeated technical Cartesian variant construction.
+
+Example: `أحجام البيتزا → صغير 10 | وسط 20 | كبير 25`.
+
+One reusable group may serve many items. Item pricing is one of:
+
+1. fixed price;
+2. reusable option group with inherited prices;
+3. reusable option group with sparse per-item overrides;
+4. item-private option prices.
+
+Unchanged values continue inheriting the shared group. Add-ons remain separate: reusable general add-ons vs item-private add-ons.
+
+Legacy generated `CatalogVariant*` structures are staging migration compatibility only. Until POS has an approved option/add-on chooser, option-priced items remain hidden from the default POS reader rather than being sold at a fallback/minimum price.
+
+See `docs/ui/flows/BO-FLOW-002.md` and `docs/architecture/BACK_OFFICE_CATALOG_BOUNDARY.md`.
+
+## D-032 — Synchronization behavior/adoption requirements remain binding; its old immediate sequencing is superseded
+
+The target remains one durable, replaceable synchronization capability that carries current and future authorized Rifad facts. Existing CouchDB/PowerSync candidate evidence is retained.
+
+Binding synchronization rules remain:
+
+- connected synchronization is automatic/continuous by default;
+- Back Office changes reach relevant POS clients quickly;
+- permitted POS changes and operational facts reach Back Office/cloud and relevant clients quickly;
+- permissions/domain authority decide what each actor may mutate; replication direction is not the permission system;
+- offline-capable commands remain durable locally and replay automatically after reconnect with stable identity/idempotency;
+- a manual Sync affordance is fallback/status/diagnostic, not the normal path;
+- ordinary additive fields/entities require normal schema/configuration evolution, **not synchronization-engine rewrites**;
+- LAN/future Branch Hub remains a separate capability and is not authorized merely by selecting cloud sync;
+- no vendor/technology is selected from README/documentation claims alone;
+- substantial/high-risk adoption still requires execution, source/test/failure inspection, license verification and Rifad conformance according to `docs/adoption/CAPABILITY_ADOPTION_WORKFLOW.md`.
+
+The earlier D-032 sentence that made synchronization the **immediate next implementation gate after visual lock** is no longer current. It is superseded by D-033 after MAP-00's full product-state review showed that shift/cash, authorization/configuration, sold-line truth, open-order/payment/refund lifecycle and production local persistence still materially define the facts that synchronization must eventually carry.
+
+Current research/proof records remain under:
+
+- `docs/research/sync/`;
+- `docs/architecture/SYNC_CAPABILITY_BOUNDARY.md`.
+
+## D-033 — Production-first operational POS core precedes synchronization re-entry
+
+Rifad now follows the dependency order in `docs/RIFAD_FINAL_IMPLEMENTATION_MAP.md`.
+
+The immediate sequence is:
+
+1. reconcile repository authority with executable reality (`MAP-00`);
+2. define/prove effective POS configuration and authorization (`MAP-01`);
+3. implement the cashier workday facts that materially change local truth: shift/cash/time-clock (`MAP-02`);
+4. complete sold-line truth for options/add-ons/discounts/taxes/fulfillment (`MAP-03`);
+5. complete open-ticket/order lifecycle and payment/receipt/refund lifecycle (`MAP-04` / `MAP-05`);
+6. adopt and prove the production local persistence implementation behind `LocalPersistenceContract` (`MAP-06`);
+7. prove packaged Windows offline/cold-start/crash behavior and the supported tablet/PWA local-first path (`MAP-07` / `MAP-09`), with physical POS hardware proof in its own gate (`MAP-08`);
+8. **only then reopen synchronization adoption/final selection** using the real Rifad operational facts (`MAP-10`);
+9. connect real Back Office ↔ POS product flows through the adopted Rifad sync/cloud path (`MAP-11`).
+
+This does **not** mean every future Rifad feature must be finished before synchronization. The re-entry threshold is the operational cashier core plus production local truth, not Advanced Inventory, every report, every delivery connector or every future product module.
+
+Existing synchronization evidence is preserved, but no candidate receives production status through sunk-cost momentum. No sync provider, donor schema or proof backend becomes Rifad's business contract.
+
+The role split is also explicit:
+
+- the **cashier/branch worker** creates branch-operational facts such as sales, shifts and cash movements under locally enforceable permission/configuration snapshots;
+- the **owner/manager** uses Back Office to administer merchant configuration and observe operational results;
+- owner-managed settings may be projected into the POS local database without requiring a mirrored cashier-management screen;
+- the ordinary offline-capable cashier path must remain usable without a live Back Office/cloud connection.
+
+See:
+
+- `docs/RIFAD_FINAL_IMPLEMENTATION_MAP.md`;
+- `docs/MAP_00_REALITY_AUTHORITY_RECONCILIATION.md`.

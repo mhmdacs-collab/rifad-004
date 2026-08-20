@@ -1,0 +1,102 @@
+.manager-override-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1800;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(20 33 29 / 46%);
+  backdrop-filter: blur(2px);
+}
+
+.manager-override-dialog {
+  width: min(100%, 430px);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 24px 70px rgb(20 33 29 / 24%);
+}
+
+.manager-override-head {
+  min-height: 74px;
+  display: grid;
+  grid-template-columns: 44px 1fr 42px;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.manager-override-head > div:nth-child(2) {
+  display: grid;
+  gap: 3px;
+}
+
+.manager-override-head span {
+  color: var(--muted);
+  font-size: .7rem;
+}
+
+.manager-override-head strong {
+  font-size: .95rem;
+}
+
+.manager-override-head > button {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 1.35rem;
+}
+
+.manager-override-lock {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  color: var(--brand);
+  background: var(--brand-soft);
+  border-radius: 50%;
+}
+
+.manager-override-body {
+  padding: 20px 22px 24px;
+  text-align: center;
+}
+
+.manager-override-body > p {
+  margin: 0 auto 18px;
+  max-width: 340px;
+  color: var(--muted);
+  font-size: .78rem;
+  line-height: 1.85;
+}
+
+.manager-override-dots {
+  margin-block: 12px 18px;
+}
+
+.manager-override-keypad {
+  width: min(100%, 320px);
+  margin: 0 auto;
+}
+
+.manager-override-note {
+  display: block;
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: .68rem;
+  line-height: 1.7;
+}
+
+@media (max-width: 560px) {
+  .manager-override-backdrop {
+    padding: 12px;
+  }
+
+  .manager-override-dialog {
+    max-height: calc(100vh - 24px);
+  }
+}

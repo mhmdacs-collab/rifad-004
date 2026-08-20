@@ -2,7 +2,7 @@
 
 ## Status
 
-Approved for `POS-FLOW-001` and `POS-FLOW-006`.
+Approved for the original `POS-FLOW-001` / `POS-FLOW-006` sales-shell structure. The early `Save` meaning is **not** the authority for the newer restaurant local/open-order direction.
 
 ## Evidence inspected
 
@@ -12,20 +12,22 @@ Approved for `POS-FLOW-001` and `POS-FLOW-006`.
 
 ## Decision
 
-- Loyverse is the functional and interaction oracle for this slice, not a code or asset donor.
+- Loyverse is the functional and interaction oracle for the original slice, not a code or asset donor.
 - On tablet and Windows, the physical layout keeps the ticket on the left and the catalog on the right for Arabic RTL use.
 - The catalog owns a green top app bar, a fixed product grid and persistent sale-page tabs at the bottom.
 - Product tiles are operational cells rather than ecommerce cards: centered name, category color and no decorative price treatment.
 - Custom pages use twenty fixed slots. Creating a page enters edit mode; an empty slot opens a product picker; a placed product can be removed.
-- The ticket owns its own header, simple line rows, tax/total block and bottom Save/Charge actions.
+- The ticket owns its own header, simple line rows, tax/total block and bottom two-slot operation card.
+- In the original slice that card contained Save/Charge semantics. Current restaurant research explicitly allows **محلي** to replace generic **حفظ** when optional table/local service is enabled; see `VISUAL-DECISION-006-RESTAURANT-SERVICE-OPEN-ORDERS.md`.
 - Phone layout remains a separate application surface and does not squeeze the tablet split into a narrow viewport.
 - Rifad green `#0A714E`, Rifad typography and Rifad-owned components/contracts remain authoritative.
 
 ## Explicit boundary
 
 - No Loyverse source code, icons, logo or proprietary visual assets are copied.
-- Categories and discounts in custom page slots are visible future capabilities but are disabled in this slice.
-- Any future visual donor requires a separate approved decision and may not change the documented workflow implicitly.
+- Categories and discounts in custom page slots are visible future capabilities but are disabled in the original slice.
+- Loyverse open-ticket/table naming remains useful evidence, but Rifad is not required to keep a generic Save-first restaurant flow when a more direct local/place workflow is approved.
+- Any future visual donor requires a separate approved/current decision and may not change workflow implicitly.
 
 ## Affected IDs
 
@@ -33,6 +35,8 @@ Approved for `POS-FLOW-001` and `POS-FLOW-006`.
 - `POS-FLOW-006`.
 - `POS-SCREEN-003`.
 - `POS-SCREEN-026`.
+
+Future restaurant/open-order screen IDs are not authorized by this file and require manifest reconciliation.
 
 ## Verification
 

@@ -1,10 +1,14 @@
 # UI Execution Manifest Schema and Gate
 
+Last updated: 2026-08-20
+
 ## Binding artifact
 
-`UI_EXECUTION_MANIFEST.json` is the implementation inventory for Rifad product surfaces. It converts research into stable screen, action, state and flow IDs.
+`UI_EXECUTION_MANIFEST.json` is the implementation inventory for Rifad product surfaces. It converts research and approved product decisions into stable screen, action, state and flow IDs.
 
-The manifest does not replace the source research. It points to evidence sections and narrows what implementation is allowed to claim.
+The manifest does not replace source research or owner-approved product decisions. It points to evidence sections and narrows what implementation is allowed to claim.
+
+For POS-facing terminology and durable UI-field traceability, use `POS_UI_NAMING_AND_FIELD_REGISTER.md` alongside the manifest.
 
 ## Stable IDs
 
@@ -37,6 +41,8 @@ Everything else is evidence-gathering work. Missing actions, states, layout choi
 
 After a permitted scope advances to `implemented` or `verified`, it remains listed in `implementationGate.readyFlows`; the gate records the approved scope while the status records its current lifecycle stage.
 
+A screen may participate in more than one executable flow. Each flow owns only the screen/action subset listed in that flow's steps. A shared screen is **not** required to repeat all of its other visible actions in every flow that uses it; instead, every flow step must reference an action declared by that screen.
+
 ## Required screen fields before `ready`
 
 - stable ID and surface;
@@ -50,7 +56,8 @@ After a permitted scope advances to `implemented` or `verified`, it remains list
 - prerequisite feature/settings/permission;
 - mock response and failure behavior;
 - acceptance criteria and test IDs;
-- visual authority/approved visual decision IDs.
+- visual authority/approved visual decision IDs;
+- **for POS: every visible durable field/option/status introduced by the screen must be represented in `POS_UI_NAMING_AND_FIELD_REGISTER.md` as CURRENT, REQUIRED-GAP, RESERVED-INTEGRATION, DERIVED or UI-ONLY.**
 
 ## Required action fields
 
@@ -61,7 +68,8 @@ After a permitted scope advances to `implemented` or `verified`, it remains list
 - authorization requirement;
 - offline classification: local / queued / disabled / connected-only;
 - idempotency requirement for durable commands;
-- visible pending/success/failure result.
+- visible pending/success/failure result;
+- durable inputs/results must be traceable to the UI field register when they introduce new POS data requirements.
 
 Pure UI navigation or presentation actions may use `uiOnly: true`; they must not hide a business mutation.
 
@@ -75,14 +83,35 @@ Pure UI navigation or presentation actions may use `uiOnly: true`; they must not
 - explicit non-goals;
 - end-to-end acceptance criteria.
 
+A flow step must name an action declared by that screen. The screen may declare additional actions used by another ready flow or by an already-recorded implemented capability; those actions do not automatically become part of the current flow.
+
+## UI-to-data traceability gate
+
+UI-first does not mean data-later-without-traceability.
+
+When a visible POS change introduces or implies durable information — for example SKU, barcode, order type, payment method, terminal reference, customer attribute, receipt fact, device preference or print status — the same change must:
+
+1. add/update the field in `POS_UI_NAMING_AND_FIELD_REGISTER.md`;
+2. classify whether it is current, missing, reserved, derived or UI-only;
+3. update the domain contract/model immediately if the field is already authoritative business state;
+4. record a persistence gap if the UI needs the field but the current mock/model does not yet preserve it.
+
+Do not create database columns for purely presentational state such as pressed state, dialog visibility, animation state or decorative artwork.
+
 ## Evidence confidence
 
-- `documented`: supported directly by the research and cited sources.
+- `documented`: supported directly by the functional research/cited sources **or by an explicit owner-approved product/architecture decision recorded in the repository**.
 - `observed`: based on recorded interface evidence that may vary by version.
 - `inferred`: not enough for `ready`; requires product confirmation or additional evidence.
 
 An `inferred` requirement cannot silently become implementation behavior.
 
+Research evidence should use the exact section string from the canonical Loyverse analysis. Owner-approved product evidence may use an explicit architecture-decision reference in the form `<DECISION_FILE>.md §...`; the referenced decision file must exist under `docs/architecture/`. This is for Rifad-owned product decisions that intentionally extend or specialize the reference product, not a substitute for researching reference behavior.
+
 ## Change control
 
 Any implementation PR touching visible behavior must list the affected screen/action/flow IDs. If behavior changes, the manifest changes in the same PR before or with the code.
+
+For POS changes, any new durable visible field or canonical cashier-facing label must also update `POS_UI_NAMING_AND_FIELD_REGISTER.md` in the same PR.
+
+A mock hardware/payment UX must remain explicitly distinguishable from production hardware/provider support until real integration evidence exists.

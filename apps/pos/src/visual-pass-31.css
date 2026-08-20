@@ -1,0 +1,46 @@
+/*
+ * Rifad POS — Visual Pass 31
+ * Inline checkout refinement:
+ * - keep the total amount and Saudi riyal mark visually unified in white
+ * - show up to four payment methods as comfortable full-width rows
+ * - switch to a two-column payment grid only when a fifth method exists
+ */
+
+.inline-checkout-total-card .money-amount,
+.inline-checkout-total-card .money-amount > span {
+  color: #fff;
+}
+
+.inline-checkout-total-card .riyal-symbol {
+  opacity: 1;
+  filter: brightness(0) invert(1);
+}
+
+.inline-payment-methods {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.inline-payment-method {
+  min-height: 82px;
+  padding: 12px 15px;
+}
+
+.inline-payment-methods:has(> .inline-payment-method:nth-child(5)) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.inline-payment-methods:has(> .inline-payment-method:nth-child(5)) > .inline-payment-method {
+  min-height: 108px;
+}
+
+@media (min-width: 781px) and (max-height: 760px) {
+  .inline-payment-method {
+    min-height: 72px;
+    padding-block: 9px;
+  }
+
+  .inline-payment-methods:has(> .inline-payment-method:nth-child(5)) > .inline-payment-method {
+    min-height: 92px;
+  }
+}

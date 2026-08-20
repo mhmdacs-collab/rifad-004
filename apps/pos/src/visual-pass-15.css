@@ -1,0 +1,28 @@
+/*
+ * Rifad POS — Visual Pass 15
+ * Quantity legibility calibration for common 1920x1080 cashier displays.
+ * Keeps the Pass 14 ticket rhythm while making repeated-item quantity easier
+ * to read at normal browser zoom / desktop scaling.
+ */
+
+@media (min-width: 781px) {
+  .ticket-quantity-chip {
+    min-width: 27px;
+    font-size: .98rem;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -.01em;
+  }
+
+  .ticket-line-times {
+    font-size: .76rem;
+  }
+}
+
+@media (max-width: 780px) {
+  .ticket-quantity-chip {
+    min-width: 25px;
+    font-size: .92rem;
+    line-height: 1;
+  }
+}

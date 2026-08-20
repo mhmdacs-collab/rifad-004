@@ -1,0 +1,11 @@
+{
+  "name": "rifad-sync-powersync-proof",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@powersync/node": "0.20.0",
+    "better-sqlite3": "12.11.1",
+    "jose": "6.2.3",
+    "pg": "8.22.0"
+  }
+}

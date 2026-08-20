@@ -1,0 +1,128 @@
+/*
+ * Rifad POS — Visual Pass 52
+ * Owner correction: Clear Cart belongs inside the basket body, directly above
+ * the first basket line. Ticket header and the stable Save/Credit + Pay footer
+ * never move; only the flexible basket-line area yields space.
+ */
+
+/* Stable transaction card remains a single, unchanged two-button row. */
+.transaction-operation-card {
+  grid-template-rows: auto !important;
+}
+
+.transaction-operation-card > button:not(.ticket-clear-cart) {
+  grid-row: 1 !important;
+}
+
+/* Clear Cart is structurally inside .ticket-panel, after .ticket-header and
+   before .ticket-lines. It therefore reads like a basket utility/line rather
+   than a second header or a footer action. */
+.ticket-clear-cart-slot {
+  flex: 0 0 auto;
+  width: 100%;
+  padding: 7px 20px 4px;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.ticket-clear-cart-slot:empty {
+  display: none;
+}
+
+.ticket-panel > .ticket-clear-cart-slot + .ticket-lines {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.ticket-clear-cart {
+  width: 100%;
+  min-height: 54px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 7px 14px;
+  color: #fff;
+  text-align: center;
+  border: 0;
+  border-radius: 11px;
+  background: #c65c52;
+  box-shadow: 0 3px 9px rgb(141 57 49 / 9%);
+  font: inherit;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: background .12s ease, transform .12s ease;
+}
+
+.ticket-clear-cart-icon {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: rgb(255 255 255 / 13%);
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: 9px;
+}
+
+.ticket-clear-cart > strong {
+  color: #fff;
+  font-size: .84rem;
+  font-weight: 850;
+  line-height: 1.3;
+}
+
+.ticket-clear-cart:hover:not(:disabled),
+.ticket-clear-cart:focus-visible {
+  background: #b95047;
+}
+
+.ticket-clear-cart:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.ticket-clear-cart:disabled {
+  opacity: .58;
+  cursor: default;
+}
+
+/* Short displays reclaim basket-list density before shrinking the touch target. */
+@media (min-width: 821px) and (max-height: 800px) {
+  .ticket-clear-cart-slot {
+    padding: 5px 16px 3px;
+  }
+
+  .ticket-clear-cart {
+    min-height: 50px;
+    gap: 8px;
+    padding: 5px 12px;
+  }
+
+  .ticket-clear-cart-icon {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+    border-radius: 8px;
+  }
+
+  .ticket-clear-cart > strong {
+    font-size: .79rem;
+  }
+}
+
+@media (max-width: 820px) {
+  .ticket-clear-cart-slot {
+    padding: 7px 14px 4px;
+  }
+
+  .ticket-clear-cart {
+    min-height: 52px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticket-clear-cart {
+    transition: none !important;
+  }
+}

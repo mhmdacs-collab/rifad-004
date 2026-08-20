@@ -1,0 +1,56 @@
+/* Narrow refinements for the owner-approved Loyverse Back Office reference. */
+
+.bo-page-header .bo-primary {
+  margin-right: 0;
+  margin-left: auto;
+}
+
+.bo-editor-topbar {
+  justify-content: flex-end;
+}
+
+.bo-editor-actions,
+.bo-modal-actions {
+  direction: ltr;
+}
+
+.bo-shell:has(.bo-subnav-item--active:nth-of-type(2)) .bo-modal-header,
+.bo-shell:has(.bo-subnav-item--active:nth-of-type(3)) .bo-modal-header {
+  display: none;
+}
+
+.bo-shell:has(.bo-subnav-item--active:nth-of-type(2)) .bo-modal > .bo-field:first-of-type input,
+.bo-shell:has(.bo-subnav-item--active:nth-of-type(3)) .bo-modal > .bo-field:first-of-type input {
+  height: 62px;
+  font-size: 27px;
+  line-height: 1.2;
+  font-weight: 300;
+  color: #6e6e6e;
+  padding: 8px 2px;
+}
+
+.bo-shell:has(.bo-subnav-item--active:nth-of-type(2)) .bo-modal > .bo-field:first-of-type > span,
+.bo-shell:has(.bo-subnav-item--active:nth-of-type(3)) .bo-modal > .bo-field:first-of-type > span {
+  display: none;
+}
+
+.bo-shell:has(.bo-subnav-item--active:nth-of-type(3)) .bo-simple-table td:first-child {
+  position: relative;
+  padding-right: 68px;
+}
+
+.bo-shell:has(.bo-subnav-item--active:nth-of-type(3)) .bo-simple-table td:first-child::before {
+  content: "▤";
+  position: absolute;
+  right: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #91ca5a;
+  color: #fff;
+  font-size: 17px;
+}

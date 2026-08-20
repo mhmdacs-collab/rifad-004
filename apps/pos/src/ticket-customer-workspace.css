@@ -1,0 +1,394 @@
+/* Focused customer task inside the basket rail.
+ * Preserve readable type and touch targets; adapt layout instead of shrinking text.
+ */
+
+.ticket-customer-workspace {
+  container-type: inline-size;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0 18px 14px !important;
+  overflow: hidden !important;
+}
+
+.ticket-customer-workspace-header {
+  flex: 0 0 auto;
+  align-items: flex-start !important;
+  gap: 12px !important;
+  padding: 16px 0 14px !important;
+}
+
+.ticket-customer-workspace-header > div {
+  min-width: 0;
+}
+
+.ticket-customer-workspace-header h2 {
+  margin: 0;
+  font-size: clamp(21px, 1.35vw, 25px) !important;
+  line-height: 1.35 !important;
+}
+
+.ticket-customer-workspace-header span {
+  display: block;
+  margin-top: 3px;
+  color: #6d7973 !important;
+  font-size: clamp(12px, .78vw, 14px) !important;
+  line-height: 1.5 !important;
+}
+
+.ticket-customer-picker-view,
+.ticket-customer-create-view {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ticket-customer-search {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 9px;
+  padding-top: 12px;
+}
+
+.ticket-customer-search label,
+.ticket-customer-create-fields label {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.ticket-customer-search label > span,
+.ticket-customer-create-fields label > span {
+  color: #43544c;
+  font-size: clamp(13px, .84vw, 15px) !important;
+  font-weight: 800;
+}
+
+.ticket-customer-search input,
+.ticket-customer-create-fields input {
+  width: 100%;
+  min-width: 0;
+  min-height: 52px !important;
+  box-sizing: border-box;
+  padding: 0 13px;
+  border: 1px solid #cad6d0;
+  border-radius: 11px !important;
+  background: #fff;
+  color: #17231e;
+  font: inherit;
+  font-size: clamp(15px, .94vw, 17px) !important;
+  outline: none;
+}
+
+.ticket-customer-search input:focus,
+.ticket-customer-create-fields input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgb(7 82 58 / 9%);
+}
+
+.ticket-customer-search-status {
+  min-height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  border: 1px solid #d8e1dd;
+  border-radius: 11px;
+  background: #f7f9f8;
+  color: #526159;
+  font-size: clamp(12px, .76vw, 14px);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.ticket-customer-results {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 12px;
+  padding: 7px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid #e0e8e4;
+  border-radius: 13px;
+  background: #fafbfa;
+  scrollbar-gutter: stable;
+}
+
+.ticket-customer-result {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  overflow: hidden;
+  transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.ticket-customer-result + .ticket-customer-result {
+  margin-top: 5px;
+}
+
+.ticket-customer-result.active {
+  grid-template-columns: minmax(0, 1fr) auto;
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  box-shadow: inset -3px 0 0 var(--brand);
+}
+
+.ticket-customer-result-main {
+  min-width: 0;
+  min-height: 72px !important;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 12px 14px !important;
+  border: 0;
+  background: transparent;
+  color: #1d2d25;
+  text-align: right;
+  cursor: pointer;
+}
+
+.ticket-customer-result-main > span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.ticket-customer-result-main strong {
+  overflow: hidden;
+  color: #17271f;
+  font-size: clamp(16px, 1vw, 18px) !important;
+  font-weight: 900;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ticket-customer-result-main small {
+  color: #74817a;
+  font-size: clamp(13px, .82vw, 15px) !important;
+}
+
+.ticket-customer-result-attach {
+  align-self: center;
+  min-height: 48px !important;
+  margin: 8px 8px 8px 10px;
+  padding: 0 14px !important;
+  border: 1px solid var(--brand);
+  border-radius: 10px;
+  background: var(--brand);
+  color: #fff;
+  font-size: clamp(13px, .84vw, 15px) !important;
+  font-weight: 900;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ticket-customer-result-attach:hover:not(:disabled) {
+  background: var(--brand-dark);
+}
+
+.ticket-customer-result-attach:disabled {
+  opacity: .62;
+  cursor: wait;
+}
+
+.ticket-customer-empty {
+  min-height: 150px;
+  display: grid;
+  place-items: center;
+  color: #78857e;
+  font-size: clamp(14px, .9vw, 16px);
+  text-align: center;
+}
+
+.ticket-customer-message {
+  flex: 0 0 auto;
+  margin-top: 9px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  background: #f2f7f4;
+  color: #345046;
+  font-size: clamp(12px, .76vw, 14px);
+  font-weight: 750;
+  line-height: 1.5;
+}
+
+.ticket-customer-picker-footer {
+  flex: 0 0 auto;
+  padding-top: 11px;
+  margin-top: 11px;
+  border-top: 1px solid #e9eeeb;
+}
+
+.ticket-customer-create-trigger {
+  width: 100%;
+  min-height: 52px !important;
+  padding: 0 14px;
+  border: 1px solid #d2dcd7;
+  border-radius: 11px;
+  background: #f7f9f8;
+  color: #1e3027;
+  font-size: clamp(14px, .92vw, 16px) !important;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.ticket-customer-create-trigger:hover:not(:disabled) {
+  border-color: #b9cec4;
+  background: #f1f6f3;
+}
+
+.ticket-customer-create-view {
+  padding-top: 14px;
+  animation: ticket-customer-slide-up 230ms cubic-bezier(.22, .8, .3, 1) both;
+  will-change: transform, opacity;
+}
+
+.ticket-customer-create-form {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ticket-customer-create-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.ticket-customer-create-fields label > span {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ticket-customer-create-fields b {
+  color: #a83d32;
+  font-style: normal;
+}
+
+.ticket-customer-create-fields em {
+  color: #85918b;
+  font-size: clamp(11px, .72vw, 13px);
+  font-style: normal;
+  font-weight: 700;
+}
+
+.ticket-customer-create-message {
+  margin-top: 10px;
+}
+
+.ticket-customer-create-submit {
+  width: 100%;
+  min-height: 56px !important;
+  margin-top: auto;
+  padding: 0 16px;
+  border-radius: 12px !important;
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
+  color: #fff !important;
+  font-size: clamp(15px, 1vw, 17px) !important;
+  font-weight: 900 !important;
+}
+
+.ticket-customer-create-submit:hover:not(:disabled) {
+  background: var(--brand-dark) !important;
+}
+
+@keyframes ticket-customer-slide-up {
+  from {
+    opacity: .18;
+    transform: translateY(34px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* A wider rail/tablet can use two columns without reducing touch size. */
+@container (min-width: 540px) {
+  .ticket-customer-create-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Common 1366×768 / 1280×800 POS heights: compact spacing, never the type. */
+@media (max-height: 760px) {
+  .ticket-customer-workspace {
+    padding-bottom: 10px !important;
+  }
+
+  .ticket-customer-workspace-header {
+    padding-top: 11px !important;
+    padding-bottom: 10px !important;
+  }
+
+  .ticket-customer-workspace-header span {
+    margin-top: 1px;
+  }
+
+  .ticket-customer-create-view {
+    padding-top: 9px;
+  }
+
+  .ticket-customer-create-fields {
+    gap: 8px;
+  }
+
+  .ticket-customer-create-fields label {
+    gap: 4px;
+  }
+
+  .ticket-customer-search input,
+  .ticket-customer-create-fields input,
+  .ticket-customer-search-status {
+    min-height: 48px !important;
+  }
+
+  .ticket-customer-create-submit {
+    min-height: 52px !important;
+  }
+}
+
+/* On compact devices the task becomes full-screen via ticket-workspace.css; keep comfortable margins. */
+@media (max-width: 720px) {
+  .ticket-customer-workspace {
+    padding-inline: 14px !important;
+  }
+
+  .ticket-customer-result.active {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+
+@media (max-width: 430px) {
+  .ticket-customer-result.active {
+    grid-template-columns: 1fr;
+  }
+
+  .ticket-customer-result-attach {
+    width: calc(100% - 16px);
+    margin: 0 8px 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticket-customer-create-view {
+    animation: none;
+  }
+
+  .ticket-customer-result {
+    transition: none;
+  }
+}

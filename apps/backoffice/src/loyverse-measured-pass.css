@@ -1,0 +1,235 @@
+/*
+ * Measured calibration from the owner-provided Loyverse saved page.
+ * Keep Rifad colors/business semantics while matching the reference density,
+ * typography scale, field treatment and elevation.
+ */
+
+:root {
+  --bo-measured-green: #0a714e;
+  --bo-measured-ink: rgba(0, 0, 0, .87);
+  --bo-measured-muted: rgba(0, 0, 0, .54);
+  --bo-measured-divider: rgba(0, 0, 0, .12);
+  --bo-measured-card-shadow: 0 2px 5px rgba(0, 0, 0, .15);
+}
+
+/* Cards in the reference are almost square and lightly elevated. */
+.bo-card,
+.bo-form-card {
+  border-radius: 2px !important;
+  border-color: transparent !important;
+  box-shadow: var(--bo-measured-card-shadow) !important;
+}
+
+/* Form typography: actual reference uses 14px fields, not tiny dashboard copy. */
+.bo-field,
+.bo-field input,
+.bo-field select,
+.bo-field textarea,
+.bo-builder-row > input,
+.bo-private-group-head > input,
+.bo-addon-option-row > input,
+.bo-price-option-row--editable > input,
+.bo-modern-search input,
+.bo-modern-filter select {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: var(--bo-measured-ink) !important;
+}
+
+.bo-field > span,
+.bo-modern-filter > span {
+  color: var(--bo-measured-muted) !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+}
+
+/* Reference filled fields read as a white surface with one quiet bottom rule. */
+.bo-field input,
+.bo-field select {
+  height: 56px !important;
+  padding: 20px 0 4px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--bo-measured-divider) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+.bo-field textarea {
+  min-height: 56px !important;
+  padding: 12px !important;
+  border: 1px solid var(--bo-measured-divider) !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+.bo-field input:focus,
+.bo-field select:focus,
+.bo-field textarea:focus {
+  border-color: var(--bo-measured-green) !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Name is intentionally much larger in the reference item editor. */
+.bo-item-editor-2026 input[aria-label="اسم الصنف"] {
+  height: 76px !important;
+  padding-top: 28px !important;
+  font-size: 28px !important;
+  line-height: 44px !important;
+  font-weight: 400 !important;
+}
+
+/* Tables use a restrained 13px header/body system. */
+.bo-modern-table th {
+  height: 48px !important;
+  padding: 10px 16px !important;
+  color: var(--bo-measured-muted) !important;
+  background: #fff !important;
+  border-bottom: 1px solid var(--bo-measured-divider) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
+.bo-modern-table td,
+.bo-modern-table td strong {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+}
+
+.bo-modern-table tbody tr:hover {
+  background: #fafafa !important;
+}
+
+/* Section headings are plain content titles, not marketing headings. */
+.bo-modern-section .bo-section-heading h2 {
+  font-size: 20px !important;
+  line-height: 28px !important;
+  font-weight: 400 !important;
+}
+
+.bo-modern-section .bo-section-heading p {
+  color: var(--bo-measured-muted) !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+}
+
+.bo-modern-section .bo-section-heading {
+  min-height: 60px !important;
+  padding: 16px 20px !important;
+}
+
+.bo-form-grid--modern,
+.bo-modern-section-body {
+  padding: 20px !important;
+}
+
+/* Buttons: modest radius, medium weight and no glossy dashboard treatment. */
+.bo-primary,
+.bo-secondary {
+  min-width: 88px;
+  min-height: 40px !important;
+  border-radius: 2px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  box-shadow: 0 0 2px rgba(0,0,0,.12), 0 2px 2px rgba(0,0,0,.20) !important;
+}
+
+.bo-secondary {
+  box-shadow: 0 1px 2px rgba(0,0,0,.08) !important;
+}
+
+/* Checkboxes/switch copy in the reference is normal text weight. */
+.bo-switch-card strong,
+.bo-inline-check,
+.bo-check-card strong,
+.bo-subsection-title strong {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+}
+
+.bo-switch-card small,
+.bo-check-card small,
+.bo-subsection-title small,
+.bo-appearance-block small {
+  color: var(--bo-measured-muted) !important;
+  font-size: 12px !important;
+  line-height: 17px !important;
+}
+
+/* Appearance panel follows the reference utility layout: controls + small image tile. */
+.bo-appearance-editor {
+  grid-template-columns: minmax(0, 1fr) 128px !important;
+  gap: 24px !important;
+  align-items: end !important;
+}
+
+.bo-pos-preview-card {
+  grid-column: 2;
+  grid-row: 1;
+  min-height: 120px !important;
+  padding: 8px !important;
+  border: 0 !important;
+  background: #f5f5f5 !important;
+  box-shadow: none !important;
+}
+
+.bo-appearance-controls {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.bo-color-swatch {
+  width: 42px !important;
+  height: 42px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.bo-color-swatch.is-selected {
+  box-shadow: inset 0 0 0 2px #fff, 0 0 0 2px var(--bo-measured-green) !important;
+}
+
+.bo-shape-picker button {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+/* Keep one save/cancel pair only, at the bottom like the reference. */
+.bo-editor-topbar--modern .bo-editor-actions {
+  display: none !important;
+}
+
+.bo-editor-bottom-actions {
+  margin-top: 12px !important;
+  padding-top: 8px !important;
+  border-top: 1px solid var(--bo-measured-divider) !important;
+}
+
+/* The item editor is deliberately a narrow vertical working column. */
+.bo-item-editor-2026 {
+  width: min(760px, 100%) !important;
+  margin-inline: 0 auto !important;
+}
+
+@media (max-width: 900px) {
+  .bo-item-editor-2026 {
+    width: 100% !important;
+    margin-inline: auto !important;
+  }
+
+  .bo-appearance-editor {
+    grid-template-columns: 1fr !important;
+  }
+
+  .bo-pos-preview-card,
+  .bo-appearance-controls {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}

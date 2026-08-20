@@ -1,0 +1,8 @@
+{
+  "name": "rifad-sync-couchdb-proof",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "pouchdb": "9.0.0"
+  }
+}

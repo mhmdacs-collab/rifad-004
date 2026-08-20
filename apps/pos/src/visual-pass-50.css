@@ -1,0 +1,198 @@
+/*
+ * Rifad POS — Visual Pass 50
+ * Owner correction: spatial continuity means keeping the same two-button
+ * operation card across transaction stages, not moving the debt action into
+ * the Pay slot. Customer additional fields are a real 3-column desktop grid.
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Customer create: quick fields and additional fields use the same density   */
+/* -------------------------------------------------------------------------- */
+
+.customer-picker-dialog .customer-field-hint {
+  display: none;
+}
+
+@media (min-width: 821px) {
+  .customer-picker-dialog .customer-extra-fields {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+    gap: 9px 11px;
+  }
+
+  .customer-picker-dialog .customer-extra-fields > label,
+  .customer-picker-dialog .customer-extra-fields .customer-extra-note {
+    grid-column: auto;
+    min-width: 0;
+  }
+
+  .customer-picker-dialog .customer-extra-fields textarea {
+    min-height: 46px;
+    height: 46px;
+    resize: vertical;
+  }
+}
+
+@media (max-width: 820px) {
+  .customer-picker-dialog .customer-extra-fields {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .customer-picker-dialog .customer-extra-fields > label,
+  .customer-picker-dialog .customer-extra-fields .customer-extra-note {
+    grid-column: auto;
+  }
+
+  .customer-picker-dialog .customer-extra-fields textarea {
+    min-height: 72px;
+    height: auto;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Restore Quick Sale footer semantics: سداد remains beside دفع as before.    */
+/* -------------------------------------------------------------------------- */
+
+.sale-screen-basic .ticket-column:has(.empty-ticket) .ticket-actions > button:last-child {
+  display: flex;
+}
+
+.sale-screen-basic .ticket-column:has(.empty-ticket) .ticket-actions > .basic-credit-action {
+  grid-column: 1;
+}
+
+/* -------------------------------------------------------------------------- */
+/* One transaction operation card, same two physical slots across the flow.   */
+/*                                                                            */
+/* RTL slot 1 (right): secondary / cancel / print                             */
+/* RTL slot 2 (left):  Pay / Settle / Complete / New Sale                     */
+/* -------------------------------------------------------------------------- */
+
+.ticket-actions,
+.inline-operation-footer {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: minmax(110px, .72fr) minmax(180px, 1.28fr);
+  align-items: center;
+  gap: 9px;
+  direction: rtl;
+  box-sizing: border-box;
+  padding: 10px 12px 12px;
+  border-top: 1px solid #dfe6e2;
+  background: #fff;
+  box-shadow: 0 -5px 15px rgb(25 55 43 / 4%);
+}
+
+.ticket-actions > button,
+.inline-operation-footer > button {
+  width: 100%;
+  min-width: 0;
+  min-height: 58px;
+  height: auto;
+  margin: 0;
+  border-radius: 11px;
+  box-sizing: border-box;
+}
+
+.ticket-actions > button:first-child,
+.inline-operation-footer > button:first-child {
+  grid-column: 1;
+}
+
+.ticket-actions > button:last-child,
+.inline-operation-footer > button:last-child {
+  grid-column: 2;
+}
+
+.inline-checkout-rail--cash .inline-operation-footer,
+.inline-checkout-rail--card .inline-operation-footer,
+.inline-checkout-rail--success .inline-operation-footer {
+  position: sticky;
+  z-index: 8;
+  bottom: 0;
+  margin-top: auto;
+}
+
+/* Undo the previous floating single-button treatment. The completion action
+   now lives inside the same two-slot operation card as the basket actions. */
+.inline-checkout-rail--cash .inline-complete-sale,
+.inline-checkout-rail--card .inline-complete-sale,
+.debt-book-dialog .debt-settlement-submit {
+  position: static;
+  width: 100%;
+  margin: 0;
+  box-shadow: none;
+}
+
+.inline-operation-footer .inline-complete-sale {
+  min-height: 58px;
+  height: auto;
+  flex-basis: auto;
+}
+
+.inline-cancel-sale {
+  color: #9b3f35;
+  border: 1px solid #ddb9b3;
+  background: #fff8f6;
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.inline-cancel-sale:hover:not(:disabled),
+.inline-cancel-sale:focus-visible {
+  border-color: #c88478;
+  background: #fdf1ee;
+}
+
+.inline-cancel-sale:disabled {
+  opacity: .52;
+  cursor: default;
+}
+
+/* Success uses the same card geometry: Print stays in the right slot and
+   New Sale remains in the left/main completion slot. */
+.inline-success-actions {
+  margin: 0;
+}
+
+.inline-success-actions > button {
+  min-height: 58px;
+}
+
+/* Compact displays reclaim padding/gap before touch target size. */
+@media (min-width: 821px) and (max-height: 800px) {
+  .ticket-actions,
+  .inline-operation-footer {
+    gap: 7px;
+    padding: 8px 10px 9px;
+  }
+
+  .ticket-actions > button,
+  .inline-operation-footer > button,
+  .inline-operation-footer .inline-complete-sale {
+    min-height: 52px;
+  }
+}
+
+@media (max-width: 820px) {
+  .ticket-actions,
+  .inline-operation-footer {
+    grid-template-columns: minmax(88px, .7fr) minmax(150px, 1.3fr);
+    gap: 8px;
+  }
+
+  .inline-operation-footer > button,
+  .inline-operation-footer .inline-complete-sale {
+    min-height: 54px;
+  }
+}
+
+@media (max-width: 420px) {
+  .ticket-actions,
+  .inline-operation-footer {
+    grid-template-columns: minmax(82px, .68fr) minmax(138px, 1.32fr);
+  }
+}

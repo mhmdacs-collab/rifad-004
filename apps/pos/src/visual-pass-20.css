@@ -1,0 +1,82 @@
+/*
+ * Rifad POS — Visual Pass 20
+ * Finalises the touch product-card composition after owner review:
+ * - price is a true full-width footer, never a pill/input-like chip
+ * - cards gain more vertical presence on common 1920x1080 cashier displays
+ * - empty layout slots recede further behind sellable products
+ */
+
+@media (min-width: 781px) {
+  .sale-screen-touch .product-area {
+    padding: 12px 14px;
+  }
+
+  .sale-screen-touch .product-grid {
+    grid-auto-rows: clamp(146px, 17vh, 170px);
+    gap: 11px;
+  }
+
+  .sale-screen-touch button.catalog-product {
+    border-radius: 7px;
+    box-shadow: 0 1px 2px rgb(18 50 37 / 6%);
+  }
+
+  .sale-screen-touch button.catalog-product > strong {
+    padding: 14px 12px 11px;
+    font-size: 1.03rem;
+    font-weight: 730;
+    line-height: 1.35;
+  }
+
+  .sale-screen-touch button.catalog-product::after {
+    width: 100% !important;
+    min-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 10px !important;
+    align-self: stretch !important;
+    justify-self: stretch !important;
+    border-radius: 0 !important;
+    border: 0 !important;
+    border-top: 1px solid rgb(42 66 55 / 15%) !important;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 34%) !important;
+    background: rgb(255 255 255 / 42%) !important;
+    font-size: 1rem !important;
+    font-weight: 860 !important;
+    line-height: 1 !important;
+  }
+
+  .sale-screen-touch button.catalog-product:hover:not(:disabled)::after {
+    background: rgb(255 255 255 / 50%) !important;
+  }
+
+  .sale-screen-touch button.catalog-product:active:not(:disabled)::after {
+    background: rgb(255 255 255 / 58%) !important;
+  }
+
+  .sale-screen-touch .blank-layout-slot {
+    border-color: #e9edeb;
+    background: #fafbfb;
+    opacity: .62;
+  }
+}
+
+@media (min-width: 1500px) and (min-height: 820px) {
+  .sale-screen-touch .product-grid {
+    grid-auto-rows: clamp(154px, 18vh, 178px);
+  }
+}
+
+@media (max-width: 780px) {
+  .sale-screen-touch button.catalog-product::after {
+    width: 100% !important;
+    min-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    border: 0 !important;
+    border-top: 1px solid rgb(42 66 55 / 15%) !important;
+    background: rgb(255 255 255 / 46%) !important;
+    font-size: .9rem !important;
+  }
+}

@@ -1,0 +1,302 @@
+/*
+ * Rifad POS — Visual Pass 45
+ * Basket scan + touch audit.
+ * Only ticket rows may scroll; totals, order type and primary actions stay visible.
+ */
+
+/* Keep the basket column structurally stable on every cashier display. */
+.loyverse-shell .ticket-column {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+.loyverse-shell .ticket-column > .ticket-panel--sale {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.loyverse-shell .ticket-panel--sale .ticket-header,
+.loyverse-shell .ticket-panel--sale .ticket-totals,
+.loyverse-shell .ticket-column > .ticket-order-type,
+.loyverse-shell .ticket-column > .ticket-actions {
+  flex: 0 0 auto;
+}
+
+/* Rows are the only scroll surface. Pay/save never disappear with long baskets. */
+.loyverse-shell .ticket-panel--sale .ticket-lines {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  background: #fff;
+}
+
+/* One glance: quantity × product name -> line total. */
+.loyverse-shell .ticket-panel--sale .ticket-line {
+  border-bottom: 1px solid #edf1ef;
+  background: #fff;
+}
+
+.loyverse-shell .ticket-panel--sale .ticket-line-button--structured {
+  width: 100%;
+  min-height: 82px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 15px;
+  color: #1b2c25;
+  border: 0;
+  background: #fff;
+  text-align: start;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 90ms ease, transform 70ms ease;
+}
+
+.loyverse-shell .ticket-panel--sale .ticket-line-button--structured:hover:not(:disabled) {
+  background: #f8fbfa;
+}
+
+.loyverse-shell .ticket-panel--sale .ticket-line-button--structured:active:not(:disabled) {
+  background: #eef7f3;
+  transform: scale(.992);
+}
+
+.loyverse-shell .ticket-panel--sale .ticket-line-copy,
+.loyverse-shell .ticket-panel--sale .ticket-line-main,
+.loyverse-shell .ticket-panel--sale .ticket-line-title-row {
+  min-width: 0;
+}
+
+.loyverse-shell .ticket-panel--sale .ticket-line-main,
+.loyverse-shell .ticket-panel--sale .ticket-line-title-row {
+  display: flex;
+  align-items: center;
+}
+
+.loyverse-shell .ticket-panel--sale .ticket-line-title-row {
+  gap: 9px;
+}
+
+/* Quantity is easy to find even at 1000+, but remains an informational chip,
+   not another green action. */
+.loyverse-shell .ticket-panel--sale .ticket-quantity-inline {
+  flex: 0 0 auto;
+  min-width: 46px;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding-inline: 9px;
+  color: #315248;
+  border: 1px solid #cfe0d9;
+  border-radius: 10px;
+  background: #f5f9f7;
+  font-size: .88rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.loyverse-shell .ticket-panel--sale .ticket-product-name {
+  min-width: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: #1b2b25;
+  font-size: .96rem;
+  font-weight: 780;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+/* Unit price belongs to the product card in the accepted sale design. */
+.loyverse-shell .ticket-panel--sale .ticket-unit-price {
+  display: none !important;
+}
+
+.loyverse-shell .ticket-panel--sale .ticket-line-total {
+  flex: 0 0 auto;
+  min-width: 78px;
+  color: #10251d;
+  font-size: .96rem;
+  font-weight: 860;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: end;
+}
+
+/* Latest-item feedback stays subtle; it should confirm a tap, not flash. */
+.loyverse-shell .ticket-panel--sale .ticket-line--latest .ticket-line-button--structured {
+  background: #f5faf7;
+}
+
+/* Totals are a fixed summary above the action rail. */
+.loyverse-shell .ticket-panel--sale .ticket-totals {
+  position: relative;
+  z-index: 2;
+  border-top: 1px solid #e3eae6;
+  background: #fbfcfb;
+  box-shadow: 0 -5px 14px rgb(20 49 38 / 4%);
+}
+
+.loyverse-shell .ticket-panel--sale .ticket-totals > div {
+  min-height: 34px;
+  padding-inline: 15px;
+  color: #52625c;
+}
+
+.loyverse-shell .ticket-panel--sale .ticket-totals .ticket-grand-total {
+  min-height: 54px;
+  color: #13271f;
+  background: #fff;
+  font-size: 1.08rem;
+}
+
+/* The action rail is always outside the scroll surface. */
+.loyverse-shell .ticket-column > .ticket-actions {
+  position: relative;
+  z-index: 4;
+  background: #fff;
+  box-shadow: 0 -7px 18px rgb(17 47 36 / 5%);
+}
+
+/* Large/tall cashier screens: give the finger slightly more room. */
+@media (min-width: 1600px) and (min-height: 850px) {
+  .loyverse-shell .ticket-panel--sale .ticket-line-button--structured {
+    min-height: 88px;
+    padding-block: 14px;
+  }
+
+  .loyverse-shell .ticket-panel--sale .ticket-product-name {
+    font-size: 1rem;
+  }
+
+  .loyverse-shell .ticket-panel--sale .ticket-line-total {
+    font-size: 1rem;
+  }
+}
+
+/* 1366-class cashier displays: compact whitespace, never the important targets. */
+@media (min-width: 1024px) and (max-width: 1599px) {
+  .loyverse-shell .ticket-panel--sale .ticket-line-button--structured {
+    min-height: 74px;
+    gap: 11px;
+    padding: 9px 12px;
+  }
+
+  .loyverse-shell .ticket-panel--sale .ticket-quantity-inline {
+    min-width: 42px;
+    min-height: 36px;
+    padding-inline: 7px;
+  }
+
+  .loyverse-shell .ticket-panel--sale .ticket-product-name,
+  .loyverse-shell .ticket-panel--sale .ticket-line-total {
+    font-size: .9rem;
+  }
+
+  .loyverse-shell .ticket-panel--sale .ticket-totals > div {
+    min-height: 30px;
+  }
+
+  .loyverse-shell .ticket-panel--sale .ticket-totals .ticket-grand-total {
+    min-height: 48px;
+  }
+}
+
+/* Short POS displays: preserve 48px+ interactive rows by reducing summary chrome first. */
+@media (min-width: 781px) and (max-height: 760px) {
+  .loyverse-shell .ticket-panel--sale .ticket-line-button--structured {
+    min-height: 64px;
+    padding-block: 7px;
+  }
+
+  .loyverse-shell .ticket-panel--sale .ticket-quantity-inline {
+    min-height: 34px;
+    border-radius: 8px;
+    font-size: .8rem;
+  }
+
+  .loyverse-shell .ticket-panel--sale .ticket-product-name,
+  .loyverse-shell .ticket-panel--sale .ticket-line-total {
+    font-size: .84rem;
+  }
+
+  .loyverse-shell .ticket-panel--sale .ticket-totals > div {
+    min-height: 27px;
+    font-size: .75rem;
+  }
+
+  .loyverse-shell .ticket-panel--sale .ticket-totals .ticket-grand-total {
+    min-height: 44px;
+    font-size: .98rem;
+  }
+}
+
+/* Mobile basket surface follows the same rule: rows scroll, actions do not. */
+@media (max-width: 780px) {
+  .mobile-ticket-surface {
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mobile-ticket-surface > .mobile-ticket-close,
+  .mobile-ticket-surface > .ticket-order-type,
+  .mobile-ticket-surface > .ticket-actions {
+    flex: 0 0 auto;
+  }
+
+  .mobile-ticket-surface > .ticket-panel--sale {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mobile-ticket-surface .ticket-panel--sale .ticket-lines {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .mobile-ticket-surface .ticket-line-button--structured {
+    min-height: 76px;
+    gap: 10px;
+    padding-inline: 13px;
+  }
+
+  .mobile-ticket-surface .ticket-product-name {
+    font-size: .9rem;
+  }
+
+  .mobile-ticket-surface .ticket-line-total {
+    min-width: 72px;
+    font-size: .9rem;
+  }
+
+  .mobile-ticket-surface > .ticket-actions {
+    background: #fff;
+    box-shadow: 0 -7px 18px rgb(17 47 36 / 6%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loyverse-shell .ticket-panel--sale .ticket-line-button--structured {
+    transition: none !important;
+  }
+}

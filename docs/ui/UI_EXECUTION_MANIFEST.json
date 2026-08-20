@@ -10,240 +10,43 @@
   },
   "implementationGate": {
     "default": "deny",
-    "rule": "Implement only a complete ready screen or the explicitly permitted subset of a ready flow.",
-    "readyFlows": [
-      "POS-FLOW-001",
-      "POS-FLOW-006"
-    ]
+    "rule": "Implement only a complete ready screen or the explicitly permitted subset of a ready flow. MAP-00 may record already-existing executable behavior without authorizing new scope.",
+    "readyFlows": ["POS-FLOW-001", "POS-FLOW-002", "POS-FLOW-006", "POS-FLOW-007", "BO-FLOW-002", "BO-FLOW-003"]
   },
   "surfaces": [
     {
       "id": "POS",
       "name": "Point of Sale",
-      "sourceSections": [
-        "4. بنية التنقل العامة في POS",
-        "5. شاشة Sales: التفكيك الكامل",
-        "6. الدفع وإتمام البيع",
-        "7. التذاكر المفتوحة Open tickets",
-        "8. الإيصالات والمرتجعات",
-        "9. الورديات وإدارة النقد",
-        "10. Items داخل POS",
-        "11. إعدادات POS الظاهرة للمستخدم"
-      ],
+      "sourceSections": ["4. بنية التنقل العامة في POS", "5. شاشة Sales: التفكيك الكامل", "6. الدفع وإتمام البيع", "7. التذاكر المفتوحة Open tickets", "8. الإيصالات والمرتجعات", "9. الورديات وإدارة النقد", "10. Items داخل POS", "11. إعدادات POS الظاهرة للمستخدم"],
       "screens": [
-        {
-          "id": "POS-SCREEN-001",
-          "name": "Account Sign In and Device Link",
-          "status": "implemented",
-          "implementationAllowedByFlows": ["POS-FLOW-001"],
-          "evidence": {
-            "sections": ["4.2 حالات بدء التشغيل والدخول"],
-            "confidence": "documented"
-          },
-          "states": ["first-run", "credential-entry", "submitting", "invalid-credentials", "device-linked"],
-          "actionIds": ["AUTH-ACTION-001"],
-          "notes": "POS-FLOW-001 permits existing-account sign-in only. Sign-up and email confirmation are outside the first slice."
-        },
-        {
-          "id": "POS-SCREEN-002",
-          "name": "Employee PIN and Time Clock",
-          "status": "implemented",
-          "implementationAllowedByFlows": ["POS-FLOW-001"],
-          "evidence": {
-            "sections": ["4.2 حالات بدء التشغيل والدخول", "4.3 شاشة ساعة الدوام قبل POS"],
-            "confidence": "documented"
-          },
-          "states": ["locked", "pin-entry", "invalid-pin", "authorized", "override-request"],
-          "actionIds": ["EMPLOYEE-ACTION-001"],
-          "notes": "POS-FLOW-001 permits PIN unlock only. Time clock and manager override remain mapped but are not authorized in the first slice."
-        },
-        {
-          "id": "POS-SCREEN-003",
-          "name": "Sales Workspace",
-          "status": "implemented",
-          "implementationAllowedByFlows": ["POS-FLOW-001"],
-          "evidence": {
-            "sections": ["5.1 تخطيط الجهاز اللوحي", "5.2 تخطيط الهاتف", "5.3 شريط الكتالوج وأدوات العثور على عنصر", "5.6 لوحة التذكرة الحالية", "7.1 إنشاء تذكرة وحفظها", "31.1 الانعكاس البنيوي"],
-            "confidence": "documented"
-          },
-          "states": ["empty-ticket", "active-ticket", "search-results", "no-search-results", "offline-local", "action-denied", "recoverable-error"],
-          "actionIds": ["SALES-ACTION-001", "CATALOG-ACTION-001", "SALES-ACTION-002", "SALES-ACTION-003", "SALES-ACTION-004", "SALES-ACTION-006", "CHECKOUT-ACTION-001"],
-          "responsive": {
-            "tablet": "Catalog and ticket are side by side; reference ratio is approximately 68.7/31.3, mirrored in RTL.",
-            "phone": "Catalog and ticket are separate surfaces; do not shrink the tablet split view.",
-            "windows": "Preserve tablet hierarchy with keyboard/mouse affordances."
-          }
-        },
-        {
-          "id": "POS-SCREEN-004",
-          "name": "Item Details and Open Value Entry",
-          "status": "mapped",
-          "implementationAllowed": false,
-          "evidence": {"sections": ["5.5 سلوك إضافة أنواع العناصر", "5.7 محرر سطر العنصر"], "confidence": "documented"}
-        },
-        {
-          "id": "POS-SCREEN-005",
-          "name": "Modifiers and Variants",
-          "status": "mapped",
-          "implementationAllowed": false,
-          "evidence": {"sections": ["5.5 سلوك إضافة أنواع العناصر", "5.9 Modifiers والتعليقات"], "confidence": "documented"}
-        },
-        {
-          "id": "POS-SCREEN-006",
-          "name": "Customer and Loyalty",
-          "status": "mapped",
-          "implementationAllowed": false,
-          "evidence": {"sections": ["5.11 العميل والولاء", "6.8 سجل مشتريات العميل من POS"], "confidence": "documented"}
-        },
-        {
-          "id": "POS-SCREEN-007",
-          "name": "Payment Method Selection",
-          "status": "implemented",
-          "implementationAllowedByFlows": ["POS-FLOW-001"],
-          "evidence": {"sections": ["6.1 شاشة اختيار طريقة الدفع", "28.2 مصفوفة الوظائف"], "confidence": "documented"},
-          "states": ["payment-methods", "cash-available", "connected-method-disabled-offline", "no-enabled-method", "invalid-ticket"],
-          "actionIds": ["CHECKOUT-ACTION-002"]
-        },
-        {
-          "id": "POS-SCREEN-008",
-          "name": "Cash Payment",
-          "status": "implemented",
-          "implementationAllowedByFlows": ["POS-FLOW-001"],
-          "evidence": {"sections": ["6.2 الدفع النقدي", "6.7 Cash rounding"], "confidence": "documented"},
-          "states": ["amount-entry", "exact-tender", "over-tender", "under-tender", "submitting", "rejected", "completed"],
-          "actionIds": ["CHECKOUT-ACTION-003"]
-        },
-        {
-          "id": "POS-SCREEN-009",
-          "name": "Integrated Payment",
-          "status": "mapped",
-          "implementationAllowed": false,
-          "evidence": {"sections": ["6.3 البطاقة والطرق المتكاملة"], "confidence": "documented"}
-        },
-        {
-          "id": "POS-SCREEN-010",
-          "name": "Split Payment",
-          "status": "mapped",
-          "implementationAllowed": false,
-          "evidence": {"sections": ["6.4 Split payment"], "confidence": "documented"}
-        },
-        {
-          "id": "POS-SCREEN-011",
-          "name": "Sale Success",
-          "status": "implemented",
-          "implementationAllowedByFlows": ["POS-FLOW-001"],
-          "evidence": {"sections": ["6.5 شاشة نجاح العملية"], "confidence": "documented"},
-          "states": ["completed", "print-queued", "print-failed", "email-queued", "starting-new-sale"],
-          "actionIds": ["PRINTING-ACTION-001", "SALES-ACTION-005"]
-        },
-        {
-          "id": "POS-SCREEN-012",
-          "name": "Save Open Ticket",
-          "status": "mapped",
-          "implementationAllowed": false,
-          "evidence": {"sections": ["7.1 إنشاء تذكرة وحفظها"], "confidence": "documented"}
-        },
-        {
-          "id": "POS-SCREEN-013",
-          "name": "Open Tickets List",
-          "status": "mapped",
-          "implementationAllowed": false,
-          "evidence": {"sections": ["7.2 قائمة التذاكر", "7.3 التزامن المرئي بين أجهزة POS"], "confidence": "documented"}
-        },
-        {
-          "id": "POS-SCREEN-014",
-          "name": "Split Ticket",
-          "status": "mapped",
-          "implementationAllowed": false,
-          "evidence": {"sections": ["7.4 Split ticket"], "confidence": "documented"}
-        },
-        {
-          "id": "POS-SCREEN-015",
-          "name": "Merge Move and Bill",
-          "status": "mapped",
-          "implementationAllowed": false,
-          "evidence": {"sections": ["7.5 Merge وMove", "7.6 Bill قبل الدفع"], "confidence": "documented"}
-        },
-        {
-          "id": "POS-SCREEN-016",
-          "name": "Receipts List",
-          "status": "mapped",
-          "implementationAllowed": false,
-          "evidence": {"sections": ["8.1 قائمة Receipts"], "confidence": "documented"}
-        },
-        {
-          "id": "POS-SCREEN-017",
-          "name": "Receipt Detail",
-          "status": "mapped",
-          "implementationAllowed": false,
-          "evidence": {"sections": ["8.2 تفاصيل الإيصال"], "confidence": "documented"}
-        },
-        {
-          "id": "POS-SCREEN-018",
-          "name": "Refund",
-          "status": "mapped",
-          "implementationAllowed": false,
-          "evidence": {"sections": ["8.3 Refund"], "confidence": "documented"}
-        },
-        {
-          "id": "POS-SCREEN-019",
-          "name": "Open Shift",
-          "status": "mapped",
-          "implementationAllowed": false,
-          "evidence": {"sections": ["9.1 فتح وردية"], "confidence": "documented"}
-        },
-        {
-          "id": "POS-SCREEN-020",
-          "name": "Current Shift",
-          "status": "mapped",
-          "implementationAllowed": false,
-          "evidence": {"sections": ["9.2 شاشة الوردية الحالية"], "confidence": "documented"}
-        },
-        {
-          "id": "POS-SCREEN-021",
-          "name": "Close Shift and Reports",
-          "status": "mapped",
-          "implementationAllowed": false,
-          "evidence": {"sections": ["9.3 إغلاق الوردية"], "confidence": "documented"}
-        },
-        {
-          "id": "POS-SCREEN-022",
-          "name": "POS Items List",
-          "status": "mapped",
-          "implementationAllowed": false,
-          "evidence": {"sections": ["10.1 القائمة"], "confidence": "documented"}
-        },
-        {
-          "id": "POS-SCREEN-023",
-          "name": "POS Item Editor",
-          "status": "mapped",
-          "implementationAllowed": false,
-          "evidence": {"sections": ["10.2 Create/Edit item"], "confidence": "documented"}
-        },
-        {
-          "id": "POS-SCREEN-024",
-          "name": "POS Categories",
-          "status": "mapped",
-          "implementationAllowed": false,
-          "evidence": {"sections": ["10.3 Categories"], "confidence": "documented"}
-        },
-        {
-          "id": "POS-SCREEN-025",
-          "name": "POS Settings",
-          "status": "mapped",
-          "implementationAllowed": false,
-          "evidence": {"sections": ["11. إعدادات POS الظاهرة للمستخدم"], "confidence": "documented"}
-        },
-        {
-          "id": "POS-SCREEN-026",
-          "name": "Tablet Sale Page Layout",
-          "status": "implemented",
-          "implementationAllowedByFlows": ["POS-FLOW-006"],
-          "evidence": {"sections": ["5.4 بطاقات العناصر والشبكة المخصصة"], "confidence": "documented"},
-          "states": ["page-list", "empty-custom-page", "layout-editing", "product-picker", "product-placed", "recoverable-error"],
-          "actionIds": ["LAYOUT-ACTION-001", "LAYOUT-ACTION-002", "LAYOUT-ACTION-003", "LAYOUT-ACTION-004"],
-          "notes": "The implemented slice creates local custom pages and places or removes product tiles. Category/discount placement and page rename/reorder/delete remain explicit non-goals."
-        }
+        {"id": "POS-SCREEN-001", "name": "Account Sign In and Device Link", "status": "implemented", "implementationAllowedByFlows": ["POS-FLOW-001"], "evidence": {"sections": ["4.2 حالات بدء التشغيل والدخول"], "confidence": "documented"}, "states": ["first-run", "credential-entry", "submitting", "invalid-credentials", "device-linked"], "actionIds": ["AUTH-ACTION-001"], "notes": "POS-FLOW-001 permits existing-account sign-in only. Sign-up and email confirmation are outside the first slice."},
+        {"id": "POS-SCREEN-002", "name": "Employee PIN and Time Clock", "status": "implemented", "implementationAllowedByFlows": ["POS-FLOW-001"], "evidence": {"sections": ["4.2 حالات بدء التشغيل والدخول", "4.3 شاشة ساعة الدوام قبل POS"], "confidence": "documented"}, "states": ["locked", "pin-entry", "invalid-pin", "authorized", "override-request"], "actionIds": ["EMPLOYEE-ACTION-001"], "notes": "Current executable scope is four-digit employee PIN unlock. Time clock remains a MAP-02 product gap; MAP-01 manager override is enforced at the blocked action rather than changing employee-session identity."},
+        {"id": "POS-SCREEN-003", "name": "Sales Workspace", "status": "implemented", "implementationAllowedByFlows": ["POS-FLOW-001"], "evidence": {"sections": ["5.1 تخطيط الجهاز اللوحي", "5.2 تخطيط الهاتف", "5.3 شريط الكتالوج وأدوات العثور على عنصر", "5.6 لوحة التذكرة الحالية", "7.1 إنشاء تذكرة وحفظها", "31.1 الانعكاس البنيوي"], "confidence": "documented"}, "states": ["empty-ticket", "active-ticket", "search-results", "no-search-results", "offline-local", "action-denied", "recoverable-error"], "actionIds": ["SALES-ACTION-001", "CATALOG-ACTION-001", "SALES-ACTION-002", "SALES-ACTION-003", "SALES-ACTION-004", "SALES-ACTION-006", "CHECKOUT-ACTION-001"], "responsive": {"tablet": "Catalog and ticket are side by side; reference ratio is approximately 68.7/31.3, mirrored in RTL.", "phone": "Catalog and ticket are separate surfaces; do not shrink the tablet split view.", "windows": "Preserve tablet hierarchy with keyboard/mouse affordances."}},
+        {"id": "POS-SCREEN-004", "name": "Item Details and Open Value Entry", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["5.5 سلوك إضافة أنواع العناصر", "5.7 محرر سطر العنصر"], "confidence": "documented"}},
+        {"id": "POS-SCREEN-005", "name": "Pricing Options and Add-ons", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["5.5 سلوك إضافة أنواع العناصر", "5.9 Modifiers والتعليقات"], "confidence": "documented"}, "notes": "Back Office administers reusable pricing-option groups, item-specific multiple prices and general/private add-on facts under BO-FLOW-002. Cashier selection, exact resolved pricing and sold-line snapshots remain explicitly unauthorized until MAP-03 scope is reviewed."},
+        {"id": "POS-SCREEN-006", "name": "Customer and Loyalty", "status": "implemented", "implementationAllowed": false, "evidence": {"sections": ["5.11 العميل والولاء", "6.8 سجل مشتريات العميل من POS"], "confidence": "documented"}, "states": ["customer-search", "customer-create", "customer-edit", "customer-attached", "customer-profile", "purchase-history", "credit-sale", "debt-ledger", "debt-settlement", "loyalty-redemption", "recoverable-error"], "actionIds": ["CUSTOMER-ACTION-001", "CUSTOMER-ACTION-002", "CUSTOMER-ACTION-003", "CUSTOMER-CREDIT-ACTION-001", "CUSTOMER-CREDIT-ACTION-002", "LOYALTY-ACTION-001"], "notes": "MAP-00 records existing executable customer/credit/loyalty behavior and tests. POS-FLOW-007 reuses only the existing customer-credit charge behavior from the payment surface; production permissions, limits/aging/accounting and final cloud persistence remain gaps."},
+        {"id": "POS-SCREEN-007", "name": "Payment Method Selection", "status": "implemented", "implementationAllowedByFlows": ["POS-FLOW-001", "POS-FLOW-007"], "evidence": {"sections": ["6.1 شاشة اختيار طريقة الدفع", "28.2 مصفوفة الوظائف", "PAYMENT_AND_DELIVERY_COLLECTION_DECISION.md §1-8"], "confidence": "documented"}, "states": ["payment-methods", "cash-available", "network-available", "credit-available", "custom-method-unavailable", "delivery-hub", "delivery-channel-selection", "delivery-cod-merchant-collection", "connected-method-disabled-offline", "no-enabled-method", "invalid-ticket"], "actionIds": ["CHECKOUT-ACTION-002", "CUSTOMER-CREDIT-ACTION-001", "DELIVERY-COLLECTION-ACTION-001"], "notes": "MAP-01 payment selection is N-method and configuration-driven. Cash, Network and Credit are the starter identities; merchant-added methods occupy the same responsive surface. Methods without a completed financial lifecycle remain visibly unavailable rather than silently completing as another method. Delivery is one conditional hub and only courier-pays-merchant COD is executable in POS-FLOW-007; self-delivery fee posting and platform settlement remain later work."},
+        {"id": "POS-SCREEN-008", "name": "Cash Payment", "status": "implemented", "implementationAllowedByFlows": ["POS-FLOW-001", "POS-FLOW-007"], "evidence": {"sections": ["6.2 الدفع النقدي", "6.7 Cash rounding"], "confidence": "documented"}, "states": ["amount-entry", "exact-tender", "over-tender", "under-tender", "submitting", "rejected", "completed"], "actionIds": ["CHECKOUT-ACTION-003"]},
+        {"id": "POS-SCREEN-009", "name": "Integrated Payment", "status": "implemented", "implementationAllowedByFlows": ["POS-FLOW-007"], "evidence": {"sections": ["6.3 البطاقة والطرق المتكاملة"], "confidence": "documented"}, "states": ["mock-card-selected", "mock-processing", "mock-completed", "mock-rejected", "recoverable-error"], "actionIds": ["CHECKOUT-ACTION-004", "CHECKOUT-ACTION-005"], "notes": "MAP-00 records the existing mock card/Mada interaction only. POS-FLOW-007 may reuse that same mock Network path after delivery COD selection; this is explicitly not real integrated-terminal/provider support and does not authorize production terminal work."},
+        {"id": "POS-SCREEN-010", "name": "Split Payment", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["6.4 Split payment", "PAYMENT_AND_DELIVERY_COLLECTION_DECISION.md §4"], "confidence": "documented"}, "notes": "Future split payment allocates across any enabled methods; durable multi-payment records and lifecycle remain MAP-05."},
+        {"id": "POS-SCREEN-011", "name": "Sale Success", "status": "implemented", "implementationAllowedByFlows": ["POS-FLOW-001", "POS-FLOW-007"], "evidence": {"sections": ["6.5 شاشة نجاح العملية"], "confidence": "documented"}, "states": ["completed", "print-queued", "print-failed", "email-queued", "starting-new-sale"], "actionIds": ["PRINTING-ACTION-001", "RECEIPT-ACTION-002", "SALES-ACTION-005"]},
+        {"id": "POS-SCREEN-012", "name": "Save Open Ticket", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["7.1 إنشاء تذكرة وحفظها"], "confidence": "documented"}, "notes": "SalesContract.saveOpenTicket is already callable from POS-SCREEN-003 under POS-FLOW-001, but the dedicated Loyverse-class Save Open Ticket surface/naming workflow remains mapped and is not represented by another screen ID."},
+        {"id": "POS-SCREEN-013", "name": "Open Tickets List", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["7.2 قائمة التذاكر", "7.3 التزامن المرئي بين أجهزة POS"], "confidence": "documented"}},
+        {"id": "POS-SCREEN-014", "name": "Split Ticket", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["7.4 Split ticket"], "confidence": "documented"}},
+        {"id": "POS-SCREEN-015", "name": "Merge Move and Bill", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["7.5 Merge وMove", "7.6 Bill قبل الدفع"], "confidence": "documented"}},
+        {"id": "POS-SCREEN-016", "name": "Receipts List", "status": "implemented", "implementationAllowed": false, "evidence": {"sections": ["8.1 قائمة Receipts"], "confidence": "documented"}, "states": ["receipt-list", "empty-receipts", "reprint-submitting", "reprint-failed", "reprint-delivery-unknown", "reprint-confirmation"], "actionIds": ["RECEIPT-ACTION-001", "PRINTING-ACTION-002"], "notes": "MAP-00 records the existing receipt-history and reprint screen and corrects its executable data-screen-id to POS-SCREEN-016. Receipt detail/refund remain separate mapped screens."},
+        {"id": "POS-SCREEN-017", "name": "Receipt Detail", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["8.2 تفاصيل الإيصال"], "confidence": "documented"}},
+        {"id": "POS-SCREEN-018", "name": "Refund", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["8.3 Refund"], "confidence": "documented"}},
+        {"id": "POS-SCREEN-019", "name": "Open Shift", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["9.1 فتح وردية"], "confidence": "documented"}},
+        {"id": "POS-SCREEN-020", "name": "Current Shift", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["9.2 شاشة الوردية الحالية"], "confidence": "documented"}},
+        {"id": "POS-SCREEN-021", "name": "Close Shift and Reports", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["9.3 إغلاق الوردية"], "confidence": "documented"}},
+        {"id": "POS-SCREEN-022", "name": "POS Items List", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["10.1 القائمة"], "confidence": "documented"}},
+        {"id": "POS-SCREEN-023", "name": "POS Item Editor", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["10.2 Create/Edit item"], "confidence": "documented"}},
+        {"id": "POS-SCREEN-024", "name": "POS Categories", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["10.3 Categories"], "confidence": "documented"}},
+        {"id": "POS-SCREEN-025", "name": "POS Settings", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["11. إعدادات POS الظاهرة للمستخدم"], "confidence": "documented"}},
+        {"id": "POS-SCREEN-026", "name": "Tablet Sale Page Layout", "status": "implemented", "implementationAllowedByFlows": ["POS-FLOW-006"], "evidence": {"sections": ["5.4 بطاقات العناصر والشبكة المخصصة"], "confidence": "documented"}, "states": ["page-list", "empty-custom-page", "layout-editing", "product-picker", "product-placed", "page-renamed", "page-reordered", "page-deleted", "recoverable-error"], "actionIds": ["LAYOUT-ACTION-001", "LAYOUT-ACTION-002", "LAYOUT-ACTION-003", "LAYOUT-ACTION-004", "LAYOUT-ACTION-005", "LAYOUT-ACTION-006", "LAYOUT-ACTION-007"], "notes": "MAP-00 reconciles the manifest with the existing SaleLayoutContract/UI: custom pages can be created, renamed, moved/reordered, deleted and populated/cleared. Category/discount tiles and cloud layout synchronization remain non-goals."},
+        {"id": "POS-SCREEN-027", "name": "Restaurant Local Service Overlay", "status": "implemented", "implementationAllowedByFlows": ["POS-FLOW-002"], "evidence": {"sections": ["7.1 إنشاء تذكرة وحفظها", "7.2 قائمة التذاكر", "35. تدفق مطعم: Open ticket ثم KDS ثم الدفع"], "confidence": "documented"}, "states": ["simple-local", "place-selection", "place-free", "place-open", "open-orders", "reopened-order", "kitchen-update-sent", "recoverable-error"], "actionIds": ["RESTAURANT-ACTION-001", "RESTAURANT-ACTION-002", "RESTAURANT-ACTION-003", "RESTAURANT-ACTION-004", "RESTAURANT-ACTION-005"]},
+        {"id": "POS-SCREEN-028", "name": "Restaurant Service Staging Settings", "status": "implemented", "implementationAllowedByFlows": ["POS-FLOW-002"], "evidence": {"sections": ["11. إعدادات POS الظاهرة للمستخدم"], "confidence": "documented"}, "states": ["restaurant-off", "restaurant-simple", "restaurant-places", "locked-by-open-orders", "recoverable-error"], "actionIds": ["RESTAURANT-ACTION-006"], "notes": "These are POS-local staging controls for the restaurant proof. MAP-01 defines the owner-managed effective-configuration boundary; migration of all restaurant configuration authority out of the old prototype control remains tied to the later restaurant configuration lifecycle, not to MAP-01 transport."}
       ]
     },
     {
@@ -251,17 +54,17 @@
       "name": "Back Office",
       "sourceSections": ["12. القشرة العامة والتنقل", "13. Reports", "14. Items في Back Office", "15. Advanced Inventory", "16. Employees وAccess Rights", "17. Customers", "18. Settings في Back Office"],
       "screens": [
-        {"id": "BO-SCREEN-001", "name": "Shell and Navigation", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["12.1 الإطار العام", "12.2 خريطة القائمة"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-001", "name": "Shell and Navigation", "status": "implemented", "implementationAllowedByFlows": ["BO-FLOW-002", "BO-FLOW-003"], "evidence": {"sections": ["12.1 الإطار العام", "12.2 خريطة القائمة"], "confidence": "documented"}, "states": ["items-list-navigation", "categories-navigation", "option-groups-navigation", "add-ons-navigation", "employees-navigation", "access-rights-navigation", "features-navigation", "stores-navigation", "pos-devices-navigation", "payment-types-navigation", "payment-delivery-navigation"], "actionIds": ["BO-NAV-ACTION-001"], "notes": "BO-FLOW-002 permits the catalog family. BO-FLOW-003 implements only the bounded MAP-01 operational-configuration family, including payment/direct-impact and delivery-collection policy. Other Back Office families remain gated."},
         {"id": "BO-SCREEN-002", "name": "Sales Summary", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["13.1 أدوات مشتركة", "13.2 Sales Summary"], "confidence": "documented"}},
         {"id": "BO-SCREEN-003", "name": "Sales by Item", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["13.3 Sales by Item"], "confidence": "documented"}},
         {"id": "BO-SCREEN-004", "name": "Report Explorer", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["13.4 بقية تقارير المبيعات"], "confidence": "documented"}},
         {"id": "BO-SCREEN-005", "name": "Back Office Receipts", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["13.5 Receipts في Back Office", "Cancel receipt"], "confidence": "documented"}},
-        {"id": "BO-SCREEN-006", "name": "Item List", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["14.1 Item list"], "confidence": "documented"}},
-        {"id": "BO-SCREEN-007", "name": "Item Editor", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["14.2 نموذج Add/Edit item"], "confidence": "documented"}},
-        {"id": "BO-SCREEN-008", "name": "Variants", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["14.3 Variants"], "confidence": "documented"}},
-        {"id": "BO-SCREEN-009", "name": "Categories", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["14.4 Categories"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-006", "name": "Item List", "status": "implemented", "implementationAllowedByFlows": ["BO-FLOW-002"], "evidence": {"sections": ["14.1 Item list"], "confidence": "documented"}, "states": ["loading", "item-list", "search-results", "no-results", "recoverable-error"], "actionIds": ["CATALOG-ADMIN-ACTION-001"], "notes": "Search covers item name, SKU and barcode; category filter, availability, resolved starting price, pricing mode and add-on count are visible. Inventory filters/import/export remain outside scope."},
+        {"id": "BO-SCREEN-007", "name": "Item Editor", "status": "implemented", "implementationAllowedByFlows": ["BO-FLOW-002"], "evidence": {"sections": ["14.2 نموذج Add/Edit item", "14.3 Variants", "14.6 Modifiers"], "confidence": "documented"}, "states": ["creating", "editing", "fixed-price", "multiple-price", "shared-option-group", "item-private-options", "general-add-ons", "private-add-ons", "appearance-color", "appearance-image", "saving", "validation-error", "saved"], "actionIds": ["CATALOG-ADMIN-ACTION-002", "CATALOG-ADMIN-ACTION-003", "CATALOG-ADMIN-ACTION-004", "CATALOG-ADMIN-ACTION-008"], "notes": "Current editor exposes fixed or reusable/item-private multiple pricing, reusable/private add-ons and merchant POS appearance by color/shape or image staging. Legacy generated variants are migration-only. Cost, stock, tax, per-store overrides, production media storage and POS option/add-on selection remain gated."},
+        {"id": "BO-SCREEN-008", "name": "Reusable Option Groups and Multiple Pricing", "status": "implemented", "implementationAllowedByFlows": ["BO-FLOW-002"], "evidence": {"sections": ["14.3 Variants"], "confidence": "documented"}, "states": ["option-group-list", "option-group-creating", "option-group-editing", "group-color", "inherit-prices", "item-price-overrides", "item-private-options", "validation-error", "saved"], "actionIds": ["CATALOG-ADMIN-ACTION-005"], "notes": "Merchant-facing concept is مجموعات الخيارات. Groups hold reusable values, direct default prices and current staging accent color. Items can inherit the group, sparsely override prices, or use item-only custom choices. Current POS selection remains separately gated."},
+        {"id": "BO-SCREEN-009", "name": "Categories", "status": "implemented", "implementationAllowedByFlows": ["BO-FLOW-002"], "evidence": {"sections": ["14.4 Categories"], "confidence": "documented"}, "states": ["category-list", "category-creating", "category-editing", "category-color", "validation-error", "saved"], "actionIds": ["CATALOG-ADMIN-ACTION-006"], "notes": "Create, rename and merchant-selected accent color are implemented in current staging semantics. Delete and reorder remain outside scope."},
         {"id": "BO-SCREEN-010", "name": "Discounts", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["14.5 Discounts"], "confidence": "documented"}},
-        {"id": "BO-SCREEN-011", "name": "Modifiers", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["14.6 Modifiers"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-011", "name": "Add-ons", "status": "implemented", "implementationAllowedByFlows": ["BO-FLOW-002"], "evidence": {"sections": ["14.6 Modifiers"], "confidence": "documented"}, "states": ["add-on-list", "add-on-creating", "add-on-editing", "add-on-color", "validation-error", "saved"], "actionIds": ["CATALOG-ADMIN-ACTION-007"], "notes": "Reusable general add-on groups, accent color and exact additional prices can be administered. Item assignment and item-private add-ons are tracked by BO-SCREEN-007/CATALOG-ADMIN-ACTION-008. POS add-on selection/rules remain separately gated."},
         {"id": "BO-SCREEN-012", "name": "Suppliers", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["15.1 Suppliers"], "confidence": "documented"}},
         {"id": "BO-SCREEN-013", "name": "Purchase Orders", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["15.2 Purchase Orders"], "confidence": "documented"}},
         {"id": "BO-SCREEN-014", "name": "Transfer Orders", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["15.3 Transfer Orders"], "confidence": "documented"}},
@@ -271,15 +74,15 @@
         {"id": "BO-SCREEN-018", "name": "Inventory Count", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["15.7 Inventory Count"], "confidence": "documented"}},
         {"id": "BO-SCREEN-019", "name": "Production", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["15.8 Production"], "confidence": "documented"}},
         {"id": "BO-SCREEN-020", "name": "Printing Labels", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["15.9 Printing Labels"], "confidence": "documented"}},
-        {"id": "BO-SCREEN-021", "name": "Employees", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["16.1 Employee list وملف الموظف"], "confidence": "documented"}},
-        {"id": "BO-SCREEN-022", "name": "Access Rights", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["16.2 Access Rights"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-021", "name": "Employees", "status": "implemented", "implementationAllowedByFlows": ["BO-FLOW-003"], "evidence": {"sections": ["16.1 Employee list وملف الموظف"], "confidence": "documented"}, "states": ["employee-list", "employee-creating", "employee-editing", "pin-entry", "active-disabled", "validation-error", "saved"], "actionIds": ["POS-CONFIG-ADMIN-ACTION-001"]},
+        {"id": "BO-SCREEN-022", "name": "Access Rights", "status": "implemented", "implementationAllowedByFlows": ["BO-FLOW-003"], "evidence": {"sections": ["16.2 Access Rights"], "confidence": "documented"}, "states": ["role-list", "role-creating", "role-editing", "permission-selection", "owner-locked", "validation-error", "saved"], "actionIds": ["POS-CONFIG-ADMIN-ACTION-002"]},
         {"id": "BO-SCREEN-023", "name": "Timecards and Total Hours", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["16.3 Timecards وTotal Hours"], "confidence": "documented"}},
         {"id": "BO-SCREEN-024", "name": "Customers", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["17.1 Customer base", "17.3 الحالات"], "confidence": "documented"}},
         {"id": "BO-SCREEN-025", "name": "Customer Profile and Purchases", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["17.2 ملف العميل وسجل الشراء"], "confidence": "documented"}},
-        {"id": "BO-SCREEN-026", "name": "Features", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["18.1 Features"], "confidence": "documented"}},
-        {"id": "BO-SCREEN-027", "name": "Stores", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["18.2 Stores"], "confidence": "documented"}},
-        {"id": "BO-SCREEN-028", "name": "POS Devices", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["18.3 POS Devices"], "confidence": "documented"}},
-        {"id": "BO-SCREEN-029", "name": "Payment Types", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["18.4 Payment Types"], "confidence": "documented"}},
+        {"id": "BO-SCREEN-026", "name": "Features", "status": "implemented", "implementationAllowedByFlows": ["BO-FLOW-003"], "evidence": {"sections": ["18.1 Features"], "confidence": "documented"}, "states": ["feature-list", "feature-enabled", "feature-disabled", "saving", "recoverable-error"], "actionIds": ["POS-CONFIG-ADMIN-ACTION-003"]},
+        {"id": "BO-SCREEN-027", "name": "Stores", "status": "implemented", "implementationAllowedByFlows": ["BO-FLOW-003"], "evidence": {"sections": ["18.2 Stores"], "confidence": "documented"}, "states": ["store-list", "store-creating", "store-editing", "active-disabled", "validation-error", "saved"], "actionIds": ["POS-CONFIG-ADMIN-ACTION-004"]},
+        {"id": "BO-SCREEN-028", "name": "POS Devices", "status": "implemented", "implementationAllowedByFlows": ["BO-FLOW-003"], "evidence": {"sections": ["18.3 POS Devices"], "confidence": "documented"}, "states": ["device-list", "device-creating", "device-editing", "pending-link", "linked", "disabled", "validation-error", "saved"], "actionIds": ["POS-CONFIG-ADMIN-ACTION-005"]},
+        {"id": "BO-SCREEN-029", "name": "Payment and Delivery Collection Settings", "status": "implemented", "implementationAllowedByFlows": ["BO-FLOW-003"], "evidence": {"sections": ["18.4 Payment Types", "PAYMENT_AND_DELIVERY_COLLECTION_DECISION.md §1-9"], "confidence": "documented"}, "states": ["payment-list", "payment-creating", "payment-editing", "direct-impact", "system-default", "enabled", "disabled", "offline-capable", "online-required", "reordered", "delivery-disabled", "delivery-enabled", "delivery-channel-list", "delivery-channel-editing", "delivery-electronic-enabled", "delivery-cod-enabled", "courier-pays-merchant", "platform-settlement", "self-delivery-policy", "fee-beneficiary-merchant", "fee-beneficiary-courier", "validation-error", "saved"], "actionIds": ["POS-CONFIG-ADMIN-ACTION-006", "POS-CONFIG-ADMIN-ACTION-007", "POS-CONFIG-ADMIN-ACTION-008"], "notes": "MAP-01 owns payment/direct-impact and delivery collection policy only. Platform settlement accounting, split-payment records and executable self-delivery fee posting remain later payment/sale-money work."},
         {"id": "BO-SCREEN-030", "name": "Taxes", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["18.5 Taxes"], "confidence": "documented"}},
         {"id": "BO-SCREEN-031", "name": "Loyalty", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["18.6 Loyalty"], "confidence": "documented"}},
         {"id": "BO-SCREEN-032", "name": "Receipt Settings", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["18.7 Receipt"], "confidence": "documented"}},
@@ -289,310 +92,148 @@
         {"id": "BO-SCREEN-036", "name": "Billing", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["18.11 Billing"], "confidence": "documented"}}
       ]
     },
-    {
-      "id": "DASH",
-      "name": "Dashboard",
-      "sourceSections": ["19. الدخول والقشرة العامة", "20. تبويب Sales", "21. تبويب Items", "22. Settings في Dashboard"],
-      "screens": [
-        {"id": "DASH-SCREEN-001", "name": "Sign In and Shell", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["19. الدخول والقشرة العامة"], "confidence": "documented"}},
-        {"id": "DASH-SCREEN-002", "name": "Sales Summary and Breakdown", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["20.1 الحالة الافتراضية", "20.2 الفترة والرسم", "20.3 القياسات المرئية"], "confidence": "documented"}},
-        {"id": "DASH-SCREEN-003", "name": "Items and Stock Alerts", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["21. تبويب Items"], "confidence": "documented"}},
-        {"id": "DASH-SCREEN-004", "name": "Dashboard Settings", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["22. Settings في Dashboard"], "confidence": "documented"}}
-      ]
-    },
-    {
-      "id": "KDS",
-      "name": "Kitchen Display System",
-      "sourceSections": ["23. الإعداد والاقتران", "24. شاشة الطلبات النشطة"],
-      "screens": [
-        {"id": "KDS-SCREEN-001", "name": "Setup Pairing and Settings", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["23. الإعداد والاقتران"], "confidence": "documented"}},
-        {"id": "KDS-SCREEN-002", "name": "Active Orders", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["24.1 الشريط العلوي", "24.2 بطاقة الطلب", "24.3 حالات اللون والزمن", "24.4 إتمام عنصر أو طلب", "24.6 حالات KDS"], "confidence": "documented"}},
-        {"id": "KDS-SCREEN-003", "name": "Completed Orders and Recall", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["24.5 Recall"], "confidence": "documented"}}
-      ]
-    },
-    {
-      "id": "CDS",
-      "name": "Customer Display System",
-      "sourceSections": ["25. الاقتران", "26. شاشة العميل"],
-      "screens": [
-        {"id": "CDS-SCREEN-001", "name": "Pairing", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["25. الاقتران"], "confidence": "documented"}},
-        {"id": "CDS-SCREEN-002", "name": "Idle and Active Ticket", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["26.1 التخطيط", "26.2 التفاعل أثناء البيع", "26.4 الحالات"], "confidence": "documented"}},
-        {"id": "CDS-SCREEN-003", "name": "Customer and Email Receipt", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["26.1 التخطيط", "26.2 التفاعل أثناء البيع"], "confidence": "documented"}},
-        {"id": "CDS-SCREEN-004", "name": "Payment Success", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["26.3 حالة نجاح الدفع"], "confidence": "documented"}}
-      ]
-    }
+    {"id": "DASH", "name": "Dashboard", "sourceSections": ["19. الدخول والقشرة العامة", "20. تبويب Sales", "21. تبويب Items", "22. Settings في Dashboard"], "screens": [
+      {"id": "DASH-SCREEN-001", "name": "Sign In and Shell", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["19. الدخول والقشرة العامة"], "confidence": "documented"}},
+      {"id": "DASH-SCREEN-002", "name": "Sales Summary and Breakdown", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["20.1 الحالة الافتراضية", "20.2 الفترة والرسم", "20.3 القياسات المرئية"], "confidence": "documented"}},
+      {"id": "DASH-SCREEN-003", "name": "Items and Stock Alerts", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["21. تبويب Items"], "confidence": "documented"}},
+      {"id": "DASH-SCREEN-004", "name": "Dashboard Settings", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["22. Settings في Dashboard"], "confidence": "documented"}}
+    ]},
+    {"id": "KDS", "name": "Kitchen Display System", "sourceSections": ["23. الإعداد والاقتران", "24. شاشة الطلبات النشطة"], "screens": [
+      {"id": "KDS-SCREEN-001", "name": "Setup Pairing and Settings", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["23. الإعداد والاقتران"], "confidence": "documented"}},
+      {"id": "KDS-SCREEN-002", "name": "Active Orders", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["24.1 الشريط العلوي", "24.2 بطاقة الطلب", "24.3 حالات اللون والزمن", "24.4 إتمام عنصر أو طلب", "24.6 حالات KDS"], "confidence": "documented"}},
+      {"id": "KDS-SCREEN-003", "name": "Completed Orders and Recall", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["24.5 Recall"], "confidence": "documented"}}
+    ]},
+    {"id": "CDS", "name": "Customer Display System", "sourceSections": ["25. الاقتران", "26. شاشة العميل"], "screens": [
+      {"id": "CDS-SCREEN-001", "name": "Pairing", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["25. الاقتران"], "confidence": "documented"}},
+      {"id": "CDS-SCREEN-002", "name": "Idle and Active Ticket", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["26.1 التخطيط", "26.2 التفاعل أثناء البيع", "26.4 الحالات"], "confidence": "documented"}},
+      {"id": "CDS-SCREEN-003", "name": "Customer and Email Receipt", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["26.1 التخطيط", "26.2 التفاعل أثناء البيع"], "confidence": "documented"}},
+      {"id": "CDS-SCREEN-004", "name": "Payment Success", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["26.3 حالة نجاح الدفع"], "confidence": "documented"}}
+    ]}
   ],
   "actions": [
-    {
-      "id": "AUTH-ACTION-001",
-      "trigger": "Sign in",
-      "screens": ["POS-SCREEN-001"],
-      "contract": "DeviceSessionContract.linkWithCredentials",
-      "contractStatus": "draft-unfrozen",
-      "offline": "connected-only",
-      "idempotency": "stable device-link command identity required",
-      "visibleResults": ["submitting", "device-linked", "invalid-credentials", "recoverable-error"]
-    },
-    {
-      "id": "EMPLOYEE-ACTION-001",
-      "trigger": "Submit four-digit PIN",
-      "screens": ["POS-SCREEN-002"],
-      "contract": "EmployeeSessionContract.unlock",
-      "contractStatus": "draft-unfrozen",
-      "offline": "local",
-      "idempotency": "not a durable business command",
-      "visibleResults": ["authorized", "invalid-pin", "action-denied"]
-    },
-    {
-      "id": "SALES-ACTION-001",
-      "trigger": "Enter sales workspace or New sale",
-      "screens": ["POS-SCREEN-003", "POS-SCREEN-011"],
-      "contract": "SalesContract.startTicket",
-      "contractStatus": "draft-unfrozen",
-      "offline": "local",
-      "idempotency": "stable ticket identity required",
-      "visibleResults": ["empty-ticket", "recoverable-error"]
-    },
-    {
-      "id": "CATALOG-ACTION-001",
-      "trigger": "Search catalog",
-      "screens": ["POS-SCREEN-003"],
-      "contract": "CatalogContract.search",
-      "contractStatus": "draft-unfrozen",
-      "offline": "local-catalog",
-      "idempotency": "query",
-      "visibleResults": ["search-results", "no-search-results"]
-    },
-    {
-      "id": "SALES-ACTION-002",
-      "trigger": "Tap a fixed-price item",
-      "screens": ["POS-SCREEN-003"],
-      "contract": "SalesContract.addItem",
-      "contractStatus": "draft-unfrozen",
-      "offline": "local",
-      "idempotency": "interaction command identity required to prevent accidental duplicate replay",
-      "visibleResults": ["active-ticket", "action-denied", "recoverable-error"]
-    },
-    {
-      "id": "SALES-ACTION-003",
-      "trigger": "Increase or decrease line quantity",
-      "screens": ["POS-SCREEN-003"],
-      "contract": "SalesContract.setLineQuantity",
-      "contractStatus": "draft-unfrozen",
-      "offline": "local",
-      "idempotency": "set desired quantity rather than replay an increment",
-      "visibleResults": ["active-ticket", "empty-ticket", "action-denied"]
-    },
-    {
-      "id": "SALES-ACTION-004",
-      "trigger": "Delete unsaved ticket line",
-      "screens": ["POS-SCREEN-003"],
-      "contract": "SalesContract.removeLine",
-      "contractStatus": "draft-unfrozen",
-      "offline": "local",
-      "idempotency": "stable line identity",
-      "visibleResults": ["active-ticket", "empty-ticket", "action-denied"]
-    },
-    {
-      "id": "CHECKOUT-ACTION-001",
-      "trigger": "Charge",
-      "screens": ["POS-SCREEN-003"],
-      "contract": "CheckoutContract.begin",
-      "contractStatus": "draft-unfrozen",
-      "offline": "local validation",
-      "idempotency": "stable checkout session identity",
-      "visibleResults": ["payment-methods", "invalid-ticket", "action-denied"]
-    },
-    {
-      "id": "CHECKOUT-ACTION-002",
-      "trigger": "Select Cash",
-      "screens": ["POS-SCREEN-007"],
-      "contract": "CheckoutContract.selectPaymentMethod",
-      "contractStatus": "draft-unfrozen",
-      "offline": "local for cash",
-      "idempotency": "set selected method",
-      "visibleResults": ["amount-entry", "connected-method-disabled-offline"]
-    },
-    {
-      "id": "CHECKOUT-ACTION-003",
-      "trigger": "Confirm cash tender",
-      "screens": ["POS-SCREEN-008"],
-      "contract": "CheckoutContract.completeCashSale",
-      "contractStatus": "draft-unfrozen",
-      "offline": "durable-local",
-      "idempotency": "required; one stable command ID atomically owns sale and cash-payment completion",
-      "money": "Rifad Money DTO only; no floating-point authority",
-      "visibleResults": ["submitting", "under-tender", "rejected", "completed"]
-    },
-    {
-      "id": "PRINTING-ACTION-001",
-      "trigger": "Print receipt",
-      "screens": ["POS-SCREEN-011"],
-      "contract": "PrintingContract.submit",
-      "contractStatus": "draft-unfrozen",
-      "offline": "local when printer transport is local",
-      "idempotency": "stable print job ID; delivery-unknown must not cause blind duplicate printing",
-      "visibleResults": ["print-queued", "print-failed", "delivery-unknown"]
-    },
-    {
-      "id": "SALES-ACTION-005",
-      "trigger": "New sale",
-      "screens": ["POS-SCREEN-011"],
-      "contract": "SalesContract.startTicket",
-      "contractStatus": "draft-unfrozen",
-      "offline": "local",
-      "idempotency": "stable new ticket identity",
-      "visibleResults": ["starting-new-sale", "empty-ticket"]
-    },
-    {
-      "id": "SALES-ACTION-006",
-      "trigger": "Save current ticket",
-      "screens": ["POS-SCREEN-003"],
-      "contract": "SalesContract.saveOpenTicket",
-      "contractStatus": "draft-unfrozen",
-      "offline": "durable-local",
-      "idempotency": "stable save command identity required",
-      "visibleResults": ["saving-ticket", "empty-ticket", "recoverable-error"]
-    },
-    {
-      "id": "LAYOUT-ACTION-001",
-      "trigger": "Load sale pages",
-      "screens": ["POS-SCREEN-026"],
-      "contract": "SaleLayoutContract.listPages",
-      "contractStatus": "draft-unfrozen",
-      "offline": "local",
-      "idempotency": "query",
-      "visibleResults": ["page-list", "empty-custom-page", "recoverable-error"]
-    },
-    {
-      "id": "LAYOUT-ACTION-002",
-      "trigger": "Create custom sale page",
-      "screens": ["POS-SCREEN-026"],
-      "contract": "SaleLayoutContract.createPage",
-      "contractStatus": "draft-unfrozen",
-      "offline": "durable-local",
-      "idempotency": "stable page identity",
-      "visibleResults": ["layout-editing", "recoverable-error"]
-    },
-    {
-      "id": "LAYOUT-ACTION-003",
-      "trigger": "Place product in page slot",
-      "screens": ["POS-SCREEN-026"],
-      "contract": "SaleLayoutContract.placeProduct",
-      "contractStatus": "draft-unfrozen",
-      "offline": "durable-local",
-      "idempotency": "set the desired product for one stable page slot",
-      "visibleResults": ["product-picker", "product-placed", "recoverable-error"]
-    },
-    {
-      "id": "LAYOUT-ACTION-004",
-      "trigger": "Remove product from page slot",
-      "screens": ["POS-SCREEN-026"],
-      "contract": "SaleLayoutContract.removeProduct",
-      "contractStatus": "draft-unfrozen",
-      "offline": "durable-local",
-      "idempotency": "clear one stable page slot",
-      "visibleResults": ["layout-editing", "empty-custom-page", "recoverable-error"]
-    }
+    {"id": "AUTH-ACTION-001", "trigger": "Sign in", "screens": ["POS-SCREEN-001"], "contract": "DeviceSessionContract.linkWithCredentials", "contractStatus": "draft-unfrozen", "offline": "connected-only", "idempotency": "stable device-link command identity required", "visibleResults": ["submitting", "device-linked", "invalid-credentials", "recoverable-error"]},
+    {"id": "EMPLOYEE-ACTION-001", "trigger": "Submit four-digit PIN", "screens": ["POS-SCREEN-002"], "contract": "EmployeeSessionContract.unlock", "contractStatus": "draft-unfrozen", "offline": "local", "idempotency": "not a durable business command", "visibleResults": ["authorized", "invalid-pin", "action-denied"]},
+    {"id": "SALES-ACTION-001", "trigger": "Enter sales workspace or New sale", "screens": ["POS-SCREEN-003", "POS-SCREEN-011"], "contract": "SalesContract.startTicket", "contractStatus": "draft-unfrozen", "offline": "local", "idempotency": "stable ticket identity required", "visibleResults": ["empty-ticket", "recoverable-error"]},
+    {"id": "CATALOG-ACTION-001", "trigger": "Search catalog", "screens": ["POS-SCREEN-003"], "contract": "CatalogContract.search", "contractStatus": "draft-unfrozen", "offline": "local-catalog", "idempotency": "query", "visibleResults": ["search-results", "no-search-results"]},
+    {"id": "SALES-ACTION-002", "trigger": "Tap a fixed-price item", "screens": ["POS-SCREEN-003"], "contract": "SalesContract.addItem", "contractStatus": "draft-unfrozen", "offline": "local", "idempotency": "interaction command identity required to prevent accidental duplicate replay", "visibleResults": ["active-ticket", "action-denied", "recoverable-error"]},
+    {"id": "SALES-ACTION-003", "trigger": "Increase or decrease line quantity", "screens": ["POS-SCREEN-003"], "contract": "SalesContract.setLineQuantity", "contractStatus": "draft-unfrozen", "offline": "local", "idempotency": "set desired quantity rather than replay an increment", "visibleResults": ["active-ticket", "empty-ticket", "action-denied"]},
+    {"id": "SALES-ACTION-004", "trigger": "Delete unsaved ticket line", "screens": ["POS-SCREEN-003"], "contract": "SalesContract.removeLine", "contractStatus": "draft-unfrozen", "offline": "local", "idempotency": "stable line identity", "visibleResults": ["active-ticket", "empty-ticket", "action-denied"]},
+    {"id": "CHECKOUT-ACTION-001", "trigger": "Charge", "screens": ["POS-SCREEN-003"], "contract": "AuthorizationContract.evaluate(accept-payment) + ManagerOverrideContract.approveOnce + CheckoutContract.begin", "contractStatus": "MAP-01 implemented authorization gate + draft checkout", "offline": "local authorization + local validation", "idempotency": "stable manager-approval command identity when override is required; stable checkout session identity", "visibleResults": ["payment-methods", "invalid-ticket", "action-denied", "override-request"]},
+    {"id": "CHECKOUT-ACTION-002", "trigger": "Select Cash", "screens": ["POS-SCREEN-007"], "contract": "CheckoutContract.selectPaymentMethod", "contractStatus": "draft-unfrozen", "offline": "local for cash", "idempotency": "set selected method", "visibleResults": ["amount-entry", "connected-method-disabled-offline"]},
+    {"id": "CHECKOUT-ACTION-003", "trigger": "Confirm cash tender", "screens": ["POS-SCREEN-008"], "contract": "CheckoutContract.completeCashSale", "contractStatus": "draft-unfrozen", "offline": "durable-local", "idempotency": "required; one stable command ID atomically owns sale and cash-payment completion", "money": "Rifad Money DTO only; no floating-point authority", "visibleResults": ["submitting", "under-tender", "rejected", "completed"]},
+    {"id": "CHECKOUT-ACTION-004", "trigger": "Select mock Card/Mada", "screens": ["POS-SCREEN-009"], "contract": "CheckoutContract.selectPaymentMethod", "contractStatus": "draft-unfrozen mock-only", "offline": "current mock-local behavior only; production integrated methods are connected/provider-specific", "idempotency": "set selected method", "visibleResults": ["mock-card-selected", "recoverable-error"]},
+    {"id": "CHECKOUT-ACTION-005", "trigger": "Confirm mock Card/Mada completion", "screens": ["POS-SCREEN-009"], "contract": "CheckoutContract.completeCardSale", "contractStatus": "draft-unfrozen mock-only", "offline": "current mock-local behavior only; no production terminal claim", "idempotency": "stable card-sale command identity in current runtime", "visibleResults": ["mock-processing", "mock-completed", "mock-rejected", "recoverable-error"]},
+    {"id": "DELIVERY-COLLECTION-ACTION-001", "trigger": "Select Delivery, channel, COD and how the merchant received the courier payment", "screens": ["POS-SCREEN-007"], "contract": "DeliveryCollectionContract.setForTicket/clearForTicket/attachReceipt + existing CheckoutContract Cash/Network path", "contractStatus": "MAP-01 implemented local collection-context boundary + existing cash/card completion", "offline": "durable-local for delivery context; existing cash/card runtime for merchant collection", "idempotency": "stable delivery-context command identities; completed receipt attachment preserves channel without changing payment method", "visibleResults": ["delivery-hub", "delivery-channel-selection", "delivery-cod-merchant-collection", "amount-entry", "mock-card-selected", "recoverable-error"]},
+    {"id": "PRINTING-ACTION-001", "trigger": "Print receipt", "screens": ["POS-SCREEN-011"], "contract": "PrintingContract.submit", "contractStatus": "draft-unfrozen", "offline": "local when printer transport is local", "idempotency": "stable print job ID; delivery-unknown must not cause blind duplicate printing", "visibleResults": ["print-queued", "print-failed", "delivery-unknown"]},
+    {"id": "RECEIPT-ACTION-002", "trigger": "Email completed receipt", "screens": ["POS-SCREEN-011"], "contract": "ReceiptsContract.emailReceipt", "contractStatus": "draft-unfrozen", "offline": "current mock behavior; production queue/connected delivery policy remains unfrozen", "idempotency": "stable email-receipt command identity", "visibleResults": ["email-queued", "recoverable-error"]},
+    {"id": "SALES-ACTION-005", "trigger": "New sale", "screens": ["POS-SCREEN-011"], "contract": "SalesContract.startTicket", "contractStatus": "draft-unfrozen", "offline": "local", "idempotency": "stable new ticket identity", "visibleResults": ["starting-new-sale", "empty-ticket"]},
+    {"id": "SALES-ACTION-006", "trigger": "Save current ticket", "screens": ["POS-SCREEN-003"], "contract": "SalesContract.saveOpenTicket", "contractStatus": "draft-unfrozen", "offline": "durable-local", "idempotency": "stable save command identity required", "visibleResults": ["saving-ticket", "empty-ticket", "recoverable-error"]},
+    {"id": "CUSTOMER-ACTION-001", "trigger": "Search/select customer", "screens": ["POS-SCREEN-006"], "contract": "CustomerCreditContract.search", "contractStatus": "draft-unfrozen existing behavior", "offline": "current local/mock customer set", "idempotency": "query", "visibleResults": ["customer-search", "customer-profile", "recoverable-error"]},
+    {"id": "CUSTOMER-ACTION-002", "trigger": "Create or update customer", "screens": ["POS-SCREEN-006"], "contract": "CustomerCreditContract.create/update", "contractStatus": "draft-unfrozen existing behavior", "offline": "current durable-local/mock behavior", "idempotency": "stable create/update command identity", "visibleResults": ["customer-create", "customer-edit", "customer-profile", "recoverable-error"]},
+    {"id": "CUSTOMER-ACTION-003", "trigger": "Attach or remove customer from ticket", "screens": ["POS-SCREEN-006"], "contract": "SalesContract.setCustomer", "contractStatus": "draft-unfrozen existing behavior", "offline": "local", "idempotency": "set desired customer reference", "visibleResults": ["customer-attached", "customer-profile", "recoverable-error"]},
+    {"id": "CUSTOMER-CREDIT-ACTION-001", "trigger": "Select Credit from payment surface and charge current ticket to customer credit", "screens": ["POS-SCREEN-006", "POS-SCREEN-007"], "contract": "CustomerCreditContract.search/create + CustomerCreditContract.chargeTicket", "contractStatus": "draft-unfrozen existing behavior reused by MAP-01 payment surface", "offline": "durable-local/mock", "idempotency": "stable credit-sale command identity", "visibleResults": ["credit-available", "customer-search", "customer-create", "credit-sale", "recoverable-error"]},
+    {"id": "CUSTOMER-CREDIT-ACTION-002", "trigger": "Settle customer debt", "screens": ["POS-SCREEN-006"], "contract": "CustomerCreditContract.settle", "contractStatus": "draft-unfrozen existing behavior", "offline": "durable-local/mock", "idempotency": "stable settlement command identity", "visibleResults": ["debt-ledger", "debt-settlement", "recoverable-error"]},
+    {"id": "LOYALTY-ACTION-001", "trigger": "Quote and apply loyalty redemption", "screens": ["POS-SCREEN-006"], "contract": "LoyaltyContract.quoteRedemption + SalesContract.setLoyaltyRedemption", "contractStatus": "draft-unfrozen existing behavior", "offline": "current local/mock loyalty behavior", "idempotency": "redemption mutation uses stable command identity", "visibleResults": ["loyalty-redemption", "customer-profile", "recoverable-error"]},
+    {"id": "RECEIPT-ACTION-001", "trigger": "Open receipt history", "screens": ["POS-SCREEN-016"], "contract": "ReceiptsContract.list", "contractStatus": "draft-unfrozen existing behavior", "offline": "local receipt history", "idempotency": "query", "visibleResults": ["receipt-list", "empty-receipts", "recoverable-error"]},
+    {"id": "PRINTING-ACTION-002", "trigger": "Reprint archived receipt", "screens": ["POS-SCREEN-016"], "contract": "AuthorizationContract.evaluate(reprint-resend-receipts) + ManagerOverrideContract.approveOnce + PrintingContract.submit", "contractStatus": "MAP-01 implemented authorization gate + draft printing", "offline": "local authorization; local when printer transport is local", "idempotency": "one-action manager approval is command-scoped; reprint remains a new explicit print command and delivery-unknown requires confirmation", "visibleResults": ["reprint-submitting", "reprint-failed", "reprint-delivery-unknown", "reprint-confirmation", "override-request"]},
+    {"id": "RESTAURANT-ACTION-001", "trigger": "Local in simple restaurant mode", "screens": ["POS-SCREEN-027"], "contract": "CheckoutContract.begin", "contractStatus": "draft-unfrozen", "offline": "local", "idempotency": "checkout session identity; dine-in fulfillment is prototype context and remains a production persistence gap", "visibleResults": ["simple-local", "payment-methods", "recoverable-error"]},
+    {"id": "RESTAURANT-ACTION-002", "trigger": "Assign current basket to service place", "screens": ["POS-SCREEN-027"], "contract": "RestaurantServiceContract.createOpenOrder", "contractStatus": "draft-unfrozen", "offline": "durable-local-mock", "idempotency": "stable local-order command identity", "visibleResults": ["place-selection", "place-open", "empty-ticket", "kitchen-update-sent", "recoverable-error"]},
+    {"id": "RESTAURANT-ACTION-003", "trigger": "Open an occupied service place", "screens": ["POS-SCREEN-027"], "contract": "RestaurantServiceContract.getOpenOrder", "contractStatus": "draft-unfrozen", "offline": "durable-local-mock", "idempotency": "query by stable open-order identity", "visibleResults": ["open-orders", "reopened-order", "recoverable-error"]},
+    {"id": "RESTAURANT-ACTION-004", "trigger": "Send additions for reopened local order", "screens": ["POS-SCREEN-027"], "contract": "RestaurantServiceContract.updateOpenOrder", "contractStatus": "draft-unfrozen", "offline": "durable-local-mock", "idempotency": "stable update command identity with incremented mock kitchen revision", "visibleResults": ["kitchen-update-sent", "empty-ticket", "recoverable-error"]},
+    {"id": "RESTAURANT-ACTION-005", "trigger": "Release local place after completed payment", "screens": ["POS-SCREEN-027"], "contract": "RestaurantServiceContract.closeOpenOrder", "contractStatus": "draft-unfrozen", "offline": "durable-local-mock", "idempotency": "close by stable open-order identity", "visibleResults": ["completed", "place-free", "recoverable-error"]},
+    {"id": "RESTAURANT-ACTION-006", "trigger": "Configure restaurant service and place management", "screens": ["POS-SCREEN-028"], "contract": "RestaurantServiceContract.updateConfig", "contractStatus": "draft-unfrozen staging-only", "offline": "durable-local-mock", "idempotency": "set desired configuration", "visibleResults": ["restaurant-off", "restaurant-simple", "restaurant-places", "locked-by-open-orders", "recoverable-error"]},
+    {"id": "LAYOUT-ACTION-001", "trigger": "Load sale pages", "screens": ["POS-SCREEN-026"], "contract": "SaleLayoutContract.listPages", "contractStatus": "draft-unfrozen", "offline": "local", "idempotency": "query", "visibleResults": ["page-list", "empty-custom-page", "recoverable-error"]},
+    {"id": "LAYOUT-ACTION-002", "trigger": "Create custom sale page", "screens": ["POS-SCREEN-026"], "contract": "SaleLayoutContract.createPage", "contractStatus": "draft-unfrozen", "offline": "durable-local", "idempotency": "stable page identity", "visibleResults": ["layout-editing", "recoverable-error"]},
+    {"id": "LAYOUT-ACTION-003", "trigger": "Place product in page slot", "screens": ["POS-SCREEN-026"], "contract": "SaleLayoutContract.placeProduct", "contractStatus": "draft-unfrozen", "offline": "durable-local", "idempotency": "set the desired product for one stable page slot", "visibleResults": ["product-picker", "product-placed", "recoverable-error"]},
+    {"id": "LAYOUT-ACTION-004", "trigger": "Remove product from page slot", "screens": ["POS-SCREEN-026"], "contract": "SaleLayoutContract.removeProduct", "contractStatus": "draft-unfrozen", "offline": "durable-local", "idempotency": "clear one stable page slot", "visibleResults": ["layout-editing", "empty-custom-page", "recoverable-error"]},
+    {"id": "LAYOUT-ACTION-005", "trigger": "Rename custom sale page", "screens": ["POS-SCREEN-026"], "contract": "SaleLayoutContract.renamePage", "contractStatus": "draft-unfrozen", "offline": "durable-local", "idempotency": "set desired name on stable page identity", "visibleResults": ["page-renamed", "layout-editing", "recoverable-error"]},
+    {"id": "LAYOUT-ACTION-006", "trigger": "Move/reorder custom sale page", "screens": ["POS-SCREEN-026"], "contract": "SaleLayoutContract.movePage", "contractStatus": "draft-unfrozen", "offline": "durable-local", "idempotency": "move stable page one declared direction per command", "visibleResults": ["page-reordered", "layout-editing", "recoverable-error"]},
+    {"id": "LAYOUT-ACTION-007", "trigger": "Delete custom sale page", "screens": ["POS-SCREEN-026"], "contract": "SaleLayoutContract.deletePage", "contractStatus": "draft-unfrozen", "offline": "durable-local", "idempotency": "delete stable page identity; default page remains protected by domain rules", "visibleResults": ["page-deleted", "page-list", "recoverable-error"]},
+    {"id": "BO-NAV-ACTION-001", "trigger": "Navigate within implemented Back Office families", "screens": ["BO-SCREEN-001"], "contract": "UI-only Back Office navigation", "contractStatus": "ui-only", "offline": "local", "idempotency": "not a durable business command", "visibleResults": ["items-list-navigation", "categories-navigation", "option-groups-navigation", "add-ons-navigation", "employees-navigation", "access-rights-navigation", "features-navigation", "stores-navigation", "pos-devices-navigation", "payment-types-navigation", "payment-delivery-navigation"]},
+    {"id": "CATALOG-ADMIN-ACTION-001", "trigger": "Load, search or filter item list", "screens": ["BO-SCREEN-006"], "contract": "CatalogAdminContract.listItems(includeOptionPriced=true)", "contractStatus": "draft-unfrozen", "offline": "local-staging", "idempotency": "query", "visibleResults": ["loading", "item-list", "search-results", "no-results", "recoverable-error"]},
+    {"id": "CATALOG-ADMIN-ACTION-002", "trigger": "Add item", "screens": ["BO-SCREEN-007"], "contract": "CatalogAdminContract.createItem", "contractStatus": "draft-unfrozen", "offline": "durable-local-staging", "idempotency": "stable command identity maps to one stable item identity", "visibleResults": ["creating", "saving", "validation-error", "saved"]},
+    {"id": "CATALOG-ADMIN-ACTION-003", "trigger": "Save item edits", "screens": ["BO-SCREEN-007"], "contract": "CatalogAdminContract.updateItem", "contractStatus": "draft-unfrozen", "offline": "durable-local-staging", "idempotency": "stable command identity; update preserves item identity", "visibleResults": ["editing", "saving", "validation-error", "saved"]},
+    {"id": "CATALOG-ADMIN-ACTION-004", "trigger": "Load categories, pricing option groups and add-on groups for item editor", "screens": ["BO-SCREEN-007"], "contract": "CatalogAdminContract.listCategories + listOptionGroups + listModifierGroups", "contractStatus": "draft-unfrozen", "offline": "local-staging", "idempotency": "query", "visibleResults": ["creating", "editing", "recoverable-error"]},
+    {"id": "CATALOG-ADMIN-ACTION-005", "trigger": "Manage reusable option groups and configure item multiple-price policy", "screens": ["BO-SCREEN-007", "BO-SCREEN-008"], "contract": "CatalogAdminContract.listOptionGroups/createOptionGroup/updateOptionGroup + createItem/updateItem pricing payload", "contractStatus": "draft-unfrozen", "offline": "durable-local-staging", "idempotency": "stable option-group command identity; item pricing is saved through stable item command identity", "visibleResults": ["option-group-list", "option-group-creating", "option-group-editing", "group-color", "inherit-prices", "item-price-overrides", "item-private-options", "validation-error", "saved"]},
+    {"id": "CATALOG-ADMIN-ACTION-006", "trigger": "Create or rename category and set its accent color", "screens": ["BO-SCREEN-009"], "contract": "CatalogAdminContract.createCategory/updateCategory", "contractStatus": "draft-unfrozen", "offline": "durable-local-staging", "idempotency": "stable command identity; rename/color update preserves category identity", "visibleResults": ["category-creating", "category-editing", "category-color", "validation-error", "saved"]},
+    {"id": "CATALOG-ADMIN-ACTION-007", "trigger": "Create or edit reusable general add-on group/options and accent color", "screens": ["BO-SCREEN-011"], "contract": "CatalogAdminContract.createModifierGroup/updateModifierGroup", "contractStatus": "draft-unfrozen", "offline": "durable-local-staging", "idempotency": "stable command identity; edit preserves add-on-group identity", "visibleResults": ["add-on-creating", "add-on-editing", "add-on-color", "validation-error", "saved"]},
+    {"id": "CATALOG-ADMIN-ACTION-008", "trigger": "Configure general/private add-ons and item POS appearance", "screens": ["BO-SCREEN-007"], "contract": "CatalogAdminContract.updateItem modifierGroupIds + privateModifierGroups + appearance", "contractStatus": "draft-unfrozen", "offline": "durable-local-staging", "idempotency": "set desired add-on identities/private payload/appearance on stable item", "visibleResults": ["general-add-ons", "private-add-ons", "appearance-color", "appearance-image", "editing", "saved", "validation-error"]},
+    {"id": "POS-CONFIG-ADMIN-ACTION-001", "trigger": "Create/edit employee and configure four-digit PIN", "screens": ["BO-SCREEN-021"], "contract": "PosConfigurationAdminContract.read/saveEmployee/setEmployeePin", "contractStatus": "MAP-01 implemented staging adapter", "offline": "durable-local-staging", "idempotency": "stable employee and PIN command identities; raw PIN is never stored in merchant configuration", "visibleResults": ["employee-list", "employee-creating", "employee-editing", "pin-entry", "active-disabled", "validation-error", "saved"]},
+    {"id": "POS-CONFIG-ADMIN-ACTION-002", "trigger": "Create/edit role and POS/Back Office permissions", "screens": ["BO-SCREEN-022"], "contract": "PosConfigurationAdminContract.read/saveRole", "contractStatus": "MAP-01 implemented staging adapter", "offline": "durable-local-staging", "idempotency": "stable role command identity; Owner authority remains immutable", "visibleResults": ["role-list", "role-creating", "role-editing", "permission-selection", "owner-locked", "validation-error", "saved"]},
+    {"id": "POS-CONFIG-ADMIN-ACTION-003", "trigger": "Enable or disable POS operational features", "screens": ["BO-SCREEN-026"], "contract": "PosConfigurationAdminContract.read/setFeature", "contractStatus": "MAP-01 implemented staging adapter", "offline": "durable-local-staging", "idempotency": "stable feature command identity sets desired value", "visibleResults": ["feature-list", "feature-enabled", "feature-disabled", "saving", "recoverable-error"]},
+    {"id": "POS-CONFIG-ADMIN-ACTION-004", "trigger": "Create/edit store", "screens": ["BO-SCREEN-027"], "contract": "PosConfigurationAdminContract.read/saveStore", "contractStatus": "MAP-01 implemented staging adapter", "offline": "durable-local-staging", "idempotency": "stable store command identity preserves store identity", "visibleResults": ["store-list", "store-creating", "store-editing", "active-disabled", "validation-error", "saved"]},
+    {"id": "POS-CONFIG-ADMIN-ACTION-005", "trigger": "Create/edit POS device and store assignment", "screens": ["BO-SCREEN-028"], "contract": "PosConfigurationAdminContract.read/saveDevice", "contractStatus": "MAP-01 implemented staging adapter", "offline": "durable-local-staging", "idempotency": "stable device command identity preserves device identity", "visibleResults": ["device-list", "device-creating", "device-editing", "pending-link", "linked", "disabled", "validation-error", "saved"]},
+    {"id": "POS-CONFIG-ADMIN-ACTION-006", "trigger": "Create/edit payment type, direct financial impact and store availability", "screens": ["BO-SCREEN-029"], "contract": "PosConfigurationAdminContract.read/savePaymentType", "contractStatus": "MAP-01 implemented staging adapter", "offline": "durable-local-staging", "idempotency": "stable payment-type command identity preserves method identity and system-default identity when present", "visibleResults": ["payment-list", "payment-creating", "payment-editing", "direct-impact", "system-default", "enabled", "disabled", "offline-capable", "online-required", "validation-error", "saved"]},
+    {"id": "POS-CONFIG-ADMIN-ACTION-007", "trigger": "Reorder payment types", "screens": ["BO-SCREEN-029"], "contract": "PosConfigurationAdminContract.reorderPaymentTypes", "contractStatus": "MAP-01 implemented staging adapter", "offline": "durable-local-staging", "idempotency": "stable reorder command identity sets one complete ordered ID list", "visibleResults": ["payment-list", "reordered", "validation-error", "saved"]},
+    {"id": "POS-CONFIG-ADMIN-ACTION-008", "trigger": "Configure delivery channels, COD settlement policy and self-delivery fee ownership policy", "screens": ["BO-SCREEN-029"], "contract": "PosConfigurationAdminContract.read/saveDeliveryConfiguration", "contractStatus": "MAP-01 implemented staging adapter", "offline": "durable-local-staging", "idempotency": "stable delivery-configuration command identity sets one complete desired delivery policy", "visibleResults": ["delivery-disabled", "delivery-enabled", "delivery-channel-list", "delivery-channel-editing", "delivery-electronic-enabled", "delivery-cod-enabled", "courier-pays-merchant", "platform-settlement", "self-delivery-policy", "fee-beneficiary-merchant", "fee-beneficiary-courier", "validation-error", "saved"]}
   ],
   "flows": [
-    {
-      "id": "POS-FLOW-001",
-      "name": "Retail Cash Sale Vertical Slice",
-      "status": "implemented",
-      "visualDecisionIds": ["VISUAL-DECISION-001", "VISUAL-DECISION-002"],
-      "evidence": {
-        "sections": ["34. تدفق بيع تجزئة عادي", "4.2 حالات بدء التشغيل والدخول", "5. شاشة Sales: التفكيك الكامل", "6.1 شاشة اختيار طريقة الدفع", "6.2 الدفع النقدي", "6.5 شاشة نجاح العملية", "7.1 إنشاء تذكرة وحفظها", "28. وضع عدم الاتصال Offline", "31. RTL والتعريب"],
-        "confidence": "documented"
-      },
-      "entryPoints": [
-        "POS-SCREEN-001 for an unlinked mock device",
-        "POS-SCREEN-002 for an already linked device"
-      ],
-      "steps": [
-        {"order": 1, "screenId": "POS-SCREEN-001", "actionId": "AUTH-ACTION-001", "scope": "existing-account sign-in only; optional when device is already linked"},
-        {"order": 2, "screenId": "POS-SCREEN-002", "actionId": "EMPLOYEE-ACTION-001", "scope": "four-digit employee PIN unlock only"},
-        {"order": 3, "screenId": "POS-SCREEN-003", "actionId": "SALES-ACTION-001", "scope": "open an empty local ticket"},
-        {"order": 4, "screenId": "POS-SCREEN-003", "actionId": "CATALOG-ACTION-001", "scope": "search mock local catalog"},
-        {"order": 5, "screenId": "POS-SCREEN-003", "actionId": "SALES-ACTION-002", "scope": "add fixed-price item without variants/modifiers/open price"},
-        {"order": 6, "screenId": "POS-SCREEN-003", "actionId": "SALES-ACTION-003", "scope": "set line quantity and show deterministic totals"},
-        {"order": 7, "screenId": "POS-SCREEN-003", "actionId": "SALES-ACTION-004", "scope": "optionally remove an unsaved line and restore empty-ticket when the last line is removed"},
-        {"order": 8, "screenId": "POS-SCREEN-003", "actionId": "SALES-ACTION-006", "scope": "optionally save the active ticket locally and begin a fresh ticket; listing and reopening remain outside this slice"},
-        {"order": 9, "screenId": "POS-SCREEN-003", "actionId": "CHECKOUT-ACTION-001", "scope": "enter payment selection"},
-        {"order": 10, "screenId": "POS-SCREEN-007", "actionId": "CHECKOUT-ACTION-002", "scope": "select cash only"},
-        {"order": 11, "screenId": "POS-SCREEN-008", "actionId": "CHECKOUT-ACTION-003", "scope": "confirm exact or over tender and compute visible change through mock contract"},
-        {"order": 12, "screenId": "POS-SCREEN-011", "actionId": "PRINTING-ACTION-001", "scope": "optional mock print with queued/failed/delivery-unknown visible states"},
-        {"order": 13, "screenId": "POS-SCREEN-011", "actionId": "SALES-ACTION-005", "scope": "return to a new empty ticket"}
-      ],
-      "mockAdapters": [
-        "MockDeviceSessionAdapter",
-        "MockEmployeeSessionAdapter",
-        "MockCatalogAdapter",
-        "MockSalesAdapter",
-        "MockCheckoutAdapter",
-        "MockPrintingAdapter"
-      ],
-      "offlineVariant": "After device link, PIN, catalog, ticket editing, cash completion and local printing remain available through mock local adapters. Connected payment methods are outside this flow.",
-      "nonGoals": [
-        "sign-up or email confirmation",
-        "time clock and manager override",
-        "variants, modifiers, open price or weighed items",
-        "customer and loyalty",
-        "discounts, taxes configuration or dining options",
-        "open-ticket list and reopening, tables or KDS/CDS propagation",
-        "integrated card and split payment",
-        "final fiscal, database, synchronization or hardware implementation"
-      ],
-      "acceptanceCriteria": [
-        "Every permitted business action calls the named Rifad draft contract through a mock adapter.",
-        "No business mutation is implemented as component-local authority.",
-        "Tablet layout preserves catalog/ticket hierarchy and mirrors structurally in RTL.",
-        "Phone layout uses separate catalog and ticket surfaces rather than shrinking the tablet split.",
-        "Windows keyboard/mouse interaction does not remove touch-sized controls.",
-        "Cash completion uses one stable idempotent command identity and exact Rifad Money values.",
-        "Loading, invalid PIN, empty ticket, no search results, under-tender, payment rejection, print failure and delivery-unknown are visibly testable.",
-        "A refresh/restart test restores the declared mock-local state for the active flow.",
-        "The UI uses Rifad branding and no unapproved visual donor pattern.",
-        "Visual, interaction and contract tests reference POS-FLOW-001 and its screen/action IDs."
-      ]
-    },
-    {
-      "id": "POS-FLOW-006",
-      "name": "Configure Tablet Sale Page",
-      "status": "implemented",
-      "visualDecisionIds": ["VISUAL-DECISION-001", "VISUAL-DECISION-002"],
-      "evidence": {
-        "sections": ["5.4 بطاقات العناصر والشبكة المخصصة", "31.1 الانعكاس البنيوي"],
-        "confidence": "documented"
-      },
-      "entryPoints": ["POS-SCREEN-003 page tab bar"],
-      "steps": [
-        {"order": 1, "screenId": "POS-SCREEN-026", "actionId": "LAYOUT-ACTION-001", "scope": "load default and custom tablet sale pages from local storage"},
-        {"order": 2, "screenId": "POS-SCREEN-026", "actionId": "LAYOUT-ACTION-002", "scope": "create a named custom page and enter layout edit mode"},
-        {"order": 3, "screenId": "POS-SCREEN-026", "actionId": "LAYOUT-ACTION-003", "scope": "choose a local catalog product and place it into one of twenty fixed slots"},
-        {"order": 4, "screenId": "POS-SCREEN-026", "actionId": "LAYOUT-ACTION-004", "scope": "remove a product from a custom page slot"}
-      ],
-      "mockAdapters": ["MockSaleLayoutAdapter", "MockCatalogAdapter"],
-      "offlineVariant": "Page creation and product placement persist through the local mock adapter without a network dependency.",
-      "nonGoals": [
-        "category or discount tiles",
-        "page rename, reorder or deletion",
-        "cloud layout synchronization",
-        "phone favorites editing"
-      ],
-      "acceptanceCriteria": [
-        "The tablet sale screen exposes fixed page tabs and a separate all-items grid.",
-        "Creating a page enters a visible twenty-slot layout editor.",
-        "Product placement and removal call the named Rifad layout contract through the mock adapter.",
-        "The saved page and tile placement survive an application reload.",
-        "Layout editing preserves the Rifad palette and the documented Loyverse interaction hierarchy without copying donor code or assets.",
-        "Tests reference POS-FLOW-006 and its screen/action IDs."
-      ]
-    },
-    {"id": "POS-FLOW-002", "name": "Restaurant Open Ticket to KDS to Payment", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["35. تدفق مطعم: Open ticket ثم KDS ثم الدفع"], "confidence": "documented"}},
-    {"id": "POS-FLOW-003", "name": "Offline Sale and Synchronization", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["36. تدفق بيع Offline ثم المزامنة"], "confidence": "documented"}},
+    {"id": "POS-FLOW-001", "name": "Retail Cash Sale Vertical Slice", "status": "implemented", "visualDecisionIds": ["VISUAL-DECISION-001", "VISUAL-DECISION-002"], "evidence": {"sections": ["34. تدفق بيع تجزئة عادي", "4.2 حالات بدء التشغيل والدخول", "5. شاشة Sales: التفكيك الكامل", "6.1 شاشة اختيار طريقة الدفع", "6.2 الدفع النقدي", "6.5 شاشة نجاح العملية", "7.1 إنشاء تذكرة وحفظها", "28. وضع عدم الاتصال Offline", "31. RTL والتعريب"], "confidence": "documented"}, "entryPoints": ["POS-SCREEN-001 for an unlinked mock device", "POS-SCREEN-002 for an already linked device"], "steps": [
+      {"order": 1, "screenId": "POS-SCREEN-001", "actionId": "AUTH-ACTION-001", "scope": "existing-account sign-in only; optional when device is already linked"},
+      {"order": 2, "screenId": "POS-SCREEN-002", "actionId": "EMPLOYEE-ACTION-001", "scope": "four-digit employee PIN unlock only"},
+      {"order": 3, "screenId": "POS-SCREEN-003", "actionId": "SALES-ACTION-001", "scope": "open an empty local ticket"},
+      {"order": 4, "screenId": "POS-SCREEN-003", "actionId": "CATALOG-ACTION-001", "scope": "search current local catalog reader"},
+      {"order": 5, "screenId": "POS-SCREEN-003", "actionId": "SALES-ACTION-002", "scope": "add fixed-price item without unresolved pricing options/add-ons/open price"},
+      {"order": 6, "screenId": "POS-SCREEN-003", "actionId": "SALES-ACTION-003", "scope": "set line quantity and show deterministic totals"},
+      {"order": 7, "screenId": "POS-SCREEN-003", "actionId": "SALES-ACTION-004", "scope": "optionally remove an unsaved line and restore empty-ticket when the last line is removed"},
+      {"order": 8, "screenId": "POS-SCREEN-003", "actionId": "SALES-ACTION-006", "scope": "optionally save the active ticket locally and begin a fresh ticket; full listing/reopening remain outside this slice"},
+      {"order": 9, "screenId": "POS-SCREEN-003", "actionId": "CHECKOUT-ACTION-001", "scope": "authorize accept-payment locally; if missing, allow one eligible manager approval for this checkout command only, then enter payment selection"},
+      {"order": 10, "screenId": "POS-SCREEN-007", "actionId": "CHECKOUT-ACTION-002", "scope": "select cash for the authorized cash slice"},
+      {"order": 11, "screenId": "POS-SCREEN-008", "actionId": "CHECKOUT-ACTION-003", "scope": "confirm exact or over tender and compute visible change through current Rifad runtime contract"},
+      {"order": 12, "screenId": "POS-SCREEN-011", "actionId": "PRINTING-ACTION-001", "scope": "optional current print behavior with queued/failed/delivery-unknown visible states"},
+      {"order": 13, "screenId": "POS-SCREEN-011", "actionId": "RECEIPT-ACTION-002", "scope": "optional current email-receipt behavior; production delivery/queue policy remains unfrozen"},
+      {"order": 14, "screenId": "POS-SCREEN-011", "actionId": "SALES-ACTION-005", "scope": "return to a new empty ticket"}
+    ], "mockAdapters": ["Current PosRuntimeContract implementation", "MockDeviceSessionAdapter", "MockEmployeeSessionAdapter", "current Catalog adapter", "MockSalesAdapter", "MockCheckoutAdapter", "MockPrintingAdapter"], "offlineVariant": "After device link, PIN, catalog, local authorization, ticket editing, cash completion and current local printing behavior remain available through the local/mock runtime. Production connected payment methods remain outside this flow.", "nonGoals": ["sign-up or email confirmation", "time clock", "pricing-option chooser, add-ons, open price or weighed items", "customer/loyalty production authorization or cloud persistence", "discount/tax configuration", "full open-ticket list/reopening lifecycle, tables or real KDS/CDS propagation", "integrated terminal and split payment", "final fiscal, production database, synchronization or hardware implementation"], "acceptanceCriteria": ["Every permitted business action calls the named Rifad draft contract through the injected runtime/adapters.", "No business mutation is implemented as component-local authority.", "Tablet layout preserves catalog/ticket hierarchy and mirrors structurally in RTL.", "Phone layout uses separate catalog and ticket surfaces rather than shrinking the tablet split.", "Windows keyboard/mouse interaction does not remove touch-sized controls.", "Cash completion uses one stable idempotent command identity and exact Rifad Money values.", "Checkout evaluates accept-payment against the local effective configuration before payment selection; a manager override is command-scoped and does not elevate the cashier session.", "Loading, invalid PIN, empty ticket, no search results, under-tender, payment rejection, print failure and delivery-unknown are visibly testable where applicable.", "A refresh/restart test restores the declared current local state for the active flow.", "The UI uses Rifad branding and no unapproved visual donor pattern.", "Visual, interaction and contract tests reference POS-FLOW-001 and its screen/action IDs."]},
+    {"id": "POS-FLOW-002", "name": "Restaurant Local Service Prototype", "status": "implemented", "visualDecisionIds": ["VISUAL-DECISION-003", "VISUAL-DECISION-005", "VISUAL-DECISION-006"], "evidence": {"sections": ["35. تدفق مطعم: Open ticket ثم KDS ثم الدفع", "7.1 إنشاء تذكرة وحفظها", "7.2 قائمة التذاكر", "11. إعدادات POS الظاهرة للمستخدم"], "confidence": "documented"}, "entryPoints": ["POS-SCREEN-003 touch sale footer", "POS-SCREEN-025 device settings shell"], "steps": [
+      {"order": 1, "screenId": "POS-SCREEN-028", "actionId": "RESTAURANT-ACTION-006", "scope": "choose retail/off, simple restaurant, or advanced place-management staging configuration"},
+      {"order": 2, "screenId": "POS-SCREEN-027", "actionId": "RESTAURANT-ACTION-001", "scope": "in simple restaurant mode, Local enters existing checkout with local/dine-in presentation context and no place selector"},
+      {"order": 3, "screenId": "POS-SCREEN-027", "actionId": "RESTAURANT-ACTION-002", "scope": "in advanced mode choose a free place, persist a local mock open order, increment initial kitchen revision and clear the working basket"},
+      {"order": 4, "screenId": "POS-SCREEN-027", "actionId": "RESTAURANT-ACTION-003", "scope": "from an empty basket open the occupied-place view and reconstruct the stored local order into the current mock sales ticket"},
+      {"order": 5, "screenId": "POS-SCREEN-027", "actionId": "RESTAURANT-ACTION-004", "scope": "send edited/reopened order back to local mock preparation state, increment revision and clear the working basket"},
+      {"order": 6, "screenId": "POS-SCREEN-027", "actionId": "RESTAURANT-ACTION-005", "scope": "after existing checkout completion, close the matching mock open order and make the service place available"}
+    ], "mockAdapters": ["MockRestaurantServiceAdapter", "MockSalesAdapter", "MockCheckoutAdapter"], "offlineVariant": "Restaurant configuration, service places and open local orders persist through current local staging state and do not require cloud connectivity for this UI proof.", "nonGoals": ["real KDS or kitchen-printer transport", "production-grade fulfillment persistence on sale/receipt", "multi-device open-order synchronization", "move/merge/split tables or seats", "production floor-plan editing", "Back Office ownership implementation", "fiscal cancellation semantics", "delivery-platform integration"], "acceptanceCriteria": ["Restaurant service OFF hides restaurant language and leaves direct Pay usable for retail.", "Simple restaurant mode exposes Local without asking for a table or room and enters the existing checkout in one touch.", "Advanced mode exposes area/place targets without decorative furniture reducing touch size.", "Assigning a free place creates one local mock open order, shows kitchen-send feedback and clears the working basket.", "An empty basket with open local orders promotes Open Orders in the stable right action slot while Pay stays disabled in its unchanged left slot.", "Opening an occupied place reconstructs the order for editing and preserves the stable transaction footer.", "Sending additions updates the stored order and increments the mock kitchen revision instead of creating a second open place.", "Completing payment for a reopened order releases the stored place.", "Open orders block disabling restaurant/place management until they are closed.", "The prototype never claims real KDS, printer, fiscal or multi-device synchronization evidence."]},
+    {"id": "POS-FLOW-006", "name": "Configure Tablet Sale Page", "status": "implemented", "visualDecisionIds": ["VISUAL-DECISION-001", "VISUAL-DECISION-002"], "evidence": {"sections": ["5.4 بطاقات العناصر والشبكة المخصصة", "31.1 الانعكاس البنيوي"], "confidence": "documented"}, "entryPoints": ["POS-SCREEN-003 page tab bar"], "steps": [
+      {"order": 1, "screenId": "POS-SCREEN-026", "actionId": "LAYOUT-ACTION-001", "scope": "load default and custom tablet sale pages from current local runtime"},
+      {"order": 2, "screenId": "POS-SCREEN-026", "actionId": "LAYOUT-ACTION-002", "scope": "create a named custom page and enter layout edit mode"},
+      {"order": 3, "screenId": "POS-SCREEN-026", "actionId": "LAYOUT-ACTION-005", "scope": "rename a custom page through SaleLayoutContract"},
+      {"order": 4, "screenId": "POS-SCREEN-026", "actionId": "LAYOUT-ACTION-006", "scope": "move/reorder a custom page through SaleLayoutContract"},
+      {"order": 5, "screenId": "POS-SCREEN-026", "actionId": "LAYOUT-ACTION-003", "scope": "choose a local catalog product and place it into one of the fixed slots"},
+      {"order": 6, "screenId": "POS-SCREEN-026", "actionId": "LAYOUT-ACTION-004", "scope": "remove a product from a custom page slot"},
+      {"order": 7, "screenId": "POS-SCREEN-026", "actionId": "LAYOUT-ACTION-007", "scope": "delete a custom page while preserving protected/default-page rules"}
+    ], "mockAdapters": ["Current SaleLayoutContract implementation", "current Catalog adapter"], "offlineVariant": "Page create/rename/move/delete and product placement persist through the current local runtime without a network dependency.", "nonGoals": ["category or discount tiles", "cloud layout synchronization", "phone favorites editing", "final owner-vs-device configuration scope"], "acceptanceCriteria": ["The tablet sale screen exposes fixed page tabs and a separate all-items grid.", "Creating a page enters a visible fixed-slot layout editor.", "Create/rename/move/delete/place/remove actions call the named Rifad SaleLayoutContract methods.", "The saved page structure and tile placement survive application reload through the current local runtime.", "Default/protected page rules remain domain-owned rather than component-local hacks.", "Layout editing preserves the Rifad palette and documented Loyverse interaction hierarchy without copying donor code or assets.", "Tests reference POS-FLOW-006 and its screen/action IDs."]},
+    {"id": "POS-FLOW-007", "name": "Delivery COD Merchant Collection", "status": "implemented", "evidence": {"sections": ["PAYMENT_AND_DELIVERY_COLLECTION_DECISION.md §5-9", "6.1 شاشة اختيار طريقة الدفع", "6.2 الدفع النقدي", "6.3 البطاقة والطرق المتكاملة"], "confidence": "documented"}, "entryPoints": ["POS-SCREEN-007 after an authorized checkout when at least one enabled delivery channel has courier-pays-merchant COD"], "steps": [
+      {"order": 1, "screenId": "POS-SCREEN-007", "actionId": "DELIVERY-COLLECTION-ACTION-001", "scope": "open one Delivery hub, choose an executable platform channel and choose how the courier paid the merchant; persist channel/source separately from payment meaning"},
+      {"order": 2, "screenId": "POS-SCREEN-007", "actionId": "CHECKOUT-ACTION-002", "scope": "cash branch: route the selected delivery context into the existing cash payment path"},
+      {"order": 3, "screenId": "POS-SCREEN-008", "actionId": "CHECKOUT-ACTION-003", "scope": "cash branch: complete the existing exact-money cash sale; receipt attachment keeps the delivery channel independently"},
+      {"order": 4, "screenId": "POS-SCREEN-009", "actionId": "CHECKOUT-ACTION-004", "scope": "network branch: route the selected delivery context into the existing mock Card/Mada selection only"},
+      {"order": 5, "screenId": "POS-SCREEN-009", "actionId": "CHECKOUT-ACTION-005", "scope": "network branch: complete the existing mock Card/Mada sale and attach the delivery channel to the receipt context"},
+      {"order": 6, "screenId": "POS-SCREEN-011", "actionId": "SALES-ACTION-005", "scope": "start the next sale after successful completion"}
+    ], "mockAdapters": ["EffectivePosConfiguration delivery projection", "DeliveryCollectionContract local adapter", "Current CheckoutContract cash path", "Current mock Card/Mada path"], "offlineVariant": "Courier-pays-merchant COD context is durable locally and the channel remains linked to the completed receipt without a live cloud call. Direct Cash/Network/Credit clears stale delivery context. Platform-settlement and self-delivery fee posting are not executable in this flow.", "nonGoals": ["platform electronic settlement accounting or reconciliation", "self-delivery fee mutation of ticket/invoice totals", "distance/zone delivery pricing", "split or partial payment", "real integrated card terminal", "delivery-platform API order ingestion", "production Back Office-to-POS transport", "production local database or synchronization"], "acceptanceCriteria": ["Delivery appears as one payment-surface hub only when at least one enabled channel has an executable courier-pays-merchant COD policy.", "The channel list is configuration-driven and self-delivery/platform-settlement-only channels are not exposed as fake executable POS actions.", "Choosing COD Cash records the delivery channel and merchant collection=cash, then uses the existing Cash path without changing cash semantics.", "Choosing COD Network records the delivery channel and merchant collection=card, then uses only the existing mock Network path without claiming production terminal support.", "Changing Cash/Network within checkout preserves the selected delivery channel while updating merchant collection.", "Returning to an ordinary direct sale clears active delivery context.", "A completed receipt can be looked up through DeliveryCollectionContract and still reports the delivery channel after local adapter restart.", "Tests cover dynamic delivery visibility, channel selection, local durability and receipt association."]},
+    {"id": "POS-FLOW-003", "name": "Offline Sale and Synchronization", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["36. تدفق بيع Offline ثم المزامنة"], "confidence": "documented"}, "notes": "Existing synchronization candidate proofs are preserved outside this UI flow. D-033 pauses sync adoption until MAP-10; this mapped flow is not an instruction to resume candidate implementation now."},
     {"id": "POS-FLOW-004", "name": "Refund", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["37. تدفق Refund"], "confidence": "documented"}},
-    {"id": "POS-FLOW-005", "name": "Cash Shift", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["38. تدفق وردية نقدية"], "confidence": "documented"}},
-    {"id": "BO-FLOW-001", "name": "Purchase Order to Inventory", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["39. تدفق Purchase Order إلى المخزون"], "confidence": "documented"}}
+    {"id": "POS-FLOW-005", "name": "Cash Shift", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["38. تدفق وردية نقدية"], "confidence": "documented"}, "notes": "Cash Shift is a high-priority MAP-02 operational-core flow after MAP-01 configuration/authorization is specified."},
+    {"id": "BO-FLOW-001", "name": "Purchase Order to Inventory", "status": "mapped", "implementationAllowed": false, "evidence": {"sections": ["39. تدفق Purchase Order إلى المخزون"], "confidence": "documented"}},
+    {"id": "BO-FLOW-002", "name": "Manage Catalog Items", "status": "implemented", "visualDecisionIds": ["VISUAL-DECISION-007"], "evidence": {"sections": ["12.1 الإطار العام", "14.1 Item list", "14.2 نموذج Add/Edit item", "14.3 Variants", "14.4 Categories", "14.6 Modifiers"], "confidence": "documented"}, "entryPoints": ["Back Office Items navigation"], "steps": [
+      {"order": 1, "screenId": "BO-SCREEN-001", "actionId": "BO-NAV-ACTION-001", "scope": "navigate only within the implemented catalog family: item list, categories, reusable option groups and add-ons; other Back Office families remain unavailable"},
+      {"order": 2, "screenId": "BO-SCREEN-006", "actionId": "CATALOG-ADMIN-ACTION-001", "scope": "load item rows; search item name/SKU/barcode and filter by category"},
+      {"order": 3, "screenId": "BO-SCREEN-007", "actionId": "CATALOG-ADMIN-ACTION-004", "scope": "load categories, reusable pricing option groups and reusable add-on groups into the item editor"},
+      {"order": 4, "screenId": "BO-SCREEN-008", "actionId": "CATALOG-ADMIN-ACTION-005", "scope": "create/edit reusable option groups including current accent color and configure fixed, inherited-group, sparse item-override or item-private multiple pricing"},
+      {"order": 5, "screenId": "BO-SCREEN-007", "actionId": "CATALOG-ADMIN-ACTION-008", "scope": "optionally assign reusable general add-ons, define item-private add-ons and configure current POS appearance semantics"},
+      {"order": 6, "screenId": "BO-SCREEN-007", "actionId": "CATALOG-ADMIN-ACTION-002", "scope": "create an item with the current pricing/add-on/appearance catalog payload"},
+      {"order": 7, "screenId": "BO-SCREEN-007", "actionId": "CATALOG-ADMIN-ACTION-003", "scope": "edit the current catalog payload while preserving stable item identity"},
+      {"order": 8, "screenId": "BO-SCREEN-009", "actionId": "CATALOG-ADMIN-ACTION-006", "scope": "create/rename a category and set current accent color while preserving stable category identity"},
+      {"order": 9, "screenId": "BO-SCREEN-011", "actionId": "CATALOG-ADMIN-ACTION-007", "scope": "create/edit reusable general add-on groups with accent color, named options and exact additional prices"}
+    ], "mockAdapters": ["BrowserCatalogAdapter schema v4"], "offlineVariant": "The current browser staging adapter persists catalog edits locally and migrates current staging shapes to schema v4. This proves Rifad catalog semantics, not production Back Office topology or LAN/cloud synchronization between separately hosted applications.", "nonGoals": ["POS pricing-option/add-on chooser and sold snapshots", "category delete/reorder", "add-on required/min/max rules", "cost", "inventory/stock", "open price", "weight or volume selling", "tax assignment", "composite items", "production media storage/synchronization", "per-store price/availability/stock", "delete item", "import/export", "permissions", "LAN synchronization", "cloud synchronization", "production database freeze"], "acceptanceCriteria": ["Back Office renders the locked RTL management shell with only the catalog family active and unrelated future families visibly disabled.", "Item list can search base item identity and filter by category while showing pricing mode and effective starting price.", "Create/edit/category/option-group/add-on mutations call Rifad CatalogAdminContract rather than component-local business state.", "Money crosses the contract as exact halalas.", "Reusable option groups carry named values with direct default prices and current merchant accent color and can serve many items.", "An item can inherit a reusable group's prices, sparsely override only differing values, or define item-private multiple prices.", "Enabling multiple prices disables the fixed-price input in the merchant UI.", "Reusable general add-on groups can be created/edited with accent color and assigned to items, while item-private add-ons remain scoped to one item.", "Categories can be created/renamed and assigned merchant accent color while retaining stable identity.", "Item editor can configure current catalog appearance semantics by color/shape or browser-staging image without making image transport sale truth.", "Turning off Available for sale keeps the item in Back Office while hiding it from the current POS sellable catalog.", "Option-priced items remain hidden from the current POS reader until POS-SCREEN-005 is separately authorized, preventing fallback/minimum-price selling.", "Legacy generated-variant structures remain migration-only and are not exposed as the current merchant workflow.", "Catalog storage/transport remains replaceable; current browser staging is not presented as LAN/cloud sync or production media storage.", "Tests reference BO-FLOW-002 and preserve existing fixed-price POS behavior."]},
+    {"id": "BO-FLOW-003", "name": "POS Operational Configuration and Access", "status": "implemented", "evidence": {"sections": ["12.1 الإطار العام", "16.1 Employee list وملف الموظف", "16.2 Access Rights", "18.1 Features", "18.2 Stores", "18.3 POS Devices", "18.4 Payment Types", "27.3 قواعد الدور والاعتماد", "PAYMENT_AND_DELIVERY_COLLECTION_DECISION.md §1-9"], "confidence": "documented"}, "entryPoints": ["Back Office operational configuration area", "Back Office Employees navigation", "Back Office Settings navigation", "Back Office Payment and Delivery area"], "steps": [
+      {"order": 1, "screenId": "BO-SCREEN-001", "actionId": "BO-NAV-ACTION-001", "scope": "navigate only within the bounded MAP-01 operational-configuration family while unrelated settings remain gated"},
+      {"order": 2, "screenId": "BO-SCREEN-022", "actionId": "POS-CONFIG-ADMIN-ACTION-002", "scope": "review default roles, create/edit non-owner roles and assign explicit capability permissions; Owner remains immutable"},
+      {"order": 3, "screenId": "BO-SCREEN-027", "actionId": "POS-CONFIG-ADMIN-ACTION-004", "scope": "create/edit store identity used for employee, device and payment scope"},
+      {"order": 4, "screenId": "BO-SCREEN-021", "actionId": "POS-CONFIG-ADMIN-ACTION-001", "scope": "create/edit employee, choose role and allowed stores, set active state and configure a unique four-digit staging PIN without persisting raw PIN"},
+      {"order": 5, "screenId": "BO-SCREEN-026", "actionId": "POS-CONFIG-ADMIN-ACTION-003", "scope": "enable or disable only the MAP-01 feature flags represented by the configuration contract; feature implementation itself remains owned by later map items"},
+      {"order": 6, "screenId": "BO-SCREEN-028", "actionId": "POS-CONFIG-ADMIN-ACTION-005", "scope": "create/edit POS device identity, store assignment and staging link status"},
+      {"order": 7, "screenId": "BO-SCREEN-029", "actionId": "POS-CONFIG-ADMIN-ACTION-006", "scope": "create/edit payment types, direct financial impact, enabled state, availability and optional store scope; Cash/Network/Credit are stable starter identities"},
+      {"order": 8, "screenId": "BO-SCREEN-029", "actionId": "POS-CONFIG-ADMIN-ACTION-007", "scope": "reorder the complete payment-type list so the effective POS projection preserves merchant display order"},
+      {"order": 9, "screenId": "BO-SCREEN-029", "actionId": "POS-CONFIG-ADMIN-ACTION-008", "scope": "configure known/custom delivery channels, electronic/COD availability, COD settlement mode and self-delivery fee ownership policy without claiming later settlement or fee-posting execution"}
+    ], "mockAdapters": ["BrowserPosConfigurationAdmin staging adapter", "pure projectEffectivePosConfiguration domain projection", "BrowserLocalPersistence effective-config staging adapter", "DeliveryCollectionContract local adapter"], "offlineVariant": "Merchant policy and the branch/device-specific effective POS snapshot are testable through current browser staging. POS authorization, payment-method order/direct-impact and courier-pays-merchant delivery collection operate from local configuration after restart without a live cloud call. Real Back Office-to-POS transport remains MAP-11 and is not implied by this staging proof.", "nonGoals": ["production credential storage or brute-force policy", "tax/discount calculation semantics", "receipt configuration", "open-ticket lifecycle", "shift/cash/time-clock operations", "split-payment allocation records and normalized payment lifecycle", "platform electronic settlement/reconciliation", "self-delivery fee posting into sale totals", "real payment terminal integration", "production local database selection", "LAN/Branch Hub", "synchronization provider selection", "real cloud Back Office to POS transport", "ZATCA/fiscal implementation", "broad Back Office visual redesign"], "acceptanceCriteria": ["Every merchant mutation crosses PosConfigurationAdminContract and carries a stable command identity.", "Owner role authority cannot be reduced; non-owner roles carry explicit capabilities rather than role-name authority.", "An employee is scoped by explicit role and one or more stores, and raw PIN is never stored in the public merchant configuration snapshot.", "Feature switches are merchant policy only and do not falsely mark MAP-02/MAP-03/MAP-04/MAP-05 features implemented.", "A POS device is assigned to one store and its identity survives staging adapter restart.", "The default merchant payment identities are Cash, Network and Credit, and each retains its direct-impact meaning when hidden/re-shown or reordered.", "Payment types preserve stable identity, enabled state, merchant order, availability requirement, direct financial impact and optional store scope.", "Delivery configuration preserves known/custom channel identity, electronic/COD availability, COD settlement policy and self-delivery fee ownership policy without pretending later financial lifecycle is complete.", "The merchant configuration projects deterministically to one branch/device effective POS configuration without provider or sync types crossing the contract.", "POS local authorization visibly blocks checkout when accept-payment is absent and accepts one eligible manager approval without changing/elevating the cashier session.", "The effective snapshot, permission set, payment order/direct-impact and executable delivery policy survive local POS restart.", "Courier-pays-merchant delivery COD records channel/source independently while Cash or Network continues to own the direct merchant money effect.", "Tests prove idempotent admin commands, PIN non-leakage/uniqueness, immutable Owner authority, payment ordering/direct-impact, delivery policy, branch scope and one-action override.", "The locked Back Office hierarchy and Rifad visual system are preserved; unrelated future families remain gated."]}
   ]
 }

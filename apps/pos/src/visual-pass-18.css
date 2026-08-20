@@ -1,0 +1,100 @@
+/*
+ * Rifad POS — Visual Pass 18
+ * Touch product cards use a stable 75/25 information split:
+ * upper area = product identity / future image surface
+ * lower area = unit price
+ */
+
+@media (min-width: 781px) {
+  .sale-screen-touch button.catalog-product {
+    display: grid;
+    grid-template-rows: 3fr 1fr;
+    place-items: stretch;
+    padding: 0 !important;
+    overflow: hidden;
+    border-radius: 7px;
+    transform-origin: center;
+  }
+
+  .sale-screen-touch button.catalog-product > strong {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 10px 10px;
+    overflow: hidden;
+    text-align: center;
+    color: #26312c;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.45;
+  }
+
+  .sale-screen-touch button.catalog-product::after {
+    content: attr(data-price);
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+    direction: ltr;
+    color: #18231e;
+    background: rgb(255 255 255 / 58%);
+    border-top: 1px solid rgb(42 66 55 / 13%);
+    font-size: .86rem;
+    font-weight: 850;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.01em;
+  }
+
+  .sale-screen-touch button.catalog-product:hover:not(:disabled)::after {
+    background: rgb(255 255 255 / 68%);
+  }
+
+  .sale-screen-touch button.catalog-product:active:not(:disabled) {
+    transform: scale(.974);
+  }
+
+  .sale-screen-touch button.catalog-product:active:not(:disabled)::after {
+    background: rgb(255 255 255 / 78%);
+  }
+
+  /* Empty layout cells preserve the grid without competing with real products. */
+  .sale-screen-touch .blank-layout-slot {
+    border-color: #e2e7e4;
+    background: #f7f9f8;
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 780px) {
+  .sale-screen-touch button.catalog-product {
+    display: grid;
+    grid-template-rows: 3fr 1fr;
+    place-items: stretch;
+    padding: 0 !important;
+    overflow: hidden;
+  }
+
+  .sale-screen-touch button.catalog-product > strong {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 8px 8px;
+    text-align: center;
+  }
+
+  .sale-screen-touch button.catalog-product::after {
+    content: attr(data-price);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    direction: ltr;
+    color: #18231e;
+    background: rgb(255 255 255 / 60%);
+    border-top: 1px solid rgb(42 66 55 / 13%);
+    font-size: .78rem;
+    font-weight: 850;
+    font-variant-numeric: tabular-nums;
+  }
+}

@@ -1,0 +1,87 @@
+/*
+ * Rifad POS — Visual Pass 17
+ * Touch-basket readability pass based on owner review at 1920x1080.
+ * Goal: make quantity × product the single dominant line, remove redundant unit-price
+ * noise from the touch basket, and tighten row rhythm without reducing touchability.
+ */
+
+@media (min-width: 781px) {
+  .sale-screen-touch .ticket-panel--sale .ticket-line-button {
+    min-height: 68px;
+    padding: 8px 2px;
+    gap: 14px;
+  }
+
+  .sale-screen-touch .ticket-panel--sale .ticket-line-main {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 0;
+  }
+
+  .sale-screen-touch .ticket-line-title-row {
+    width: 100%;
+    gap: 10px;
+    align-items: baseline;
+  }
+
+  /* Quantity is intentionally stronger than the item name on 1080p cashier displays. */
+  .sale-screen-touch .ticket-quantity-inline {
+    min-width: 50px;
+    gap: 5px;
+    color: #17231e;
+    font-size: 1.16rem !important;
+    font-weight: 900 !important;
+    line-height: 1.08;
+    letter-spacing: -.01em;
+  }
+
+  .sale-screen-touch .ticket-quantity-inline b {
+    color: #111b16;
+    font-size: 1.2rem !important;
+    font-weight: 950 !important;
+    line-height: 1;
+  }
+
+  .sale-screen-touch .ticket-quantity-inline > span {
+    color: #4f5d56;
+    font-size: 1rem !important;
+    font-weight: 800 !important;
+  }
+
+  .sale-screen-touch .ticket-panel--sale .ticket-product-name {
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    line-height: 1.3;
+  }
+
+  /* Touch POS should read like a cashier basket: quantity × item + line total.
+     Unit price remains available in basic mode and checkout/audit views. */
+  .sale-screen-touch .ticket-panel--sale .ticket-unit-price {
+    display: none !important;
+  }
+
+  .sale-screen-touch .ticket-panel--sale .ticket-line-total {
+    min-width: 104px;
+    font-size: 1.08rem !important;
+    font-weight: 830 !important;
+  }
+}
+
+@media (max-width: 780px) {
+  .sale-screen-touch .ticket-quantity-inline {
+    min-width: 44px;
+    font-size: 1.08rem !important;
+    font-weight: 900 !important;
+  }
+
+  .sale-screen-touch .ticket-quantity-inline b {
+    font-size: 1.12rem !important;
+    font-weight: 950 !important;
+  }
+
+  .sale-screen-touch .ticket-panel--sale .ticket-unit-price {
+    display: none !important;
+  }
+}

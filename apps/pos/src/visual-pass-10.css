@@ -1,0 +1,350 @@
+/* Rifad POS — Visual Pass 10
+ * Device-local sale screen mode: شاشة لمس / شاشة أساسية.
+ */
+
+.pos-device-settings {
+  width: min(92vw, 720px);
+  max-height: min(88vh, 760px);
+  overflow: auto;
+}
+
+.device-settings-section {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+}
+
+.device-settings-section + .device-settings-section {
+  border-top: 1px solid #e6ebe8;
+}
+
+.device-settings-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.device-settings-copy strong {
+  font-size: 1.04rem;
+  color: #122019;
+}
+
+.device-settings-copy span {
+  color: #6b7772;
+  font-size: .78rem;
+  line-height: 1.8;
+}
+
+.screen-mode-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.screen-mode-options > button {
+  min-height: 150px;
+  display: grid;
+  justify-items: start;
+  align-content: center;
+  gap: 8px;
+  padding: 20px;
+  text-align: right;
+  color: #16231d;
+  background: #fff;
+  border: 1px solid #dce3df;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.screen-mode-options > button.active {
+  border: 2px solid var(--brand);
+  background: var(--brand-soft);
+  box-shadow: 0 8px 24px rgb(8 56 39 / 8%);
+}
+
+.screen-mode-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  color: var(--brand);
+  background: #fff;
+  border: 1px solid #d8e3de;
+  border-radius: 10px;
+}
+
+.screen-mode-options strong {
+  font-size: 1rem;
+}
+
+.screen-mode-options small {
+  color: #6b7772;
+  font-size: .75rem;
+  line-height: 1.7;
+}
+
+.settings-done {
+  width: calc(100% - 44px);
+  margin: 0 22px 22px;
+}
+
+.order-type-settings {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.order-type-settings > button {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  color: #26342e;
+  background: #fff;
+  border: 1px solid #dce3df;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: .86rem;
+}
+
+.order-type-settings > button > span {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: #eef2f0;
+  border: 1px solid #d6dfda;
+  border-radius: 6px;
+}
+
+.order-type-settings > button.active {
+  color: var(--brand-dark);
+  background: var(--brand-soft);
+  border-color: var(--brand);
+}
+
+.order-type-settings > button.active > span {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+
+.order-type-strip {
+  flex: 0 0 auto;
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 8px 22px;
+  background: #fff;
+  border-bottom: 1px solid #e1e7e4;
+}
+
+.order-type-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #22312b;
+  font-size: .78rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.order-type-label small {
+  padding: 3px 7px;
+  color: #6f7c76;
+  background: #f0f3f1;
+  border-radius: 999px;
+  font-size: .62rem;
+  font-weight: 700;
+}
+
+.order-type-options {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.order-type-options button {
+  min-width: 88px;
+  min-height: 38px;
+  padding: 0 18px;
+  color: #34423c;
+  background: #fff;
+  border: 1px solid #d8e0dc;
+  border-radius: 9px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: .8rem;
+  font-weight: 750;
+}
+
+.order-type-options button:hover {
+  border-color: var(--brand);
+}
+
+.order-type-options button.active {
+  color: #fff;
+  background: var(--brand);
+  border-color: var(--brand);
+  box-shadow: 0 4px 12px rgb(8 56 39 / 12%);
+}
+
+.sale-screen-basic .workspace-header .catalog-search--always {
+  width: min(62vw, 780px);
+  max-width: 780px;
+  height: 48px;
+  background: #fff;
+  border-radius: 4px;
+}
+
+.sale-screen-basic .workspace-header .catalog-search--always input {
+  font-size: .88rem;
+  font-weight: 650;
+}
+
+.basic-sale-surface {
+  min-height: 0;
+  height: 100%;
+  padding: 28px;
+  overflow: auto;
+  background: #f5f7f6;
+}
+
+.basic-sale-empty {
+  min-height: 58vh;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  text-align: center;
+  color: #6b7772;
+}
+
+.basic-sale-empty svg {
+  color: var(--brand);
+}
+
+.basic-sale-empty strong {
+  color: #1b2923;
+  font-size: 1.15rem;
+}
+
+.basic-sale-empty span {
+  max-width: 520px;
+  font-size: .8rem;
+  line-height: 1.8;
+}
+
+.basic-product-results {
+  width: min(100%, 900px);
+  margin-inline: auto;
+  display: grid;
+  gap: 8px;
+}
+
+.basic-product-row {
+  min-height: 72px;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 130px 30px;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  color: #122019;
+  background: #fff;
+  border: 1px solid #dde4e0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.basic-product-row:hover:not(:disabled) {
+  border-color: var(--brand);
+  box-shadow: 0 6px 18px rgb(8 56 39 / 7%);
+}
+
+.basic-product-swatch {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  font-size: .68rem;
+  font-weight: 800;
+}
+
+.basic-product-row strong {
+  min-width: 0;
+  text-align: right;
+  font-size: .95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.basic-product-row small {
+  direction: ltr;
+  text-align: left;
+  font-size: .82rem;
+  font-weight: 800;
+}
+
+.basic-product-row > svg {
+  color: var(--brand);
+}
+
+.basic-no-results {
+  min-height: 260px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 6px;
+  color: #6b7772;
+}
+
+.basic-no-results strong {
+  color: #17251f;
+  font-size: 1rem;
+}
+
+@media (max-width: 780px) {
+  .screen-mode-options,
+  .order-type-settings {
+    grid-template-columns: 1fr;
+  }
+
+  .order-type-strip {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 7px;
+    padding: 10px 12px;
+  }
+
+  .order-type-options {
+    width: 100%;
+  }
+
+  .order-type-options button {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .sale-screen-basic .workspace-header .catalog-search--always {
+    width: auto;
+    flex: 1;
+  }
+
+  .basic-sale-surface {
+    padding: 16px 12px 94px;
+  }
+
+  .basic-product-row {
+    grid-template-columns: 40px minmax(0, 1fr) 90px;
+  }
+
+  .basic-product-row > svg {
+    display: none;
+  }
+}

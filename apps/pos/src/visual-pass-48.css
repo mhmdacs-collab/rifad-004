@@ -1,0 +1,419 @@
+/*
+ * Rifad POS — Visual Pass 48
+ * Stable debt-settlement feedback, readable settlement success, and denser
+ * customer creation. Primary transaction actions live in a stable footer band.
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Debt settlement: one fixed feedback card so keypad/action geometry is stable */
+/* -------------------------------------------------------------------------- */
+
+.debt-book-dialog .debt-settlement-feedback {
+  min-height: 76px;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-rows: auto minmax(20px, auto);
+  align-content: center;
+  gap: 5px;
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  border: 1px solid #dce7e2;
+  border-radius: 10px;
+  background: #f8faf9;
+  transition: border-color 100ms ease, background 100ms ease;
+}
+
+.debt-book-dialog .debt-settlement-feedback > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.debt-book-dialog .debt-settlement-feedback > div > span {
+  color: #56655e;
+  font-size: .74rem;
+  font-weight: 760;
+}
+
+.debt-book-dialog .debt-settlement-feedback > div > strong {
+  color: #263a31;
+  font-size: 1.02rem;
+  font-weight: 880;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.debt-book-dialog .debt-settlement-feedback > small {
+  min-height: 20px;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  color: #6c7872;
+  font-size: .68rem;
+  font-weight: 680;
+  line-height: 1.55;
+}
+
+.debt-book-dialog .debt-settlement-feedback.is-ready {
+  border-color: #c2dccf;
+  background: #f2f8f5;
+}
+
+.debt-book-dialog .debt-settlement-feedback.is-ready > div > strong {
+  color: #1f6549;
+}
+
+.debt-book-dialog .debt-settlement-feedback.is-error {
+  border-color: #e2c9c2;
+  background: #fbf6f4;
+}
+
+.debt-book-dialog .debt-settlement-feedback.is-error > small {
+  color: #8d4e40;
+}
+
+/* Old standalone result/error blocks must not reserve competing layout space. */
+.debt-book-dialog .debt-after-payment,
+.debt-book-dialog .customer-settlement-error {
+  display: none;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Debt settlement success: summary first, explicit footer completion          */
+/* -------------------------------------------------------------------------- */
+
+.debt-book-dialog--success {
+  padding-bottom: 0;
+}
+
+.debt-book-dialog--success .debt-book-success {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: stretch;
+  align-items: stretch;
+  gap: 0;
+  text-align: right;
+}
+
+.debt-book-success-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: min(100%, 600px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  gap: 14px;
+  padding: 18px 4px 20px;
+}
+
+.debt-book-success-mark {
+  width: 70px;
+  height: 70px;
+  flex: 0 0 70px;
+  display: grid;
+  place-items: center;
+  align-self: center;
+  color: #fff;
+  border-radius: 50%;
+  background: var(--brand);
+  box-shadow: 0 8px 22px rgb(10 113 78 / 16%);
+  font-size: 2rem;
+  font-weight: 900;
+}
+
+.debt-book-success-copy {
+  display: grid;
+  gap: 3px;
+  text-align: center;
+}
+
+.debt-book-success-copy > span {
+  color: var(--brand);
+  font-size: .78rem;
+  font-weight: 900;
+}
+
+.debt-book-success-copy > strong {
+  color: #17251e;
+  font-size: 1.34rem;
+  font-weight: 900;
+  line-height: 1.5;
+}
+
+.debt-book-success-copy > small {
+  color: #67746e;
+  font-size: .82rem;
+  font-weight: 720;
+}
+
+.debt-book-success-summary {
+  overflow: hidden;
+  border: 1px solid #dce5e1;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.debt-book-success-summary > div {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #edf1ef;
+}
+
+.debt-book-success-summary > div:last-child {
+  border-bottom: 0;
+}
+
+.debt-book-success-summary span {
+  color: #64716b;
+  font-size: .76rem;
+  font-weight: 700;
+}
+
+.debt-book-success-summary strong {
+  color: #1b2922;
+  font-size: 1.04rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.debt-book-success-summary .debt-book-success-remaining {
+  min-height: 70px;
+  border-top: 1px solid #cfe1d8;
+  background: #f1f8f5;
+}
+
+.debt-book-success-summary .debt-book-success-remaining span,
+.debt-book-success-summary .debt-book-success-remaining strong {
+  color: #1e6448;
+}
+
+.debt-book-success-summary .debt-book-success-remaining strong {
+  font-size: 1.3rem;
+}
+
+.debt-book-success-note {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 13px;
+  color: #5d6d65;
+  text-align: center;
+  border: 1px solid #e1e7e4;
+  border-radius: 10px;
+  background: #f8faf9;
+  font-size: .74rem;
+  font-weight: 680;
+  line-height: 1.65;
+}
+
+.debt-book-success-footer {
+  flex: 0 0 auto;
+  margin: 0 -20px;
+  padding: 12px 20px 16px;
+  border-top: 1px solid #dfe6e2;
+  background: #fff;
+  box-shadow: 0 -6px 18px rgb(25 55 43 / 5%);
+}
+
+.debt-book-success-footer > .primary-button {
+  width: 100%;
+  min-height: 64px;
+  border-radius: 11px;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Customer creation: quick essentials, then compact two-column optional data  */
+/* -------------------------------------------------------------------------- */
+
+.customer-picker-dialog .customer-create-form--expanded {
+  padding: 13px;
+  gap: 10px;
+}
+
+.customer-quick-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.customer-quick-fields > label,
+.customer-extra-fields > label {
+  min-width: 0;
+}
+
+.customer-quick-fields .customer-quick-address {
+  grid-column: 1 / -1;
+}
+
+.customer-picker-dialog .customer-create-form input,
+.customer-picker-dialog .customer-extra-fields input {
+  min-height: 46px;
+}
+
+.customer-field-hint {
+  min-height: 16px;
+  color: #7a8680;
+  font-size: .62rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.customer-picker-dialog .customer-extra-fields {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+  padding: 12px;
+}
+
+.customer-picker-dialog .customer-extra-fields textarea {
+  min-height: 68px;
+}
+
+.customer-picker-dialog .customer-extra-fields .customer-extra-note {
+  grid-column: 1 / -1;
+}
+
+.customer-picker-dialog .customer-create-actions {
+  position: sticky;
+  z-index: 2;
+  bottom: -13px;
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: minmax(110px, .7fr) minmax(180px, 1.3fr);
+  align-items: center;
+  gap: 9px;
+  margin: 2px -13px -13px;
+  padding: 10px 13px 13px;
+  border-top: 1px solid #dfe6e2;
+  background: #fff;
+  box-shadow: 0 -5px 15px rgb(25 55 43 / 4%);
+}
+
+.customer-picker-dialog .customer-create-actions > button {
+  min-height: 52px;
+  margin: 0;
+  border-radius: 10px;
+}
+
+.customer-picker-dialog .customer-create-actions > .primary-button {
+  color: #fff;
+  border-color: var(--brand);
+  background: var(--brand);
+  font-size: .88rem;
+}
+
+/* Edit forms can use the same human-scale density on wider screens. */
+.customer-profile-edit-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.customer-profile-edit-form > button[type="submit"],
+.customer-profile-edit-form > label:has(textarea) {
+  grid-column: 1 / -1;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Responsive: rearrange before shrinking frequent controls                    */
+/* -------------------------------------------------------------------------- */
+
+@media (min-width: 821px) and (max-height: 800px) {
+  .debt-book-dialog .debt-settlement-feedback {
+    min-height: 66px;
+    padding-block: 7px;
+    margin-bottom: 6px;
+  }
+
+  .debt-book-success-main {
+    gap: 9px;
+    padding-block: 8px 10px;
+  }
+
+  .debt-book-success-mark {
+    width: 58px;
+    height: 58px;
+    flex-basis: 58px;
+    font-size: 1.65rem;
+  }
+
+  .debt-book-success-summary > div {
+    min-height: 50px;
+    padding-block: 7px;
+  }
+
+  .debt-book-success-summary .debt-book-success-remaining {
+    min-height: 58px;
+  }
+
+  .debt-book-success-footer {
+    padding-block: 9px 11px;
+  }
+
+  .debt-book-success-footer > .primary-button {
+    min-height: 56px;
+  }
+
+  .customer-picker-dialog .customer-create-form--expanded {
+    max-height: min(54dvh, 410px);
+  }
+}
+
+@media (max-width: 820px) {
+  .customer-quick-fields,
+  .customer-picker-dialog .customer-extra-fields,
+  .customer-profile-edit-form {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-quick-fields .customer-quick-address,
+  .customer-picker-dialog .customer-extra-fields .customer-extra-note,
+  .customer-profile-edit-form > button[type="submit"],
+  .customer-profile-edit-form > label:has(textarea) {
+    grid-column: auto;
+  }
+
+  .customer-picker-dialog .customer-create-actions {
+    grid-template-columns: .72fr 1.28fr;
+  }
+
+  .debt-book-success-main {
+    width: 100%;
+    padding-inline: 0;
+  }
+
+  .debt-book-success-footer {
+    margin-inline: -14px;
+    padding-inline: 14px;
+  }
+}
+
+@media (max-width: 520px) {
+  .debt-book-dialog .debt-settlement-feedback {
+    min-height: 82px;
+  }
+
+  .debt-book-success-summary > div {
+    min-height: 56px;
+  }
+
+  .customer-picker-dialog .customer-create-actions {
+    grid-template-columns: 1fr 1.35fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .debt-book-dialog .debt-settlement-feedback,
+  .debt-settlement-keypad > button {
+    transition: none !important;
+  }
+}

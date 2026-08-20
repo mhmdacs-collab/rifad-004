@@ -1,0 +1,176 @@
+/*
+ * Rifad POS — Visual Pass 04
+ * Saudi riyal mark, cashier-friendly tender suggestions and amount hierarchy.
+ */
+
+.money-amount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .18em;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.riyal-symbol {
+  display: block;
+  width: .66em;
+  height: .78em;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.payment-amount-block--centered {
+  text-align: center;
+}
+
+.payment-amount-block--centered h1 {
+  display: flex;
+  justify-content: center;
+  margin: 12px 0 8px;
+}
+
+.payment-amount-block--centered h1 .money-amount,
+.cash-total h1 .money-amount {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.payment-methods--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.payment-methods--two .payment-method--cash {
+  grid-column: auto;
+}
+
+.payment-methods--two .payment-method {
+  min-height: 112px;
+}
+
+.payment-method--mada {
+  border-color: #dfe5e1 !important;
+}
+
+/* Ticket rows: reserve real space for the product name before the amount. */
+.ticket-line-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: 18px;
+  width: 100%;
+  direction: rtl;
+}
+
+.ticket-product-name {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ticket-line-main .line-total {
+  min-width: max-content;
+  justify-self: end;
+}
+
+.ticket-line-meta .money-amount,
+.ticket-totals .money-amount {
+  font-size: inherit;
+}
+
+/* Cash tender shortcuts: the exact total is already prefilled, so these are only higher tender values. */
+.cash-input input {
+  min-height: 64px;
+  padding-inline: 20px;
+  font-size: 1.45rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.cash-suggestions--tender {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.cash-suggestions--tender button {
+  min-width: 0;
+  min-height: 68px;
+  padding: 8px 10px;
+  border: 1px solid #d7dfda;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 1.02rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 7px rgb(24 48 38 / 4%);
+  transition: border-color 120ms ease, background-color 120ms ease, transform 100ms ease;
+}
+
+.cash-suggestions--tender button:hover:not(:disabled) {
+  border-color: rgb(10 117 79 / 42%);
+  background: #f7fbf9;
+}
+
+.cash-suggestions--tender button:active {
+  transform: scale(.98);
+}
+
+.cash-suggestions--tender button.selected {
+  color: var(--brand-dark);
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  box-shadow: inset 0 0 0 1px rgb(10 117 79 / 12%);
+}
+
+.cash-suggestions--tender .money-amount {
+  font-size: 1em;
+}
+
+.change-card strong .money-amount {
+  font-size: inherit;
+}
+
+.complete-sale {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+@media (min-width: 1500px) {
+  .cash-suggestions--tender button {
+    min-height: 76px;
+    font-size: 1.1rem;
+  }
+
+  .cash-input input {
+    min-height: 70px;
+    font-size: 1.6rem;
+  }
+}
+
+@media (max-width: 1180px) and (min-width: 781px) {
+  .cash-suggestions--tender {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 780px) {
+  .payment-methods--two {
+    grid-template-columns: 1fr;
+  }
+
+  .cash-suggestions--tender {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  .cash-suggestions--tender button {
+    min-height: 62px;
+    font-size: .92rem;
+  }
+}

@@ -1,8 +1,8 @@
 {
-  "version": "0.1.0",
-  "status": "provisional-for-POS-FLOW-001",
-  "origin": "Official Rifad light/dark logo assets supplied as 1.png and 2.png",
-  "purpose": "Prevent visual invention while the coded Rifad design system is created.",
+  "version": "0.2.0",
+  "status": "provisional-current-POS",
+  "origin": "Rifad-owned visual system evolved through owner-reviewed POS passes; official Rifad brand assets remain the brand source.",
+  "purpose": "Keep implemented POS visual and interaction rules explicit while the design system is still being validated.",
   "colors": {
     "brandPrimary": "#0a714e",
     "brandPrimaryDark": "#07543b",
@@ -17,8 +17,10 @@
     "warning": "#f59e0b"
   },
   "typography": {
-    "fontFamily": ["Tahoma", "Segoe UI", "Arial", "sans-serif"],
-    "numericEmphasis": "Use heavier weight for totals, money and operational counters."
+    "baseFontFamily": ["Tahoma", "Segoe UI", "Arial", "sans-serif"],
+    "arabicHeaderAndTabFontFamily": ["Cairo", "Tahoma", "Segoe UI", "Arial", "sans-serif"],
+    "numericEmphasis": "Use heavier weight and larger optical scale for totals, change, tendered money and operational counters.",
+    "humanViewingRule": "Judge readable size from normal cashier viewing distance, not design-tool zoom or screenshot symmetry."
   },
   "direction": {
     "default": "rtl",
@@ -26,10 +28,31 @@
     "ltrValueTypes": ["email", "url", "sku", "barcode", "ip-address", "device-id"]
   },
   "interaction": {
+    "priority": ["touch", "human-visual-clarity", "beauty"],
     "touchFirst": true,
+    "recommendedFrequentTargetPx": 48,
+    "compactImportantTargetFloorPx": 44,
+    "layoutBeforeTouchTargetShrink": true,
+    "wholeRowOrCardTapWhenSingleAction": true,
     "primaryActionUsesBrandColor": true,
+    "primaryActionReceivesGreaterTouchWeight": true,
     "operationalStateRequiresTextAndColor": true,
+    "paymentMethodRecognitionUsesTextAndVisualCue": true,
     "genericAdminTemplateProhibited": true
   },
-  "changeRule": "Add or change tokens only through an approved visual decision linked to affected screen/flow IDs."
+  "responsiveQa": {
+    "requiredClasses": [
+      "large-cashier-desktop",
+      "1366x768-class",
+      "tablet-landscape",
+      "short-height-pos",
+      "mobile-narrow"
+    ],
+    "rule": "Change composition, column count, wrapping, scrolling or secondary content before shrinking important cashier controls below practical touch size."
+  },
+  "dataTraceability": {
+    "register": "docs/ui/POS_UI_NAMING_AND_FIELD_REGISTER.md",
+    "rule": "Any new visible durable POS field or canonical label updates the register in the same product/implementation change."
+  },
+  "changeRule": "Add or change tokens only through an approved product/visual decision linked to affected screen/flow IDs; do not let token changes silently modify business behavior."
 }

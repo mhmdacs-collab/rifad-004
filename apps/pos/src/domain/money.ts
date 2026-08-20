@@ -1,10 +1,9 @@
 import type { Money } from "./models";
 
-const formatter = new Intl.NumberFormat("ar-SA", {
-  style: "currency",
-  currency: "SAR",
+const numberFormatter = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
+  useGrouping: true,
 });
 
 export const money = (halalas: number): Money => {
@@ -24,7 +23,8 @@ export const multiplyMoney = (value: Money, quantity: number): Money => {
   return money(value.halalas * quantity);
 };
 
-export const formatMoney = (value: Money): string => formatter.format(value.halalas / 100);
+export const formatMoneyAmount = (value: Money): string => numberFormatter.format(value.halalas / 100);
+export const formatMoney = (value: Money): string => `${formatMoneyAmount(value)} SAR`;
 
 export const parseRiyalsToHalalas = (value: string): number | null => {
   const normalized = value.replace(/[^0-9.]/g, "");
@@ -34,13 +34,27 @@ export const parseRiyalsToHalalas = (value: string): number | null => {
   return Number.isSafeInteger(halalas) ? halalas : null;
 };
 
+const roundStrictlyUp = (value: number, increment: number): number => {
+  const rounded = Math.ceil(value / increment) * increment;
+  return rounded > value ? rounded : rounded + increment;
+};
+
 export const suggestedCashHalalas = (totalHalalas: number): readonly number[] => {
-  const denominations = [500, 1000, 2000, 5000, 10000];
-  const suggestions = new Set<number>([totalHalalas]);
-  for (const denomination of denominations) {
-    const rounded = Math.ceil(totalHalalas / denomination) * denomination;
-    if (rounded >= totalHalalas) suggestions.add(rounded);
-    if (suggestions.size >= 4) break;
+  if (!Number.isSafeInteger(totalHalalas) || totalHalalas < 0) {
+    throw new Error("Cash total must be a non-negative safe integer halala amount.");
   }
-  return [...suggestions].sort((a, b) => a - b).slice(0, 4);
+
+  // Exact payment is already prefilled. Cash shortcuts must be predictable at a
+  // glance: progressively round upward to familiar cashier checkpoints rather
+  // than injecting special-case amounts for particular totals.
+  const checkpoints = [500, 1000, 5000, 10000, 50000] as const;
+  const suggestions = new Set<number>();
+
+  for (const checkpoint of checkpoints) {
+    suggestions.add(roundStrictlyUp(totalHalalas, checkpoint));
+  }
+
+  return [...suggestions]
+    .filter((value) => value > totalHalalas)
+    .sort((a, b) => a - b);
 };
