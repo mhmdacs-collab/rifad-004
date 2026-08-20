@@ -1,96 +1,150 @@
-/* Cash payment bilingual polish — Arabic remains the visual primary language. */
+/* Cash payment bilingual polish — Arabic stays primary; English is positional context only. */
 
-.inline-checkout-rail--cash .inline-checkout-head strong::after {
-  content: "Cash Payment";
-  display: block;
-  margin-top: 1px;
-  color: #7a8782;
-  font-family: Arial, sans-serif;
-  font-size: 10px;
-  font-weight: 650;
-  line-height: 1.1;
-  letter-spacing: .01em;
-  direction: ltr;
+/* Do not translate the obvious page title or action buttons. */
+.inline-checkout-rail--cash .inline-checkout-head strong::after,
+.inline-checkout-rail--cash .inline-complete-sale > span::after,
+.inline-checkout-rail--cash .inline-cancel-sale::after,
+.inline-checkout-rail--cash .inline-cash-suggestions::before {
+  content: none !important;
+}
+
+/* Total: Arabic right — amount center — English left. */
+.inline-checkout-rail--cash .inline-checkout-total-card {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+  grid-template-areas: "english amount arabic" !important;
+  align-items: center !important;
+  column-gap: 10px !important;
+  direction: ltr !important;
+}
+
+.inline-checkout-rail--cash .inline-checkout-total-card > span {
+  grid-area: arabic;
+  justify-self: end;
+  direction: rtl;
+  font-size: 0 !important;
+  white-space: nowrap;
+}
+
+.inline-checkout-rail--cash .inline-checkout-total-card > span::before {
+  content: "إجمالي المبلغ";
+  color: inherit;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.2;
 }
 
 .inline-checkout-rail--cash .inline-checkout-total-card > span::after {
-  content: " · Total";
-  color: rgba(255, 255, 255, .72);
+  content: none !important;
+}
+
+.inline-checkout-rail--cash .inline-checkout-total-card > h1 {
+  grid-area: amount;
+  justify-self: center;
+  margin: 0 !important;
+  direction: rtl;
+  white-space: nowrap;
+}
+
+.inline-checkout-rail--cash .inline-checkout-total-card::after {
+  content: "Total Amount";
+  grid-area: english;
+  justify-self: start;
+  color: rgba(255, 255, 255, .76);
   font-family: Arial, sans-serif;
-  font-size: .76em;
+  font-size: 10.5px;
   font-weight: 650;
+  line-height: 1.2;
   direction: ltr;
-  unicode-bidi: isolate;
+  white-space: nowrap;
+}
+
+/* Amount received: Arabic on the right, English on the left. */
+.inline-checkout-rail--cash .inline-cash-entry-heading {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  align-items: end !important;
+  direction: ltr !important;
+}
+
+.inline-checkout-rail--cash .inline-cash-entry-heading > div {
+  grid-column: 2;
+  justify-self: end;
+  direction: rtl;
 }
 
 .inline-checkout-rail--cash .inline-cash-entry-heading strong::after {
-  content: " · Amount Received";
-  color: #72807a;
+  content: none !important;
+}
+
+.inline-checkout-rail--cash .inline-cash-entry-heading::before {
+  content: "Amount Received";
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: start;
+  color: #7a8782;
   font-family: Arial, sans-serif;
   font-size: 10px;
   font-weight: 650;
+  line-height: 1.2;
   direction: ltr;
-  unicode-bidi: isolate;
+  white-space: nowrap;
 }
 
-.inline-checkout-rail--cash .inline-cash-suggestions {
-  position: relative;
+/* Change: Arabic right — amount center — English left. */
+.inline-checkout-rail--cash .inline-change-card {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+  grid-template-areas: "english amount arabic" !important;
+  align-items: center !important;
+  column-gap: 10px !important;
+  direction: ltr !important;
 }
 
-.inline-checkout-rail--cash .inline-cash-suggestions::before {
-  content: "مبالغ سريعة  ·  Quick amounts";
-  position: absolute;
-  inset-inline-start: 2px;
-  top: -15px;
-  color: #7a8782;
-  font-size: 9px;
-  font-weight: 650;
-  line-height: 1;
-  pointer-events: none;
+.inline-checkout-rail--cash .inline-change-card > span {
+  grid-area: arabic;
+  justify-self: end;
+  direction: rtl;
+  font-size: 0 !important;
+  white-space: nowrap;
+}
+
+.inline-checkout-rail--cash .inline-change-card > span::before {
+  content: "المتبقي للعميل";
+  color: inherit;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
 }
 
 .inline-checkout-rail--cash .inline-change-card > span::after {
-  content: " · Change";
+  content: none !important;
+}
+
+.inline-checkout-rail--cash .inline-change-card > strong {
+  grid-area: amount;
+  justify-self: center;
+  direction: rtl;
+  white-space: nowrap;
+}
+
+.inline-checkout-rail--cash .inline-change-card::before {
+  content: "Balance";
+  grid-area: english;
+  justify-self: start;
   color: currentColor;
   font-family: Arial, sans-serif;
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 650;
+  line-height: 1.2;
   opacity: .72;
   direction: ltr;
-  unicode-bidi: isolate;
+  white-space: nowrap;
 }
 
-.inline-checkout-rail--cash .inline-complete-sale > span,
-.inline-checkout-rail--cash .inline-cancel-sale {
-  line-height: 1.05;
-}
-
-.inline-checkout-rail--cash .inline-complete-sale > span::after {
-  content: "Pay";
-  display: block;
-  margin-top: 2px;
-  font-family: Arial, sans-serif;
-  font-size: 9.5px;
-  font-weight: 650;
-  opacity: .78;
-  direction: ltr;
-}
-
-.inline-checkout-rail--cash .inline-cancel-sale::after {
-  content: "Cancel";
-  display: block;
-  margin-top: 3px;
-  font-family: Arial, sans-serif;
-  font-size: 9px;
-  font-weight: 650;
-  opacity: .62;
-  direction: ltr;
-}
-
-/* Keep Arabic typography untouched; English should never compete for attention. */
-.inline-checkout-rail--cash .inline-checkout-head strong,
-.inline-checkout-rail--cash .inline-checkout-total-card > span,
-.inline-checkout-rail--cash .inline-cash-entry-heading strong,
-.inline-checkout-rail--cash .inline-change-card > span {
-  font-size: inherit;
+/* Keep the keypad, quick amounts and footer visually untouched. */
+.inline-checkout-rail--cash .inline-cash-suggestions {
+  position: static !important;
 }
