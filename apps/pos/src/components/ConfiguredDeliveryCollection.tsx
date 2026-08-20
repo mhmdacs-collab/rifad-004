@@ -31,11 +31,10 @@ export function ConfiguredDeliveryCollection({ delivery, onBack, onCollect }: Pr
       </div>
 
       {!selected && channels.length === 0 ? (
-        <div className="delivery-collection-empty" role="status">
-          <span className="delivery-empty-mark" aria-hidden="true">⌁</span>
+        <div className="delivery-collection-context" role="status">
           <strong>لا توجد قناة توصيل متاحة حاليًا</strong>
           <span>فعّل قناة توصيل لاحقًا لتظهر هنا.</span>
-          <small lang="en" dir="ltr">No delivery channels are available on this POS yet.</small>
+          <span lang="en" dir="ltr">No delivery channels are available on this POS yet.</span>
         </div>
       ) : !selected ? (
         <div className="delivery-channel-choice-grid">
