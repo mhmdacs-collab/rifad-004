@@ -5,6 +5,7 @@ import { ConfiguredPaymentMethodRail } from "./components/ConfiguredPaymentMetho
 import { InlineCheckoutRail } from "./components/InlineCheckoutRail";
 import { LocalServiceEnhancer } from "./components/LocalServiceEnhancer";
 import { ManagerOverrideDialog } from "./components/ManagerOverrideDialog";
+import { TicketWorkspaceEnhancer } from "./components/TicketWorkspaceEnhancer";
 import { TransactionOperationEnhancer } from "./components/TransactionOperationEnhancer";
 import { installQuantityKeypad } from "./quantity-keypad";
 import { createPosRuntimeAdapter } from "./runtime/posRuntimeAdapter";
@@ -110,6 +111,8 @@ export default function App() {
     const backgroundTicket = inlineCheckoutStage === "success"
       ? { ...saleTicket, lines: [], customer: null }
       : saleTicket;
+    const creditEnabled = effectiveConfiguration.configuration?.paymentMethods.some((method) =>
+      method.enabled && (method.systemDefault === "credit" || method.kind === "customer-credit")) ?? false;
 
     const clearDeliveryForDirectPayment = async () => {
       await posRuntime.deliveryCollection.clearForTicket({
@@ -175,6 +178,7 @@ export default function App() {
       setPaymentContextError(null);
       try {
         await clearDeliveryForDirectPayment();
+        local.markSettlementPending(saleTicket.sequence);
         return await flow.chargeTicketToCustomer(customerId);
       } catch (error) {
         setPaymentContextError(error instanceof Error ? error.message : "تعذر تجهيز البيع الآجل.");
@@ -199,16 +203,35 @@ export default function App() {
       void flow.newSale();
     };
 
+    const authorizeSaleCompletion = () => managerOverride.requirePermission({
+      capability: "accept-payment",
+      commandId: commandId("accept-payment"),
+      title: "اعتماد الدفع",
+      targetType: "ticket",
+      targetId: saleTicket.id,
+    });
+
     const beginAuthorizedCheckout = async () => {
-      const approved = await managerOverride.requirePermission({
-        capability: "accept-payment",
-        commandId: commandId("accept-payment"),
-        title: "اعتماد الدفع",
-        targetType: "ticket",
-        targetId: saleTicket.id,
-      });
-      if (!approved) return;
+      if (!(await authorizeSaleCompletion())) return false;
       await flow.beginCheckout();
+      return true;
+    };
+
+    const beginAuthorizedRestaurantLocalCheckout = async () => {
+      if (!(await authorizeSaleCompletion())) return false;
+      return local.beginSimpleLocalCheckout();
+    };
+
+    const beginAuthorizedRestaurantDirectCheckout = async () => {
+      if (!(await authorizeSaleCompletion())) return false;
+      local.prepareDirectCheckout();
+      await flow.beginCheckout();
+      return true;
+    };
+
+    const chargeCreditFromTicket = async (customerId: string) => {
+      if (!(await authorizeSaleCompletion())) return null;
+      return chargeCreditInline(customerId);
     };
 
     return (
@@ -256,6 +279,24 @@ export default function App() {
               onSettleDebt={flow.settleCustomerDebt}
             />
 
+            <TicketWorkspaceEnhancer
+              active={flow.stage === "sales"}
+              ticket={saleTicket}
+              local={local}
+              creditEnabled={creditEnabled}
+              legacyFixture={legacyOrderTypeFixture}
+              busy={flow.busy}
+              onCheckout={beginAuthorizedCheckout}
+              onRestaurantLocalCheckout={beginAuthorizedRestaurantLocalCheckout}
+              onRestaurantDirectCheckout={beginAuthorizedRestaurantDirectCheckout}
+              onSearchCustomers={flow.searchCustomers}
+              onCreateCustomer={(name, mobile, details) => flow.createCustomer(name, mobile, details)}
+              onSetTicketCustomer={flow.setTicketCustomer}
+              onLoadCustomerLedger={flow.loadCustomerLedger}
+              onChargeCredit={chargeCreditFromTicket}
+              onSettleDebt={flow.settleCustomerDebt}
+            />
+
             <TransactionOperationEnhancer
               showClearCart={flow.stage === "sales" && saleTicket.lines.length > 0}
               onClearCart={async () => {
@@ -263,7 +304,7 @@ export default function App() {
               }}
             />
 
-            <LocalServiceEnhancer ticket={saleTicket} local={local} legacyFixture={legacyOrderTypeFixture} />
+            <LocalServiceEnhancer local={local} legacyFixture={legacyOrderTypeFixture} />
 
             {inlineCheckoutStage === "payment" ? (
               <ConfiguredPaymentMethodRail
