@@ -6,7 +6,8 @@ import type {
   PosPaymentDirectImpact,
 } from "../../../../contracts/posConfiguration";
 import type { DeliveryMerchantCollection } from "../../../../contracts/deliveryCollection";
-import type { Ticket } from "../domain/models";
+import type { Customer, Ticket } from "../domain/models";
+import { ConfiguredCustomerCredit } from "./ConfiguredCustomerCredit";
 import { ConfiguredDeliveryCollection, hasExecutableDeliveryCollection } from "./ConfiguredDeliveryCollection";
 import { Icon } from "./Icon";
 import { InlineNotice } from "./InlineNotice";
@@ -24,11 +25,15 @@ type ConfiguredPaymentMethodRailProps = {
   onBackToSales: () => void;
   onCash: () => void;
   onCard: () => void;
-  onCredit: () => void;
+  onSearchCustomers: (query: string) => Promise<readonly Customer[]>;
+  onCreateCustomer: (name: string, mobile: string) => Promise<Customer | null>;
+  onChargeCredit: (customerId: string) => Promise<Customer | null>;
   onDeliveryCollect: (channel: EffectiveDeliveryChannel, merchantCollection: DeliveryMerchantCollection) => void;
 };
 
-const supportedKinds = new Set<EffectivePosPaymentMethod["kind"]>(["cash", "card", "customer-credit"]);
+type SpecialPaymentFlow = "credit" | "delivery" | null;
+
+const supportedKinds = new Set<EffectivePosPaymentMethod["kind"]>(["cash", "card"]);
 const EMPTY_DELIVERY: EffectiveDeliveryConfiguration = { enabled: false, channels: [] };
 
 const directImpactFor = (method: EffectivePosPaymentMethod): PosPaymentDirectImpact => {
@@ -172,28 +177,41 @@ export function ConfiguredPaymentMethodRail({
   onBackToSales,
   onCash,
   onCard,
-  onCredit,
+  onSearchCustomers,
+  onCreateCustomer,
+  onChargeCredit,
   onDeliveryCollect,
 }: ConfiguredPaymentMethodRailProps) {
-  const [deliveryOpen, setDeliveryOpen] = useState(false);
-  const methods = [...paymentMethods]
+  const [specialFlow, setSpecialFlow] = useState<SpecialPaymentFlow>(null);
+  const enabledMethods = [...paymentMethods]
     .filter((method) => method.enabled)
     .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "ar"));
+  const creditMethod = enabledMethods.find((method) => method.kind === "customer-credit") ?? null;
+  const methods = enabledMethods.filter((method) => method.kind !== "customer-credit");
   const deliveryExecutable = hasExecutableDeliveryCollection(delivery);
 
   const choose = (method: EffectivePosPaymentMethod) => {
     if (method.kind === "cash") onCash();
     if (method.kind === "card") onCard();
-    if (method.kind === "customer-credit") onCredit();
   };
+
+  const headerTitle = specialFlow === "delivery" ? "تحصيل طلب التوصيل" : specialFlow === "credit" ? "بيع آجل" : "اختيار طريقة الدفع";
+  const headerEnglish = specialFlow === "delivery" ? "Delivery collection" : specialFlow === "credit" ? "Credit sale" : "Choose payment method";
 
   return (
     <aside className="inline-checkout-rail inline-checkout-rail--payment" aria-label="الدفع" data-screen-id="POS-SCREEN-007">
       <header className="inline-checkout-head">
-        <button type="button" className="inline-checkout-back" onClick={deliveryOpen ? () => setDeliveryOpen(false) : onBackToSales} aria-label={deliveryOpen ? "العودة إلى طرق الدفع" : "العودة إلى السلة"}><Icon name="arrow" size={20} /></button>
+        <button
+          type="button"
+          className="inline-checkout-back"
+          onClick={specialFlow ? () => setSpecialFlow(null) : onBackToSales}
+          aria-label={specialFlow ? "العودة إلى طرق الدفع" : "العودة إلى السلة"}
+        >
+          <Icon name="arrow" size={20} />
+        </button>
         <div>
-          <strong>{deliveryOpen ? "تحصيل طلب التوصيل" : "اختيار طريقة الدفع"}</strong>
-          <span lang="en" dir="ltr">{deliveryOpen ? "Delivery collection" : "Choose payment method"} · Ticket #{ticket.sequence}</span>
+          <strong>{headerTitle}</strong>
+          <span lang="en" dir="ltr">{headerEnglish} · Ticket #{ticket.sequence}</span>
         </div>
       </header>
 
@@ -206,19 +224,27 @@ export function ConfiguredPaymentMethodRail({
         <InlineNotice message={errorMessage} onDismiss={onDismissError} />
         <InlineNotice message={configurationError} onDismiss={() => undefined} />
 
-        {deliveryOpen ? (
+        {specialFlow === "delivery" ? (
           <ConfiguredDeliveryCollection
             delivery={delivery ?? EMPTY_DELIVERY}
-            onBack={() => setDeliveryOpen(false)}
+            onBack={() => setSpecialFlow(null)}
             onCollect={onDeliveryCollect}
+          />
+        ) : specialFlow === "credit" && creditMethod ? (
+          <ConfiguredCustomerCredit
+            ticketTotal={ticket.total}
+            busy={busy === "customer-create" || busy === "customer-credit" || busy === "customer-settlement"}
+            onSearch={onSearchCustomers}
+            onCreateCustomer={onCreateCustomer}
+            onChargeCredit={onChargeCredit}
           />
         ) : (
           <section className="inline-payment-section" aria-label="طرق الدفع">
             {configurationLoading ? <div className="inline-checkout-note"><span>جارٍ تحميل طرق الدفع المحلية…</span></div> : null}
-            {!configurationLoading && methods.length === 0 ? <div className="inline-checkout-note"><span>لا توجد طريقة دفع مفعّلة لهذا الجهاز.</span></div> : null}
+            {!configurationLoading && methods.length === 0 ? <div className="inline-checkout-note"><span>لا توجد طريقة تحصيل مباشرة مفعّلة لهذا الجهاز.</span></div> : null}
 
             <div
-              className="inline-payment-methods inline-payment-methods--with-delivery"
+              className="inline-payment-methods"
               data-payment-method-count={methods.length}
               data-payment-layout="scroll-list"
             >
@@ -228,14 +254,12 @@ export function ConfiguredPaymentMethodRail({
                   ? busy === "cash-method"
                   : method.kind === "card"
                     ? busy === "card-method"
-                    : method.kind === "customer-credit"
-                      ? busy === "customer-credit"
-                      : false;
+                    : false;
                 const englishName = englishLabelFor(method);
                 return (
                   <button
                     type="button"
-                    className={`inline-payment-method ${method.kind === "cash" ? "inline-payment-method--cash" : method.kind === "card" ? "inline-payment-method--mada" : method.kind === "customer-credit" ? "inline-payment-method--credit" : "inline-payment-method--custom"}`}
+                    className={`inline-payment-method ${method.kind === "cash" ? "inline-payment-method--cash" : method.kind === "card" ? "inline-payment-method--mada" : "inline-payment-method--custom"}`}
                     key={method.id}
                     onClick={() => choose(method)}
                     disabled={!supported || methodBusy}
@@ -248,27 +272,34 @@ export function ConfiguredPaymentMethodRail({
                       <strong>{method.name}</strong>
                       <span className="inline-payment-english" lang="en" dir="ltr">{englishName}</span>
                     </span>
-                    <span className="inline-payment-chevron" aria-hidden="true">‹</span>
                   </button>
                 );
               })}
             </div>
 
-            <div className="payment-delivery-zone">
+            <div className="payment-special-actions" aria-label="مسارات الدفع الخاصة">
+              {creditMethod ? (
+                <button
+                  type="button"
+                  className="payment-special-action payment-special-action--credit"
+                  onClick={() => setSpecialFlow("credit")}
+                  aria-label="آجل — Credit"
+                  data-special-payment-flow="credit"
+                >
+                  <PaymentArtwork method={creditMethod} />
+                  <span><strong>آجل</strong><small lang="en" dir="ltr">Credit</small></span>
+                </button>
+              ) : null}
               <button
                 type="button"
-                className="payment-delivery-launcher"
-                onClick={() => setDeliveryOpen(true)}
+                className="payment-special-action payment-special-action--delivery"
+                onClick={() => setSpecialFlow("delivery")}
                 aria-label="توصيل — Delivery"
-                data-payment-method-id="delivery-hub"
+                data-special-payment-flow="delivery"
                 data-delivery-ready={deliveryExecutable ? "true" : "false"}
               >
                 <DeliveryArtwork />
-                <span className="inline-payment-copy">
-                  <strong>توصيل</strong>
-                  <span className="inline-payment-english" lang="en" dir="ltr">Delivery</span>
-                </span>
-                <span className="inline-payment-chevron" aria-hidden="true">‹</span>
+                <span><strong>توصيل</strong><small lang="en" dir="ltr">Delivery</small></span>
               </button>
             </div>
           </section>
