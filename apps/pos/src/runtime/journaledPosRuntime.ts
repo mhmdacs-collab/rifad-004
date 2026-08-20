@@ -315,7 +315,7 @@ export const withLocalPersistenceJournal = (
           ),
         ]);
 
-        return { customer, receipt };
+        return { ...customer, receipt };
       },
     },
     checkout: {
