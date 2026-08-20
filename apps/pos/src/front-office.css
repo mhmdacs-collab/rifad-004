@@ -215,13 +215,17 @@
 }
 
 /* Clear Cart is a basket utility, never a third transaction button. */
-.sale-screen-touch .transaction-clear-cart,
-.sale-screen-touch .clear-cart-action,
-.sale-screen-touch [data-clear-cart-action="true"] {
+.sale-screen-touch .ticket-clear-cart {
   color: var(--fo-danger) !important;
   background: var(--fo-danger-soft) !important;
   border-color: #f0d0d0 !important;
   box-shadow: none !important;
+  transition: transform .08s ease, background .1s ease, border-color .1s ease;
+}
+
+.sale-screen-touch .ticket-clear-cart:active:not(:disabled) {
+  transform: scale(.988);
+  background: #ffe8e8 !important;
 }
 
 /* Stable two-slot transaction card. */
@@ -274,25 +278,19 @@
   scrollbar-gutter: stable;
 }
 
-.inline-checkout-rail .payment-method-card,
-.inline-checkout-rail .configured-payment-method,
-.inline-checkout-rail .payment-method-button,
+.inline-checkout-rail .inline-payment-method,
 .inline-checkout-rail .payment-special-action {
   border-radius: var(--fo-radius-md) !important;
   box-shadow: none !important;
   transition: transform .08s ease, border-color .12s ease, background .12s ease, box-shadow .12s ease !important;
 }
 
-.inline-checkout-rail .payment-method-card:hover:not(:disabled),
-.inline-checkout-rail .configured-payment-method:hover:not(:disabled),
-.inline-checkout-rail .payment-method-button:hover:not(:disabled),
+.inline-checkout-rail .inline-payment-method:hover:not(:disabled),
 .inline-checkout-rail .payment-special-action:hover:not(:disabled) {
   box-shadow: var(--fo-shadow-soft) !important;
 }
 
-.inline-checkout-rail .payment-method-card:active:not(:disabled),
-.inline-checkout-rail .configured-payment-method:active:not(:disabled),
-.inline-checkout-rail .payment-method-button:active:not(:disabled),
+.inline-checkout-rail .inline-payment-method:active:not(:disabled),
 .inline-checkout-rail .payment-special-action:active:not(:disabled) {
   transform: scale(.985);
 }
