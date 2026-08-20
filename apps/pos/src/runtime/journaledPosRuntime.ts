@@ -13,17 +13,20 @@ const domainEvent = (
   occurredAt = now(),
 ): LocalDomainEventDraft => ({ id, type, aggregateType, aggregateId, payload, occurredAt });
 
+const debtReceiptNumber = (commandId: string) => {
+  const suffix = commandId.replace(/[^a-zA-Z0-9]/g, "").slice(-10).toUpperCase();
+  return `DC-${suffix || "COLLECTION"}`;
+};
+
 /**
- * Adds Rifad local persistence/outbox behavior around any PosRuntimeContract.
+ * Adds Rifad local persistence/outbox behavior around the legacy POS runtime.
  *
- * When a snapshot bridge is supplied, durable runtime changes are mirrored into
- * one versioned LocalPersistence namespace. Events produced by the same action
- * are committed with that snapshot in the same persistence operation. The
- * bridge exists only for the current legacy mock; a native runtime can write
- * through LocalPersistenceContract directly and omit it.
+ * Debt collection is intentionally composed here rather than owned by the
+ * legacy customer-credit engine. This lets one atomic snapshot commit carry
+ * both the debt mutation and the Rifad-owned collection receipt/outbox events.
  */
 export const withLocalPersistenceJournal = (
-  base: PosRuntimeContract,
+  base: Omit<PosRuntimeContract, "debtCollection">,
   persistence: LocalPersistenceContract,
   snapshotBridge?: LegacySnapshotBridge,
 ): PosRuntimeContract => {
@@ -256,6 +259,63 @@ export const withLocalPersistenceJournal = (
           ),
         ]);
         return customer;
+      },
+    },
+    debtCollection: {
+      settle: async (input) => {
+        await ready;
+        const customer = await base.customerCredit.settle({
+          commandId: input.commandId,
+          customerId: input.customerId,
+          amount: input.amount,
+        });
+        const collectedAt = now();
+        const employee = base.restore().employee;
+        const device = base.restore().device;
+        const receipt = {
+          id: `debt-collection:${input.commandId}`,
+          number: debtReceiptNumber(input.commandId),
+          customerId: customer.id,
+          customerName: customer.name,
+          amount: input.amount,
+          collectionMethod: input.collectionMethod,
+          previousDebt: {
+            ...customer.debt,
+            halalas: customer.debt.halalas + input.amount.halalas,
+          },
+          remainingDebt: customer.debt,
+          collectedAt,
+          employeeId: employee?.employeeId ?? null,
+          employeeName: employee?.employeeName ?? "موظف رفاد",
+          branchName: device?.branchName ?? "",
+        } as const;
+
+        await commit([
+          domainEvent(
+            `customer.debt-settled:${input.commandId}`,
+            "customer.debt-settled.v1",
+            "customer",
+            customer.id,
+            {
+              customer,
+              amount: input.amount,
+              collectionMethod: input.collectionMethod,
+              collectionReceiptId: receipt.id,
+              collectionReceiptNumber: receipt.number,
+            },
+            collectedAt,
+          ),
+          domainEvent(
+            `debt.collection-receipt:${input.commandId}`,
+            "debt.collection-receipt-created.v1",
+            "debt-collection-receipt",
+            receipt.id,
+            { receipt, customer },
+            collectedAt,
+          ),
+        ]);
+
+        return { customer, receipt };
       },
     },
     checkout: {
