@@ -5,6 +5,7 @@ import type { LocalServiceFlow } from "../state/useLocalServiceFlow";
 import { CustomerPickerDialog } from "./CustomerPickerDialog";
 import { DebtBookDialog } from "./DebtBookDialog";
 import { LocalServiceDialog } from "./LocalServiceDialog";
+import { TicketCustomerWorkspace } from "./TicketCustomerWorkspace";
 
 type TicketTaskKind = "customer" | "credit" | "debt" | "place-assign" | "place-open";
 
@@ -299,7 +300,15 @@ export function TicketWorkspaceEnhancer({
   const closeTask = () => setTask(null);
   const customerPurpose = task.kind === "credit" ? "credit" : "attach";
 
-  const taskContent = task.kind === "customer" || task.kind === "credit" ? (
+  const taskContent = task.kind === "customer" && !ticket.customer ? (
+    <TicketCustomerWorkspace
+      busy={customerBusy}
+      onClose={closeTask}
+      onSearch={onSearchCustomers}
+      onCreateCustomer={onCreateCustomer}
+      onAttachCustomer={onSetTicketCustomer}
+    />
+  ) : task.kind === "customer" || task.kind === "credit" ? (
     <CustomerPickerDialog
       purpose={customerPurpose}
       ticketTotal={ticket.total}
