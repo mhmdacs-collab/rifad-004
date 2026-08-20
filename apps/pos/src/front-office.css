@@ -1,0 +1,397 @@
+/*
+ * Rifad Front Office — consolidated cashier visual layer
+ *
+ * Authority: docs/ui/visual-decisions/
+ * VISUAL-DECISION-009-FRONT-OFFICE-VISUAL-CONSOLIDATION.md
+ *
+ * This file intentionally loads after the historical visual-pass files. It is
+ * the convergence boundary for the final cashier shell; do not extend the
+ * numbered visual-pass sequence for normal Front Office polish.
+ */
+
+.sale-flow-shell {
+  --fo-brand: #0a714e;
+  --fo-brand-strong: #075b40;
+  --fo-brand-soft: #eaf4f0;
+  --fo-canvas: #f3f5f4;
+  --fo-surface: #ffffff;
+  --fo-surface-soft: #f8faf9;
+  --fo-ink: #18211d;
+  --fo-muted: #68756f;
+  --fo-border: #dde4e0;
+  --fo-border-strong: #cbd5d0;
+  --fo-danger: #aa3f3f;
+  --fo-danger-soft: #fff1f1;
+  --fo-radius-sm: 9px;
+  --fo-radius-md: 13px;
+  --fo-radius-lg: 17px;
+  --fo-shadow-soft: 0 2px 10px rgb(27 48 40 / 6%);
+  --fo-shadow-raised: 0 8px 22px rgb(27 48 40 / 9%);
+  --fo-press-scale: .978;
+  color: var(--fo-ink);
+  background: var(--fo-canvas);
+}
+
+/* Cashier surfaces should behave like an installed touch application. */
+.sale-flow-shell button,
+.sale-flow-shell [role="button"],
+.sale-flow-shell .catalog-product,
+.sale-flow-shell .ticket-line-button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.sale-screen-touch button,
+.inline-checkout-rail button {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sale-screen-touch.loyverse-shell {
+  background: var(--fo-canvas);
+}
+
+/* ---------- Catalog shell ---------- */
+.sale-screen-touch .sales-catalog {
+  background: var(--fo-canvas);
+}
+
+.sale-screen-touch .workspace-header {
+  border-bottom: 1px solid rgb(255 255 255 / 12%);
+  box-shadow: none;
+}
+
+.sale-screen-touch .current-page-title {
+  font-weight: 800;
+  letter-spacing: -.01em;
+}
+
+.sale-screen-touch .catalog-search {
+  border-radius: 11px;
+  transition: border-color .14s ease, background .14s ease, box-shadow .14s ease;
+}
+
+.sale-screen-touch .catalog-search:focus-within {
+  border-color: rgb(10 113 78 / 35%);
+  box-shadow: 0 0 0 3px rgb(10 113 78 / 10%);
+}
+
+.sale-screen-touch .product-area {
+  padding: 16px;
+  background: var(--fo-canvas);
+}
+
+.sale-screen-touch .product-grid {
+  gap: 12px;
+}
+
+.sale-screen-touch button.catalog-product {
+  border: 1px solid var(--fo-border) !important;
+  border-radius: var(--fo-radius-md) !important;
+  box-shadow: var(--fo-shadow-soft) !important;
+  transition: transform .09s ease, border-color .12s ease, box-shadow .12s ease, filter .12s ease;
+}
+
+.sale-screen-touch button.catalog-product:hover:not(:disabled) {
+  border-color: #b8c9c1 !important;
+  outline: 0 !important;
+  box-shadow: var(--fo-shadow-raised) !important;
+  filter: none !important;
+}
+
+.sale-screen-touch button.catalog-product:active:not(:disabled) {
+  transform: scale(var(--fo-press-scale)) !important;
+  box-shadow: 0 2px 7px rgb(27 48 40 / 8%) !important;
+}
+
+.sale-screen-touch button.catalog-product > strong {
+  padding-inline: 13px !important;
+  color: #26312c;
+  font-weight: 760 !important;
+  line-height: 1.5;
+}
+
+.sale-screen-touch button.catalog-product::after {
+  color: #1b2721 !important;
+  background: rgb(255 255 255 / 66%) !important;
+  border-top-color: rgb(35 58 47 / 10%) !important;
+  font-weight: 800 !important;
+}
+
+.sale-screen-touch .sale-page-tabs {
+  background: var(--fo-surface);
+  border-top: 1px solid var(--fo-border);
+  box-shadow: none;
+}
+
+.sale-screen-touch .sale-page-tabs button {
+  min-height: 48px;
+  transition: color .12s ease, background .12s ease, border-color .12s ease;
+}
+
+.sale-screen-touch .sale-page-tabs button.active {
+  color: var(--fo-brand);
+  background: var(--fo-brand-soft);
+}
+
+/* ---------- Transaction rail ---------- */
+.sale-screen-touch .ticket-column {
+  background: var(--fo-surface);
+  border-inline-start: 1px solid var(--fo-border);
+  box-shadow: -5px 0 18px rgb(25 46 37 / 4%);
+}
+
+.sale-screen-touch .ticket-header {
+  min-height: 76px;
+  padding: 14px 18px;
+  border-bottom-color: var(--fo-border);
+}
+
+.sale-screen-touch .ticket-title-block h2 {
+  color: var(--fo-ink);
+  font-weight: 800;
+}
+
+.sale-screen-touch .ticket-title-block > span,
+.sale-screen-touch .ticket-more {
+  color: var(--fo-muted);
+}
+
+.sale-screen-touch .ticket-customer-button {
+  min-height: 44px;
+  border-radius: 11px;
+  transition: background .12s ease, border-color .12s ease, transform .09s ease;
+}
+
+.sale-screen-touch .ticket-customer-button:active:not(:disabled) {
+  transform: scale(.97);
+}
+
+.sale-screen-touch .ticket-lines {
+  padding-inline: 12px;
+  scrollbar-gutter: stable;
+}
+
+.sale-screen-touch .ticket-line {
+  border-bottom-color: #edf1ef;
+}
+
+.sale-screen-touch .ticket-line-button {
+  min-height: 64px;
+  border-radius: 10px;
+  transition: background .1s ease, transform .08s ease;
+}
+
+.sale-screen-touch .ticket-line-button:hover:not(:disabled) {
+  background: var(--fo-surface-soft);
+}
+
+.sale-screen-touch .ticket-line-button:active:not(:disabled) {
+  transform: scale(.988);
+  background: #f2f6f4;
+}
+
+.sale-screen-touch .ticket-line--latest .ticket-line-button {
+  background: #f1f8f5;
+}
+
+.sale-screen-touch .ticket-product-name,
+.sale-screen-touch .ticket-line-total {
+  color: var(--fo-ink);
+}
+
+.sale-screen-touch .ticket-unit-price,
+.sale-screen-touch .ticket-quantity-inline {
+  color: var(--fo-muted);
+}
+
+.sale-screen-touch .ticket-totals {
+  border-top-color: var(--fo-border);
+  background: var(--fo-surface);
+}
+
+.sale-screen-touch .ticket-grand-total {
+  color: var(--fo-ink);
+}
+
+/* Clear Cart is a basket utility, never a third transaction button. */
+.sale-screen-touch .transaction-clear-cart,
+.sale-screen-touch .clear-cart-action,
+.sale-screen-touch [data-clear-cart-action="true"] {
+  color: var(--fo-danger) !important;
+  background: var(--fo-danger-soft) !important;
+  border-color: #f0d0d0 !important;
+  box-shadow: none !important;
+}
+
+/* Stable two-slot transaction card. */
+.sale-screen-touch .transaction-operation-card,
+.inline-checkout-rail .transaction-operation-card {
+  background: var(--fo-surface);
+  border-top-color: var(--fo-border) !important;
+  box-shadow: none !important;
+}
+
+.sale-screen-touch .transaction-operation-card > button,
+.inline-checkout-rail .transaction-operation-card > button {
+  min-height: 54px;
+  border-radius: 11px;
+  transition: transform .08s ease, filter .1s ease, background .1s ease, border-color .1s ease;
+}
+
+.sale-screen-touch .transaction-operation-card > button:active:not(:disabled),
+.inline-checkout-rail .transaction-operation-card > button:active:not(:disabled) {
+  transform: scale(.985);
+}
+
+/* ---------- Checkout / payment ---------- */
+.inline-checkout-rail {
+  color: var(--fo-ink);
+  background: var(--fo-surface);
+  border-inline-start: 1px solid var(--fo-border);
+  box-shadow: -5px 0 18px rgb(25 46 37 / 4%);
+}
+
+.inline-checkout-rail .inline-checkout-head {
+  border-bottom-color: var(--fo-border);
+  box-shadow: none;
+}
+
+.inline-checkout-rail .inline-checkout-total-card {
+  border: 1px solid var(--fo-border);
+  border-radius: var(--fo-radius-md);
+  background: var(--fo-surface-soft);
+  box-shadow: none;
+}
+
+.inline-checkout-rail .inline-checkout-total-card h1 {
+  color: var(--fo-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.inline-checkout-rail .inline-payment-methods {
+  gap: 10px;
+  scrollbar-gutter: stable;
+}
+
+.inline-checkout-rail .payment-method-card,
+.inline-checkout-rail .configured-payment-method,
+.inline-checkout-rail .payment-method-button,
+.inline-checkout-rail .payment-special-action {
+  border-radius: var(--fo-radius-md) !important;
+  box-shadow: none !important;
+  transition: transform .08s ease, border-color .12s ease, background .12s ease, box-shadow .12s ease !important;
+}
+
+.inline-checkout-rail .payment-method-card:hover:not(:disabled),
+.inline-checkout-rail .configured-payment-method:hover:not(:disabled),
+.inline-checkout-rail .payment-method-button:hover:not(:disabled),
+.inline-checkout-rail .payment-special-action:hover:not(:disabled) {
+  box-shadow: var(--fo-shadow-soft) !important;
+}
+
+.inline-checkout-rail .payment-method-card:active:not(:disabled),
+.inline-checkout-rail .configured-payment-method:active:not(:disabled),
+.inline-checkout-rail .payment-method-button:active:not(:disabled),
+.inline-checkout-rail .payment-special-action:active:not(:disabled) {
+  transform: scale(.985);
+}
+
+/* Flatten older decorative payment gradients without changing payment meaning. */
+.inline-checkout-rail .payment-special-action--credit {
+  color: #35413c !important;
+  background: #f7f9f8 !important;
+  border-color: var(--fo-border) !important;
+}
+
+.inline-checkout-rail .payment-special-action--delivery {
+  color: #7a4b20 !important;
+  background: #fff8ef !important;
+  border-color: #ead0ad !important;
+}
+
+/* ---------- Responsive cashier geometry ---------- */
+@media (min-width: 1440px) {
+  .sale-screen-touch .product-grid {
+    grid-template-columns: repeat(5, minmax(122px, 1fr));
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .sale-screen-touch .product-grid {
+    grid-template-columns: repeat(4, minmax(118px, 1fr));
+    grid-auto-rows: minmax(138px, 1fr);
+  }
+
+  .sale-screen-touch .product-area {
+    padding: 13px;
+  }
+}
+
+@media (min-width: 781px) and (max-width: 1023px) {
+  .sale-screen-touch .product-grid {
+    grid-template-columns: repeat(3, minmax(112px, 1fr));
+    grid-auto-rows: 136px;
+    gap: 10px;
+  }
+
+  .sale-screen-touch .product-area {
+    padding: 11px;
+  }
+
+  .sale-screen-touch .ticket-header {
+    min-height: 70px;
+    padding-inline: 14px;
+  }
+}
+
+@media (max-height: 720px) and (min-width: 781px) {
+  .sale-screen-touch .workspace-header {
+    min-height: 60px;
+    height: 60px;
+  }
+
+  .sale-screen-touch .product-area {
+    padding-block: 10px;
+  }
+
+  .sale-screen-touch .ticket-header {
+    min-height: 64px;
+    padding-block: 10px;
+  }
+
+  .sale-screen-touch .transaction-operation-card > button,
+  .inline-checkout-rail .transaction-operation-card > button {
+    min-height: 50px;
+  }
+}
+
+@media (max-width: 780px) {
+  .sale-screen-touch .product-area {
+    padding: 10px;
+  }
+
+  .sale-screen-touch .product-grid {
+    gap: 9px;
+  }
+
+  .sale-screen-touch button.catalog-product {
+    border-radius: 11px !important;
+  }
+
+  .mobile-ticket-surface,
+  .inline-checkout-rail {
+    background: var(--fo-surface);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sale-flow-shell *,
+  .sale-flow-shell *::before,
+  .sale-flow-shell *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
