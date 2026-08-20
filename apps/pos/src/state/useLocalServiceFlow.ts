@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RestaurantServiceContract } from "../contracts/restaurantService";
 import { PosContractError } from "../contracts/pos";
+import type { Ticket } from "../domain/models";
 import type { OpenLocalOrder, PlaceGroup, RestaurantServiceConfig } from "../domain/restaurantService";
 import type { usePosFlow } from "./usePosFlow";
 
@@ -16,6 +17,21 @@ const localMessage = (error: unknown) => error instanceof PosContractError ? err
 const INITIAL_CONFIG: RestaurantServiceConfig = {
   restaurantServiceEnabled: true,
   placeManagementEnabled: true,
+};
+
+const sameTicketContent = (working: Ticket | null, sent: Ticket) => {
+  if (!working) return false;
+  if ((working.customer?.id ?? null) !== (sent.customer?.id ?? null)) return false;
+  if (working.lines.length !== sent.lines.length) return false;
+
+  return working.lines.every((line, index) => {
+    const baseline = sent.lines[index];
+    return baseline
+      && line.productId === baseline.productId
+      && line.quantity === baseline.quantity
+      && line.unitPrice.halalas === baseline.unitPrice.halalas
+      && line.unitPrice.currency === baseline.unitPrice.currency;
+  });
 };
 
 /**
@@ -148,8 +164,13 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
     }
   }, [rebuildOpenOrderIntoWorkingTicket, service]);
 
+  const hasUnsentOpenOrderChanges = useMemo(
+    () => activeOpenOrder ? !sameTicketContent(flow.ticket, activeOpenOrder.ticket) : false,
+    [activeOpenOrder, flow.ticket],
+  );
+
   const sendOpenOrderUpdate = useCallback(async () => {
-    if (!activeOpenOrder || !flow.ticket || flow.ticket.lines.length === 0) return false;
+    if (!activeOpenOrder || !flow.ticket || !hasUnsentOpenOrderChanges) return false;
     setLocalBusy("send-order-update");
     setLocalError(null);
     try {
@@ -159,9 +180,35 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
         ticket: flow.ticket,
       });
       setOpenLocalOrders(await service.listOpenOrders());
+      setActiveOpenOrder(updated);
+      setCheckoutServiceContext({ mode: "dine_in", label: `محلي · ${updated.servicePlaceName}` });
+      setLocalNotice(`تم إرسال التحديث للمطبخ · ${updated.servicePlaceName}`);
+      return true;
+    } catch (error) {
+      setLocalError(localMessage(error));
+      return false;
+    } finally {
+      setLocalBusy(null);
+    }
+  }, [activeOpenOrder, flow.ticket, hasUnsentOpenOrderChanges, service]);
+
+  /**
+   * Leave an already-synchronised table ticket without paying it. Unsent edits
+   * are deliberately protected from silent loss: the cashier must send them
+   * before leaving this working copy.
+   */
+  const leaveOpenOrder = useCallback(async () => {
+    if (!activeOpenOrder) return false;
+    if (hasUnsentOpenOrderChanges) {
+      setLocalError("أرسل تعديلات الطاولة قبل الرجوع إلى شاشة البيع.");
+      return false;
+    }
+    setLocalBusy("leave-open-order");
+    setLocalError(null);
+    try {
       setActiveOpenOrder(null);
       setCheckoutServiceContext(null);
-      setLocalNotice(`تم إرسال التحديث للمطبخ · ${updated.servicePlaceName}`);
+      setPendingSettlementSequence(null);
       await flow.newSale();
       return true;
     } catch (error) {
@@ -170,7 +217,7 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
     } finally {
       setLocalBusy(null);
     }
-  }, [activeOpenOrder, flow, service]);
+  }, [activeOpenOrder, flow, hasUnsentOpenOrderChanges]);
 
   /**
    * Called immediately before final local-order payment. Completion is observed
@@ -230,6 +277,7 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
     activeOpenOrder,
     activeServiceLabel,
     checkoutServiceContext,
+    hasUnsentOpenOrderChanges,
     localBusy,
     localNotice,
     localError,
@@ -240,6 +288,7 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
     assignToPlace,
     resumeOpenOrder,
     sendOpenOrderUpdate,
+    leaveOpenOrder,
     markSettlementPending,
     abandonActiveResume,
     clearCheckoutContext,
