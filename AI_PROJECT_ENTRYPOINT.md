@@ -19,6 +19,7 @@ It exists because AI/chat sessions may end without warning. The repository, not 
 - what Rifad is;
 - what the product owner is responsible for;
 - what the technical/AI role is responsible for;
+- the approved product target;
 - the approved sourcing/build philosophy;
 - what current code means and does **not** mean;
 - current repository/PR state;
@@ -45,6 +46,22 @@ The product owner does **not** care what engine, programming language, framework
 
 The engineering objective is the strongest practical Rifad product: stable, fast, mathematically correct, capable, maintainable, extensible and affordable.
 
+### Product north star — Loyverse parity first
+
+The approved first product horizon is **100% functional/workflow parity with the adopted observable Loyverse baseline before Rifad treats the baseline as complete and moves on to systematic differentiation beyond it**.
+
+This means:
+
+- do not deliberately stop at an arbitrary 70% or 80% feature subset and call the baseline complete;
+- use Loyverse as a known product horizon so architecture and Core selection are evaluated against the future product we already know we need, not only the next screen;
+- cover the adopted observable behavior across POS, Back Office, Dashboard, KDS and Customer Display, including relevant flows, states, permissions, errors and offline/recovery behavior;
+- Restaurant/service behavior is part of that target where present in the adopted baseline;
+- Rifad may add Saudi requirements, ZATCA, local market behavior and explicit owner-approved improvements without waiting for parity when they are necessary foundations;
+- Rifad owns its visual identity and implementation; parity is functional/workflow parity, not source-code copying and not an assumption about proprietary Loyverse internals;
+- any deliberate omission from the adopted Loyverse baseline must be an explicit product-owner decision and recorded as such.
+
+The purpose is strategic: **design and select the engine while seeing the near future now**, so Rifad does not repeatedly rebuild foundations when later baseline capabilities arrive.
+
 ### AI / technical-lead role
 
 The technical/AI responsibility is to:
@@ -52,7 +69,7 @@ The technical/AI responsibility is to:
 - find the strongest existing engines and implementations before inventing substantial code;
 - inspect real source, tests, failure behavior, database design, maintenance and licenses;
 - execute candidates where practical instead of trusting feature lists/READMEs;
-- simulate how candidates fit Rifad before adoption;
+- simulate how candidates fit the full Rifad/Loyverse-parity horizon before adoption;
 - choose the strongest Primary Core and best capability slices on evidence;
 - identify architectural dead ends early;
 - decide whether to retain, modify, reuse, port, reimplement, graft, isolate or reject technical implementations;
@@ -75,7 +92,7 @@ Examples such as Odoo, ERPNext, another POS, the existing Rifad code, or a diffe
 Before building a substantial engine from zero:
 
 1. Search for a mature **whole-core candidate** capable of carrying a large share of Rifad.
-2. Run architecture simulation against expected Rifad needs.
+2. Run architecture simulation against the full expected Rifad/Loyverse-parity horizon, not only the next MAP item.
 3. If a core is strong but weak in a bounded capability, search for the strongest implementation of that capability elsewhere.
 4. Reuse, port, reimplement or graft the proven capability into the selected core in the cleanest practical way.
 5. Build from zero only when mature implementations do not fit safely or bespoke Rifad work is demonstrably better.
@@ -191,9 +208,9 @@ Do **not** require a future core to reproduce accidental staging architecture si
 
 ### Future Core Lab
 
-A clean `rifad-core-lab` repository has been proposed as the next strategic workspace for Primary Core discovery/simulation.
+A clean `rifad-core-lab` repository is the next strategic workspace for Primary Core discovery/simulation.
 
-**As of this file's last update, do not assume it already exists. Verify before using it.**
+The GitHub connector used by the current session cannot create a repository, and the authorized remote-desktop route was unavailable when last attempted. Until the empty repository exists, its exact bootstrap is staged under `bootstrap/rifad-core-lab/` on the architecture-foundation branch.
 
 The lab is intended for candidate source/build/runtime evidence, simulations, benchmarks, licenses, scorecards and decisions — not for prematurely building the production product.
 
@@ -250,7 +267,7 @@ Before any write, verify the live branch/PR state rather than trusting this snap
 
 The next strategic job is:
 
-> **Primary Core Candidate Discovery & Architecture Simulation**
+> **Primary Core Candidate Discovery & Architecture Simulation against the full Rifad/Loyverse-parity horizon**
 
 Before committing to another production engine path:
 
@@ -259,13 +276,14 @@ Before committing to another production engine path:
 3. Shortlist the strongest candidates.
 4. Clone/build/run serious candidates where practical.
 5. Inspect source, tests, database, transaction model and failure behavior.
-6. Simulate each candidate against Rifad's expected topology.
+6. Simulate each candidate against Rifad's expected topology and complete parity horizon.
 7. Record `KEEP / MODIFY / REPLACE / GRAFT` by major capability.
 8. Compare adaptation cost and long-term risk against the current Rifad engine path.
 9. Only then select or reject a Primary Core.
 
 Simulation must consider at least:
 
+- coverage toward the adopted Loyverse functional/workflow baseline;
 - money precision/rounding;
 - transaction integrity;
 - sales/orders;
@@ -276,6 +294,7 @@ Simulation must consider at least:
 - taxes;
 - customers/credit/loyalty;
 - restaurant/tables/open orders;
+- KDS/CDS implications;
 - local persistence/restart/crash;
 - concurrency/multi-device;
 - LAN;
@@ -299,9 +318,11 @@ Do not select the first candidate that runs.
 
 ## 9. Product behavior authority
 
-Loyverse remains the primary observable functional/workflow/ergonomic baseline for the POS/Back Office split, not a code source or required internal architecture.
+Loyverse is the primary observable functional/workflow/ergonomic baseline and the approved first-horizon parity target, not a code source or required internal architecture.
 
-Rifad's UI and customer experience remain Rifad-owned.
+The objective is to account for **100% of the adopted observable baseline** before declaring the baseline complete. Track unsupported behavior explicitly; do not let missing flows disappear merely because the current Core lacks them.
+
+Rifad's UI, visual identity and customer experience remain Rifad-owned, and Saudi-specific requirements may intentionally differ.
 
 For detailed product behavior use:
 
@@ -351,13 +372,14 @@ A fresh session must:
 2. Read `PROJECT_RULES.md`.
 3. Read `docs/architecture/PRIMARY_CORE_AND_CAPABILITY_GRAFTING.md`.
 4. Read `docs/architecture/RIFAD_BUILD_METHOD.md`.
-5. Read only the current-task detail documents needed for the requested work.
-6. Verify live GitHub branch/PR/head state before making repository changes.
-7. Recover the current task from repository evidence instead of asking the owner to repeat project history.
+5. Read the Loyverse parity target/product requirements when evaluating any Core or capability with product impact.
+6. Read only the current-task detail documents needed for the requested work.
+7. Verify live GitHub branch/PR/head state before making repository changes.
+8. Recover the current task from repository evidence instead of asking the owner to repeat project history.
 
 Before substantive work, the fresh session should be able to summarize in a few lines:
 
-- current product objective;
+- current product objective, including Loyverse-parity first horizon;
 - owner vs technical responsibility;
 - Primary Core + grafting strategy;
 - current repository/PR state;
@@ -375,12 +397,13 @@ When documents conflict, use this order unless a newer explicit owner decision s
 1. explicit current owner decision;
 2. this `AI_PROJECT_ENTRYPOINT.md` for current direction/session continuity;
 3. `PROJECT_RULES.md`;
-4. `docs/architecture/PRIMARY_CORE_AND_CAPABILITY_GRAFTING.md`;
-5. `docs/architecture/RIFAD_BUILD_METHOD.md`;
-6. current architecture decisions / current execution status;
-7. final implementation map for dependency history;
-8. capability-specific current specs/evidence;
-9. historical proposals/research as evidence only.
+4. product target / Loyverse parity target;
+5. `docs/architecture/PRIMARY_CORE_AND_CAPABILITY_GRAFTING.md`;
+6. `docs/architecture/RIFAD_BUILD_METHOD.md`;
+7. current architecture decisions / current execution status;
+8. final implementation map for dependency history;
+9. capability-specific current specs/evidence;
+10. historical proposals/research as evidence only.
 
 Do not silently rewrite a higher-authority rule to make a local task easier. Surface the conflict.
 
@@ -396,6 +419,7 @@ Update `AI_PROJECT_ENTRYPOINT.md` in the **same repository change** whenever any
 - current strategic task;
 - active production/lab repository role;
 - owner/AI responsibility split;
+- product parity target;
 - sourcing philosophy;
 - authority order;
 - a major branch/PR becomes the new continuation point;
