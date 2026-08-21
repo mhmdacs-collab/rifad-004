@@ -202,13 +202,21 @@ const receiptItems = (ticket: Ticket): readonly ReceiptItem[] => ticket.lines.ma
 
 const normalizeTicket = (ticket: Ticket | null | undefined): Ticket | null => {
   if (!ticket) return null;
-  const subtotal = ticket.subtotal ?? lineSubtotal(ticket.lines ?? []);
+  const lines = ticket.lines ?? [];
+  const computedSubtotal = lineSubtotal(lines);
+  const persistedSubtotal = ticket.subtotal?.halalas ?? 0;
+  // A legacy open-ticket snapshot can contain real lines with a persisted
+  // zero subtotal. Recompute that impossible value from the stored price
+  // snapshots so reopening cannot silently turn a table total into SAR 0.00.
+  const subtotal = lines.length > 0 && persistedSubtotal <= 0
+    ? computedSubtotal
+    : ticket.subtotal ?? computedSubtotal;
   const rawRedemption = ticket.loyaltyRedemption?.halalas ?? 0;
   const loyaltyRedemption = money(Math.min(Math.max(0, rawRedemption), subtotal.halalas));
   const total = money(Math.max(0, subtotal.halalas - loyaltyRedemption.halalas));
   return {
     ...ticket,
-    lines: (ticket.lines ?? []).map((line) => ({ ...line, kitchenState: kitchenStateOf(line) })),
+    lines: lines.map((line) => ({ ...line, kitchenState: kitchenStateOf(line) })),
     customer: normalizeCustomerReference(ticket.customer),
     subtotal,
     loyaltyRedemption,
@@ -726,19 +734,22 @@ class MockStore {
     return this.saveTicket(this.createTicket(lines, ticket.sequence, ticket.id, ticket.customer, ticket.loyaltyRedemption));
   }
 
-  async setLineQuantity(ticketId: string, lineId: string, quantity: number): Promise<Ticket> {
+  async setLineQuantity(ticketId: string, lineId: string, quantity: number, allowSentCorrection = false): Promise<Ticket> {
     await pause();
     const ticket = this.requireTicket(ticketId);
     if (!Number.isSafeInteger(quantity) || quantity < 0) throw new PosContractError("INVALID_QUANTITY", "الكمية غير صالحة.");
     const target = ticket.lines.find((line) => line.id === lineId);
-    if (target && isSentKitchenLine(target)) {
+    if (target && isSentKitchenLine(target) && !allowSentCorrection) {
       throw new PosContractError("SENT_LINE_IMMUTABLE", "الصنف المرسل للمطبخ ثابت ولا يمكن تعديله من السلة.");
+    }
+    if (target && isSentKitchenLine(target) && allowSentCorrection && quantity > target.quantity) {
+      throw new PosContractError("SENT_LINE_IMMUTABLE", "لا يمكن زيادة صنف مرسل؛ أضف الكمية الجديدة كسطر بانتظار الإرسال.");
     }
     const lines = quantity === 0 ? ticket.lines.filter((line) => line.id !== lineId) : ticket.lines.map((line) => line.id === lineId ? { ...line, quantity } : line);
     return this.saveTicket(this.createTicket(lines, ticket.sequence, ticket.id, ticket.customer, ticket.loyaltyRedemption));
   }
 
-  async removeLine(ticketId: string, lineId: string) { return this.setLineQuantity(ticketId, lineId, 0); }
+  async removeLine(ticketId: string, lineId: string, allowSentCorrection = false) { return this.setLineQuantity(ticketId, lineId, 0, allowSentCorrection); }
 
   async saveOpenTicket(ticketId: string): Promise<Ticket> {
     await pause();
@@ -822,8 +833,8 @@ export const createMockPosRuntime = (): MockPosRuntime => {
     startTicket: () => store.startTicket(),
     restoreTicket: ({ ticket }) => store.restoreTicket(ticket),
     addItem: ({ ticketId, productId }) => store.addItem(ticketId, productId),
-    setLineQuantity: ({ ticketId, lineId, quantity }) => store.setLineQuantity(ticketId, lineId, quantity),
-    removeLine: ({ ticketId, lineId }) => store.removeLine(ticketId, lineId),
+    setLineQuantity: ({ ticketId, lineId, quantity, allowSentCorrection }) => store.setLineQuantity(ticketId, lineId, quantity, allowSentCorrection),
+    removeLine: ({ ticketId, lineId, allowSentCorrection }) => store.removeLine(ticketId, lineId, allowSentCorrection),
     saveOpenTicket: ({ ticketId }) => store.saveOpenTicket(ticketId),
     setCustomer: ({ ticketId, customerId }) => store.setTicketCustomer(ticketId, customerId),
     setLoyaltyRedemption: ({ ticketId, amount }) => store.setLoyaltyRedemption(ticketId, amount),

@@ -55,8 +55,13 @@ export interface SalesContract {
   /** Restore a durable ticket snapshot (for example when reopening a table). */
   restoreTicket(input: { commandId: string; ticket: Ticket }): Promise<Ticket>;
   addItem(input: { commandId: string; ticketId: string; productId: string }): Promise<Ticket>;
-  setLineQuantity(input: { ticketId: string; lineId: string; quantity: number }): Promise<Ticket>;
-  removeLine(input: { ticketId: string; lineId: string }): Promise<Ticket>;
+  /**
+   * Ordinary cart edits cannot mutate a line already sent to the kitchen.
+   * The explicit correction path opts in and is kept separate from swipe,
+   * delete and clear-cart actions.
+   */
+  setLineQuantity(input: { ticketId: string; lineId: string; quantity: number; allowSentCorrection?: boolean }): Promise<Ticket>;
+  removeLine(input: { ticketId: string; lineId: string; allowSentCorrection?: boolean }): Promise<Ticket>;
   saveOpenTicket(input: { commandId: string; ticketId: string }): Promise<Ticket>;
   setCustomer(input: { commandId: string; ticketId: string; customerId: string | null }): Promise<Ticket>;
   setLoyaltyRedemption(input: { commandId: string; ticketId: string; amount: Money }): Promise<Ticket>;

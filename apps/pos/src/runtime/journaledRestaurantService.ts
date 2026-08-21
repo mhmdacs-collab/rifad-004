@@ -1,5 +1,6 @@
 import type { LocalDomainEventDraft, LocalPersistenceContract } from "../contracts/localPersistence";
 import type { RestaurantServiceContract } from "../contracts/restaurantService";
+import { PosContractError } from "../contracts/pos";
 import type { LegacySnapshotBridge } from "./legacySnapshotBridge";
 
 const event = (
@@ -88,7 +89,13 @@ export const withRestaurantPersistenceJournal = (
     },
     closeOpenOrder: async (input) => {
       await ready;
-      const order = await base.getOpenOrder(input);
+      let order;
+      try {
+        order = await base.getOpenOrder(input);
+      } catch (error) {
+        if (error instanceof PosContractError && error.code === "OPEN_LOCAL_ORDER_NOT_FOUND") return;
+        throw error;
+      }
       await base.closeOpenOrder(input);
       await commit([
         event(

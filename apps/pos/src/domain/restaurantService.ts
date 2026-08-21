@@ -38,6 +38,10 @@ export type OpenLocalOrder = Readonly<{
   updatedAt: string;
   kitchenRevision: number;
   kitchenBatches: readonly KitchenDispatchBatch[];
+  /** Last accepted update command, including metadata-only updates. */
+  lastMutationCommandId?: string;
+  /** Bounded idempotency memory for retries after later mutations. */
+  mutationCommandIds?: readonly string[];
 }>;
 
 export type RestaurantServiceSnapshot = Readonly<{

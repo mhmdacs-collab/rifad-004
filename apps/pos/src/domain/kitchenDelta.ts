@@ -64,8 +64,8 @@ const aggregateLineList = (lines: readonly TicketLine[]) => {
   return result;
 };
 
-const deltaLine = (line: TicketLine, quantity: number, kind: KitchenDeltaKind): KitchenDeltaLine => ({
-  id: `${kind}:${line.productId}`,
+const deltaLine = (line: TicketLine, quantity: number, kind: KitchenDeltaKind, identity = line.productId): KitchenDeltaLine => ({
+  id: `${kind}:${identity}`,
   productId: line.productId,
   name: line.name,
   unitPrice: line.unitPrice,
@@ -83,6 +83,43 @@ export const ticketToKitchenAdditions = (ticket: Ticket): readonly KitchenDeltaL
 export const pendingTicketToKitchenAdditions = (ticket: Ticket): readonly KitchenDeltaLine[] =>
   Array.from(aggregateLineList(pendingKitchenTicketLines(ticket)).values())
     .map(({ line, quantity }) => deltaLine(line, quantity, "add"));
+
+/**
+ * Build explicit corrections against the already-sent line ownership.  A
+ * correction is intentionally separate from pending additions: changing a
+ * sent line never rewrites its historical batch, it appends a reduce/cancel
+ * delta for the quantity that the kitchen already accepted.
+ *
+ * New snapshots preserve line IDs, so the primary path compares each sent
+ * line by ID.  The product aggregate fallback keeps older persisted callers
+ * compatible when they did not carry ownership markers.
+ */
+export const sentTicketToKitchenCorrections = (previous: Ticket, proposed: Ticket): readonly KitchenDeltaLine[] => {
+  const hasOwnershipMarkers = proposed.lines.some((line) => line.kitchenState !== undefined);
+  if (!hasOwnershipMarkers) {
+    return diffKitchenTickets(previous, proposed).filter((line) => line.kind !== "add");
+  }
+
+  const proposedById = new Map(proposed.lines.map((line) => [line.id, line]));
+  const corrections: KitchenDeltaLine[] = [];
+  for (const previousLine of previous.lines.filter(isSentKitchenLine)) {
+    const next = proposedById.get(previousLine.id);
+    if (!next) {
+      corrections.push(deltaLine(previousLine, previousLine.quantity, "cancel", previousLine.id));
+      continue;
+    }
+    if (next.quantity > previousLine.quantity) continue;
+    if (next.quantity < previousLine.quantity) {
+      corrections.push(deltaLine(
+        previousLine,
+        previousLine.quantity - next.quantity,
+        next.quantity === 0 ? "cancel" : "reduce",
+        previousLine.id,
+      ));
+    }
+  }
+  return corrections;
+};
 
 /**
  * Fold immutable dispatch history into the net quantity already accepted by

@@ -66,9 +66,17 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [printStatus, setPrintStatus] = useState<PrintDeliveryStatus>("idle");
   const [lastTouchedLineId, setLastTouchedLineId] = useState<string | null>(null);
+  const [sentCorrectionPending, setSentCorrectionPending] = useState(false);
   const financialActionLock = useRef<string | null>(null);
   const printActionLock = useRef(false);
+  const ticketRef = useRef<Ticket | null>(ticket);
+  const ticketMutationQueue = useRef<Promise<void>>(Promise.resolve());
+  const ticketGeneration = useRef(0);
   const deferredQuery = useDeferredValue(query);
+
+  useEffect(() => {
+    ticketRef.current = ticket;
+  }, [ticket]);
 
   useEffect(() => {
     let active = true;
@@ -118,9 +126,11 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
       const activeEmployee = await runtime.employeeSession.unlock({ pin });
       const activeTicket = await runtime.sales.startTicket({ commandId: commandId("ticket") });
       setEmployee(activeEmployee);
+      ticketRef.current = activeTicket;
       setTicket(activeTicket);
       setReceipt(null);
       setLastTouchedLineId(null);
+      setSentCorrectionPending(false);
       setStage("sales");
     } catch (error) {
       setErrorMessage(messageFrom(error));
@@ -130,21 +140,32 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
     }
   }, [runtime]);
 
-  const addProduct = useCallback(async (productId: string) => {
-    if (!ticket) return;
-    setBusy(`product:${productId}`);
-    setErrorMessage(null);
-    try {
-      const updated = await runtime.sales.addItem({ commandId: commandId("add-item"), ticketId: ticket.id, productId });
-      setTicket(updated);
-      const touched = [...updated.lines].reverse().find((line) => line.productId === productId);
-      setLastTouchedLineId(touched?.id ?? null);
-    } catch (error) {
-      setErrorMessage(messageFrom(error));
-    } finally {
-      setBusy(null);
-    }
-  }, [runtime, ticket]);
+  const addProduct = useCallback((productId: string) => {
+    const queuedGeneration = ticketGeneration.current;
+    const queuedTicketId = ticketRef.current?.id ?? null;
+    const operation = ticketMutationQueue.current.catch(() => undefined).then(async () => {
+      const current = ticketRef.current;
+      // A queued tap belongs to the ticket visible when it was made. If a
+      // reopen/new-sale replaced that ticket while the queue was draining,
+      // discard the stale tap instead of applying it to the new sale.
+      if (!current || ticketGeneration.current !== queuedGeneration || current.id !== queuedTicketId) return;
+      setBusy(`product:${productId}`);
+      setErrorMessage(null);
+      try {
+        const updated = await runtime.sales.addItem({ commandId: commandId("add-item"), ticketId: current.id, productId });
+        ticketRef.current = updated;
+        setTicket(updated);
+        const touched = [...updated.lines].reverse().find((line) => line.productId === productId);
+        setLastTouchedLineId(touched?.id ?? null);
+      } catch (error) {
+        setErrorMessage(messageFrom(error));
+      } finally {
+        setBusy(null);
+      }
+    });
+    ticketMutationQueue.current = operation.catch(() => undefined);
+    return operation;
+  }, [runtime]);
 
   /**
    * Hydrate the active POS ticket from a Rifad-owned durable snapshot. This is
@@ -153,16 +174,20 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
    * ownership across the next sales mutation.
    */
   const restoreTicket = useCallback(async (snapshot: Ticket): Promise<boolean> => {
+    await ticketMutationQueue.current.catch(() => undefined);
+    ticketGeneration.current += 1;
     setBusy("restore-ticket");
     setErrorMessage(null);
     try {
       const restored = await runtime.sales.restoreTicket({ commandId: commandId("restore-ticket"), ticket: snapshot });
+      ticketRef.current = restored;
       setTicket(restored);
       setReceipt(null);
       setCheckoutId(null);
       setCashCommandId(null);
       setCardCommandId(null);
       setLastTouchedLineId(null);
+      setSentCorrectionPending(false);
       setStage("sales");
       return true;
     } catch (error) {
@@ -173,35 +198,86 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
     }
   }, [runtime]);
 
-  const setQuantity = useCallback(async (lineId: string, quantity: number) => {
-    if (!ticket) return;
-    setBusy(`line:${lineId}`);
-    setErrorMessage(null);
-    try {
-      const updated = await runtime.sales.setLineQuantity({ ticketId: ticket.id, lineId, quantity });
-      setTicket(updated);
-      setLastTouchedLineId(quantity > 0 ? lineId : null);
-    } catch (error) {
-      setErrorMessage(messageFrom(error));
-    } finally {
-      setBusy(null);
-    }
-  }, [runtime, ticket]);
+  const setQuantity = useCallback(async (lineId: string, quantity: number, allowSentCorrection = false) => {
+    const operation = ticketMutationQueue.current.catch(() => undefined).then(async () => {
+      const current = ticketRef.current;
+      const mutationGeneration = ticketGeneration.current;
+      if (!current) return;
+      setBusy(`line:${lineId}`);
+      setErrorMessage(null);
+      try {
+        const updated = await runtime.sales.setLineQuantity({ ticketId: current.id, lineId, quantity, allowSentCorrection });
+        if (ticketGeneration.current !== mutationGeneration || ticketRef.current?.id !== current.id) return;
+        ticketRef.current = updated;
+        setTicket(updated);
+        if (allowSentCorrection) setSentCorrectionPending(true);
+        setLastTouchedLineId(quantity > 0 ? lineId : null);
+      } catch (error) {
+        setErrorMessage(messageFrom(error));
+      } finally {
+        setBusy(null);
+      }
+    });
+    ticketMutationQueue.current = operation.catch(() => undefined);
+    return operation;
+  }, [runtime]);
 
-  const removeLine = useCallback(async (lineId: string) => {
-    if (!ticket) return;
-    setBusy(`line:${lineId}`);
-    setErrorMessage(null);
-    try {
-      const updated = await runtime.sales.removeLine({ ticketId: ticket.id, lineId });
-      setTicket(updated);
-      setLastTouchedLineId(updated.lines.at(-1)?.id ?? null);
-    } catch (error) {
-      setErrorMessage(messageFrom(error));
-    } finally {
-      setBusy(null);
-    }
-  }, [runtime, ticket]);
+  const removeLine = useCallback(async (lineId: string, allowSentCorrection = false) => {
+    const operation = ticketMutationQueue.current.catch(() => undefined).then(async () => {
+      const current = ticketRef.current;
+      const mutationGeneration = ticketGeneration.current;
+      if (!current) return;
+      setBusy(`line:${lineId}`);
+      setErrorMessage(null);
+      try {
+        const updated = await runtime.sales.removeLine({ ticketId: current.id, lineId, allowSentCorrection });
+        if (ticketGeneration.current !== mutationGeneration || ticketRef.current?.id !== current.id) return;
+        ticketRef.current = updated;
+        setTicket(updated);
+        if (allowSentCorrection) setSentCorrectionPending(true);
+        setLastTouchedLineId(updated.lines.at(-1)?.id ?? null);
+      } catch (error) {
+        setErrorMessage(messageFrom(error));
+      } finally {
+        setBusy(null);
+      }
+    });
+    ticketMutationQueue.current = operation.catch(() => undefined);
+    return operation;
+  }, [runtime]);
+
+  /**
+   * Clear a retail ticket as one queued mutation. Active restaurant tickets
+   * use the local-service pending projection instead; this path exists so a
+   * rapid product tap already waiting in the line queue cannot reappear after
+   * the cashier presses Clear Cart.
+   */
+  const clearTicket = useCallback(() => {
+    ticketGeneration.current += 1;
+    const operation = ticketMutationQueue.current.catch(() => undefined).then(async () => {
+      const current = ticketRef.current;
+      if (!current) return;
+      setBusy("clear-ticket");
+      setErrorMessage(null);
+      try {
+        let working = current;
+        for (const line of [...working.lines]) {
+          const updated = await runtime.sales.removeLine({ ticketId: working.id, lineId: line.id });
+          working = updated;
+          ticketRef.current = updated;
+          setTicket(updated);
+        }
+        setSentCorrectionPending(false);
+        setLastTouchedLineId(null);
+      } catch (error) {
+        setErrorMessage(messageFrom(error));
+      } finally {
+        setBusy(null);
+      }
+    });
+    ticketMutationQueue.current = operation.catch(() => undefined);
+    return operation;
+  }, [runtime]);
 
   const saveOpenTicket = useCallback(async () => {
     if (!ticket) return;
@@ -209,6 +285,7 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
     setErrorMessage(null);
     try {
       const nextTicket = await runtime.sales.saveOpenTicket({ commandId: commandId("save-ticket"), ticketId: ticket.id });
+      ticketRef.current = nextTicket;
       setTicket(nextTicket);
       setLastTouchedLineId(null);
     } catch (error) {
@@ -256,6 +333,7 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
       const updated = await runtime.customerCredit.update({ commandId: commandId("customer-update"), customerId, name, mobile, details });
       if (ticket?.customer?.id === customerId) {
         const updatedTicket = await runtime.sales.setCustomer({ commandId: commandId("ticket-customer-refresh"), ticketId: ticket.id, customerId });
+        ticketRef.current = updatedTicket;
         setTicket(updatedTicket);
       }
       return updated;
@@ -273,6 +351,7 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
     setErrorMessage(null);
     try {
       const updated = await runtime.sales.setCustomer({ commandId: commandId("ticket-customer"), ticketId: ticket.id, customerId });
+      ticketRef.current = updated;
       setTicket(updated);
       return true;
     } catch (error) {
@@ -289,6 +368,7 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
     setErrorMessage(null);
     try {
       const updated = await runtime.sales.setLoyaltyRedemption({ commandId: commandId("loyalty-redemption"), ticketId: ticket.id, amount: money(amountHalalas) });
+      ticketRef.current = updated;
       setTicket(updated);
       return true;
     } catch (error) {
@@ -368,10 +448,13 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
       }
       try {
         const activeTicket = await runtime.sales.startTicket({ commandId: commandId("ticket") });
+        ticketGeneration.current += 1;
+        ticketRef.current = activeTicket;
         setTicket(activeTicket);
         setReceipt(null);
         setStage("sales");
       } catch (error) {
+        ticketRef.current = null;
         setTicket(null);
         setReceipt(completed);
         setStage("success");
@@ -381,6 +464,7 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
     }
 
     setReceipt(completed);
+    ticketRef.current = null;
     setTicket(null);
     setStage("success");
   }, [runtime]);
@@ -670,10 +754,13 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
   }, [runtime]);
 
   const newSale = useCallback(async () => {
+    await ticketMutationQueue.current.catch(() => undefined);
+    ticketGeneration.current += 1;
     setBusy("new-sale");
     setErrorMessage(null);
     try {
       const activeTicket = await runtime.sales.startTicket({ commandId: commandId("ticket") });
+      ticketRef.current = activeTicket;
       setTicket(activeTicket);
       setReceipt(null);
       setCheckoutId(null);
@@ -681,6 +768,7 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
       setCardCommandId(null);
       setPrintStatus("idle");
       setLastTouchedLineId(null);
+      setSentCorrectionPending(false);
       setQuery("");
       setCategoryId("all");
       setStage("sales");
@@ -709,6 +797,7 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
     errorMessage,
     printStatus,
     lastTouchedLineId,
+    sentCorrectionPending,
     setQuery,
     setCategoryId,
     setActivePageId,
@@ -719,6 +808,7 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
     addProduct,
     setQuantity,
     removeLine,
+    clearTicket,
     saveOpenTicket,
     searchCustomers,
     createCustomer,

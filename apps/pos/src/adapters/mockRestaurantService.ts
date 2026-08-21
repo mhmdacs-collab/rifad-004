@@ -13,6 +13,7 @@ import {
   kitchenStateOf,
   markTicketLinesSent,
   pendingTicketToKitchenAdditions,
+  sentTicketToKitchenCorrections,
   ticketToKitchenAdditions,
   type KitchenDispatchBatch,
   type KitchenDeltaLine,
@@ -60,7 +61,27 @@ const emptySnapshot = (): RestaurantServiceSnapshot => ({
 });
 
 const cloneTicket = (ticket: Ticket): Ticket => JSON.parse(JSON.stringify(ticket)) as Ticket;
-const committedTicket = (ticket: Ticket): Ticket => markTicketLinesSent(cloneTicket(ticket));
+const cloneOpenOrder = (order: OpenLocalOrder): OpenLocalOrder => JSON.parse(JSON.stringify(order)) as OpenLocalOrder;
+const repairTicketTotals = (ticket: Ticket): Ticket => {
+  const computedSubtotal = ticket.lines.reduce((sum, line) => sum + line.unitPrice.halalas * line.quantity, 0);
+  const persistedSubtotal = ticket.subtotal?.halalas ?? 0;
+  // Older open-order snapshots could carry a non-empty ticket with SAR 0.00.
+  // Rebuild that impossible total from the immutable line price snapshots while
+  // retaining valid discounts when they are present.
+  const subtotalHalalas = ticket.lines.length > 0 && persistedSubtotal <= 0
+    ? computedSubtotal
+    : Math.max(0, persistedSubtotal);
+  const redemptionHalalas = Math.min(Math.max(0, ticket.loyaltyRedemption?.halalas ?? 0), subtotalHalalas);
+  const totalHalalas = Math.max(0, subtotalHalalas - redemptionHalalas);
+  return {
+    ...ticket,
+    subtotal: { halalas: subtotalHalalas, currency: "SAR" },
+    loyaltyRedemption: { halalas: redemptionHalalas, currency: "SAR" },
+    taxIncluded: { halalas: Math.round((totalHalalas * 15) / 115), currency: "SAR" },
+    total: { halalas: totalHalalas, currency: "SAR" },
+  };
+};
+const committedTicket = (ticket: Ticket): Ticket => markTicketLinesSent(repairTicketTotals(cloneTicket(ticket)));
 const pause = () => new Promise<void>((resolve) => window.setTimeout(resolve, WAIT_MS));
 const createId = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
 
@@ -76,15 +97,21 @@ const sameMoney = (left: Ticket["total"], right: Ticket["total"]) =>
 const sameTicketBusinessContent = (left: Ticket, right: Ticket) => {
   if (left.id !== right.id || left.sequence !== right.sequence) return false;
   if (JSON.stringify(left.customer) !== JSON.stringify(right.customer)) return false;
-  if (!sameMoney(left.loyaltyRedemption, right.loyaltyRedemption) || !sameMoney(left.total, right.total)) return false;
+  if (!sameMoney(left.subtotal, right.subtotal)
+    || !sameMoney(left.loyaltyRedemption, right.loyaltyRedemption)
+    || !sameMoney(left.taxIncluded, right.taxIncluded)
+    || !sameMoney(left.total, right.total)) return false;
   const normalizeLines = (lines: readonly TicketLine[]) => lines
     .map((line) => ({
       productId: line.productId,
+      id: line.id,
       name: line.name,
       quantity: line.quantity,
       unitPrice: line.unitPrice,
+      tone: line.tone,
+      kitchenState: line.kitchenState,
     }))
-    .sort((a, b) => `${a.productId}:${a.unitPrice.halalas}:${a.quantity}:${a.name}`.localeCompare(`${b.productId}:${b.unitPrice.halalas}:${b.quantity}:${b.name}`));
+    .sort((a, b) => `${a.productId}:${a.id}:${a.unitPrice.halalas}:${a.quantity}:${a.name}`.localeCompare(`${b.productId}:${b.id}:${b.unitPrice.halalas}:${b.quantity}:${b.name}`));
   return JSON.stringify(normalizeLines(left.lines)) === JSON.stringify(normalizeLines(right.lines));
 };
 
@@ -120,6 +147,49 @@ const hasSentQuantityReduction = (committed: Ticket, proposed: Ticket) => {
     if ((after.get(productId) ?? 0) < quantity) return true;
   }
   return false;
+};
+
+const hasSentLineSnapshotMutation = (committed: Ticket, proposed: Ticket) => {
+  const hasOwnershipMarkers = proposed.lines.some((line) => line.kitchenState !== undefined);
+  if (hasOwnershipMarkers) {
+    const proposedById = new Map(proposed.lines.map((line) => [line.id, line]));
+    return committed.lines.some((line) => {
+      const candidate = proposedById.get(line.id);
+      // A missing sent line is a cancellation candidate, not a snapshot
+      // mutation. The caller must still opt into the explicit correction path.
+      if (!candidate) return false;
+      return kitchenStateOf(candidate) !== "sent"
+          || candidate.productId !== line.productId
+          || candidate.name !== line.name
+          || candidate.tone !== line.tone
+          || candidate.unitPrice.halalas !== line.unitPrice.halalas
+          || candidate.unitPrice.currency !== line.unitPrice.currency
+          || candidate.quantity > line.quantity;
+    });
+  }
+
+  // Legacy callers did not preserve line IDs. Compare the committed product
+  // snapshot against a representative proposed line while quantity floors are
+  // checked separately.
+  return committed.lines.some((line) => {
+    const candidate = proposed.lines.find((item) => item.productId === line.productId);
+    if (!candidate) return false;
+    return candidate.name !== line.name
+      || candidate.tone !== line.tone
+      || candidate.unitPrice.halalas !== line.unitPrice.halalas
+      || candidate.unitPrice.currency !== line.unitPrice.currency
+      || candidate.quantity > line.quantity;
+  });
+};
+
+const hasSentLineQuantityReduction = (committed: Ticket, proposed: Ticket) => {
+  if (!proposed.lines.some((line) => line.kitchenState !== undefined)) return false;
+  const proposedById = new Map(proposed.lines.map((line) => [line.id, line]));
+  return committed.lines.some((line) => {
+    const candidate = proposedById.get(line.id);
+    if (!candidate) return false;
+    return candidate.quantity < line.quantity;
+  });
 };
 
 const createKitchenBatch = (
@@ -176,7 +246,11 @@ const normalizeStoredOrder = (value: StoredOpenLocalOrder): OpenLocalOrder | nul
     ticketToKitchenAdditions(value.ticket),
   );
   const kitchenBatches = storedBatches.length > 0 ? storedBatches : [legacyBatch];
-  const kitchenRevision = Math.max(1, value.kitchenRevision ?? kitchenBatches.length);
+  const maxBatchRevision = kitchenBatches.reduce((max, batch) => Math.max(max, batch.revision), 0);
+  const kitchenRevision = Math.max(1, value.kitchenRevision ?? 0, maxBatchRevision, kitchenBatches.length);
+  const mutationCommandIds = Array.isArray(value.mutationCommandIds)
+    ? value.mutationCommandIds.filter((item): item is string => typeof item === "string").slice(-32)
+    : (value.lastMutationCommandId ? [value.lastMutationCommandId] : []);
   return {
     id: value.id,
     commandId: value.commandId,
@@ -192,6 +266,8 @@ const normalizeStoredOrder = (value: StoredOpenLocalOrder): OpenLocalOrder | nul
     updatedAt: value.updatedAt,
     kitchenRevision,
     kitchenBatches,
+    lastMutationCommandId: value.lastMutationCommandId,
+    mutationCommandIds,
   };
 };
 
@@ -254,14 +330,19 @@ class MockRestaurantServiceStore {
 
   async listOpenOrders() {
     await pause();
-    return [...this.snapshot.openOrders].sort((a, b) => a.openedAt.localeCompare(b.openedAt));
+    return [...this.snapshot.openOrders]
+      .sort((a, b) => a.openedAt.localeCompare(b.openedAt))
+      .map(cloneOpenOrder);
   }
 
   async createOpenOrder(commandId: string, ticket: Ticket, servicePlaceId: string) {
     await pause();
     const prior = this.snapshot.openOrders.find((order) => order.commandId === commandId);
-    if (prior) return prior;
+    if (prior) return cloneOpenOrder(prior);
     if (ticket.lines.length === 0) throw new PosContractError("EMPTY_TICKET", "أضف صنفًا واحدًا على الأقل قبل اختيار المحلي.");
+    if (ticket.lines.some((line) => kitchenStateOf(line) === "sent")) {
+      throw new PosContractError("SENT_LINE_IMMUTABLE", "لا يمكن فتح طلب محلي جديد من تذكرة سبق إرسال أصنافها للمطبخ.");
+    }
     const resolved = findPlace(servicePlaceId);
     if (!resolved) throw new PosContractError("SERVICE_PLACE_NOT_FOUND", "تعذر العثور على المكان المحدد.");
     if (this.snapshot.openOrders.some((order) => order.servicePlaceId === servicePlaceId)) {
@@ -283,39 +364,64 @@ class MockRestaurantServiceStore {
       updatedAt: now,
       kitchenRevision: 1,
       kitchenBatches: [createKitchenBatch(batchId, commandId, 1, now, ticketToKitchenAdditions(ticket))],
+      mutationCommandIds: [],
     };
     this.snapshot = { ...this.snapshot, openOrders: [...this.snapshot.openOrders, order] };
     this.persist();
-    return order;
+    return cloneOpenOrder(order);
   }
 
   async getOpenOrder(openOrderId: string) {
     await pause();
     const order = this.snapshot.openOrders.find((item) => item.id === openOrderId);
     if (!order) throw new PosContractError("OPEN_LOCAL_ORDER_NOT_FOUND", "تعذر العثور على الطلب المحلي المفتوح.");
-    return order;
+    return cloneOpenOrder(order);
   }
 
-  async updateOpenOrder(commandId: string, openOrderId: string, ticket: Ticket) {
+  async updateOpenOrder(commandId: string, openOrderId: string, ticket: Ticket, allowSentCorrections = false) {
     await pause();
     const index = this.snapshot.openOrders.findIndex((item) => item.id === openOrderId);
     if (index < 0) throw new PosContractError("OPEN_LOCAL_ORDER_NOT_FOUND", "تعذر العثور على الطلب المحلي المفتوح.");
     const current = this.snapshot.openOrders[index]!;
     const committed = committedTicket(current.ticket);
-    const repeated = current.kitchenBatches.find((batch) => batch.commandId === commandId);
-    if (repeated) return current;
+    const repeated = current.lastMutationCommandId === commandId
+      || current.mutationCommandIds?.includes(commandId) === true
+      || current.kitchenBatches.some((batch) => batch.commandId === commandId);
+    if (repeated) return cloneOpenOrder(current);
 
     if (ticket.id !== committed.id || ticket.sequence !== committed.sequence) {
       throw new PosContractError("OPEN_LOCAL_ORDER_TICKET_MISMATCH", "لا يمكن تغيير هوية التذكرة أثناء إبقاء الطاولة مفتوحة.");
     }
 
-    if (hasSentQuantityReduction(committed, ticket)) {
+    const sentQuantityReduction = hasSentQuantityReduction(committed, ticket)
+      || hasSentLineQuantityReduction(committed, ticket);
+    if (sentQuantityReduction && !allowSentCorrections) {
       throw new PosContractError("SENT_LINE_IMMUTABLE", "لا يمكن إنقاص صنف أُرسل للمطبخ من السلة الحالية.");
+    }
+    if (hasSentLineSnapshotMutation(committed, ticket)) {
+      throw new PosContractError("SENT_LINE_IMMUTABLE", "لا يمكن تغيير بيانات صنف أُرسل للمطبخ من السلة الحالية.");
+    }
+    const committedLineIds = new Set(committed.lines.map((line) => line.id));
+    const hasUnknownSentLine = ticket.lines.some((line) =>
+      kitchenStateOf(line) === "sent" && !committedLineIds.has(line.id));
+    if (hasUnknownSentLine) {
+      throw new PosContractError("SENT_LINE_IMMUTABLE", "لا يمكن اعتماد صنف مرسل جديد بلا إرسال سابق للمطبخ.");
+    }
+    const hasSentLineRemoval = (() => {
+      if (!ticket.lines.some((line) => line.kitchenState !== undefined)) return false;
+      const proposedIds = new Set(ticket.lines.map((line) => line.id));
+      return committed.lines.some((line) => !proposedIds.has(line.id));
+    })();
+    if (hasSentLineRemoval && !allowSentCorrections) {
+      throw new PosContractError("SENT_LINE_IMMUTABLE", "لا يمكن حذف صنف أُرسل للمطبخ من السلة الحالية.");
     }
 
     const pendingTicketLines = pendingLinesForUpdate(committed, ticket);
     const pendingTicket: Ticket = { ...ticket, lines: pendingTicketLines };
-    const lines = pendingTicketToKitchenAdditions(pendingTicket);
+    const lines = [
+      ...pendingTicketToKitchenAdditions(pendingTicket),
+      ...(allowSentCorrections ? sentTicketToKitchenCorrections(committed, ticket) : []),
+    ];
     const metadataChanged = !sameTicketBusinessContent(committed, ticket);
     if (lines.length === 0 && !metadataChanged) {
       throw new PosContractError("EMPTY_KITCHEN_DELTA", "لا توجد تغييرات جديدة لإرسالها إلى المطبخ.");
@@ -326,6 +432,7 @@ class MockRestaurantServiceStore {
       ? createKitchenBatch(createId("kitchen-batch"), commandId, revision, updatedAt, lines)
       : null;
     const sentTicket = committedTicket({ ...ticket, updatedAt });
+    const mutationCommandIds = [...(current.mutationCommandIds ?? []), commandId].slice(-32);
     const updated: OpenLocalOrder = {
       ...current,
       // `commandId` identifies creation and must remain stable for replay.
@@ -333,12 +440,14 @@ class MockRestaurantServiceStore {
       updatedAt,
       kitchenRevision: revision,
       kitchenBatches: batch ? [...current.kitchenBatches, batch] : current.kitchenBatches,
+      lastMutationCommandId: commandId,
+      mutationCommandIds,
     };
     const openOrders = [...this.snapshot.openOrders];
     openOrders[index] = updated;
     this.snapshot = { ...this.snapshot, openOrders };
     this.persist();
-    return updated;
+    return cloneOpenOrder(updated);
   }
 
   async closeOpenOrder(openOrderId: string) {
@@ -362,7 +471,7 @@ export const createMockRestaurantService = (): RestaurantServiceContract => {
     listOpenOrders: () => store.listOpenOrders(),
     createOpenOrder: ({ commandId, ticket, servicePlaceId }) => store.createOpenOrder(commandId, ticket, servicePlaceId),
     getOpenOrder: ({ openOrderId }) => store.getOpenOrder(openOrderId),
-    updateOpenOrder: ({ commandId, openOrderId, ticket }) => store.updateOpenOrder(commandId, openOrderId, ticket),
+    updateOpenOrder: ({ commandId, openOrderId, ticket, allowSentCorrections }) => store.updateOpenOrder(commandId, openOrderId, ticket, allowSentCorrections),
     closeOpenOrder: ({ openOrderId }) => store.closeOpenOrder(openOrderId),
   };
 };
