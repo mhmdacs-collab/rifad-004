@@ -158,6 +158,41 @@ describe("always print receipt", () => {
 });
 
 describe("unified ticket customer", () => {
+  it("mounts one customer workspace when the mobile ticket surface is open", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await openSales(user);
+
+    // The compact checkout toggle is disabled for an empty ticket; add one
+    // catalog item so the mobile surface can be opened deterministically.
+    await user.click(await screen.findByRole("button", { name: /قهوة سعودية/ }));
+    await user.click(screen.getByRole("button", { name: /عرض التذكرة/ }));
+    const mobileTicket = screen.getByRole("region", { name: "التذكرة الحالية على الهاتف" });
+    await user.click(within(mobileTicket).getByRole("button", { name: "إضافة عميل إلى التذكرة" }));
+
+    expect(screen.getAllByRole("region", { name: "إضافة عميل إلى التذكرة" })).toHaveLength(1);
+    expect(screen.getAllByRole("textbox", { name: "بحث العميل" })).toHaveLength(1);
+  });
+
+  it("returns the ticket workspace to the desktop rail after a viewport resize", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await openSales(user);
+    await user.click(await screen.findByRole("button", { name: /قهوة سعودية/ }));
+    await user.click(screen.getByRole("button", { name: /عرض التذكرة/ }));
+    expect(screen.getByRole("region", { name: "التذكرة الحالية على الهاتف" })).toBeInTheDocument();
+
+    const originalInnerWidth = window.innerWidth;
+    try {
+      Object.defineProperty(window, "innerWidth", { configurable: true, value: 1024 });
+      fireEvent(window, new Event("resize"));
+      await waitFor(() => expect(screen.queryByRole("region", { name: "التذكرة الحالية على الهاتف" })).not.toBeInTheDocument());
+      expect(screen.getByRole("complementary", { name: "التذكرة الحالية" })).toBeInTheDocument();
+    } finally {
+      Object.defineProperty(window, "innerWidth", { configurable: true, value: originalInnerWidth });
+    }
+  });
+
   it("attaches one customer to the ticket and carries the same identity to the cash receipt", async () => {
     const user = userEvent.setup();
     render(<App />);

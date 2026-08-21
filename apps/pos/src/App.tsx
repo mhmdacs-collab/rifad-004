@@ -5,7 +5,6 @@ import { ConfiguredPaymentMethodRail } from "./components/ConfiguredPaymentMetho
 import { InlineCheckoutRail } from "./components/InlineCheckoutRail";
 import { LocalServiceEnhancer } from "./components/LocalServiceEnhancer";
 import { ManagerOverrideDialog } from "./components/ManagerOverrideDialog";
-import { installQuantityKeypad } from "./quantity-keypad";
 import { createPosRuntimeAdapter } from "./runtime/posRuntimeAdapter";
 import {
   createRestaurantServiceAdapter,
@@ -42,8 +41,6 @@ export default function App() {
   if (flow.ticket) {
     lastSaleTicket.current = flow.ticket;
   }
-
-  useEffect(() => installQuantityKeypad(), []);
 
   useEffect(() => {
     let active = true;
@@ -262,8 +259,9 @@ export default function App() {
               onPlacePageProduct={(pageId, slotIndex, productId) => void flow.placeSalePageProduct(pageId, slotIndex, productId)}
               onRemovePageProduct={(pageId, slotIndex) => void flow.removeSalePageProduct(pageId, slotIndex)}
               onAddProduct={(id) => void flow.addProduct(id)}
-              onSetQuantity={(id, value) => void flow.setQuantity(id, value)}
-              onRemoveLine={(id) => void flow.removeLine(id)}
+              onSetQuantity={flow.setQuantity}
+              onRemoveLine={flow.removeLine}
+              onClearTicket={flow.clearTicket}
               onSaveTicket={() => void flow.saveOpenTicket()}
               onCheckout={() => void beginAuthorizedCheckout()}
               onOpenReceipts={() => void flow.openReceipts()}

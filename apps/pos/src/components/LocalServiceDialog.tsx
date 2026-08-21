@@ -48,14 +48,14 @@ export function LocalServiceDialog({ mode, groups, openOrders, busy, onClose, on
   };
 
   return (
-    <div className="dialog-backdrop local-service-backdrop" role="presentation" onClick={onClose}>
+    <div className="dialog-backdrop local-service-backdrop" role="presentation" onClick={() => { if (!busy) onClose(); }}>
       <section className="local-service-dialog" role="dialog" aria-modal="true" aria-labelledby="local-service-title" onClick={(event) => event.stopPropagation()}>
         <header className="local-service-head">
           <div>
             <span>{mode === "assign" ? "محلي" : "إدارة الخدمة"}</span>
             <h2 id="local-service-title">{mode === "assign" ? "اختر المكان" : "الطلبات المفتوحة"}</h2>
           </div>
-          <button type="button" onClick={onClose} aria-label="إغلاق">×</button>
+          <button type="button" onClick={onClose} disabled={busy} aria-label="إغلاق">×</button>
         </header>
 
         <div className="local-service-summary" aria-label="حالة أماكن الخدمة">
@@ -68,7 +68,7 @@ export function LocalServiceDialog({ mode, groups, openOrders, busy, onClose, on
           {groups.map((group) => {
             const groupOpenCount = openOrders.filter((order) => order.placeGroupId === group.id).length;
             return (
-              <button type="button" key={group.id} className={group.id === activeGroup?.id ? "active" : ""} onClick={() => setActiveGroupId(group.id)}>
+              <button type="button" key={group.id} className={group.id === activeGroup?.id ? "active" : ""} onClick={() => setActiveGroupId(group.id)} disabled={busy}>
                 <span>{group.name}</span>
                 {groupOpenCount > 0 ? <small>{groupOpenCount}</small> : null}
               </button>
@@ -102,7 +102,7 @@ export function LocalServiceDialog({ mode, groups, openOrders, busy, onClose, on
 
         <footer className="local-service-foot">
           <span>{mode === "assign" ? "اختيار المكان يرسل الطلب للمطبخ ويُفرغ السلة." : "اضغط على المكان المحجوز لاستعادة طلبه."}</span>
-          <button type="button" onClick={onClose}>إلغاء</button>
+          <button type="button" onClick={onClose} disabled={busy}>إلغاء</button>
         </footer>
       </section>
     </div>

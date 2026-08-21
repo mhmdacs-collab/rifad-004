@@ -133,10 +133,9 @@ describe("ticket customer workspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "+ إضافة عميل جديد" }));
     fireEvent.change(screen.getByLabelText(/اسم العميل/), { target: { value: "مسودة عميل" } });
     fireEvent.change(screen.getByLabelText(/رقم الجوال/), { target: { value: "0501112233" } });
-    fireEvent.click(screen.getByRole("button", { name: "العودة إلى العملاء" }));
+    fireEvent.click(screen.getByRole("button", { name: "إلغاء" }));
 
-    expect(await screen.findByText("أحمد محمد")).toBeInTheDocument();
+    expect(onClose).toHaveBeenCalledTimes(1);
     expect(onCreateCustomer).not.toHaveBeenCalled();
-    expect(onClose).not.toHaveBeenCalled();
   });
 });

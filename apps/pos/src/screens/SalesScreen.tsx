@@ -10,6 +10,7 @@ import { formatMoney } from "../domain/money";
 import { readPrintReceiptAlways, writePrintReceiptAlways } from "../domain/posPreferences";
 import type { Customer, CustomerDetails, DebtCollectionMethod, DebtCollectionReceipt, DebtLedgerEntry, DebtSettlementResult, EmployeeSession, PrintDeliveryStatus, Product, SalePage, Ticket, TicketLine } from "../domain/models";
 import type { LocalServiceFlow } from "../state/useLocalServiceFlow";
+import { isPendingKitchenLine, isSentKitchenLine, sentTicketToKitchenCorrections } from "../domain/kitchenDelta";
 import type { RestaurantServiceConfig } from "../domain/restaurantService";
 
 type SalesScreenMode = "touch" | "basic";
@@ -68,8 +69,9 @@ type SalesScreenProps = {
   onPlacePageProduct: (pageId: string, slotIndex: number, productId: string) => void;
   onRemovePageProduct: (pageId: string, slotIndex: number) => void;
   onAddProduct: (productId: string) => void;
-  onSetQuantity: (lineId: string, quantity: number) => void;
-  onRemoveLine: (lineId: string) => void;
+  onSetQuantity: (lineId: string, quantity: number, allowSentCorrection?: boolean) => void | Promise<void>;
+  onRemoveLine: (lineId: string, allowSentCorrection?: boolean) => void | Promise<void>;
+  onClearTicket?: () => void | Promise<void>;
   onSaveTicket: () => void;
   onCheckout: () => void;
   onOpenReceipts: () => void;
@@ -92,7 +94,7 @@ export function SalesScreen(props: SalesScreenProps) {
     query, busy, errorMessage, lastTouchedLineId, onDismissError, onQueryChange,
     onPageChange, onCreatePage, onRenamePage, onDeletePage, onMovePage,
     onPlacePageProduct, onRemovePageProduct, onAddProduct, onSetQuantity,
-    onRemoveLine, onSaveTicket, onCheckout, onOpenReceipts,
+    onRemoveLine, onClearTicket, onSaveTicket, onCheckout, onOpenReceipts,
     onSearchCustomers, onCreateCustomer, onSetTicketCustomer, onLoadCustomerLedger,
     onChargeCredit, onSettleDebt, onPrintDebtCollection,
     local, creditEnabled, onRestaurantLocalCheckout, onRestaurantDirectCheckout,
@@ -120,8 +122,11 @@ export function SalesScreen(props: SalesScreenProps) {
   const [renamingPage, setRenamingPage] = useState<SalePage | null>(null);
   const [renameName, setRenameName] = useState("");
   const [editingLine, setEditingLine] = useState<TicketLine | null>(null);
+  const [editingSentCorrection, setEditingSentCorrection] = useState(false);
   const [localDialogMode, setLocalDialogMode] = useState<"assign" | "open" | null>(null);
   const [clearingCart, setClearingCart] = useState(false);
+  const [inlineCustomerWorkspaceOverride, setInlineCustomerWorkspaceOverride] = useState(false);
+  const [quantityKeypadFresh, setQuantityKeypadFresh] = useState(true);
   const [draftQuantityInput, setDraftQuantityInput] = useState("1");
   const pagePressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressTriggered = useRef(false);
@@ -129,6 +134,19 @@ export function SalesScreen(props: SalesScreenProps) {
 
   useEffect(() => () => {
     if (pagePressTimer.current) clearTimeout(pagePressTimer.current);
+  }, []);
+
+  // The compact ticket surface is a presentation mode, not a second ticket
+  // state. If a cashier rotates/resizes into the desktop breakpoint while it
+  // is open, close the compact surface so the desktop rail becomes the sole
+  // mounted workspace instead of leaving the ticket hidden behind CSS.
+  useEffect(() => {
+    const syncTicketPresentation = () => {
+      if (window.innerWidth > 780) setMobileTicketOpen(false);
+    };
+    syncTicketPresentation();
+    window.addEventListener("resize", syncTicketPresentation);
+    return () => window.removeEventListener("resize", syncTicketPresentation);
   }, []);
 
   useEffect(() => {
@@ -170,7 +188,9 @@ export function SalesScreen(props: SalesScreenProps) {
   const showTicketOrderType = !isBasicMode && itemCount > 0 && visibleOrderTypes.length > 0;
   const orderTypeRequired = showTicketOrderType && visibleOrderTypes.length > 1 && !effectiveOrderType;
   const draftQuantity = Number(draftQuantityInput);
-  const validDraftQuantity = Number.isSafeInteger(draftQuantity) && draftQuantity >= 1;
+  const validDraftQuantity = Number.isSafeInteger(draftQuantity)
+    && draftQuantity >= 1
+    && (!editingSentCorrection || !editingLine || draftQuantity <= editingLine.quantity);
   const draftQuantityChanged = Boolean(editingLine) && validDraftQuantity && draftQuantity !== editingLine?.quantity;
 
   useEffect(() => {
@@ -192,8 +212,11 @@ export function SalesScreen(props: SalesScreenProps) {
     ticket.updatedAt,
   ]);
 
-  const openLineEditor = (line: TicketLine) => {
+  const openLineEditor = (line: TicketLine, allowSentCorrection = false) => {
+    if (activeOpenOrder && isSentKitchenLine(line) && !allowSentCorrection) return;
     setEditingLine(line);
+    setEditingSentCorrection(allowSentCorrection);
+    setQuantityKeypadFresh(true);
     setDraftQuantityInput(String(line.quantity));
   };
 
@@ -201,17 +224,37 @@ export function SalesScreen(props: SalesScreenProps) {
     const digits = rawValue.replace(/\D/g, "");
     if (digits === "") {
       setDraftQuantityInput("");
+      setQuantityKeypadFresh(false);
       return;
     }
     const normalized = digits.replace(/^0+(?=\d)/, "");
     const value = Number(normalized);
-    if (Number.isSafeInteger(value)) setDraftQuantityInput(normalized);
+    if (Number.isSafeInteger(value)) {
+      if (editingSentCorrection && editingLine && value > editingLine.quantity) return;
+      setDraftQuantityInput(normalized);
+      setQuantityKeypadFresh(false);
+    }
+  };
+
+  const pressQuantityKey = (value: string) => {
+    const next = quantityKeypadFresh
+      ? (value === "00" ? "0" : value)
+      : `${draftQuantityInput}${value}`;
+    if (editingSentCorrection && editingLine && Number(next) > editingLine.quantity) return;
+    setDraftQuantityInput(next);
+    setQuantityKeypadFresh(false);
+  };
+
+  const backspaceQuantityKey = () => {
+    setDraftQuantityInput(quantityKeypadFresh ? "" : draftQuantityInput.slice(0, -1));
+    setQuantityKeypadFresh(false);
   };
 
   const adjustDraftQuantity = (delta: number) => {
     const current = Number(draftQuantityInput);
     const base = Number.isSafeInteger(current) && current >= 1 ? current : 1;
-    const next = Math.max(1, base + delta);
+    const max = editingSentCorrection && editingLine ? editingLine.quantity : Number.MAX_SAFE_INTEGER;
+    const next = Math.min(max, Math.max(1, base + delta));
     if (Number.isSafeInteger(next)) setDraftQuantityInput(String(next));
   };
 
@@ -303,12 +346,30 @@ export function SalesScreen(props: SalesScreenProps) {
   const advancedRestaurant = serviceEnabled && local.config.placeManagementEnabled;
   const activeOpenOrder = local.activeOpenOrder;
   const localBusy = local.localBusy !== null;
+  const hasPendingOpenOrderLines = activeOpenOrder ? ticket.lines.some(isPendingKitchenLine) : false;
+  const hasPendingOpenOrderCorrections = activeOpenOrder ? sentTicketToKitchenCorrections(activeOpenOrder.ticket, ticket).length > 0 : false;
+  // A line/product mutation is asynchronous. Keep every other ticket action
+  // locked while it is in flight so a stale closure cannot overwrite the
+  // latest ticket snapshot. Catalog search is the one non-mutating busy state
+  // that may safely coexist with ticket edits.
+  const ticketMutationLocked = localBusy
+    || clearingCart
+    || (busy !== null && busy !== "catalog");
 
   const clearCart = async () => {
     if (clearingCart) return;
     setClearingCart(true);
     try {
-      for (const line of ticket.lines) await onRemoveLine(line.id);
+      if (activeOpenOrder) {
+        await local.clearPendingOpenOrder();
+      } else {
+        if (onClearTicket) await onClearTicket();
+        else {
+          // Compatibility fallback for isolated screen consumers that do not
+          // provide the queued clear operation.
+          for (const line of ticket.lines) await onRemoveLine(line.id);
+        }
+      }
     } finally {
       setClearingCart(false);
     }
@@ -323,7 +384,7 @@ export function SalesScreen(props: SalesScreenProps) {
               type="button"
               className="ticket-workspace-action--send"
               onClick={() => void local.sendOpenOrderUpdate()}
-              disabled={!local.hasUnsentOpenOrderChanges || localBusy}
+              disabled={!local.hasUnsentOpenOrderChanges || localBusy || busy !== null || clearingCart}
               aria-label={local.hasUnsentOpenOrderChanges ? `إرسال تغييرات ${activeOpenOrder.servicePlaceName} للمطبخ` : `لا توجد تغييرات غير مرسلة في ${activeOpenOrder.servicePlaceName}`}
             >
               {local.localBusy === "send-order-update" ? "جارٍ الإرسال…" : "إرسال"}
@@ -331,7 +392,7 @@ export function SalesScreen(props: SalesScreenProps) {
             <button
               type="button"
               onClick={() => void onRestaurantDirectCheckout()}
-              disabled={itemCount === 0 || local.hasUnsentOpenOrderChanges || localBusy}
+              disabled={itemCount === 0 || local.hasUnsentOpenOrderChanges || localBusy || busy !== null || clearingCart}
               aria-label={local.hasUnsentOpenOrderChanges ? "الدفع غير متاح حتى إرسال تغييرات المطبخ" : `دفع وإغلاق ${activeOpenOrder.servicePlaceName}`}
             >دفع</button>
           </div>
@@ -388,8 +449,9 @@ export function SalesScreen(props: SalesScreenProps) {
       );
     }
     return (
-      <button type="button" className={`catalog-cell catalog-product tone-${product.tone}`} key={`${product.id}-${slotIndex ?? "catalog"}`} onClick={() => onAddProduct(product.id)} disabled={busy === `product:${product.id}`} aria-label={`${product.name}، ${formatMoney(product.price)}`}>
+      <button type="button" className={`catalog-cell catalog-product tone-${product.tone}`} key={`${product.id}-${slotIndex ?? "catalog"}`} onClick={() => onAddProduct(product.id)} disabled={ticketMutationLocked || busy === `product:${product.id}`} aria-label={`${product.name}، ${formatMoney(product.price)}`}>
         <strong>{product.name}</strong>
+        <span className="catalog-product-price" dir="ltr">{formatMoney(product.price)}</span>
       </button>
     );
   };
@@ -404,21 +466,24 @@ export function SalesScreen(props: SalesScreenProps) {
         ) : <span className="catalog-cell blank-layout-slot" key={`slot-${slotIndex}`} />;
       });
 
-  const openCustomerPicker = () => setCustomerPickerPurpose("attach");
+  const openCustomerPicker = () => {
+    setInlineCustomerWorkspaceOverride(false);
+    setCustomerPickerPurpose("attach");
+  };
   const customerBusy = busy === "customer-create" || busy === "customer-credit" || busy === "ticket-customer";
-  const inlineCustomerWorkspaceOpen = customerPickerPurpose === "attach" && !ticket.customer;
+  const inlineCustomerWorkspaceOpen = customerPickerPurpose === "attach" && (!ticket.customer || inlineCustomerWorkspaceOverride);
 
   const renderCartWorkspace = () => inlineCustomerWorkspaceOpen ? (
     <TicketCustomerWorkspace
       busy={customerBusy}
-      onClose={() => setCustomerPickerPurpose(null)}
+      onClose={() => { setInlineCustomerWorkspaceOverride(false); setCustomerPickerPurpose(null); }}
       onSearch={onSearchCustomers}
       onCreateCustomer={(name, mobile, details) => onCreateCustomer(name, mobile, details)}
       onAttachCustomer={onSetTicketCustomer}
     />
   ) : (
     <>
-      <TicketPanel ticket={ticket} editable lastTouchedLineId={lastTouchedLineId} onEditLine={openLineEditor} onRemoveLine={onRemoveLine} onCustomerClick={openCustomerPicker} onClearCart={ticket.lines.length > 0 ? clearCart : undefined} clearingCart={clearingCart} serviceLabel={local.activeServiceLabel} onReturn={local.activeOpenOrder ? local.leaveOpenOrder : undefined} activeOrder={local.activeOpenOrder} />
+      <TicketPanel ticket={ticket} editable={!ticketMutationLocked} interactionDisabled={ticketMutationLocked} lastTouchedLineId={lastTouchedLineId} onEditLine={openLineEditor} onRemoveLine={onRemoveLine} onCustomerClick={openCustomerPicker} onClearCart={activeOpenOrder ? (local.hasUnsentOpenOrderChanges ? clearCart : undefined) : (ticket.lines.length > 0 ? clearCart : undefined)} clearingCart={clearingCart} serviceLabel={local.activeServiceLabel} onReturn={local.activeOpenOrder ? local.leaveOpenOrder : undefined} activeOrder={local.activeOpenOrder} pendingMetadata={Boolean(activeOpenOrder && local.hasUnsentOpenOrderChanges && !hasPendingOpenOrderLines && !hasPendingOpenOrderCorrections)} />
       {renderOrderTypeSelector()}
       {renderTicketActions()}
     </>
@@ -470,7 +535,7 @@ export function SalesScreen(props: SalesScreenProps) {
             ) : (
               <div className="basic-product-results" aria-busy={busy === "catalog"}>
                 {products.map((product) => (
-                  <button type="button" className="basic-product-row" key={product.id} onClick={() => onAddProduct(product.id)} disabled={busy === `product:${product.id}`}>
+                  <button type="button" className="basic-product-row" key={product.id} onClick={() => onAddProduct(product.id)} disabled={ticketMutationLocked || busy === `product:${product.id}`}>
                     <span className={`basic-product-swatch tone-${product.tone}`}>{product.abbreviation}</span>
                     <strong>{product.name}</strong>
                     <small dir="ltr">{formatMoney(product.price)}</small>
@@ -533,7 +598,10 @@ export function SalesScreen(props: SalesScreenProps) {
       </section>
 
       <div className="ticket-column">
-        {renderCartWorkspace()}
+        {/* On compact screens the mobile ticket surface owns the workspace.
+         * Do not keep a second hidden copy mounted: customer search and other
+         * workspace effects must have one source of truth. */}
+        {!mobileTicketOpen ? renderCartWorkspace() : null}
       </div>
 
       {mobileTicketOpen ? (
@@ -654,7 +722,7 @@ export function SalesScreen(props: SalesScreenProps) {
       {editingLine ? (
         <div className="dialog-backdrop" role="presentation">
           <section className="layout-dialog line-editor" role="dialog" aria-modal="true" aria-labelledby="line-editor-title">
-            <header><button type="button" onClick={() => setEditingLine(null)} aria-label="إغلاق">×</button><h2 id="line-editor-title">{editingLine.name} · {formatMoney(editingLine.unitPrice)}</h2></header>
+            <header><button type="button" onClick={() => { setEditingLine(null); setEditingSentCorrection(false); }} aria-label="إغلاق">×</button><h2 id="line-editor-title">{editingSentCorrection ? "تصحيح الكمية المرسلة · " : ""}{editingLine.name} · {formatMoney(editingLine.unitPrice)}</h2></header>
             <label htmlFor="line-quantity-input">الكمية</label>
             <div className="line-quantity-editor">
               <button type="button" aria-label="تقليل الكمية" onClick={() => adjustDraftQuantity(-1)}><Icon name="minus" /></button>
@@ -662,7 +730,7 @@ export function SalesScreen(props: SalesScreenProps) {
                 id="line-quantity-input"
                 className="line-quantity-input"
                 type="text"
-                inputMode="numeric"
+                inputMode="none"
                 pattern="[0-9]*"
                 dir="ltr"
                 aria-label="الكمية"
@@ -672,9 +740,20 @@ export function SalesScreen(props: SalesScreenProps) {
               />
               <button type="button" aria-label="زيادة الكمية" onClick={() => adjustDraftQuantity(1)}><Icon name="plus" /></button>
             </div>
+            <div className="line-quantity-keypad" role="group" aria-label="لوحة أرقام الكمية">
+              {([
+                ["1", "رقم 1"], ["2", "رقم 2"], ["3", "رقم 3"],
+                ["4", "رقم 4"], ["5", "رقم 5"], ["6", "رقم 6"],
+                ["7", "رقم 7"], ["8", "رقم 8"], ["9", "رقم 9"],
+                ["00", "صفران"], ["0", "رقم 0"],
+              ] as const).map(([value, label]) => (
+                <button type="button" key={value} className={`line-quantity-key${value === "00" ? " line-quantity-key--double-zero" : ""}`} aria-label={label} onClick={() => pressQuantityKey(value)}>{value}</button>
+              ))}
+              <button type="button" className="line-quantity-key line-quantity-key--backspace" aria-label="حذف رقم" onClick={backspaceQuantityKey}>⌫</button>
+            </div>
             <div className="line-editor-actions">
-              <button type="button" className="delete-line" onClick={() => { onRemoveLine(editingLine.id); setEditingLine(null); }}><Icon name="trash" size={18} />حذف</button>
-              <button type="button" className="primary-button" disabled={!draftQuantityChanged} onClick={() => { if (!draftQuantityChanged) return; onSetQuantity(editingLine.id, draftQuantity); setEditingLine(null); }}>حفظ</button>
+              <button type="button" className="delete-line" onClick={() => { onRemoveLine(editingLine.id, editingSentCorrection); setEditingLine(null); setEditingSentCorrection(false); }}><Icon name="trash" size={18} />{editingSentCorrection ? "إلغاء الصنف المرسل" : "حذف"}</button>
+              <button type="button" className="primary-button" disabled={!draftQuantityChanged} onClick={() => { if (!draftQuantityChanged) return; onSetQuantity(editingLine.id, draftQuantity, editingSentCorrection); setEditingLine(null); setEditingSentCorrection(false); }}>{editingSentCorrection ? "إرسال التصحيح" : "حفظ"}</button>
             </div>
           </section>
         </div>
@@ -686,9 +765,10 @@ export function SalesScreen(props: SalesScreenProps) {
           ticketTotal={ticket.total}
           attachedCustomer={ticket.customer ?? null}
           busy={busy === "customer-create" || busy === "customer-credit" || busy === "ticket-customer"}
-          onClose={() => setCustomerPickerPurpose(null)}
+          onClose={() => { setInlineCustomerWorkspaceOverride(false); setCustomerPickerPurpose(null); }}
           onSearch={onSearchCustomers}
           onCreateCustomer={onCreateCustomer}
+          onOpenInlineCustomerCreate={() => { setInlineCustomerWorkspaceOverride(true); setCustomerPickerPurpose("attach"); }}
           onAttachCustomer={onSetTicketCustomer}
           onChargeCredit={onChargeCredit}
         />

@@ -136,10 +136,23 @@
 }
 
 .sale-screen-touch button.catalog-product::after {
+  content: none !important;
+  display: none !important;
+}
+
+.sale-screen-touch button.catalog-product > .catalog-product-price {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  direction: ltr;
   color: #1b2721 !important;
   background: rgb(255 255 255 / 66%) !important;
-  border-top-color: rgb(35 58 47 / 10%) !important;
+  border-top: 1px solid rgb(35 58 47 / 10%) !important;
   font-weight: 800 !important;
+  font-size: .86rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .sale-screen-touch .sale-page-tabs {
@@ -297,6 +310,17 @@
   border-color: #f0d0d0 !important;
   box-shadow: none !important;
   transition: transform .08s ease, background .1s ease, border-color .1s ease;
+}
+
+.sale-screen-touch .ticket-clear-cart strong,
+.sale-screen-touch .ticket-clear-cart .ticket-clear-cart-icon {
+  color: var(--fo-danger) !important;
+}
+
+.sale-screen-touch .ticket-clear-cart:disabled,
+.sale-screen-touch .ticket-clear-cart:disabled strong,
+.sale-screen-touch .ticket-clear-cart:disabled .ticket-clear-cart-icon {
+  color: #9f8b8b !important;
 }
 
 .sale-screen-touch .ticket-clear-cart:active:not(:disabled) {
@@ -545,6 +569,100 @@
   border-radius: 9px;
 }
 
+.sale-screen-touch .kitchen-pending-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.sale-screen-touch .kitchen-pending-line + .kitchen-pending-line {
+  margin-top: 4px;
+}
+
+.sale-screen-touch .kitchen-pending-line .kitchen-delta-row {
+  width: 100%;
+  border: 0;
+  text-align: start;
+  font: inherit;
+  cursor: pointer;
+}
+
+.sale-screen-touch .kitchen-pending-line .kitchen-delta-row:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.sale-screen-touch .kitchen-pending-remove {
+  min-height: 44px;
+  padding: 4px 8px;
+  border: 1px solid #efd0d0;
+  border-radius: 8px;
+  color: var(--fo-danger);
+  background: var(--fo-danger-soft);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.sale-screen-touch .kitchen-correction-actions > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.sale-screen-touch .kitchen-correction-actions > header small {
+  color: var(--fo-muted);
+  font-size: 11px;
+}
+
+.sale-screen-touch .kitchen-correction-actions > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sale-screen-touch .kitchen-correction-actions > div + div {
+  margin-top: 7px;
+}
+
+.sale-screen-touch .kitchen-correction-actions span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.sale-screen-touch .kitchen-correction-actions button {
+  min-height: 44px;
+  padding: 5px 8px;
+  border: 1px solid var(--fo-border-strong);
+  border-radius: 8px;
+  color: #46534d;
+  background: var(--fo-surface);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.sale-screen-touch .kitchen-correction-actions .danger-action {
+  color: var(--fo-danger);
+  border-color: #efd0d0;
+  background: var(--fo-danger-soft);
+}
+
+.sale-screen-touch .kitchen-sent-immutable-note {
+  margin: 10px 0 0;
+  color: var(--fo-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
 .sale-screen-touch .kitchen-delta-row + .kitchen-delta-row {
   margin-top: 4px;
 }
@@ -577,43 +695,10 @@
   font-size: 12px;
 }
 
-.sale-screen-touch .kitchen-correction-actions > div {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.sale-screen-touch .kitchen-correction-actions > div + div {
-  margin-top: 7px;
-}
-
-.sale-screen-touch .kitchen-correction-actions span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.sale-screen-touch .kitchen-metadata-pending {
+  margin: 4px 0 0;
+  color: #704b1c;
   font-size: 12px;
-  font-weight: 750;
-}
-
-.sale-screen-touch .kitchen-correction-actions button {
-  min-height: 34px;
-  padding: 5px 8px;
-  border: 1px solid var(--fo-border-strong);
-  border-radius: 8px;
-  color: #46534d;
-  background: var(--fo-surface);
-  font: inherit;
-  font-size: 11px;
-  font-weight: 750;
-}
-
-.sale-screen-touch .kitchen-correction-actions .danger-action {
-  color: var(--fo-danger);
-  border-color: #efd0d0;
-  background: var(--fo-danger-soft);
 }
 
 /* ---------- Debt settlement and collection receipt ---------- */
@@ -1075,7 +1160,13 @@
 }
 
 .sale-screen-touch.loyverse-shell .catalog-product::after {
+  content: none !important;
+  display: none !important;
+}
+
+.sale-screen-touch.loyverse-shell .catalog-product > .catalog-product-price {
   z-index: 2;
+  display: flex;
   align-items: center;
   justify-content: flex-start;
   min-height: 35px;

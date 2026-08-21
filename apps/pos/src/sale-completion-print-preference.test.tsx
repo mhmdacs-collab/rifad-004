@@ -1,10 +1,12 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import App from "./App";
 import { PRINT_RECEIPT_ALWAYS_KEY } from "./domain/posPreferences";
 
 const STORAGE_KEY = "rifad.pos.mock.v1";
+
+const productGrid = () => within(document.querySelector(".product-grid") as HTMLElement);
 
 const unlockPos = async (user: ReturnType<typeof userEvent.setup>) => {
   await user.click(screen.getByRole("button", { name: "تسجيل الدخول" }));
@@ -16,7 +18,7 @@ const unlockPos = async (user: ReturnType<typeof userEvent.setup>) => {
 };
 
 const completeCashSale = async (user: ReturnType<typeof userEvent.setup>) => {
-  await user.click(screen.getByRole("button", { name: /قهوة سعودية/ }));
+  await user.click(productGrid().getByRole("button", { name: /قهوة سعودية/ }));
   await user.click(screen.getByRole("button", { name: "دفع" }));
   await screen.findByText("اختيار طريقة الدفع");
   await user.click(screen.getByRole("button", { name: /نقدًا/ }));
@@ -51,6 +53,6 @@ describe("sale completion print preference", () => {
     await completeCashSale(user);
 
     await waitFor(() => expect(screen.queryByRole("heading", { name: "تمت عملية البيع بنجاح" })).not.toBeInTheDocument());
-    expect(screen.getByRole("button", { name: /قهوة سعودية/ })).toBeInTheDocument();
+    expect(productGrid().getByRole("button", { name: /قهوة سعودية/ })).toBeInTheDocument();
   });
 });

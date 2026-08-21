@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Ticket, TicketLine } from "../domain/models";
 import type { OpenLocalOrder } from "../domain/restaurantService";
-import { diffKitchenTickets } from "../domain/kitchenDelta";
+import { isPendingKitchenLine, sentTicketToKitchenCorrections } from "../domain/kitchenDelta";
 import { Icon } from "./Icon";
 import { MoneyAmount } from "./MoneyAmount";
 
@@ -9,14 +9,16 @@ type TicketPanelProps = {
   ticket: Ticket;
   editable?: boolean;
   lastTouchedLineId?: string | null;
-  onEditLine?: (line: TicketLine) => void;
-  onRemoveLine?: (lineId: string) => void;
+  onEditLine?: (line: TicketLine, allowSentCorrection?: boolean) => void;
+  onRemoveLine?: (lineId: string, allowSentCorrection?: boolean) => void | Promise<void>;
   onCustomerClick?: () => void;
   onClearCart?: () => Promise<void>;
   clearingCart?: boolean;
   serviceLabel?: string | null;
   onReturn?: () => Promise<boolean>;
   activeOrder?: OpenLocalOrder | null;
+  pendingMetadata?: boolean;
+  interactionDisabled?: boolean;
   variant?: "sale" | "checkout";
 };
 
@@ -38,13 +40,17 @@ export function TicketPanel({
   serviceLabel = null,
   onReturn,
   activeOrder = null,
+  pendingMetadata = false,
+  interactionDisabled = false,
   variant = "sale",
 }: TicketPanelProps) {
   const linesRef = useRef<HTMLDivElement | null>(null);
   const swipeStartRef = useRef<SwipeStart | null>(null);
   const suppressLineClickRef = useRef<string | null>(null);
   const [revealedLineId, setRevealedLineId] = useState<string | null>(null);
-  const pendingKitchenLines = activeOrder ? diffKitchenTickets(activeOrder.ticket, ticket) : [];
+  const pendingKitchenLines = activeOrder ? ticket.lines.filter(isPendingKitchenLine) : [];
+  const pendingKitchenCorrections = activeOrder ? sentTicketToKitchenCorrections(activeOrder.ticket, ticket) : [];
+  const sentWorkingLines = activeOrder ? ticket.lines.filter((line) => !isPendingKitchenLine(line)) : [];
 
   useEffect(() => {
     if (!lastTouchedLineId || !linesRef.current) return;
@@ -105,7 +111,7 @@ export function TicketPanel({
         </div>
         <div className="ticket-header-tools">
           {onReturn ? (
-            <button type="button" className="local-open-order-return" onClick={() => void onReturn()} aria-label="الرجوع لشاشة البيع مع إبقاء الطاولة مفتوحة">
+            <button type="button" className="local-open-order-return" onClick={() => void onReturn()} disabled={interactionDisabled} aria-label="الرجوع لشاشة البيع مع إبقاء الطاولة مفتوحة">
               الرجوع لشاشة البيع
             </button>
           ) : null}
@@ -115,6 +121,7 @@ export function TicketPanel({
               type="button"
               className={`ticket-customer ticket-customer-button ${ticket.customer ? "ticket-customer-button--linked" : ""}`}
               onClick={onCustomerClick}
+              disabled={interactionDisabled}
               aria-label={ticket.customer ? `العميل ${ticket.customer.name}` : "إضافة عميل إلى التذكرة"}
             >
               <Icon name="user" size={20} />
@@ -128,9 +135,9 @@ export function TicketPanel({
 
       {onClearCart ? (
         <div className="ticket-clear-cart-slot">
-          <button type="button" className="ticket-clear-cart" data-action-id="SALES-ACTION-004" onClick={() => void onClearCart()} disabled={clearingCart} aria-label="مسح السلة">
+          <button type="button" className="ticket-clear-cart" data-action-id="SALES-ACTION-004" onClick={() => void onClearCart()} disabled={clearingCart || interactionDisabled} aria-label={activeOrder ? "مسح التغييرات غير المرسلة" : "مسح السلة"}>
             <span className="ticket-clear-cart-icon" aria-hidden="true"><Icon name="trash" size={20} /></span>
-            <strong>{clearingCart ? "جارٍ مسح السلة…" : "مسح السلة"}</strong>
+            <strong>{clearingCart ? (activeOrder ? "جارٍ مسح التغييرات…" : "جارٍ مسح السلة…") : (activeOrder ? "مسح التغييرات" : "مسح السلة")}</strong>
           </button>
         </div>
       ) : null}
@@ -156,27 +163,40 @@ export function TicketPanel({
               ))}
             </section>
             <section className="kitchen-pending-changes" aria-label="التغييرات غير المرسلة">
-              <header><strong>التغييرات الحالية</strong><small>{pendingKitchenLines.length > 0 ? "بانتظار الإرسال" : "لا توجد تغييرات"}</small></header>
+              <header><strong>التغييرات الحالية</strong><small>{pendingKitchenLines.length > 0 || pendingKitchenCorrections.length > 0 || pendingMetadata ? "بانتظار الإرسال" : "لا توجد تغييرات"}</small></header>
               {pendingKitchenLines.map((line) => (
-                <div className={`kitchen-delta-row kitchen-delta-row--pending kitchen-delta-row--${line.kind}`} key={`pending:${line.id}`}>
-                  <span dir="ltr"><b>{line.quantity}</b> ×</span>
-                  <strong>{line.name}</strong>
-                  <small>{line.kind === "add" ? "إضافة" : line.kind === "reduce" ? "إنقاص" : "إلغاء"}</small>
+                <div className="kitchen-pending-line" key={`pending:${line.id}`}>
+                  <button type="button" className="kitchen-delta-row kitchen-delta-row--pending kitchen-delta-row--add" onClick={() => editLine(line)} disabled={!editable} aria-label={`تعديل ${line.name}، بانتظار الإرسال`}>
+                    <span dir="ltr"><b>{line.quantity}</b> ×</span>
+                    <strong>{line.name}</strong>
+                    <small>إضافة</small>
+                  </button>
+                  {editable && onRemoveLine ? <button type="button" className="kitchen-pending-remove" onClick={() => removeLine(line.id)} aria-label={`حذف الإضافة ${line.name}`}>حذف</button> : null}
                 </div>
               ))}
-              {pendingKitchenLines.length === 0 ? <p className="kitchen-no-pending">كل التغييرات مرسلة.</p> : null}
+              {pendingKitchenCorrections.map((line) => (
+                <div className={`kitchen-delta-row kitchen-delta-row--pending kitchen-delta-row--${line.kind}`} key={`correction:${line.id}`}>
+                  <span dir="ltr"><b>{line.quantity}</b> ×</span>
+                  <strong>{line.name}</strong>
+                  <small>{line.kind === "cancel" ? "إلغاء" : "إنقاص"}</small>
+                </div>
+              ))}
+              {pendingMetadata ? <p className="kitchen-metadata-pending">تغييرات بيانات التذكرة بانتظار الإرسال.</p> : null}
+              {pendingKitchenLines.length === 0 && pendingKitchenCorrections.length === 0 && !pendingMetadata ? <p className="kitchen-no-pending">كل التغييرات مرسلة.</p> : null}
             </section>
-            {editable ? (
+            {editable && sentWorkingLines.length > 0 ? (
               <section className="kitchen-correction-actions" aria-label="تصحيح الطلب المرسل">
-                {ticket.lines.map((line) => (
-                  <div key={`correction:${line.id}`}>
+                <header><strong>تصحيح مرسل</strong><small>مسار صريح · لا يغيّر السجل</small></header>
+                {sentWorkingLines.map((line) => (
+                  <div key={`correction-action:${line.id}`}>
                     <span>{line.name} · {line.quantity}</span>
-                    <button type="button" onClick={() => onEditLine?.(line)}>تعديل الكمية</button>
-                    <button type="button" className="danger-action" onClick={() => onRemoveLine?.(line.id)}>إلغاء الصنف</button>
+                    <button type="button" disabled={interactionDisabled} onClick={() => onEditLine?.(line, true)}>تعديل الكمية المرسلة</button>
+                    <button type="button" className="danger-action" disabled={interactionDisabled} onClick={() => onRemoveLine?.(line.id, true)}>إلغاء الصنف المرسل</button>
                   </div>
                 ))}
               </section>
             ) : null}
+            <p className="kitchen-sent-immutable-note">الأصناف المرسلة ثابتة أمام أدوات السلة العادية؛ التصحيح لا يتم إلا عبر المسار الصريح أعلاه.</p>
           </div>
         ) : ticket.lines.length === 0 ? (
           <div className="empty-ticket">

@@ -74,12 +74,6 @@ export function TicketCustomerWorkspace({
     setView("create");
   };
 
-  const returnToPicker = () => {
-    if (submitting) return;
-    setMessage(null);
-    setView("picker");
-  };
-
   const attachCustomer = async (customer: Customer) => {
     if (actionLocked.current) return;
     actionLocked.current = true;
@@ -135,7 +129,7 @@ export function TicketCustomerWorkspace({
     setMessage("تم حفظ العميل، لكن تعذر ربطه بالتذكرة.");
   };
 
-  const headerBack = view === "create" ? returnToPicker : onClose;
+  const headerBack = onClose;
 
   return (
       <section
@@ -144,7 +138,7 @@ export function TicketCustomerWorkspace({
         aria-labelledby="ticket-customer-workspace-title"
       >
         <header className="customer-touch-header ticket-customer-workspace-header">
-          <button type="button" onClick={headerBack} aria-label={view === "create" ? "العودة إلى العملاء" : "العودة إلى السلة"} disabled={submitting}>×</button>
+          <button type="button" onClick={headerBack} aria-label="العودة إلى السلة" disabled={submitting}>×</button>
           <div>
             <h2 id="ticket-customer-workspace-title">{view === "create" ? "إضافة عميل جديد" : "إضافة عميل إلى التذكرة"}</h2>
             <span>{view === "create" ? "أدخل البيانات الأساسية ثم احفظ العميل وأضفه مباشرة إلى التذكرة." : "ابحث بالاسم أو رقم الجوال، ثم اختر العميل."}</span>
@@ -254,9 +248,12 @@ export function TicketCustomerWorkspace({
 
               {message ? <div className="ticket-customer-message ticket-customer-create-message" role="status">{message}</div> : null}
 
-              <button type="submit" className="primary-button ticket-customer-create-submit" disabled={busy || submitting}>
-                {submitting ? "جارٍ الحفظ والإضافة…" : "حفظ وإضافة إلى التذكرة"}
-              </button>
+              <div className="ticket-customer-create-actions">
+                <button type="button" className="ticket-customer-create-cancel" onClick={onClose} disabled={submitting}>إلغاء</button>
+                <button type="submit" className="primary-button ticket-customer-create-submit" disabled={busy || submitting}>
+                  {submitting ? "جارٍ الحفظ والإضافة…" : "حفظ وإضافة إلى التذكرة"}
+                </button>
+              </div>
             </form>
           </div>
         )}

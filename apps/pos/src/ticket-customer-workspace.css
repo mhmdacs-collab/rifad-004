@@ -301,6 +301,32 @@
   font-weight: 900 !important;
 }
 
+.ticket-customer-create-actions {
+  display: grid;
+  grid-template-columns: minmax(0, .72fr) minmax(0, 1.28fr);
+  gap: 8px;
+  margin-top: auto;
+}
+
+.ticket-customer-create-actions .ticket-customer-create-submit {
+  margin-top: 0;
+}
+
+.ticket-customer-create-cancel {
+  min-height: 56px;
+  padding: 0 14px;
+  border: 1px solid #d2dcd7;
+  border-radius: 12px;
+  color: #40534a;
+  background: #f7faf8;
+  font-size: clamp(14px, .92vw, 16px);
+  font-weight: 850;
+}
+
+.ticket-customer-create-cancel:hover:not(:disabled) {
+  background: #eef5f1;
+}
+
 .ticket-customer-create-submit:hover:not(:disabled) {
   background: var(--brand-dark) !important;
 }
@@ -358,6 +384,10 @@
 
   .ticket-customer-create-submit {
     min-height: 52px !important;
+  }
+
+  .ticket-customer-create-cancel {
+    min-height: 52px;
   }
 }
 

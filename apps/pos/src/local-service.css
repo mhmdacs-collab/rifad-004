@@ -1,7 +1,6 @@
 /* Local restaurant service — first owner-reviewable UI pass.
    This layer intentionally leaves the established ticket header/footer geometry intact. */
 
-.ticket-order-type,
 .device-settings-section--order-types {
   display: none !important;
 }
