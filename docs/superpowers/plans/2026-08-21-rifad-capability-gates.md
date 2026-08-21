@@ -1,10 +1,10 @@
 # Rifad Capability Gates Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** This plan is a documentation-only architecture change. Runtime implementation is not authorized by this plan.
 
-**Goal:** Make the owner-approved G0–G8 capability maturity gates and Mock Ceiling a discoverable, binding Rifad repository rule without changing runtime code or the dependency order.
+**Goal:** Make the owner-approved G0–G8 maturity gates, Mock Ceiling, Primary Core selection and Capability Grafting strategy discoverable and binding without changing runtime code or MAP dependency order.
 
-**Architecture:** Add one canonical build-method document, then link it from the binding project rules and the existing adoption workflow. The final implementation map remains the authority for what/when; the new build method governs how each substantial capability is promoted from discovery to production.
+**Architecture:** The Final Implementation Map continues to define what/when. `RIFAD_BUILD_METHOD.md` defines how work matures. `PRIMARY_CORE_AND_CAPABILITY_GRAFTING.md` defines how implementation foundations are sourced: evaluate a strong whole core when appropriate, then retain it where strong and graft/port/reimplement better capability slices where weak. `CAPABILITY_ADOPTION_WORKFLOW.md` supplies the detailed evaluation workflow.
 
 **Tech Stack:** Markdown repository documentation only.
 
@@ -15,55 +15,62 @@
 - Do not change runtime code.
 - Do not start MAP-02.
 - Do not alter the dependency order in `docs/RIFAD_FINAL_IMPLEMENTATION_MAP.md`.
+- Do not select a Primary Core as a side effect of this documentation change.
 - Do not define the later Codex/session-start operating protocol in this change.
-- Preserve existing donor/adoption rules and make the new gates additive and consistent with them.
+- Preserve useful existing Rifad work as evidence, not automatic production authority.
+- Do not require adapters as architecture ceremony; use them only when they create real isolation/translation/replacement value.
 
 ---
 
-### Task 1: Add the canonical Rifad build method
+### Task 1: Canonical sourcing strategy
 
 **Files:**
-- Create: `docs/architecture/RIFAD_BUILD_METHOD.md`
+- Create: `docs/architecture/PRIMARY_CORE_AND_CAPABILITY_GRAFTING.md`
 
-**Interfaces:**
-- Consumes: `PROJECT_RULES.md`, `docs/adoption/CAPABILITY_ADOPTION_WORKFLOW.md`, `docs/RIFAD_FINAL_IMPLEMENTATION_MAP.md`.
-- Produces: canonical G0–G8 gate definitions, Mock Ceiling, maturity dimensions and promotion rules.
+- [x] Record owner/AI responsibility split.
+- [x] Allow evidence-driven whole-core adoption.
+- [x] Require architecture simulation before core selection.
+- [x] Define capability grafting for LAN/Tables/KDS/Printing/Sync/etc.
+- [x] Define adapters as optional tools, not doctrine.
+- [x] Preserve Rifad ownership of product, UX, quality and Saudi requirements.
 
-- [ ] **Step 1:** Write the canonical document from the approved design.
-- [ ] **Step 2:** Verify it distinguishes the final map's what/when responsibility from the build method's how responsibility.
-- [ ] **Step 3:** Verify G3 requires a stop before substantial engine work and G4 requires real multi-candidate evidence for substantial capabilities.
-- [ ] **Step 4:** Verify no section claims current mocks or staging adapters are production-ready.
-- [ ] **Step 5:** Commit the document.
+### Task 2: Reconcile G0–G8 build method
 
-### Task 2: Bind the method into repository authority
+**Files:**
+- Modify: `docs/architecture/RIFAD_BUILD_METHOD.md`
+
+- [x] Keep maturity dimensions and Mock Ceiling.
+- [x] Expand G4 into whole-core scan + bounded capability source scan.
+- [x] Add architecture simulation before adoption.
+- [x] Expand G5 dispositions for core and graft decisions.
+- [x] Allow direct core modification, native extension, facade, adapter or service at G6.
+- [x] Keep G7/G8 evidence requirements.
+
+### Task 3: Bind strategy into repository authority
 
 **Files:**
 - Modify: `PROJECT_RULES.md`
 - Modify: `docs/adoption/CAPABILITY_ADOPTION_WORKFLOW.md`
 
-**Interfaces:**
-- Consumes: `docs/architecture/RIFAD_BUILD_METHOD.md`.
-- Produces: explicit repository-level requirement to follow G0–G8 and trigger the adoption workflow after the Mock Ceiling.
+- [x] Remove the assumption that every core capability must be Rifad-authored from zero.
+- [x] Remove slice-only/adapter-only interpretation.
+- [x] Allow an explicitly selected mature project to become the Primary Core.
+- [x] Preserve evidence, legal, failure and production gates.
+- [x] Define capability grafting once the core is selected.
 
-- [ ] **Step 1:** Add a concise capability-gates section to `PROJECT_RULES.md`.
-- [ ] **Step 2:** State that green tests or existing code do not by themselves promote a capability to production.
-- [ ] **Step 3:** Add a short mapping in the adoption workflow showing that donor adoption is entered from G4 and returns evidence into G5–G8.
-- [ ] **Step 4:** Preserve all existing donor licensing, provenance and replaceability requirements.
-- [ ] **Step 5:** Commit the authority-document updates.
-
-### Task 3: Verify documentation consistency
+### Task 4: Reconcile design history
 
 **Files:**
-- Read/verify: `docs/architecture/RIFAD_BUILD_METHOD.md`
-- Read/verify: `PROJECT_RULES.md`
-- Read/verify: `docs/adoption/CAPABILITY_ADOPTION_WORKFLOW.md`
-- Read/verify: `docs/RIFAD_FINAL_IMPLEMENTATION_MAP.md`
+- Modify: `docs/superpowers/specs/2026-08-21-rifad-capability-gates-design.md`
+- Modify: this plan.
 
-**Interfaces:**
-- Produces: a documentation-only branch with no runtime or map-order changes.
+- [x] Remove stale statements that could teach a future agent the old slice-only interpretation.
+- [x] Record the owner-approved Primary Core + Capability Grafting correction.
 
-- [ ] **Step 1:** Compare the branch to base `16958648b9f4e1db12ab121b74ae50bfd741cd85`.
-- [ ] **Step 2:** Confirm only documentation files changed.
-- [ ] **Step 3:** Search the changed text for contradictory production claims or a change to MAP sequencing.
-- [ ] **Step 4:** Confirm the branch remains isolated from PR #4 and no merge occurred.
-- [ ] **Step 5:** Report the resulting branch HEAD and changed files.
+### Task 5: Verification
+
+- [ ] Compare the branch to base `16958648b9f4e1db12ab121b74ae50bfd741cd85`.
+- [ ] Confirm only documentation files changed.
+- [ ] Confirm MAP dependency order was not modified.
+- [ ] Confirm PR #4 remains untouched, Draft, Open and Unmerged.
+- [ ] Report branch HEAD and changed files.
