@@ -1,4 +1,5 @@
 import type { Ticket } from "./models";
+import type { KitchenDispatchBatch } from "./kitchenDelta";
 
 export type RestaurantServiceConfig = Readonly<{
   restaurantServiceEnabled: boolean;
@@ -36,6 +37,7 @@ export type OpenLocalOrder = Readonly<{
   openedAt: string;
   updatedAt: string;
   kitchenRevision: number;
+  kitchenBatches: readonly KitchenDispatchBatch[];
 }>;
 
 export type RestaurantServiceSnapshot = Readonly<{

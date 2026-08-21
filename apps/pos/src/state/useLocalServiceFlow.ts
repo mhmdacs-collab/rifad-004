@@ -46,6 +46,7 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
   const [checkoutServiceContext, setCheckoutServiceContext] = useState<CheckoutServiceContext>(null);
   const [pendingSettlementSequence, setPendingSettlementSequence] = useState<number | null>(null);
   const settlementClosing = useRef(false);
+  const actionLock = useRef<string | null>(null);
   const [localBusy, setLocalBusy] = useState<string | null>(null);
   const [localNotice, setLocalNotice] = useState<string | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -72,6 +73,8 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
   }, [localNotice]);
 
   const updateConfig = useCallback(async (next: RestaurantServiceConfig) => {
+    if (actionLock.current) return false;
+    actionLock.current = "config";
     setLocalBusy("config");
     setLocalError(null);
     try {
@@ -82,6 +85,7 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
       setLocalError(localMessage(error));
       return false;
     } finally {
+      actionLock.current = null;
       setLocalBusy(null);
     }
   }, [service]);
@@ -105,7 +109,8 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
 
   const assignToPlace = useCallback(async (servicePlaceId: string) => {
     const ticket = flow.ticket;
-    if (!ticket || ticket.lines.length === 0) return false;
+    if (!ticket || ticket.lines.length === 0 || actionLock.current) return false;
+    actionLock.current = "assign-place";
     setLocalBusy("assign-place");
     setLocalError(null);
     try {
@@ -123,6 +128,7 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
       setLocalError(localMessage(error));
       return false;
     } finally {
+      actionLock.current = null;
       setLocalBusy(null);
     }
   }, [flow, service]);
@@ -146,6 +152,8 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
   }, [flow]);
 
   const resumeOpenOrder = useCallback(async (openOrderId: string) => {
+    if (actionLock.current) return false;
+    actionLock.current = "resume-order";
     setLocalBusy("resume-order");
     setLocalError(null);
     try {
@@ -160,6 +168,7 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
       setLocalError(localMessage(error));
       return false;
     } finally {
+      actionLock.current = null;
       setLocalBusy(null);
     }
   }, [rebuildOpenOrderIntoWorkingTicket, service]);
@@ -170,7 +179,8 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
   );
 
   const sendOpenOrderUpdate = useCallback(async () => {
-    if (!activeOpenOrder || !flow.ticket || !hasUnsentOpenOrderChanges) return false;
+    if (!activeOpenOrder || !flow.ticket || !hasUnsentOpenOrderChanges || actionLock.current) return false;
+    actionLock.current = "send-order-update";
     setLocalBusy("send-order-update");
     setLocalError(null);
     try {
@@ -188,6 +198,7 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
       setLocalError(localMessage(error));
       return false;
     } finally {
+      actionLock.current = null;
       setLocalBusy(null);
     }
   }, [activeOpenOrder, flow.ticket, hasUnsentOpenOrderChanges, service]);
@@ -198,11 +209,12 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
    * before leaving this working copy.
    */
   const leaveOpenOrder = useCallback(async () => {
-    if (!activeOpenOrder) return false;
+    if (!activeOpenOrder || actionLock.current) return false;
     if (hasUnsentOpenOrderChanges) {
       setLocalError("أرسل تعديلات الطاولة قبل الرجوع إلى شاشة البيع.");
       return false;
     }
+    actionLock.current = "leave-open-order";
     setLocalBusy("leave-open-order");
     setLocalError(null);
     try {
@@ -215,6 +227,7 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
       setLocalError(localMessage(error));
       return false;
     } finally {
+      actionLock.current = null;
       setLocalBusy(null);
     }
   }, [activeOpenOrder, flow, hasUnsentOpenOrderChanges]);

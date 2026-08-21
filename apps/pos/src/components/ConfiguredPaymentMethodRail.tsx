@@ -20,6 +20,7 @@ type ConfiguredPaymentMethodRailProps = {
   paymentMethods: readonly EffectivePosPaymentMethod[];
   delivery?: EffectiveDeliveryConfiguration;
   serviceMode?: CheckoutServiceMode;
+  serviceLabel?: string | null;
   configurationLoading: boolean;
   configurationError: string | null;
   busy: string | null;
@@ -173,6 +174,7 @@ export function ConfiguredPaymentMethodRail({
   paymentMethods,
   delivery,
   serviceMode = null,
+  serviceLabel = null,
   configurationLoading,
   configurationError,
   busy,
@@ -222,6 +224,7 @@ export function ConfiguredPaymentMethodRail({
         <div>
           <strong>{headerTitle}</strong>
           <span lang="en" dir="ltr">{headerEnglish} · Ticket #{ticket.sequence}</span>
+          {serviceLabel ? <span className="local-checkout-context">{serviceLabel}</span> : null}
         </div>
       </header>
 

@@ -289,6 +289,7 @@ export default function App() {
                 paymentMethods={effectiveConfiguration.configuration?.paymentMethods ?? []}
                 delivery={effectiveConfiguration.configuration?.delivery}
                 serviceMode={local.checkoutServiceContext?.mode ?? null}
+                serviceLabel={local.checkoutServiceContext?.label ?? null}
                 configurationLoading={effectiveConfiguration.loading}
                 configurationError={effectiveConfiguration.errorMessage}
                 busy={flow.busy}
@@ -311,6 +312,7 @@ export default function App() {
                 ticket={saleTicket}
                 receipt={flow.receipt}
                 deliveryContext={completedDelivery}
+                serviceLabel={local.checkoutServiceContext?.label ?? null}
                 printStatus={flow.printStatus}
                 busy={flow.busy}
                 errorMessage={paymentContextError ?? flow.errorMessage}

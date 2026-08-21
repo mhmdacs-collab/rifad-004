@@ -10,15 +10,13 @@ import { formatMoney } from "../domain/money";
 import { readPrintReceiptAlways, writePrintReceiptAlways } from "../domain/posPreferences";
 import type { Customer, CustomerDetails, DebtLedgerEntry, EmployeeSession, Product, SalePage, Ticket, TicketLine } from "../domain/models";
 import type { LocalServiceFlow } from "../state/useLocalServiceFlow";
+import type { RestaurantServiceConfig } from "../domain/restaurantService";
 
 type SalesScreenMode = "touch" | "basic";
 type OrderType = "dine-in" | "takeaway" | "delivery";
 
 const SALE_SCREEN_MODE_KEY = "rifad.pos.sale-screen-mode.v1";
 const ORDER_TYPES_KEY = "rifad.pos.visible-order-types.v1";
-const SETTINGS_OPEN_EVENT = "rifad:pos-settings-open";
-const SETTINGS_SAVE_EVENT = "rifad:pos-settings-save";
-const SETTINGS_CANCEL_EVENT = "rifad:pos-settings-cancel";
 
 const ORDER_TYPE_OPTIONS: readonly { id: OrderType; label: string }[] = [
   { id: "dine-in", label: "محلي" },
@@ -110,6 +108,7 @@ export function SalesScreen(props: SalesScreenProps) {
   const [draftScreenMode, setDraftScreenMode] = useState<SalesScreenMode>(screenMode);
   const [draftVisibleOrderTypes, setDraftVisibleOrderTypes] = useState<readonly OrderType[]>(visibleOrderTypes);
   const [draftPrintReceiptAlways, setDraftPrintReceiptAlways] = useState(printReceiptAlways);
+  const [draftRestaurantConfig, setDraftRestaurantConfig] = useState<RestaurantServiceConfig>(local.config);
   const [customerPickerPurpose, setCustomerPickerPurpose] = useState<CustomerPickerPurpose | null>(null);
   const [debtBookOpen, setDebtBookOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -254,26 +253,27 @@ export function SalesScreen(props: SalesScreenProps) {
     setDraftScreenMode(screenMode);
     setDraftVisibleOrderTypes(visibleOrderTypes);
     setDraftPrintReceiptAlways(printReceiptAlways);
+    setDraftRestaurantConfig(local.config);
     setSettingsOpen(true);
-    window.dispatchEvent(new Event(SETTINGS_OPEN_EVENT));
   };
 
   const cancelSettings = () => {
     setDraftScreenMode(screenMode);
     setDraftVisibleOrderTypes(visibleOrderTypes);
     setDraftPrintReceiptAlways(printReceiptAlways);
+    setDraftRestaurantConfig(local.config);
     setSettingsOpen(false);
-    window.dispatchEvent(new Event(SETTINGS_CANCEL_EVENT));
   };
 
-  const saveSettings = () => {
+  const saveSettings = async () => {
+    const restaurantSaved = await local.updateConfig(draftRestaurantConfig);
+    if (!restaurantSaved) return;
     setScreenMode(draftScreenMode);
     setVisibleOrderTypes(draftVisibleOrderTypes);
     setPrintReceiptAlways(draftPrintReceiptAlways);
     writePrintReceiptAlways(draftPrintReceiptAlways);
     onQueryChange("");
     setSettingsOpen(false);
-    window.dispatchEvent(new Event(SETTINGS_SAVE_EVENT));
   };
 
   const renderOrderTypeSelector = () => showTicketOrderType ? (
@@ -417,7 +417,7 @@ export function SalesScreen(props: SalesScreenProps) {
     />
   ) : (
     <>
-      <TicketPanel ticket={ticket} editable lastTouchedLineId={lastTouchedLineId} onEditLine={openLineEditor} onRemoveLine={onRemoveLine} onCustomerClick={openCustomerPicker} onClearCart={ticket.lines.length > 0 ? clearCart : undefined} clearingCart={clearingCart} serviceLabel={local.activeServiceLabel} onReturn={local.activeOpenOrder ? local.leaveOpenOrder : undefined} />
+      <TicketPanel ticket={ticket} editable lastTouchedLineId={lastTouchedLineId} onEditLine={openLineEditor} onRemoveLine={onRemoveLine} onCustomerClick={openCustomerPicker} onClearCart={ticket.lines.length > 0 ? clearCart : undefined} clearingCart={clearingCart} serviceLabel={local.activeServiceLabel} onReturn={local.activeOpenOrder ? local.leaveOpenOrder : undefined} activeOrder={local.activeOpenOrder} />
       {renderOrderTypeSelector()}
       {renderTicketActions()}
     </>
@@ -579,8 +579,30 @@ export function SalesScreen(props: SalesScreenProps) {
               <div className="device-settings-copy"><strong>الإيصالات</strong><span>تحكم بسلوك الطباعة بعد إكمال البيع على هذا الجهاز.</span></div>
               <label className="print-always-toggle"><input type="checkbox" checked={draftPrintReceiptAlways} onChange={(event) => setDraftPrintReceiptAlways(event.target.checked)} /><span><strong>طباعة الإيصال دائمًا</strong><small>بعد الدفع يُرسل الإيصال للطابعة ويبدأ بيع جديد مباشرة بدون إظهار ملخص العملية.</small></span></label>
             </div>
+            <section className="device-settings-section local-service-settings">
+              <div className="device-settings-copy"><strong>خدمة المطعم</strong><span>فعّلها لتمييز الطلب المحلي والسفري في شاشة اللمس. هذا الإعداد لا يظهر في نمط البيع السريع.</span></div>
+              <button
+                type="button"
+                className={`local-setting-row ${draftRestaurantConfig.restaurantServiceEnabled ? "active" : ""}`}
+                onClick={() => setDraftRestaurantConfig((current) => ({ restaurantServiceEnabled: !current.restaurantServiceEnabled, placeManagementEnabled: false }))}
+                disabled={localBusy || (local.openLocalOrders.length > 0 && local.config.restaurantServiceEnabled)}
+                aria-pressed={draftRestaurantConfig.restaurantServiceEnabled}
+              >
+                <span><strong>تفعيل خدمة المطعم</strong><small>{draftRestaurantConfig.restaurantServiceEnabled ? "المحلي والسفري مفعّلان" : "وضع بيع مباشر / تجزئة"}</small></span><i className="local-setting-switch" aria-hidden="true"><b /></i>
+              </button>
+              <button
+                type="button"
+                className={`local-setting-row local-setting-row--nested ${draftRestaurantConfig.placeManagementEnabled ? "active" : ""}`}
+                onClick={() => setDraftRestaurantConfig((current) => ({ restaurantServiceEnabled: true, placeManagementEnabled: !current.placeManagementEnabled }))}
+                disabled={!draftRestaurantConfig.restaurantServiceEnabled || localBusy || (local.openLocalOrders.length > 0 && local.config.placeManagementEnabled)}
+                aria-pressed={draftRestaurantConfig.placeManagementEnabled}
+              >
+                <span><strong>تحديد الطاولات والجلسات</strong><small>{draftRestaurantConfig.placeManagementEnabled ? "محلي متقدم · اختيار مكان وطلبات مفتوحة" : "محلي بسيط · بدون اختيار مكان"}</small></span><i className="local-setting-switch" aria-hidden="true"><b /></i>
+              </button>
+              {local.openLocalOrders.length > 0 ? <small className="local-setting-lock-note">يوجد {local.openLocalOrders.length} طلب محلي مفتوح؛ أغلقها قبل إيقاف الإعدادات.</small> : null}
+            </section>
             <button className="settings-cancel" type="button" onClick={cancelSettings}>إلغاء</button>
-            <button className="primary-button settings-done" type="button" onClick={saveSettings}>حفظ</button>
+            <button className="primary-button settings-done" type="button" onClick={() => void saveSettings()} disabled={localBusy}>حفظ</button>
           </section>
         </div>
       ) : null}

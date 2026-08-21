@@ -52,13 +52,17 @@
 
 - [x] Add RED/GREEN pure-domain tests for add, same-product add, reduce, cancel, unchanged, and order.
 - [x] Add immutable `KitchenDispatchBatch` history and adapter idempotency coverage.
-- [ ] Render immutable sent history and pending add/reduce/cancel separately in the cart.
-- [ ] Keep the same table/order/ticket active after Send; gate Send and Pay deterministically.
-- [ ] Make corrections explicit and never rewrite earlier dispatch batches.
-- [ ] Preserve total and history through leave/reopen; free the place only after completed payment.
-- [ ] Move table context, return, settings, and dialogs into React-owned structure; remove remaining DOM slots/observers.
-- [ ] Add atomic assign/resume/send/leave guards and run restaurant suites.
-- [ ] Commit domain/lifecycle changes independently from visual polish.
+- [x] Render immutable sent history and pending add/reduce/cancel separately in the cart.
+- [x] Keep the same table/order/ticket active after Send; gate Send and Pay deterministically.
+- [x] Make corrections explicit and never rewrite earlier dispatch batches.
+- [x] Preserve total and history through leave/reopen; free the place only after completed payment.
+- [x] Move table context, return, settings, and dialogs into React-owned structure; remove remaining DOM slots/observers.
+- [x] Add atomic assign/resume/send/leave guards and run restaurant suites.
+- [x] Commit domain/lifecycle changes independently from visual polish.
+
+Capability Adoption audit: this wave is a bounded correction of the existing Rifad-owned `RestaurantServiceContract`, `OpenLocalOrder`, and mock/local persistence path. It does not add an external donor or a new tables state machine; move/merge/split/seats/reservations and real KDS transport remain out of scope.
+
+Wave verification: typecheck PASS; `kitchen-delta.test.ts` + `local-service.test.tsx` PASS (13/13). The full suite is reduced from the 16-failure baseline to three failures, all assigned to Wave 4/5 debt/receipt assertions rather than Restaurant/Kitchen behavior.
 
 ## Wave 4 — Payments, Credit, and Debt
 

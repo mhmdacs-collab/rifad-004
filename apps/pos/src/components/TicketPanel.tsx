@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Ticket, TicketLine } from "../domain/models";
+import type { OpenLocalOrder } from "../domain/restaurantService";
+import { diffKitchenTickets } from "../domain/kitchenDelta";
 import { Icon } from "./Icon";
 import { MoneyAmount } from "./MoneyAmount";
 
@@ -14,6 +16,7 @@ type TicketPanelProps = {
   clearingCart?: boolean;
   serviceLabel?: string | null;
   onReturn?: () => Promise<boolean>;
+  activeOrder?: OpenLocalOrder | null;
   variant?: "sale" | "checkout";
 };
 
@@ -34,12 +37,14 @@ export function TicketPanel({
   clearingCart = false,
   serviceLabel = null,
   onReturn,
+  activeOrder = null,
   variant = "sale",
 }: TicketPanelProps) {
   const linesRef = useRef<HTMLDivElement | null>(null);
   const swipeStartRef = useRef<SwipeStart | null>(null);
   const suppressLineClickRef = useRef<string | null>(null);
   const [revealedLineId, setRevealedLineId] = useState<string | null>(null);
+  const pendingKitchenLines = activeOrder ? diffKitchenTickets(activeOrder.ticket, ticket) : [];
 
   useEffect(() => {
     if (!lastTouchedLineId || !linesRef.current) return;
@@ -133,7 +138,47 @@ export function TicketPanel({
       <div className="ticket-lines" ref={linesRef} onPointerDown={(event) => {
         if (event.target === event.currentTarget) setRevealedLineId(null);
       }}>
-        {ticket.lines.length === 0 ? (
+        {activeOrder ? (
+          <div className="kitchen-ticket-workspace">
+            <section className="kitchen-sent-history" aria-label="الأصناف المرسلة للمطبخ">
+              <header><strong>أُرسل للمطبخ</strong><small>سجل ثابت · الإصدار {activeOrder.kitchenRevision}</small></header>
+              {activeOrder.kitchenBatches.map((batch) => (
+                <div className="kitchen-dispatch-batch" key={batch.id} data-kitchen-revision={batch.revision}>
+                  <small>إرسال {batch.revision}</small>
+                  {batch.lines.map((line) => (
+                    <div className={`kitchen-delta-row kitchen-delta-row--sent kitchen-delta-row--${line.kind}`} key={line.id}>
+                      <span dir="ltr"><b>{line.quantity}</b> ×</span>
+                      <strong>{line.name}</strong>
+                      <small>{line.kind === "add" ? "مرسل" : line.kind === "reduce" ? "تصحيح −" : "إلغاء"}</small>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </section>
+            <section className="kitchen-pending-changes" aria-label="التغييرات غير المرسلة">
+              <header><strong>التغييرات الحالية</strong><small>{pendingKitchenLines.length > 0 ? "بانتظار الإرسال" : "لا توجد تغييرات"}</small></header>
+              {pendingKitchenLines.map((line) => (
+                <div className={`kitchen-delta-row kitchen-delta-row--pending kitchen-delta-row--${line.kind}`} key={`pending:${line.id}`}>
+                  <span dir="ltr"><b>{line.quantity}</b> ×</span>
+                  <strong>{line.name}</strong>
+                  <small>{line.kind === "add" ? "إضافة" : line.kind === "reduce" ? "إنقاص" : "إلغاء"}</small>
+                </div>
+              ))}
+              {pendingKitchenLines.length === 0 ? <p className="kitchen-no-pending">كل التغييرات مرسلة.</p> : null}
+            </section>
+            {editable ? (
+              <section className="kitchen-correction-actions" aria-label="تصحيح الطلب المرسل">
+                {ticket.lines.map((line) => (
+                  <div key={`correction:${line.id}`}>
+                    <span>{line.name} · {line.quantity}</span>
+                    <button type="button" onClick={() => onEditLine?.(line)}>تعديل الكمية</button>
+                    <button type="button" className="danger-action" onClick={() => onRemoveLine?.(line.id)}>إلغاء الصنف</button>
+                  </div>
+                ))}
+              </section>
+            ) : null}
+          </div>
+        ) : ticket.lines.length === 0 ? (
           <div className="empty-ticket">
             <span><Icon name="receipt" size={30} /></span>
             <strong>التذكرة فارغة</strong>
