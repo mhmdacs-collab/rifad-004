@@ -15,8 +15,8 @@ const commandId = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
 const localMessage = (error: unknown) => error instanceof PosContractError ? error.message : "تعذر تنفيذ العملية المحلية. حاول مرة أخرى.";
 
 const INITIAL_CONFIG: RestaurantServiceConfig = {
-  restaurantServiceEnabled: true,
-  placeManagementEnabled: true,
+  restaurantServiceEnabled: false,
+  placeManagementEnabled: false,
 };
 
 const sameTicketContent = (working: Ticket | null, sent: Ticket) => {
