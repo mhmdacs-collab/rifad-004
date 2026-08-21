@@ -2,6 +2,14 @@
 
 These rules are binding for implementation work in this repository.
 
+## 0. Mandatory session entrypoint
+
+- Before any substantive architecture, implementation, donor/core selection, MAP work or repository change, a fresh AI/Codex session or human technical lead must read `AI_PROJECT_ENTRYPOINT.md` completely.
+- Recover project state from repository authority before asking the product owner to repeat prior history or decisions.
+- After reading the entrypoint, verify live branch/PR/head state before making writes; the entrypoint is continuity authority, not a substitute for checking mutable Git state.
+- When a major strategic task, Primary Core decision, repository role, authority rule or continuation point changes, update `AI_PROJECT_ENTRYPOINT.md` in the same repository change.
+- If this file and the entrypoint conflict, surface the conflict instead of silently choosing the locally convenient rule.
+
 ## 1. Product ownership and implementation sourcing
 
 - Rifad is the product. Rifad owns the customer experience, business decisions, release quality and Saudi-specific requirements.
@@ -153,6 +161,7 @@ A UI slice additionally requires manifest-linked visual, interaction, responsive
 ## 10. Execution continuity
 
 - Every meaningful implementation slice or core-selection decision must leave a repository record of what changed, why it was done, what evidence exists, what remains and the next dependency-safe step.
+- `AI_PROJECT_ENTRYPOINT.md` is the mandatory continuity entrypoint for every fresh session and must stay aligned with major strategic state.
 - `docs/implementation/CURRENT_EXECUTION_STATUS.md` is the rolling execution checkpoint while a map item is in progress; capability-specific plans/evidence may link from it.
 - Core-selection simulation/scorecards and graft decisions must remain in the repository, not only in chat history.
 - When a map item reaches PASS, reconcile the canonical/current-state documents that describe product reality, including the UI manifest/field register/progress/architecture decisions/final map/handoff where applicable.
