@@ -16,6 +16,7 @@ Pull request: PR #2 — keep **Draft** and **unmerged** until explicit owner app
 
 Branch `agent/frontoffice-regression-finalization` is a bounded correction lane based on
 `agent/rifad-frontoffice-final-ui` at `4a30118f11b1072db71569cb73fd9aeae37e8309`.
+Review is tracked in Draft PR #4 and remains unmerged pending owner approval.
 It closes regressions in the already executable retail/customer, restaurant staging,
 credit/debt and printing UI without changing the master dependency position below.
 

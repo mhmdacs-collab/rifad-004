@@ -6,6 +6,8 @@ Base branch: `agent/rifad-frontoffice-final-ui`
 
 Pinned base SHA: `4a30118f11b1072db71569cb73fd9aeae37e8309`
 
+Draft pull request: `#4` targeting `agent/rifad-frontoffice-final-ui`; unmerged.
+
 ## Scope completed
 
 The branch closes the Front Office regression scope in six separately committed waves:

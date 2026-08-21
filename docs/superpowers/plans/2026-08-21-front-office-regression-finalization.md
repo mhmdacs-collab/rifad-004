@@ -97,6 +97,6 @@ Wave verification: typecheck PASS; targeted receipt/customer/restaurant suites P
 - [x] Run fresh typecheck, targeted tests, full tests, and build; compare with the 16-failure baseline.
 - [x] Run the app and observe/capture cart, customer, tables, payment, credit, debt, receipt, print, and settings at 1366×768, 1440×900, 1920×1080, and 1024×768.
 - [x] Record exact PASS/FAIL/UNVERIFIED evidence and remaining issues.
-- [ ] Inspect status/diff, push the branch, and create or reuse a Draft PR targeting `agent/rifad-frontoffice-final-ui`.
+- [x] Inspect status/diff, push the branch, and create or reuse a Draft PR targeting `agent/rifad-frontoffice-final-ui`.
 
 Final verification: typecheck PASS; targeted Front Office suites PASS (7 files, 29 tests); full POS suite PASS (27 files, 83 tests) versus the pinned-base baseline of 16 failed / 52 passed; production build PASS (148 modules). Runtime visual inspection PASS at all four required viewports with no console warnings/errors or page-level horizontal overflow. Physical printer output and production persistence remain UNVERIFIED and are not claimed by this lane.
