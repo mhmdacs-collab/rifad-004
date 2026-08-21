@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { createMockPosRuntime } from "./adapters/mockPos";
+import { createMockPosRuntime, MOCK_POS_STORAGE_KEY } from "./adapters/mockPos";
 import { money } from "./domain/money";
-import type { CustomerDetails } from "./domain/models";
+import type { CustomerDetails, Ticket } from "./domain/models";
 import { createLegacySnapshotBridge } from "./runtime/legacySnapshotBridge";
 import { createLocalPersistenceAdapter } from "./runtime/localPersistenceAdapter";
 import {
@@ -41,6 +41,33 @@ const linkAndUnlock = async () => {
 };
 
 describe("local-first cold restart persistence", () => {
+  it("repairs a legacy non-empty POS ticket whose persisted total is zero", () => {
+    const legacyTicket: Ticket = {
+      id: "legacy-zero-ticket",
+      sequence: 7,
+      lines: [{
+        id: "legacy-zero-line",
+        productId: "p-001",
+        name: "قهوة سعودية",
+        unitPrice: money(1_800),
+        quantity: 1,
+        tone: "rose",
+      }],
+      customer: null,
+      subtotal: money(0),
+      loyaltyRedemption: money(0),
+      taxIncluded: money(0),
+      total: money(0),
+      updatedAt: "2026-08-21T00:00:00.000Z",
+    };
+    window.localStorage.setItem(MOCK_POS_STORAGE_KEY, JSON.stringify({ ticket: legacyTicket }));
+
+    const restored = createMockPosRuntime().restore();
+    expect(restored.ticket?.subtotal.halalas).toBe(1_800);
+    expect(restored.ticket?.taxIncluded.halalas).toBe(235);
+    expect(restored.ticket?.total.halalas).toBe(1_800);
+  });
+
   it("imports an existing legacy POS snapshot into the Rifad namespace before retiring the old key", async () => {
     const legacy = createMockPosRuntime();
     await legacy.deviceSession.linkWithCredentials({

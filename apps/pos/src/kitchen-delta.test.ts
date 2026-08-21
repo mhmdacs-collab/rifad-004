@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createMockRestaurantService } from "./adapters/mockRestaurantService";
+import { createMockRestaurantService, RESTAURANT_SERVICE_STORAGE_KEY } from "./adapters/mockRestaurantService";
 import type { Ticket, TicketLine } from "./domain/models";
 import { aggregateSentQuantities, diffKitchenTickets, ticketToKitchenAdditions } from "./domain/kitchenDelta";
 
@@ -268,5 +268,33 @@ describe("kitchen delta", () => {
     const reread = await service.getOpenOrder({ openOrderId: created.id });
     expect(reread.ticket.lines[0]?.quantity).toBe(1);
     expect(reread.kitchenBatches[0]?.lines[0]?.quantity).toBe(1);
+  });
+
+  it("repairs a legacy non-empty table snapshot whose persisted total is zero", async () => {
+    const legacyTicket = {
+      ...ticket(line("coffee", "قهوة", 1, 1_800)),
+      subtotal: { halalas: 0, currency: "SAR" as const },
+      taxIncluded: { halalas: 0, currency: "SAR" as const },
+      total: { halalas: 0, currency: "SAR" as const },
+    };
+    window.localStorage.setItem(RESTAURANT_SERVICE_STORAGE_KEY, JSON.stringify({
+      config: { restaurantServiceEnabled: true, placeManagementEnabled: true },
+      openOrders: [{
+        id: "legacy-zero-order",
+        commandId: "legacy-zero-create",
+        ticket: legacyTicket,
+        placeGroupId: "group-tables",
+        placeGroupName: "الطاولات",
+        servicePlaceId: "table-01",
+        servicePlaceName: "طاولة 1",
+        openedAt: "2026-08-21T00:00:00.000Z",
+        updatedAt: "2026-08-21T00:00:00.000Z",
+      }],
+    }));
+
+    const [restored] = await createMockRestaurantService().listOpenOrders();
+    expect(restored?.ticket.subtotal.halalas).toBe(1_800);
+    expect(restored?.ticket.taxIncluded.halalas).toBe(235);
+    expect(restored?.ticket.total.halalas).toBe(1_800);
   });
 });
