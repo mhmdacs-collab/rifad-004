@@ -1,149 +1,187 @@
 # Rifad Capability Gates Design
 
-Status: **OWNER-APPROVED DESIGN**
+Status: **OWNER-APPROVED DESIGN — RECONCILED WITH PRIMARY CORE STRATEGY**
 
 Date: 2026-08-21
 
 ## Purpose
 
-Rifad already has a strong architectural direction, but executable mocks, staging adapters and draft contracts can be mistaken for production-ready engines if there is no mandatory promotion process between UI discovery and durable implementation.
+Rifad needs a promotion process that prevents two opposite mistakes:
 
-This design adds that missing process without discarding existing work or changing the dependency order in `docs/RIFAD_FINAL_IMPLEMENTATION_MAP.md`.
+1. treating mocks/staging code as production merely because it exists;
+2. rebuilding mature engines from zero merely because an earlier architecture assumed every capability must be Rifad-authored and separately adapted.
 
-The map answers **what Rifad builds and in what dependency order**. The capability gates answer **how a capability is allowed to mature from discovery to production**.
+The owner has clarified the implementation philosophy:
 
-## Approved maturity dimensions
+> Rifad owns the product and customer experience. The underlying core may be a mature open-source engine if evidence shows it is the strongest practical foundation. Once a primary core is selected, weak/missing capabilities may be grafted, ported or reimplemented from other proven sources.
 
-Every substantial capability is evaluated independently on these dimensions:
+This design therefore combines capability maturity gates with whole-core sourcing and capability grafting.
+
+## Owner / AI responsibility split
+
+- The product owner defines customer needs, workflows, visible behavior and product priorities.
+- The AI/technical lead is responsible for finding and comparing the strongest implementation foundations and capability sources, simulating future fit before implementation, and avoiding unnecessary green-field rebuilding.
+- UI quality and customer behavior are not evidence that the underlying engine is production-ready.
+- Engine authorship is not a product goal. Stability, correctness, capability, maintainability and control are.
+
+## Maturity dimensions
+
+Every substantial capability is evaluated independently on:
 
 1. Product / UX
-2. Rifad Contract
-3. Frontier / Donor Evidence
+2. Boundary / Contract
+3. Frontier / Source Evidence
 4. Implementation
 5. Durability / Offline
 6. Conformance / Failure Evidence
 7. Production Evidence
 
-Allowed maturity labels are:
+Allowed labels:
 
 - `NONE`
 - `DISCOVERY`
 - `PROVEN-STAGING`
 - `PRODUCTION-PROVEN`
 
-A capability must not receive one misleading overall percentage. Different dimensions may be at different maturity levels.
+No single percentage is allowed to hide weak dimensions.
 
 ## Capability gates
 
 ### G0 — Authority and scope
 
-Define the bounded capability, owner of truth, dependency-map position, allowed scope and explicit non-goals before implementation.
+Define the bounded product outcome, dependency-map position, allowed scope, non-goals and risk lane. State whether the decision may affect the Primary Core.
 
 ### G1 — Product discovery
 
-Use the approved product baseline, mature product behavior and Rifad requirements to determine user flows, states, actions, errors, permissions, offline expectations and acceptance scenarios.
+Use mature product behavior, Saudi requirements and Rifad product decisions to determine flows, states, actions, errors, permissions, offline expectations and acceptance scenarios.
 
-UI and mock adapters are allowed here when they are useful for discovering behavior.
+UI/mocks are allowed for discovery.
 
-### G2 — Rifad contract draft
+### G2 — Boundary draft
 
-Draft Rifad-owned commands, queries, DTOs, stable identities, errors, state transitions, data ownership and idempotency/offline semantics as applicable.
+Draft the minimum deliberate execution seam and durable meanings. The seam may later be a Rifad contract, thin facade, native core extension seam or another controlled boundary.
 
-This contract is a candidate, not yet sacred or frozen.
+Do not freeze accidental mock shapes.
 
 ### G3 — Mock Ceiling
 
-Before extending a mock, ask whether the work is still product/UX discovery or has crossed into a real engine.
+Stop extending the mock as a production path when work crosses into substantial state machines, financial ledgers, durable lifecycles, concurrency/conflicts, production offline/retry, hardware/protocols, migrations, security or fiscal authority.
 
-A mock may continue for UI behavior and bounded interaction proof. It must stop being extended as the production path when the next work requires a substantial state machine, financial ledger, durable lifecycle, concurrency/conflict logic, offline/retry mechanics, hardware/protocol integration, persistent migrations, security-critical behavior or fiscal/regulatory logic.
+Crossing G3 requires sourcing/simulation before real engine implementation.
 
-Crossing this ceiling requires G4 before implementation continues.
+### G4 — Frontier, Core and Source Simulation Gate
 
-### G4 — Frontier / Donor Gate
+G4 has two valid levels.
 
-Research the strongest mature implementations per bounded slice, not only whole applications. For substantial capabilities compare at least two credible implementations, and more when the ecosystem is rich.
+#### Whole-core evaluation
 
-Inspect actual source, tests, failure cases, issues, maintenance, persistence/restart behavior, invariants, dependency/license fit and relevant security/hardware/regulatory evidence.
+When Rifad has not explicitly selected a Primary Core, or when a foundation decision materially affects future architecture, compare serious mature engines as whole systems.
 
-The current Rifad implementation is also a candidate and receives no automatic preference merely because work has already been invested in it.
+Inspect and simulate as applicable:
 
-### G5 — Adoption decision
+- money/rounding;
+- transaction integrity;
+- sales/orders;
+- inventory;
+- shifts/cash;
+- payments/refunds;
+- taxes;
+- restaurant/tables;
+- local persistence/restart/crash;
+- concurrency/multi-device;
+- LAN;
+- API/extensibility;
+- database/migrations;
+- offline;
+- sync attachment;
+- printing/hardware;
+- security/permissions;
+- branch/tenant behavior;
+- accounting;
+- ZATCA attachment feasibility;
+- performance;
+- maintenance;
+- licensing.
 
-For each useful slice choose exactly one disposition:
+For every serious candidate simulate what Rifad would retain, modify, graft and own before adoption.
+
+#### Capability source evaluation
+
+After a Primary Core is selected, or for a clearly bounded gap, compare mature implementations for that capability. Include the selected core's native solution, current Rifad code and external sources where relevant.
+
+Examples: LAN, Tables, KDS, Printing, Sync, Payment provider state, local persistence, fiscal behavior.
+
+### G5 — Selection
+
+Whole-core decisions:
+
+- `ADOPT-PRIMARY-CORE`
+- `KEEP-CURRENT-CORE`
+- `CONTINUE-RESEARCH`
+- `REJECT`
+
+Capability decisions:
 
 - `DIRECT-REUSE`
 - `PORT-REIMPLEMENT`
 - `BEHAVIORAL-REFERENCE`
+- `KEEP-CORE`
 - `KEEP-RIFAD`
+- `EXTERNAL-SERVICE`
 - `REJECT`
 
-Do not adopt an entire donor application merely because one slice is useful. Different slices may come from different evidence sources and are composed only inside Rifad-owned boundaries.
+Past effort is not a selection criterion.
 
-### G6 — Contract freeze candidate and implementation
+### G6 — Integration and boundary refinement
 
-Refine the draft Rifad contract using product evidence and donor characterization. Only then promote it to a freeze candidate and implement or adapt the selected slice behind Rifad-owned core/adapter boundaries.
+Integration style is evidence-driven. Valid approaches include direct core modification, native plugin/extension, thin facade, adapter, internal module or sidecar/service.
 
-UI and unrelated domains continue depending only on Rifad contracts. Donor schemas, IDs, SDK types, errors and lifecycle details do not cross the boundary.
+Adapters are a tool, not a doctrine. Do not add them without concrete isolation/translation/replacement value.
 
-### G7 — Conformance gate
+### G7 — Conformance and failure evidence
 
-Promote important behavioral invariants into Rifad-owned contract/conformance tests that can run against the mock, selected implementation and future replacement implementations.
-
-Tests must express product behavior and failure invariants rather than merely protecting one implementation's internals.
+Promote important Rifad behavior and failure cases into tests/evidence. For replaceable/grafted capabilities, keep conformance implementation-independent where practical.
 
 ### G8 — Production evidence
 
-A capability reaches `PRODUCTION-PROVEN` only when evidence appropriate to its risk exists.
+Production status requires evidence appropriate to the risk: restart/crash, migrations, hardware, capacity, security, ambiguous-result recovery, duplicate prevention, conflict policy, fiscal official vectors, etc.
 
-Examples:
+## Primary Core + grafting principle
 
-- low-risk helpers: unit/conformance and license evidence;
-- local persistence: restart, crash/interruption, corruption, migration, capacity/performance and host proof;
-- printing/hardware: supported media/device matrix, Arabic/QR/logo fixtures, disconnect/reconnect and physical-device evidence;
-- payments: decline, timeout, unknown result, retry, duplicate prevention, reconciliation/refund and security evidence;
-- synchronization: durable replay, duplicate prevention, conflict policy, isolation, migration, recovery and operational/security evidence;
-- ZATCA/fiscal: official specifications/vectors, certificate/state lifecycle, retry/acknowledgement/rejection and audit evidence.
+The preferred architecture may be:
 
-## Contract refinement rule
+`Rifad UX/Product → selected Primary Core → retained native capabilities + grafted stronger capabilities + Saudi/ZATCA work`
 
-Rifad contracts are owned by Rifad, but draft contracts are not protected from learning.
+A weak capability does not automatically invalidate a strong Primary Core. Search for a graft first.
 
-Correct sequence:
-
-`Rifad product behavior → Contract Draft → Frontier/Donor knowledge → Refined Rifad Contract → Freeze Candidate → Implementations`
-
-Incorrect sequence:
-
-`Early mock interface → force every future implementation to preserve accidental early assumptions`
-
-Donor knowledge may reveal missing concepts, but donor schemas never become Rifad public contracts automatically.
+Likewise, a broad mature core is not automatically accepted. It must pass simulation and evidence.
 
 ## Relationship to existing work
 
-This design does not invalidate current mocks, tests or staging implementations. Existing work is classified by maturity and used as evidence:
+Current Rifad mocks, UI and tests remain valuable evidence. They may survive even if a different Primary Core is selected.
 
-- strong product behavior and regression tests are retained;
-- staging contracts remain useful draft seams;
-- strong Rifad implementations may win G5 as `KEEP-RIFAD`;
-- weak implementations may be replaced without rewriting product surfaces if the Rifad boundary remains correct.
+- UX behavior can be retained.
+- Regression/conformance cases can be retained.
+- Current Rifad engine code may win as `KEEP-CURRENT-CORE` or `KEEP-RIFAD` if evidence supports it.
+- Weak engine code may be replaced without treating previous effort as authority.
 
-There is no sunk-cost promotion rule.
+## Application to MAP items
 
-## Application to map items
+MAP order remains intact, but implementation does not begin automatically just because an item is next.
 
-A map item may be decomposed internally into gate-driven slices. For example MAP-02 may proceed as:
+For example, before authoritative Shift/Cash implementation, Rifad may first evaluate whether a mature Primary Core already solves shifts/cash/inventory/payments/tables strongly enough to save months and reduce risk.
 
-- MAP-02A product/behavior characterization;
-- MAP-02B Rifad contract drafts;
-- MAP-02C frontier/donor research;
-- MAP-02D adoption decisions;
-- MAP-02E implementation;
-- MAP-02F conformance + offline workday proof.
+Once a Primary Core is selected, later MAP items use capability grafting for its gaps instead of re-running whole-core selection for every feature.
 
-This decomposition does not change MAP-02's dependency position in the final implementation map.
+## Scope
 
-## Scope of this design
+This design establishes:
 
-This design establishes capability maturity gates and the Mock Ceiling only.
+- G0–G8;
+- Mock Ceiling;
+- whole-core sourcing;
+- architecture simulation before adoption;
+- capability grafting;
+- adapters as optional tools rather than mandatory ceremony.
 
-It does **not** yet define the separate session-start/Codex operating protocol, AI project entrypoint, capability maturity matrix file format, or any production implementation for MAP-02 or later capabilities.
+It does not yet select the winning Primary Core, define the Codex session-start protocol, or authorize MAP-02 implementation.
