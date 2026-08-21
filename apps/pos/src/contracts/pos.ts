@@ -52,6 +52,8 @@ export interface CatalogContract {
 
 export interface SalesContract {
   startTicket(input: { commandId: string }): Promise<Ticket>;
+  /** Restore a durable ticket snapshot (for example when reopening a table). */
+  restoreTicket(input: { commandId: string; ticket: Ticket }): Promise<Ticket>;
   addItem(input: { commandId: string; ticketId: string; productId: string }): Promise<Ticket>;
   setLineQuantity(input: { ticketId: string; lineId: string; quantity: number }): Promise<Ticket>;
   removeLine(input: { ticketId: string; lineId: string }): Promise<Ticket>;

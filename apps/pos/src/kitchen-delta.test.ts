@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createMockRestaurantService } from "./adapters/mockRestaurantService";
 import type { Ticket, TicketLine } from "./domain/models";
-import { diffKitchenTickets, ticketToKitchenAdditions } from "./domain/kitchenDelta";
+import { aggregateSentQuantities, diffKitchenTickets, ticketToKitchenAdditions } from "./domain/kitchenDelta";
 
 const line = (productId: string, name: string, quantity: number, halalas: number): TicketLine => ({
   id: `line-${productId}`,
@@ -114,5 +114,81 @@ describe("kitchen delta", () => {
     });
     expect(repeated.kitchenRevision).toBe(2);
     expect(repeated.kitchenBatches).toHaveLength(2);
+    expect(created.kitchenBatches[0]?.lines[0]?.quantity).toBe(1);
+  });
+
+  it("models same-product additions as a new pending-owned line and never lowers sent truth", async () => {
+    const service = createMockRestaurantService();
+    const initial = ticket(line("coffee", "قهوة", 2, 1_800));
+    const created = await service.createOpenOrder({
+      commandId: "create-ownership-1",
+      ticket: initial,
+      servicePlaceId: "table-01",
+    });
+
+    expect(created.ticket.lines).toEqual([
+      expect.objectContaining({ productId: "coffee", quantity: 2, kitchenState: "sent" }),
+    ]);
+
+    const pendingOne = line("coffee", "قهوة", 1, 1_800);
+    const workingOne = ticket(
+      { ...created.ticket.lines[0]!, kitchenState: "sent" },
+      { ...pendingOne, id: "pending-coffee", kitchenState: "pending" },
+    );
+    const firstUpdate = await service.updateOpenOrder({
+      commandId: "update-ownership-1",
+      openOrderId: created.id,
+      ticket: workingOne,
+    });
+    expect(firstUpdate.kitchenBatches.map((batch) => batch.lines.map((item) => item.quantity))).toEqual([[2], [1]]);
+    expect(firstUpdate.kitchenBatches[0]?.lines[0]?.quantity).toBe(2);
+    expect(firstUpdate.ticket.lines.filter((item) => item.productId === "coffee").every((item) => item.kitchenState === "sent")).toBe(true);
+
+    const pendingTwo = { ...pendingOne, id: "pending-coffee", quantity: 2, kitchenState: "pending" as const };
+    const workingTwo = ticket(
+      { ...created.ticket.lines[0]!, kitchenState: "sent" },
+      pendingTwo,
+    );
+    const secondUpdate = await service.updateOpenOrder({
+      commandId: "update-ownership-2",
+      openOrderId: created.id,
+      ticket: workingTwo,
+    });
+    expect(secondUpdate.kitchenBatches.map((batch) => batch.lines.map((item) => item.quantity))).toEqual([[2], [1], [2]]);
+    expect(secondUpdate.kitchenBatches[0]?.lines[0]?.quantity).toBe(2);
+    expect(secondUpdate.kitchenBatches[1]?.lines[0]?.quantity).toBe(1);
+
+    await expect(service.updateOpenOrder({
+      commandId: "invalid-reduction",
+      openOrderId: created.id,
+      ticket: ticket({ ...created.ticket.lines[0]!, quantity: 1, kitchenState: "sent" }),
+    })).rejects.toMatchObject({ code: "SENT_LINE_IMMUTABLE" });
+
+    const replayedCreate = await service.createOpenOrder({
+      commandId: "create-ownership-1",
+      ticket: initial,
+      servicePlaceId: "table-01",
+    });
+    expect(replayedCreate.id).toBe(created.id);
+  });
+
+  it("folds immutable kitchen history into a sent quantity floor", () => {
+    const batches = [
+      {
+        id: "batch-1",
+        commandId: "send-1",
+        revision: 1,
+        sentAt: "2026-08-21T00:00:00.000Z",
+        lines: [{ id: "batch-1:coffee", productId: "coffee", name: "قهوة", unitPrice: { halalas: 1_800, currency: "SAR" as const }, quantity: 2, kind: "add" as const }],
+      },
+      {
+        id: "batch-2",
+        commandId: "send-2",
+        revision: 2,
+        sentAt: "2026-08-21T00:01:00.000Z",
+        lines: [{ id: "batch-2:coffee", productId: "coffee", name: "قهوة", unitPrice: { halalas: 1_800, currency: "SAR" as const }, quantity: 1, kind: "add" as const }],
+      },
+    ];
+    expect(aggregateSentQuantities(batches).get("coffee")).toBe(3);
   });
 });

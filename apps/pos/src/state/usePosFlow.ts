@@ -137,13 +137,41 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
     try {
       const updated = await runtime.sales.addItem({ commandId: commandId("add-item"), ticketId: ticket.id, productId });
       setTicket(updated);
-      setLastTouchedLineId(updated.lines.find((line) => line.productId === productId)?.id ?? null);
+      const touched = [...updated.lines].reverse().find((line) => line.productId === productId);
+      setLastTouchedLineId(touched?.id ?? null);
     } catch (error) {
       setErrorMessage(messageFrom(error));
     } finally {
       setBusy(null);
     }
   }, [runtime, ticket]);
+
+  /**
+   * Hydrate the active POS ticket from a Rifad-owned durable snapshot. This is
+   * deliberately a contract call (rather than only a React state assignment)
+   * so reopen preserves ticket identity, stored prices, discounts and line
+   * ownership across the next sales mutation.
+   */
+  const restoreTicket = useCallback(async (snapshot: Ticket): Promise<boolean> => {
+    setBusy("restore-ticket");
+    setErrorMessage(null);
+    try {
+      const restored = await runtime.sales.restoreTicket({ commandId: commandId("restore-ticket"), ticket: snapshot });
+      setTicket(restored);
+      setReceipt(null);
+      setCheckoutId(null);
+      setCashCommandId(null);
+      setCardCommandId(null);
+      setLastTouchedLineId(null);
+      setStage("sales");
+      return true;
+    } catch (error) {
+      setErrorMessage(messageFrom(error));
+      return false;
+    } finally {
+      setBusy(null);
+    }
+  }, [runtime]);
 
   const setQuantity = useCallback(async (lineId: string, quantity: number) => {
     if (!ticket) return;
@@ -687,6 +715,7 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
     clearError: () => setErrorMessage(null),
     signIn,
     unlock,
+    restoreTicket,
     addProduct,
     setQuantity,
     removeLine,

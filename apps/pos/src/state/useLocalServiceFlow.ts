@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RestaurantServiceContract } from "../contracts/restaurantService";
 import { PosContractError } from "../contracts/pos";
 import type { Ticket } from "../domain/models";
+import { kitchenStateOf, isPendingKitchenLine } from "../domain/kitchenDelta";
 import type { OpenLocalOrder, PlaceGroup, RestaurantServiceConfig } from "../domain/restaurantService";
 import type { usePosFlow } from "./usePosFlow";
 
@@ -21,17 +22,21 @@ const INITIAL_CONFIG: RestaurantServiceConfig = {
 
 const sameTicketContent = (working: Ticket | null, sent: Ticket) => {
   if (!working) return false;
-  if ((working.customer?.id ?? null) !== (sent.customer?.id ?? null)) return false;
-  if (working.lines.length !== sent.lines.length) return false;
+  if (JSON.stringify(working.customer) !== JSON.stringify(sent.customer)) return false;
+  if (JSON.stringify(working.subtotal) !== JSON.stringify(sent.subtotal)) return false;
+  if (JSON.stringify(working.loyaltyRedemption) !== JSON.stringify(sent.loyaltyRedemption)) return false;
+  if (JSON.stringify(working.taxIncluded) !== JSON.stringify(sent.taxIncluded)) return false;
+  if (JSON.stringify(working.total) !== JSON.stringify(sent.total)) return false;
 
-  return working.lines.every((line, index) => {
-    const baseline = sent.lines[index];
-    return baseline
-      && line.productId === baseline.productId
-      && line.quantity === baseline.quantity
-      && line.unitPrice.halalas === baseline.unitPrice.halalas
-      && line.unitPrice.currency === baseline.unitPrice.currency;
-  });
+  const normalize = (ticket: Ticket) => ticket.lines
+    .map((line) => ({
+      productId: line.productId,
+      quantity: line.quantity,
+      unitPrice: line.unitPrice.halalas,
+      kitchenState: kitchenStateOf(line),
+    }))
+    .sort((left, right) => `${left.kitchenState}:${left.productId}:${left.unitPrice}`.localeCompare(`${right.kitchenState}:${right.productId}:${right.unitPrice}`));
+  return JSON.stringify(normalize(working)) === JSON.stringify(normalize(sent));
 };
 
 /**
@@ -139,16 +144,7 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
       setLocalError("ابدأ من سلة فارغة قبل فتح طلب محلي محفوظ.");
       return false;
     }
-
-    for (const line of order.ticket.lines) {
-      for (let index = 0; index < line.quantity; index += 1) {
-        await flow.addProduct(line.productId);
-      }
-    }
-    if (order.ticket.customer) {
-      await flow.setTicketCustomer(order.ticket.customer.id);
-    }
-    return true;
+    return flow.restoreTicket(order.ticket);
   }, [flow]);
 
   const resumeOpenOrder = useCallback(async (openOrderId: string) => {
@@ -189,6 +185,8 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
         openOrderId: activeOpenOrder.id,
         ticket: flow.ticket,
       });
+      const restored = await flow.restoreTicket(updated.ticket);
+      if (!restored) return false;
       setOpenLocalOrders(await service.listOpenOrders());
       setActiveOpenOrder(updated);
       setCheckoutServiceContext({ mode: "dine_in", label: `محلي · ${updated.servicePlaceName}` });
@@ -201,7 +199,33 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
       actionLock.current = null;
       setLocalBusy(null);
     }
-  }, [activeOpenOrder, flow.ticket, hasUnsentOpenOrderChanges, service]);
+  }, [activeOpenOrder, flow, flow.ticket, hasUnsentOpenOrderChanges, service]);
+
+  /**
+   * Discard only the uncommitted working batch. The restaurant snapshot is the
+   * sent floor, so restoring it atomically cannot erase kitchen history or
+   * briefly expose a ticket total below what the table already owes.
+   */
+  const clearPendingOpenOrder = useCallback(async () => {
+    if (!activeOpenOrder || !flow.ticket || actionLock.current) return false;
+    const pending = flow.ticket.lines.some(isPendingKitchenLine);
+    if (!pending) return true;
+    actionLock.current = "clear-pending-order";
+    setLocalBusy("clear-pending-order");
+    setLocalError(null);
+    try {
+      const restored = await flow.restoreTicket(activeOpenOrder.ticket);
+      if (!restored) return false;
+      setLocalNotice(`تم مسح التغييرات غير المرسلة · ${activeOpenOrder.servicePlaceName}`);
+      return true;
+    } catch (error) {
+      setLocalError(localMessage(error));
+      return false;
+    } finally {
+      actionLock.current = null;
+      setLocalBusy(null);
+    }
+  }, [activeOpenOrder, flow]);
 
   /**
    * Leave an already-synchronised table ticket without paying it. Unsent edits
@@ -301,6 +325,7 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
     assignToPlace,
     resumeOpenOrder,
     sendOpenOrderUpdate,
+    clearPendingOpenOrder,
     leaveOpenOrder,
     markSettlementPending,
     abandonActiveResume,

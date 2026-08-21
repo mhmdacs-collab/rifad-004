@@ -33,6 +33,7 @@ import type {
   Ticket,
   TicketLine,
 } from "../domain/models";
+import { kitchenStateOf, isSentKitchenLine } from "../domain/kitchenDelta";
 
 export const MOCK_POS_STORAGE_KEY = "rifad.pos.mock.v1";
 const STORAGE_KEY = MOCK_POS_STORAGE_KEY;
@@ -207,6 +208,7 @@ const normalizeTicket = (ticket: Ticket | null | undefined): Ticket | null => {
   const total = money(Math.max(0, subtotal.halalas - loyaltyRedemption.halalas));
   return {
     ...ticket,
+    lines: (ticket.lines ?? []).map((line) => ({ ...line, kitchenState: kitchenStateOf(line) })),
     customer: normalizeCustomerReference(ticket.customer),
     subtotal,
     loyaltyRedemption,
@@ -696,6 +698,13 @@ class MockStore {
     return ticket;
   }
 
+  async restoreTicket(ticket: Ticket): Promise<Ticket> {
+    await pause();
+    const restored = normalizeTicket(ticket);
+    if (!restored) throw new PosContractError("INVALID_TICKET", "تعذر استعادة التذكرة.");
+    return this.saveTicket(restored);
+  }
+
   async addItem(ticketId: string, productId: string): Promise<Ticket> {
     await pause();
     const ticket = this.requireTicket(ticketId);
@@ -707,10 +716,13 @@ class MockStore {
     } catch {
       throw new PosContractError("PRODUCT_NOT_FOUND", "العنصر غير متاح.");
     }
-    const existing = ticket.lines.find((line) => line.productId === product.id);
+    // A sent line is an immutable kitchen fact. Additions after dispatch must
+    // create/merge only within the current pending batch, even for the same
+    // product.
+    const existing = ticket.lines.find((line) => line.productId === product.id && !isSentKitchenLine(line));
     const lines = existing
       ? ticket.lines.map((line) => line.id === existing.id ? { ...line, quantity: line.quantity + 1 } : line)
-      : [...ticket.lines, { id: createId("line"), productId: product.id, name: product.name, unitPrice: product.price, quantity: 1, tone: product.tone } satisfies TicketLine];
+      : [...ticket.lines, { id: createId("line"), productId: product.id, name: product.name, unitPrice: product.price, quantity: 1, tone: product.tone, kitchenState: "pending" } satisfies TicketLine];
     return this.saveTicket(this.createTicket(lines, ticket.sequence, ticket.id, ticket.customer, ticket.loyaltyRedemption));
   }
 
@@ -718,6 +730,10 @@ class MockStore {
     await pause();
     const ticket = this.requireTicket(ticketId);
     if (!Number.isSafeInteger(quantity) || quantity < 0) throw new PosContractError("INVALID_QUANTITY", "الكمية غير صالحة.");
+    const target = ticket.lines.find((line) => line.id === lineId);
+    if (target && isSentKitchenLine(target)) {
+      throw new PosContractError("SENT_LINE_IMMUTABLE", "الصنف المرسل للمطبخ ثابت ولا يمكن تعديله من السلة.");
+    }
     const lines = quantity === 0 ? ticket.lines.filter((line) => line.id !== lineId) : ticket.lines.map((line) => line.id === lineId ? { ...line, quantity } : line);
     return this.saveTicket(this.createTicket(lines, ticket.sequence, ticket.id, ticket.customer, ticket.loyaltyRedemption));
   }
@@ -804,6 +820,7 @@ export const createMockPosRuntime = (): MockPosRuntime => {
   };
   const sales: SalesContract = {
     startTicket: () => store.startTicket(),
+    restoreTicket: ({ ticket }) => store.restoreTicket(ticket),
     addItem: ({ ticketId, productId }) => store.addItem(ticketId, productId),
     setLineQuantity: ({ ticketId, lineId, quantity }) => store.setLineQuantity(ticketId, lineId, quantity),
     removeLine: ({ ticketId, lineId }) => store.removeLine(ticketId, lineId),

@@ -7,6 +7,16 @@ export type Money = Readonly<{
 
 export type ProductTone = "sand" | "mint" | "rose" | "sky" | "amber" | "stone";
 
+/**
+ * Ownership of a line while a local/restaurant ticket is being dispatched.
+ *
+ * Retail tickets only use the default `pending` state. Restaurant adapters
+ * promote a line to `sent` once it has crossed the kitchen boundary. Keeping
+ * the marker on the line lets the sales contract prevent an ordinary cashier
+ * edit from mutating an immutable kitchen dispatch.
+ */
+export type TicketLineKitchenState = "pending" | "sent";
+
 export type Product = Readonly<{
   id: string;
   name: string;
@@ -31,6 +41,8 @@ export type TicketLine = Readonly<{
   unitPrice: Money;
   quantity: number;
   tone: ProductTone;
+  /** Missing on pre-ownership snapshots; those lines are treated as pending. */
+  kitchenState?: TicketLineKitchenState;
 }>;
 
 export type CustomerDetails = Readonly<{

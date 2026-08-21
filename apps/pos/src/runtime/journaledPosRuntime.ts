@@ -142,6 +142,12 @@ export const withLocalPersistenceJournal = (
         await commit();
         return ticket;
       },
+      restoreTicket: async (input) => {
+        await ready;
+        const ticket = await base.sales.restoreTicket(input);
+        await commit();
+        return ticket;
+      },
       addItem: async (input) => {
         await ready;
         const ticket = await base.sales.addItem(input);

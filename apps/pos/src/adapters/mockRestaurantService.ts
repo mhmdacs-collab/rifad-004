@@ -7,10 +7,12 @@ import type {
   RestaurantServiceSnapshot,
   ServicePlace,
 } from "../domain/restaurantService";
-import type { Ticket } from "../domain/models";
+import type { Ticket, TicketLine } from "../domain/models";
 import { PosContractError } from "../contracts/pos";
 import {
-  diffKitchenTickets,
+  kitchenStateOf,
+  markTicketLinesSent,
+  pendingTicketToKitchenAdditions,
   ticketToKitchenAdditions,
   type KitchenDispatchBatch,
   type KitchenDeltaLine,
@@ -58,8 +60,67 @@ const emptySnapshot = (): RestaurantServiceSnapshot => ({
 });
 
 const cloneTicket = (ticket: Ticket): Ticket => JSON.parse(JSON.stringify(ticket)) as Ticket;
+const committedTicket = (ticket: Ticket): Ticket => markTicketLinesSent(cloneTicket(ticket));
 const pause = () => new Promise<void>((resolve) => window.setTimeout(resolve, WAIT_MS));
 const createId = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
+
+const quantitiesByProduct = (lines: readonly TicketLine[]) => {
+  const quantities = new Map<string, number>();
+  for (const line of lines) quantities.set(line.productId, (quantities.get(line.productId) ?? 0) + line.quantity);
+  return quantities;
+};
+
+const sameMoney = (left: Ticket["total"], right: Ticket["total"]) =>
+  left.halalas === right.halalas && left.currency === right.currency;
+
+const sameTicketBusinessContent = (left: Ticket, right: Ticket) => {
+  if (left.id !== right.id || left.sequence !== right.sequence) return false;
+  if (JSON.stringify(left.customer) !== JSON.stringify(right.customer)) return false;
+  if (!sameMoney(left.loyaltyRedemption, right.loyaltyRedemption) || !sameMoney(left.total, right.total)) return false;
+  const normalizeLines = (lines: readonly TicketLine[]) => lines
+    .map((line) => ({
+      productId: line.productId,
+      name: line.name,
+      quantity: line.quantity,
+      unitPrice: line.unitPrice,
+    }))
+    .sort((a, b) => `${a.productId}:${a.unitPrice.halalas}:${a.quantity}:${a.name}`.localeCompare(`${b.productId}:${b.unitPrice.halalas}:${b.quantity}:${b.name}`));
+  return JSON.stringify(normalizeLines(left.lines)) === JSON.stringify(normalizeLines(right.lines));
+};
+
+/**
+ * Convert a working ticket into the one pending batch represented by the
+ * current ownership markers. Legacy callers without markers are supported by
+ * deriving the positive quantity delta against the committed ticket.
+ */
+const pendingLinesForUpdate = (committed: Ticket, proposed: Ticket): readonly TicketLine[] => {
+  const hasOwnershipMarkers = proposed.lines.some((line) => line.kitchenState !== undefined);
+  const explicit = hasOwnershipMarkers
+    ? proposed.lines.filter((line) => kitchenStateOf(line) === "pending")
+    : [];
+  if (explicit.length > 0) return explicit;
+
+  const before = quantitiesByProduct(committed.lines);
+  const after = quantitiesByProduct(proposed.lines);
+  const result: TicketLine[] = [];
+  for (const [productId, quantity] of after) {
+    const delta = quantity - (before.get(productId) ?? 0);
+    if (delta <= 0) continue;
+    const representative = proposed.lines.find((line) => line.productId === productId);
+    if (!representative) continue;
+    result.push({ ...representative, id: createId("pending-line"), quantity: delta, kitchenState: "pending" });
+  }
+  return result;
+};
+
+const hasSentQuantityReduction = (committed: Ticket, proposed: Ticket) => {
+  const before = quantitiesByProduct(committed.lines);
+  const after = quantitiesByProduct(proposed.lines);
+  for (const [productId, quantity] of before) {
+    if ((after.get(productId) ?? 0) < quantity) return true;
+  }
+  return false;
+};
 
 const createKitchenBatch = (
   id: string,
@@ -106,7 +167,7 @@ const normalizeStoredOrder = (value: StoredOpenLocalOrder): OpenLocalOrder | nul
   const placeGroupId = value.placeGroupId ?? value.serviceAreaId;
   const placeGroupName = value.placeGroupName ?? value.serviceAreaName;
   if (!placeGroupId || !placeGroupName) return null;
-  const kitchenRevision = value.kitchenRevision ?? 1;
+  const storedBatches = Array.isArray(value.kitchenBatches) ? value.kitchenBatches : [];
   const legacyBatch = createKitchenBatch(
     `${value.id}:kitchen:1`,
     value.commandId,
@@ -114,10 +175,15 @@ const normalizeStoredOrder = (value: StoredOpenLocalOrder): OpenLocalOrder | nul
     value.updatedAt,
     ticketToKitchenAdditions(value.ticket),
   );
+  const kitchenBatches = storedBatches.length > 0 ? storedBatches : [legacyBatch];
+  const kitchenRevision = Math.max(1, value.kitchenRevision ?? kitchenBatches.length);
   return {
     id: value.id,
     commandId: value.commandId,
-    ticket: value.ticket,
+    // Legacy snapshots did not carry ownership markers. Their persisted
+    // ticket is already the last committed table total, so promote it to the
+    // immutable sent representation during hydration.
+    ticket: committedTicket(value.ticket),
     placeGroupId,
     placeGroupName,
     servicePlaceId: value.servicePlaceId,
@@ -125,9 +191,7 @@ const normalizeStoredOrder = (value: StoredOpenLocalOrder): OpenLocalOrder | nul
     openedAt: value.openedAt,
     updatedAt: value.updatedAt,
     kitchenRevision,
-    kitchenBatches: Array.isArray(value.kitchenBatches) && value.kitchenBatches.length > 0
-      ? value.kitchenBatches
-      : [legacyBatch],
+    kitchenBatches,
   };
 };
 
@@ -195,9 +259,9 @@ class MockRestaurantServiceStore {
 
   async createOpenOrder(commandId: string, ticket: Ticket, servicePlaceId: string) {
     await pause();
-    if (ticket.lines.length === 0) throw new PosContractError("EMPTY_TICKET", "أضف صنفًا واحدًا على الأقل قبل اختيار المحلي.");
     const prior = this.snapshot.openOrders.find((order) => order.commandId === commandId);
     if (prior) return prior;
+    if (ticket.lines.length === 0) throw new PosContractError("EMPTY_TICKET", "أضف صنفًا واحدًا على الأقل قبل اختيار المحلي.");
     const resolved = findPlace(servicePlaceId);
     if (!resolved) throw new PosContractError("SERVICE_PLACE_NOT_FOUND", "تعذر العثور على المكان المحدد.");
     if (this.snapshot.openOrders.some((order) => order.servicePlaceId === servicePlaceId)) {
@@ -206,10 +270,11 @@ class MockRestaurantServiceStore {
     const now = new Date().toISOString();
     const orderId = createId("local-order");
     const batchId = createId("kitchen-batch");
+    const sentTicket = committedTicket(ticket);
     const order: OpenLocalOrder = {
       id: orderId,
       commandId,
-      ticket: cloneTicket(ticket),
+      ticket: sentTicket,
       placeGroupId: resolved.group.id,
       placeGroupName: resolved.group.name,
       servicePlaceId: resolved.place.id,
@@ -236,22 +301,38 @@ class MockRestaurantServiceStore {
     const index = this.snapshot.openOrders.findIndex((item) => item.id === openOrderId);
     if (index < 0) throw new PosContractError("OPEN_LOCAL_ORDER_NOT_FOUND", "تعذر العثور على الطلب المحلي المفتوح.");
     const current = this.snapshot.openOrders[index]!;
+    const committed = committedTicket(current.ticket);
     const repeated = current.kitchenBatches.find((batch) => batch.commandId === commandId);
     if (repeated) return current;
-    const lines = diffKitchenTickets(current.ticket, ticket);
-    if (lines.length === 0) {
+
+    if (ticket.id !== committed.id || ticket.sequence !== committed.sequence) {
+      throw new PosContractError("OPEN_LOCAL_ORDER_TICKET_MISMATCH", "لا يمكن تغيير هوية التذكرة أثناء إبقاء الطاولة مفتوحة.");
+    }
+
+    if (hasSentQuantityReduction(committed, ticket)) {
+      throw new PosContractError("SENT_LINE_IMMUTABLE", "لا يمكن إنقاص صنف أُرسل للمطبخ من السلة الحالية.");
+    }
+
+    const pendingTicketLines = pendingLinesForUpdate(committed, ticket);
+    const pendingTicket: Ticket = { ...ticket, lines: pendingTicketLines };
+    const lines = pendingTicketToKitchenAdditions(pendingTicket);
+    const metadataChanged = !sameTicketBusinessContent(committed, ticket);
+    if (lines.length === 0 && !metadataChanged) {
       throw new PosContractError("EMPTY_KITCHEN_DELTA", "لا توجد تغييرات جديدة لإرسالها إلى المطبخ.");
     }
     const updatedAt = new Date().toISOString();
-    const revision = current.kitchenRevision + 1;
-    const batch = createKitchenBatch(createId("kitchen-batch"), commandId, revision, updatedAt, lines);
+    const revision = lines.length > 0 ? Math.max(current.kitchenRevision, current.kitchenBatches.length) + 1 : current.kitchenRevision;
+    const batch = lines.length > 0
+      ? createKitchenBatch(createId("kitchen-batch"), commandId, revision, updatedAt, lines)
+      : null;
+    const sentTicket = committedTicket({ ...ticket, updatedAt });
     const updated: OpenLocalOrder = {
       ...current,
-      commandId,
-      ticket: cloneTicket(ticket),
+      // `commandId` identifies creation and must remain stable for replay.
+      ticket: sentTicket,
       updatedAt,
       kitchenRevision: revision,
-      kitchenBatches: [...current.kitchenBatches, batch],
+      kitchenBatches: batch ? [...current.kitchenBatches, batch] : current.kitchenBatches,
     };
     const openOrders = [...this.snapshot.openOrders];
     openOrders[index] = updated;
