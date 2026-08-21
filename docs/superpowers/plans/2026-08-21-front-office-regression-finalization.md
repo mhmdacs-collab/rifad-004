@@ -81,11 +81,13 @@ Wave verification: typecheck PASS; payment/credit/debt targeted suites PASS (23/
 
 **Files:** `PrintingContract`, runtime adapters/journal, debt receipt UI, `front-office.css`, tests.
 
-- [ ] Add a dedicated debt-collection receipt print command; do not fabricate a sales receipt.
-- [ ] Show receipt number, customer name/mobile, amount, method, date/time, cashier, branch, previous debt, paid amount, and remaining debt.
-- [ ] Provide `طباعة سند القبض` and `تم`, with atomic print guard and visible status.
-- [ ] Consolidate semantic colors, states, focus-visible, pressed/disabled behavior, overflow, and responsive rules in `front-office.css` only.
-- [ ] Commit receipt/print separately from the final CSS polish when the diff would otherwise mix concerns.
+- [x] Add a dedicated debt-collection receipt print command; do not fabricate a sales receipt.
+- [x] Show receipt number, customer name/mobile, amount, method, date/time, cashier, branch, previous debt, paid amount, and remaining debt.
+- [x] Provide `طباعة سند القبض` and `تم`, with atomic print guard and visible status.
+- [x] Consolidate semantic colors, states, focus-visible, pressed/disabled behavior, overflow, and responsive rules in `front-office.css` only.
+- [x] Commit receipt/print separately from the final CSS polish when the diff would otherwise mix concerns.
+
+Wave verification: typecheck PASS; targeted receipt/customer/restaurant suites PASS (37/37); production build PASS. The application was run in the in-app browser and actually observed at 1024×768, 1366×768, 1440×900, and 1920×1080. Verified states include inline customer creation with catalog retained and no body horizontal overflow, tables, sent/pending Kitchen Delta, payment total/method contrast, Credit selected-summary behavior, Debt keypad with sticky method/confirmation actions, collection receipt fields/actions, print status, and settings. Browser console warnings/errors: none.
 
 ## Wave 6 — Full verification and handoff
 

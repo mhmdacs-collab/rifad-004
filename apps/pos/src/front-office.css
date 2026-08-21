@@ -373,6 +373,14 @@
   font-variant-numeric: tabular-nums;
 }
 
+.inline-checkout-rail .inline-checkout-total-card :is(span, strong, h1) {
+  color: var(--fo-ink) !important;
+}
+
+.inline-checkout-rail .inline-checkout-total-card .riyal-symbol {
+  filter: none !important;
+}
+
 .inline-checkout-rail .inline-payment-methods {
   gap: 10px;
   scrollbar-gutter: stable;
@@ -414,6 +422,415 @@
   color: #7a4b20 !important;
   background: #fff8ef !important;
   border-color: #ead0ad !important;
+}
+
+/* ---------- Keyboard, touch, and state semantics ---------- */
+.sale-flow-shell :is(button, input, textarea, [role="button"]):focus-visible {
+  outline: 3px solid rgb(10 113 78 / 28%) !important;
+  outline-offset: 2px;
+}
+
+.sale-flow-shell button:disabled,
+.sale-flow-shell [aria-disabled="true"] {
+  cursor: not-allowed;
+  filter: saturate(.65);
+}
+
+.sale-flow-shell button[aria-pressed="true"],
+.sale-flow-shell button.active {
+  border-color: var(--fo-brand) !important;
+}
+
+/* ---------- Inline customer ticket workspace ---------- */
+.sale-screen-touch .ticket-column,
+.sale-screen-touch .ticket-customer-workspace,
+.sale-screen-touch .ticket-customer-picker-view,
+.sale-screen-touch .ticket-customer-create-view,
+.sale-screen-touch .ticket-customer-create-form,
+.sale-screen-touch .ticket-customer-create-fields {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.sale-screen-touch .ticket-customer-workspace {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.sale-screen-touch .ticket-customer-create-view[data-customer-create-view="slide-up"] {
+  animation: fo-customer-slide-up .2s ease-out both;
+}
+
+.sale-screen-touch .ticket-customer-create-fields {
+  grid-template-columns: 1fr;
+}
+
+.sale-screen-touch .ticket-customer-create-fields input {
+  width: 100%;
+  min-width: 0;
+  font-size: 16px;
+}
+
+@keyframes fo-customer-slide-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- Kitchen delta workspace ---------- */
+.sale-screen-touch .kitchen-ticket-workspace {
+  display: grid;
+  gap: 12px;
+  padding: 4px 0 16px;
+  min-width: 0;
+}
+
+.sale-screen-touch :is(.kitchen-sent-history, .kitchen-pending-changes, .kitchen-correction-actions) {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--fo-border);
+  border-radius: var(--fo-radius-md);
+  background: var(--fo-surface);
+}
+
+.sale-screen-touch .kitchen-sent-history {
+  background: #f5f8f6;
+}
+
+.sale-screen-touch .kitchen-pending-changes {
+  border-color: #e9d7b7;
+  background: #fffaf1;
+}
+
+.sale-screen-touch :is(.kitchen-sent-history, .kitchen-pending-changes) > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.sale-screen-touch :is(.kitchen-sent-history, .kitchen-pending-changes) > header strong {
+  color: var(--fo-ink);
+  font-size: 14px;
+}
+
+.sale-screen-touch :is(.kitchen-sent-history, .kitchen-pending-changes) > header small {
+  color: var(--fo-muted);
+  font-size: 11px;
+}
+
+.sale-screen-touch .kitchen-dispatch-batch + .kitchen-dispatch-batch {
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px dashed var(--fo-border-strong);
+}
+
+.sale-screen-touch .kitchen-dispatch-batch > small {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--fo-muted);
+  font-weight: 700;
+}
+
+.sale-screen-touch .kitchen-delta-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 7px 8px;
+  border-radius: 9px;
+}
+
+.sale-screen-touch .kitchen-delta-row + .kitchen-delta-row {
+  margin-top: 4px;
+}
+
+.sale-screen-touch .kitchen-delta-row > strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sale-screen-touch .kitchen-delta-row--sent {
+  color: #405048;
+  background: #edf3f0;
+}
+
+.sale-screen-touch .kitchen-delta-row--pending {
+  color: #704b1c;
+  background: #fff0d4;
+}
+
+.sale-screen-touch :is(.kitchen-delta-row--reduce, .kitchen-delta-row--cancel) {
+  color: #8d3939;
+  background: #fff0f0;
+}
+
+.sale-screen-touch .kitchen-no-pending {
+  margin: 4px 0 0;
+  color: var(--fo-muted);
+  font-size: 12px;
+}
+
+.sale-screen-touch .kitchen-correction-actions > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sale-screen-touch .kitchen-correction-actions > div + div {
+  margin-top: 7px;
+}
+
+.sale-screen-touch .kitchen-correction-actions span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.sale-screen-touch .kitchen-correction-actions button {
+  min-height: 34px;
+  padding: 5px 8px;
+  border: 1px solid var(--fo-border-strong);
+  border-radius: 8px;
+  color: #46534d;
+  background: var(--fo-surface);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.sale-screen-touch .kitchen-correction-actions .danger-action {
+  color: var(--fo-danger);
+  border-color: #efd0d0;
+  background: var(--fo-danger-soft);
+}
+
+/* ---------- Debt settlement and collection receipt ---------- */
+.sale-flow-shell .debt-book-dialog,
+.sale-flow-shell .debt-book-dialog * {
+  box-sizing: border-box;
+}
+
+.sale-flow-shell .debt-book-dialog {
+  max-width: min(1180px, calc(100vw - 28px));
+  max-height: min(860px, calc(100dvh - 24px));
+  overflow: hidden;
+}
+
+.sale-flow-shell .debt-book-body,
+.sale-flow-shell .debt-account-view,
+.sale-flow-shell .debt-settlement-box,
+.sale-flow-shell .debt-settlement-actions {
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.sale-flow-shell .debt-account-view {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
+.sale-flow-shell .debt-ledger {
+  min-height: 0;
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+.sale-flow-shell .debt-settlement-box {
+  position: relative;
+  max-height: min(520px, 62dvh);
+  padding: 12px 14px 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.sale-flow-shell .debt-settlement-actions {
+  position: sticky;
+  z-index: 5;
+  bottom: 0;
+  margin: 10px -14px 0;
+  padding: 10px 14px 14px;
+  border-top: 1px solid var(--fo-border);
+  background: rgb(255 255 255 / 97%);
+  box-shadow: 0 -8px 18px rgb(27 48 40 / 7%);
+  backdrop-filter: blur(8px);
+}
+
+.sale-flow-shell .debt-collection-method > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.sale-flow-shell .debt-collection-method button {
+  min-width: 0;
+  min-height: 42px;
+  border-radius: 10px;
+}
+
+.sale-flow-shell .debt-collection-method button[aria-pressed="true"] {
+  color: #fff;
+  background: var(--fo-brand);
+}
+
+.sale-flow-shell .debt-settlement-submit {
+  min-height: 50px;
+  margin-top: 9px;
+}
+
+.sale-flow-shell .debt-book-dialog--success .debt-book-success {
+  min-height: 0;
+  overflow: auto;
+  background: #f5f8f6;
+}
+
+.sale-flow-shell .debt-book-success-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px 16px;
+  width: min(760px, 100%);
+  margin: 0 auto;
+  padding: 24px;
+  border: 1px solid var(--fo-border);
+  border-radius: var(--fo-radius-lg);
+  background: var(--fo-surface);
+  box-shadow: var(--fo-shadow-soft);
+}
+
+.sale-flow-shell .debt-book-success-copy {
+  align-self: center;
+  min-width: 0;
+  text-align: start;
+}
+
+.sale-flow-shell .debt-book-success-copy > strong {
+  display: block;
+  color: var(--fo-ink);
+  font-size: clamp(21px, 2.4vw, 30px);
+  line-height: 1.35;
+}
+
+.sale-flow-shell .debt-book-success-copy > small {
+  display: block;
+  margin-top: 3px;
+  color: var(--fo-muted);
+  font-size: 15px;
+}
+
+.sale-flow-shell .debt-book-success-amount,
+.sale-flow-shell .debt-book-success-receipt-meta,
+.sale-flow-shell .debt-book-success-summary,
+.sale-flow-shell .debt-book-success-note {
+  grid-column: 1 / -1;
+}
+
+.sale-flow-shell .debt-book-success-amount {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: 13px;
+  color: #fff;
+  background: var(--fo-brand);
+}
+
+.sale-flow-shell .debt-book-success-amount > span {
+  font-weight: 800;
+}
+
+.sale-flow-shell .debt-book-success-amount > strong {
+  color: #fff;
+  font-size: clamp(25px, 3vw, 36px);
+  font-variant-numeric: tabular-nums;
+}
+
+.sale-flow-shell .debt-book-success-amount :is(span, strong) {
+  color: #fff !important;
+}
+
+.sale-flow-shell .debt-book-success-amount .riyal-symbol {
+  filter: brightness(0) invert(1);
+}
+
+.sale-flow-shell .debt-book-success-receipt-meta {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.sale-flow-shell .debt-book-success-receipt-meta > span {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--fo-border);
+  border-radius: 10px;
+  background: var(--fo-surface-soft);
+}
+
+.sale-flow-shell .debt-book-success-receipt-meta :is(b, strong) {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.sale-flow-shell .debt-book-success-receipt-meta b {
+  margin-bottom: 5px;
+  color: var(--fo-muted);
+  font-size: 11px;
+}
+
+.sale-flow-shell .debt-book-success-summary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.sale-flow-shell .debt-book-success-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  width: min(760px, 100%);
+  margin: 14px auto 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.sale-flow-shell .debt-book-success-footer > button {
+  width: 100% !important;
+  min-height: 52px;
+  margin: 0 !important;
+  border-radius: 11px;
+  font: inherit;
+  font-weight: 800;
+}
+
+.sale-flow-shell .debt-collection-print {
+  color: var(--fo-brand-strong);
+  border: 1px solid #b9d2c7;
+  background: var(--fo-surface);
+}
+
+.sale-flow-shell .debt-collection-print-status {
+  grid-column: 1 / -1;
+  padding: 9px 11px;
+  border-radius: 9px;
+  color: #355146;
+  background: var(--fo-brand-soft);
+  text-align: center;
+}
+
+.sale-flow-shell .debt-collection-print-status:is(.is-failed, .is-delivery-unknown) {
+  color: #893b3b;
+  background: var(--fo-danger-soft);
 }
 
 /* ---------- Responsive cashier geometry ---------- */
@@ -493,6 +910,23 @@
   .sale-screen-touch .local-open-order-return {
     min-height: 42px;
     font-size: 12px;
+  }
+
+  .sale-flow-shell .debt-book-dialog {
+    max-width: calc(100vw - 12px);
+    max-height: calc(100dvh - 12px);
+  }
+
+  .sale-flow-shell .debt-book-success-main {
+    padding: 16px;
+  }
+
+  .sale-flow-shell .debt-book-success-receipt-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sale-flow-shell .debt-book-success-footer {
+    grid-template-columns: 1fr;
   }
 }
 
