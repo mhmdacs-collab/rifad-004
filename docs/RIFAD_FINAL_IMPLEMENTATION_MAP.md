@@ -12,6 +12,23 @@ Pull request: PR #2 — keep **Draft** and **unmerged** until explicit owner app
 
 ---
 
+## Supplemental Front Office regression lane — 2026-08-21
+
+Branch `agent/frontoffice-regression-finalization` is a bounded correction lane based on
+`agent/rifad-frontoffice-final-ui` at `4a30118f11b1072db71569cb73fd9aeae37e8309`.
+It closes regressions in the already executable retail/customer, restaurant staging,
+credit/debt and printing UI without changing the master dependency position below.
+
+- Customer creation is an inline Ticket Workspace state; it is not a separate modal.
+- Normal-ticket customer attachment and Credit customer selection intentionally use different selection states.
+- Restaurant changes refine the existing local/mock `RestaurantServiceContract`: immutable kitchen dispatch batches and add/reduce/cancel deltas, preserved table totals, deterministic send/pay gates and table release only after payment.
+- Debt collection persists the selected collection method and a dedicated collection-receipt identity; its printing path is separate from completed-sale receipts.
+- This evidence is `CURRENT-MOCK`. It does **not** promote MAP-04, MAP-05, production KDS, production payment accounting, production persistence, hardware printing or synchronization.
+
+The original MAP-01 status and dependency sequence remain authoritative.
+
+---
+
 ## 1. Purpose
 
 This document is the single execution map for the current Rifad product cycle.

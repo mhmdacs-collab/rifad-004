@@ -98,6 +98,22 @@ Manager override fields are CURRENT-MOCK: actor employee, approver employee, cap
 
 `REQUIRED-GAP` for MAP-03 includes resolved pricing-option identity/value, selected add-ons and exact added amounts, discount snapshot, tax snapshot and any other sale-line choice that changes durable sold truth.
 
+### Front Office regression meanings — `CURRENT-MOCK`
+
+| Field / concept | Canonical meaning | Class | Notes |
+| --- | --- | --- | --- |
+| inline customer workspace state | presentation mode replacing the cart content while the catalog stays visible | `UI-ONLY` | never a modal and never an auto-save authority |
+| selected normal-ticket customer | candidate shown in the retained result list before explicit attachment | `UI-ONLY` | attachment is owned by `SalesContract.setCustomer` |
+| selected Credit customer summary | collapsed payment-customer selection after an explicit choice | `UI-ONLY` | Change Customer restores search/results |
+| kitchen dispatch batch ID | immutable identity of one sent local/mock kitchen revision | `CURRENT-MOCK` | prevents a later same-product addition from rewriting sent history |
+| kitchen delta kind | `add`, `reduce` or `cancel` change relative to sent quantity | `CURRENT-MOCK` | bounded existing restaurant contract correction; not a real KDS state machine |
+| sent quantity snapshot | quantity already represented by immutable kitchen batches | `CURRENT-MOCK` | current quantity minus sent quantity derives pending delta |
+| debt collection method | merchant collection rail selected for settlement (`cash` or `network`) | `CURRENT-MOCK` | required before settlement; separate from sale Payment Type configuration |
+| debt collection receipt ID / number | stable identity and cashier-facing number for one idempotent settlement | `CURRENT-MOCK` | does not create a completed-sale receipt |
+| debt receipt customer mobile | mobile snapshot printed on the collection receipt | `CURRENT-MOCK` | collection-receipt presentation fact |
+| debt before / paid / remaining | exact Money snapshots around the accepted settlement | `CURRENT-MOCK` | overpayment and zero payment are rejected |
+| `PrintingContract.submitDebtCollection` | dedicated collection-receipt print boundary | `CURRENT-MOCK` | separate from sale `submit`/reprint paths; hardware delivery remains unverified |
+
 ## 6. Payment methods — current MAP-01 meaning
 
 A Payment Type identifies **how the merchant's right is collected/held**, not merely a button label.

@@ -6,6 +6,27 @@ Status: **MAP-01 PASS — payment/direct-impact/delivery-collection closeout inc
 
 Active branch: `agent/pos-visual-pass-01`
 
+## 0. Supplemental Front Office verification — 2026-08-21
+
+The correction branch `agent/frontoffice-regression-finalization`, based on
+`agent/rifad-frontoffice-final-ui` at `4a30118f11b1072db71569cb73fd9aeae37e8309`,
+keeps the locked shell and closes the following already-executable UI regressions:
+
+- Ticket/cart controls are React-owned, with quantity save disabled when unchanged, delete-only swipe reveal, immediate Clear Cart and guarded Pay/Send actions.
+- Add Customer replaces the Ticket Workspace content in place with four fields (required name/mobile; optional tax number/address), no auto-save, and automatic attach/return after success. The product catalog remains visible.
+- Normal-ticket customer attachment keeps the result list and an attach action in the selected card. Credit selection instead collapses results to a selected-customer summary with Change Customer.
+- Local restaurant staging shows sent history separately from pending add/reduce/cancel kitchen deltas; table totals survive send/leave/reopen and Pay remains blocked while unsent changes exist.
+- Debt settlement requires a valid amount and collection method, distinguishes cash/network, prevents overpayment and duplicate submission, and exposes a readable dedicated collection receipt and print action.
+- App-like focus, pressed, disabled, scrolling, sticky-action and contrast corrections live only in `apps/pos/src/front-office.css`.
+
+Actual runtime visual inspection passed at 1024×768, 1366×768, 1440×900 and
+1920×1080 for the implemented cart, customer, restaurant/table, payment, credit,
+debt, receipt and settings surfaces. No browser console warnings/errors or page-level
+horizontal overflow were observed. This is browser/runtime evidence only; physical
+printer and production persistence remain unverified.
+
+This section does not promote MAP-04/MAP-05 or change the master map status.
+
 ## 1. Current executable POS truth
 
 The current POS is a Rifad-owned touch-first RTL shell backed by Rifad contracts/adapters. Existing executable families include the retail sale slice, current local restaurant proof, customer/credit/loyalty behavior, receipt history/reprint, tablet sale-page layout and MAP-01 authorization/configuration behavior.

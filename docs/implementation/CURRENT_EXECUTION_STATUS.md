@@ -8,6 +8,28 @@ Current completed map item: **MAP-01 — Effective POS Configuration + Authoriza
 
 Status: **PASS — owner policy → effective local POS configuration → local authorization + configuration-driven payment/delivery collection semantics proven**
 
+## Front Office regression finalization — supplemental lane
+
+As of 2026-08-21, `agent/frontoffice-regression-finalization` contains a bounded,
+test-backed correction of behavior that was already executable on
+`agent/rifad-frontoffice-final-ui` (`4a30118f11b1072db71569cb73fd9aeae37e8309`).
+
+The lane was implemented in isolated waves: baseline/root causes; Ticket/Customer/Cart;
+Restaurant/Kitchen/Tables; Payments/Credit/Debt; Receipt/Print/app polish; and final
+verification. It does not change the map dependency position or authorize a new
+production capability.
+
+Current bounded results:
+
+- React owns Ticket Workspace, cart/customer actions and financial action locks; the removed DOM enhancers no longer rewrite these controls after render.
+- Add Customer is inline in the cart column, keeps the catalog visible, creates only on explicit submit, attaches the created customer and returns to the cart.
+- Normal-ticket attachment keeps results available and exposes an attach action in the selected card; Credit selection hides the other results and exposes a selected summary plus Change Customer.
+- Existing local/mock restaurant service now preserves immutable kitchen dispatch history and produces explicit add/reduce/cancel deltas without claiming a real KDS or broader table engine.
+- Debt collection validates method and amount, persists method/receipt identity idempotently, and prints a dedicated collection receipt without creating a sales receipt.
+- Runtime inspection was performed at 1024×768, 1366×768, 1440×900 and 1920×1080; exact evidence remains branch-level verification, not production/hardware certification.
+
+Classification remains `CURRENT-MOCK`; MAP-04 and MAP-05 remain future gates.
+
 ## Dependency position
 
 `MAP-00 PASS → MAP-01 PASS → MAP-02 next`
