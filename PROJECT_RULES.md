@@ -38,6 +38,15 @@ Examples: sales, money, tables, shifts, inventory, loyalty, printing, LAN, synch
 
 A module may not read or mutate another module's private tables. Cross-module interaction goes through contracts or versioned domain events.
 
+### Capability promotion gates
+
+- Every substantial capability follows the owner-approved G0–G8 build method in `docs/architecture/RIFAD_BUILD_METHOD.md`.
+- The Final Implementation Map defines **what/when**; the Build Method defines **how** a capability is allowed to mature. Being the next map item does not waive the gates.
+- UI/mock work may proceed for bounded product discovery, but the **Mock Ceiling** is mandatory: when the next work becomes a real state machine, financial ledger, durable lifecycle, concurrency/conflict system, production offline/retry engine, hardware/protocol integration, migration/security/fiscal authority or equivalent substantial engine, stop extending the mock as the production path and perform the Frontier/Donor Gate first.
+- Draft Rifad contracts may be refined after mature implementation characterization. Do not freeze accidental mock shapes merely because they exist.
+- Current Rifad code is evaluated as a candidate alongside external implementations. Existing effort is not automatic authority, and donor code is not automatic authority either.
+- Green tests, a working UI or a clean restart do not by themselves promote a capability to production. Production status requires the applicable conformance/failure/runtime evidence in G7/G8.
+
 ## 4. Donor policy
 
 Before adopting donor logic:
