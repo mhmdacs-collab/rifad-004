@@ -36,15 +36,15 @@
 
 **Files:** `SalesScreen.tsx`, `TicketPanel.tsx`, `TicketCustomerWorkspace.tsx`, `CustomerPickerDialog.tsx`, `ConfiguredCustomerCredit.tsx`, `App.tsx`, affected tests.
 
-- [ ] Render Pay/Credit/Debt actions and Clear Cart directly from React; remove business DOM observers/capture listeners.
-- [ ] Clear cart sequentially, without confirmation, while keeping the operation card unchanged.
-- [ ] Keep Add Customer inside the cart column with a light slide-up transition; the product catalog remains visible.
-- [ ] Limit Add Customer to name, mobile, optional tax number, and optional address; no auto-save.
-- [ ] On success create + attach + return to cart. Cancel/back returns without creating.
-- [ ] Attach flow keeps results visible and exposes `إضافة إلى التذكرة` inside the selected card.
-- [ ] Credit flow alone hides results after selection and shows selected summary + `تغيير العميل`.
-- [ ] Add double-tap guards for customer create/attach and run targeted tests.
-- [ ] Commit this wave independently.
+- [x] Render Pay/Credit/Debt actions and Clear Cart directly from React; remove business DOM observers/capture listeners.
+- [x] Clear cart sequentially, without confirmation, while keeping the operation card unchanged.
+- [x] Keep Add Customer inside the cart column with a light slide-up transition; the product catalog remains visible.
+- [x] Limit Add Customer to name, mobile, optional tax number, and optional address; no auto-save.
+- [x] On success create + attach + return to cart. Cancel/back returns without creating.
+- [x] Attach flow keeps results visible and exposes `إضافة إلى التذكرة` inside the selected card.
+- [x] Credit flow alone hides results after selection and shows selected summary + `تغيير العميل`.
+- [x] Add double-tap guards for customer create/attach and run targeted tests.
+- [x] Commit this wave independently.
 
 ## Wave 3 — Restaurant, Kitchen Delta, and table lifecycle
 

@@ -10,6 +10,10 @@ type TicketPanelProps = {
   onEditLine?: (line: TicketLine) => void;
   onRemoveLine?: (lineId: string) => void;
   onCustomerClick?: () => void;
+  onClearCart?: () => Promise<void>;
+  clearingCart?: boolean;
+  serviceLabel?: string | null;
+  onReturn?: () => Promise<boolean>;
   variant?: "sale" | "checkout";
 };
 
@@ -26,6 +30,10 @@ export function TicketPanel({
   onEditLine,
   onRemoveLine,
   onCustomerClick,
+  onClearCart,
+  clearingCart = false,
+  serviceLabel = null,
+  onReturn,
   variant = "sale",
 }: TicketPanelProps) {
   const linesRef = useRef<HTMLDivElement | null>(null);
@@ -88,8 +96,14 @@ export function TicketPanel({
         <div className="ticket-title-block">
           <h2>تذكرة</h2>
           <span dir="ltr">#{ticket.sequence}</span>
+          {serviceLabel ? <span className="local-ticket-context">{serviceLabel}</span> : null}
         </div>
         <div className="ticket-header-tools">
+          {onReturn ? (
+            <button type="button" className="local-open-order-return" onClick={() => void onReturn()} aria-label="الرجوع لشاشة البيع مع إبقاء الطاولة مفتوحة">
+              الرجوع لشاشة البيع
+            </button>
+          ) : null}
           <span className="ticket-more" aria-hidden="true">⋮</span>
           {variant === "sale" && onCustomerClick ? (
             <button
@@ -106,6 +120,15 @@ export function TicketPanel({
           ) : null}
         </div>
       </header>
+
+      {onClearCart ? (
+        <div className="ticket-clear-cart-slot">
+          <button type="button" className="ticket-clear-cart" data-action-id="SALES-ACTION-004" onClick={() => void onClearCart()} disabled={clearingCart} aria-label="مسح السلة">
+            <span className="ticket-clear-cart-icon" aria-hidden="true"><Icon name="trash" size={20} /></span>
+            <strong>{clearingCart ? "جارٍ مسح السلة…" : "مسح السلة"}</strong>
+          </button>
+        </div>
+      ) : null}
 
       <div className="ticket-lines" ref={linesRef} onPointerDown={(event) => {
         if (event.target === event.currentTarget) setRevealedLineId(null);

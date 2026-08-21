@@ -5,8 +5,6 @@ import { ConfiguredPaymentMethodRail } from "./components/ConfiguredPaymentMetho
 import { InlineCheckoutRail } from "./components/InlineCheckoutRail";
 import { LocalServiceEnhancer } from "./components/LocalServiceEnhancer";
 import { ManagerOverrideDialog } from "./components/ManagerOverrideDialog";
-import { TicketWorkspaceEnhancer } from "./components/TicketWorkspaceEnhancer";
-import { TransactionOperationEnhancer } from "./components/TransactionOperationEnhancer";
 import { installQuantityKeypad } from "./quantity-keypad";
 import { createPosRuntimeAdapter } from "./runtime/posRuntimeAdapter";
 import {
@@ -275,33 +273,12 @@ export default function App() {
               onCreateCustomer={flow.createCustomer}
               onSetTicketCustomer={flow.setTicketCustomer}
               onLoadCustomerLedger={flow.loadCustomerLedger}
-              onChargeCredit={flow.chargeTicketToCustomer}
-              onSettleDebt={flow.settleCustomerDebt}
-            />
-
-            <TicketWorkspaceEnhancer
-              active={flow.stage === "sales"}
-              ticket={saleTicket}
-              local={local}
-              creditEnabled={creditEnabled}
-              legacyFixture={legacyOrderTypeFixture}
-              busy={flow.busy}
-              onCheckout={beginAuthorizedCheckout}
-              onRestaurantLocalCheckout={beginAuthorizedRestaurantLocalCheckout}
-              onRestaurantDirectCheckout={beginAuthorizedRestaurantDirectCheckout}
-              onSearchCustomers={flow.searchCustomers}
-              onCreateCustomer={(name, mobile, details) => flow.createCustomer(name, mobile, details)}
-              onSetTicketCustomer={flow.setTicketCustomer}
-              onLoadCustomerLedger={flow.loadCustomerLedger}
               onChargeCredit={chargeCreditFromTicket}
               onSettleDebt={flow.settleCustomerDebt}
-            />
-
-            <TransactionOperationEnhancer
-              showClearCart={flow.stage === "sales" && saleTicket.lines.length > 0}
-              onClearCart={async () => {
-                await Promise.all(saleTicket.lines.map((line) => flow.removeLine(line.id)));
-              }}
+              local={local}
+              creditEnabled={creditEnabled}
+              onRestaurantLocalCheckout={beginAuthorizedRestaurantLocalCheckout}
+              onRestaurantDirectCheckout={beginAuthorizedRestaurantDirectCheckout}
             />
 
             <LocalServiceEnhancer local={local} legacyFixture={legacyOrderTypeFixture} />

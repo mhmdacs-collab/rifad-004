@@ -3,10 +3,13 @@ import { CustomerPickerDialog, type CustomerPickerPurpose } from "../components/
 import { DebtBookDialog } from "../components/DebtBookDialog";
 import { Icon } from "../components/Icon";
 import { InlineNotice } from "../components/InlineNotice";
+import { LocalServiceDialog } from "../components/LocalServiceDialog";
 import { TicketPanel } from "../components/TicketPanel";
+import { TicketCustomerWorkspace } from "../components/TicketCustomerWorkspace";
 import { formatMoney } from "../domain/money";
 import { readPrintReceiptAlways, writePrintReceiptAlways } from "../domain/posPreferences";
-import type { Customer, DebtLedgerEntry, EmployeeSession, Product, SalePage, Ticket, TicketLine } from "../domain/models";
+import type { Customer, CustomerDetails, DebtLedgerEntry, EmployeeSession, Product, SalePage, Ticket, TicketLine } from "../domain/models";
+import type { LocalServiceFlow } from "../state/useLocalServiceFlow";
 
 type SalesScreenMode = "touch" | "basic";
 type OrderType = "dine-in" | "takeaway" | "delivery";
@@ -73,11 +76,15 @@ type SalesScreenProps = {
   onCheckout: () => void;
   onOpenReceipts: () => void;
   onSearchCustomers: (query: string) => Promise<readonly Customer[]>;
-  onCreateCustomer: (name: string, mobile: string) => Promise<Customer | null>;
+  onCreateCustomer: (name: string, mobile: string, details?: CustomerDetails) => Promise<Customer | null>;
   onSetTicketCustomer: (customerId: string | null) => Promise<boolean>;
   onLoadCustomerLedger: (customerId: string) => Promise<readonly DebtLedgerEntry[]>;
   onChargeCredit: (customerId: string) => Promise<Customer | null>;
   onSettleDebt: (customerId: string, amountHalalas: number) => Promise<Customer | null>;
+  local: LocalServiceFlow;
+  creditEnabled: boolean;
+  onRestaurantLocalCheckout: () => Promise<boolean>;
+  onRestaurantDirectCheckout: () => Promise<boolean>;
 };
 
 export function SalesScreen(props: SalesScreenProps) {
@@ -89,6 +96,7 @@ export function SalesScreen(props: SalesScreenProps) {
     onRemoveLine, onSaveTicket, onCheckout, onOpenReceipts,
     onSearchCustomers, onCreateCustomer, onSetTicketCustomer, onLoadCustomerLedger,
     onChargeCredit, onSettleDebt,
+    local, creditEnabled, onRestaurantLocalCheckout, onRestaurantDirectCheckout,
   } = props;
 
   const [mobileTicketOpen, setMobileTicketOpen] = useState(false);
@@ -112,6 +120,8 @@ export function SalesScreen(props: SalesScreenProps) {
   const [renamingPage, setRenamingPage] = useState<SalePage | null>(null);
   const [renameName, setRenameName] = useState("");
   const [editingLine, setEditingLine] = useState<TicketLine | null>(null);
+  const [localDialogMode, setLocalDialogMode] = useState<"assign" | "open" | null>(null);
+  const [clearingCart, setClearingCart] = useState(false);
   const [draftQuantityInput, setDraftQuantityInput] = useState("1");
   const pagePressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressTriggered = useRef(false);
@@ -288,12 +298,69 @@ export function SalesScreen(props: SalesScreenProps) {
     </div>
   ) : null;
 
-  const renderTicketActions = () => (
-    <div className="ticket-actions">
-      {isBasicMode ? (
+  const serviceEnabled = !isBasicMode && local.config.restaurantServiceEnabled;
+  const advancedRestaurant = serviceEnabled && local.config.placeManagementEnabled;
+  const activeOpenOrder = local.activeOpenOrder;
+  const localBusy = local.localBusy !== null;
+
+  const clearCart = async () => {
+    if (clearingCart) return;
+    setClearingCart(true);
+    try {
+      for (const line of ticket.lines) await onRemoveLine(line.id);
+    } finally {
+      setClearingCart(false);
+    }
+  };
+
+  const renderTicketActions = () => {
+    if (serviceEnabled) {
+      if (activeOpenOrder) {
+        return (
+          <div className={`ticket-actions transaction-operation-card ticket-workspace-actions--restaurant ${local.hasUnsentOpenOrderChanges ? "ticket-workspace-actions--unsent" : ""}`}>
+            <button
+              type="button"
+              className="ticket-workspace-action--send"
+              onClick={() => void local.sendOpenOrderUpdate()}
+              disabled={!local.hasUnsentOpenOrderChanges || localBusy}
+              aria-label={local.hasUnsentOpenOrderChanges ? `إرسال تغييرات ${activeOpenOrder.servicePlaceName} للمطبخ` : `لا توجد تغييرات غير مرسلة في ${activeOpenOrder.servicePlaceName}`}
+            >
+              {local.localBusy === "send-order-update" ? "جارٍ الإرسال…" : "إرسال"}
+            </button>
+            <button
+              type="button"
+              onClick={() => void onRestaurantDirectCheckout()}
+              disabled={itemCount === 0 || local.hasUnsentOpenOrderChanges || localBusy}
+              aria-label={local.hasUnsentOpenOrderChanges ? "الدفع غير متاح حتى إرسال تغييرات المطبخ" : `دفع وإغلاق ${activeOpenOrder.servicePlaceName}`}
+            >دفع</button>
+          </div>
+        );
+      }
+
+      if (itemCount === 0) {
+        return advancedRestaurant && local.openLocalOrders.length > 0 ? (
+          <div className="ticket-actions transaction-operation-card ticket-workspace-actions--single">
+            <button type="button" className="ticket-workspace-action--open" onClick={() => setLocalDialogMode("open")} disabled={localBusy} aria-label={`الطلبات المفتوحة، ${local.openLocalOrders.length}`}>
+              طلبات مفتوحة · {local.openLocalOrders.length}
+            </button>
+          </div>
+        ) : <div className="ticket-actions transaction-operation-card ticket-workspace-actions--empty" />;
+      }
+
+      return (
+        <div className="ticket-actions transaction-operation-card ticket-workspace-actions--restaurant">
+          <button type="button" className="ticket-workspace-action--local" onClick={() => advancedRestaurant ? setLocalDialogMode("assign") : void onRestaurantLocalCheckout()} disabled={localBusy} aria-label={advancedRestaurant ? "محلي، اختيار مكان" : "محلي"}>محلي</button>
+          <button type="button" className="ticket-workspace-action--takeaway" onClick={() => void onRestaurantDirectCheckout()} disabled={localBusy} aria-label="سفري">سفري</button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="ticket-actions transaction-operation-card">
+      {creditEnabled && visibleOrderTypes.length === 0 ? (
         <button
           type="button"
-          className="basic-credit-action"
+          className={`basic-credit-action ${itemCount > 0 ? "ticket-workspace-action--credit" : "ticket-workspace-action--settlement"}`}
           onClick={() => {
             if (itemCount > 0) setCustomerPickerPurpose("credit");
             else setDebtBookOpen(true);
@@ -307,7 +374,8 @@ export function SalesScreen(props: SalesScreenProps) {
       )}
       <button type="button" onClick={onCheckout} disabled={itemCount === 0 || orderTypeRequired || busy === "checkout"}>دفع</button>
     </div>
-  );
+    );
+  };
 
   const renderProduct = (product: Product, slotIndex?: number) => {
     if (editMode && slotIndex !== undefined) {
@@ -336,6 +404,24 @@ export function SalesScreen(props: SalesScreenProps) {
       });
 
   const openCustomerPicker = () => setCustomerPickerPurpose("attach");
+  const customerBusy = busy === "customer-create" || busy === "customer-credit" || busy === "ticket-customer";
+  const inlineCustomerWorkspaceOpen = customerPickerPurpose === "attach" && !ticket.customer;
+
+  const renderCartWorkspace = () => inlineCustomerWorkspaceOpen ? (
+    <TicketCustomerWorkspace
+      busy={customerBusy}
+      onClose={() => setCustomerPickerPurpose(null)}
+      onSearch={onSearchCustomers}
+      onCreateCustomer={(name, mobile, details) => onCreateCustomer(name, mobile, details)}
+      onAttachCustomer={onSetTicketCustomer}
+    />
+  ) : (
+    <>
+      <TicketPanel ticket={ticket} editable lastTouchedLineId={lastTouchedLineId} onEditLine={openLineEditor} onRemoveLine={onRemoveLine} onCustomerClick={openCustomerPicker} onClearCart={ticket.lines.length > 0 ? clearCart : undefined} clearingCart={clearingCart} serviceLabel={local.activeServiceLabel} onReturn={local.activeOpenOrder ? local.leaveOpenOrder : undefined} />
+      {renderOrderTypeSelector()}
+      {renderTicketActions()}
+    </>
+  );
 
   return (
     <main className={`pos-workspace loyverse-shell sale-screen-${screenMode}`} data-screen-id={editMode ? "POS-SCREEN-026" : "POS-SCREEN-003"}>
@@ -446,17 +532,13 @@ export function SalesScreen(props: SalesScreenProps) {
       </section>
 
       <div className="ticket-column">
-        <TicketPanel ticket={ticket} editable lastTouchedLineId={lastTouchedLineId} onEditLine={openLineEditor} onRemoveLine={onRemoveLine} onCustomerClick={openCustomerPicker} />
-        {renderOrderTypeSelector()}
-        {renderTicketActions()}
+        {renderCartWorkspace()}
       </div>
 
       {mobileTicketOpen ? (
         <section className="mobile-ticket-surface" aria-label="التذكرة الحالية على الهاتف">
           <button className="mobile-ticket-close" type="button" onClick={() => setMobileTicketOpen(false)}><Icon name="arrow" size={19} /> العودة إلى المنتجات</button>
-          <TicketPanel ticket={ticket} editable lastTouchedLineId={lastTouchedLineId} onEditLine={openLineEditor} onRemoveLine={onRemoveLine} onCustomerClick={openCustomerPicker} />
-          {renderOrderTypeSelector()}
-          {renderTicketActions()}
+          {renderCartWorkspace()}
         </section>
       ) : null}
 
@@ -575,7 +657,7 @@ export function SalesScreen(props: SalesScreenProps) {
         </div>
       ) : null}
 
-      {customerPickerPurpose ? (
+      {customerPickerPurpose && !inlineCustomerWorkspaceOpen ? (
         <CustomerPickerDialog
           purpose={customerPickerPurpose}
           ticketTotal={ticket.total}
@@ -596,6 +678,26 @@ export function SalesScreen(props: SalesScreenProps) {
           onSearch={onSearchCustomers}
           onLoadLedger={onLoadCustomerLedger}
           onSettleDebt={onSettleDebt}
+        />
+      ) : null}
+
+      {localDialogMode ? (
+        <LocalServiceDialog
+          mode={localDialogMode}
+          groups={local.placeGroups}
+          openOrders={local.openLocalOrders}
+          busy={localBusy}
+          onClose={() => setLocalDialogMode(null)}
+          onAssign={async (servicePlaceId) => {
+            const assigned = await local.assignToPlace(servicePlaceId);
+            if (assigned) setLocalDialogMode(null);
+            return assigned;
+          }}
+          onOpen={async (openOrderId) => {
+            const opened = await local.resumeOpenOrder(openOrderId);
+            if (opened) setLocalDialogMode(null);
+            return opened;
+          }}
         />
       ) : null}
     </main>

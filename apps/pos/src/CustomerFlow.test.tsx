@@ -24,9 +24,10 @@ async function openSales(user: ReturnType<typeof userEvent.setup>) {
 
 async function attachAhmad(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("button", { name: "إضافة عميل إلى التذكرة" }));
-  const picker = await screen.findByRole("dialog", { name: "إضافة عميل إلى التذكرة" });
-  await user.click(await within(picker).findByRole("button", { name: /أحمد محمد/ }));
-  await user.click(within(picker).getByRole("button", { name: "إضافة إلى التذكرة" }));
+  const heading = await screen.findByRole("heading", { name: "إضافة عميل إلى التذكرة" });
+  const workspace = heading.closest<HTMLElement>("[data-ticket-workspace='customer']")!;
+  await user.click(await within(workspace).findByRole("button", { name: /أحمد محمد/ }));
+  await user.click(within(workspace).getByRole("button", { name: "إضافة إلى التذكرة" }));
   return screen.findByRole("button", { name: "العميل أحمد محمد" });
 }
 

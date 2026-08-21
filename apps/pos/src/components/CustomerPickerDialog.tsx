@@ -442,13 +442,13 @@ export function CustomerPickerDialog({
           <div><h2 id="customer-picker-title">{purpose === "credit" ? "بيع آجل" : "إضافة عميل إلى التذكرة"}</h2><span>{purpose === "credit" ? "اختر العميل الذي ستُسجل عليه قيمة التذكرة." : "ابحث بالاسم أو رقم الجوال، أو أضف عميلًا جديدًا."}</span></div>
         </header>
 
-        <div className="customer-search-form customer-search-form--live">
+        {purpose === "attach" || !selected ? <div className="customer-search-form customer-search-form--live">
           <label><span>العميل أو رقم الجوال</span><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابدأ بالاسم أو 0501234567" aria-label="بحث العميل" disabled={submitting} /></label>
           <span className="customer-live-search-status" role="status">{searching ? "جارٍ البحث…" : `${results.length} نتيجة`}</span>
-        </div>
+        </div> : null}
 
         <div className="customer-credit-body">
-          <div className="customer-results" aria-label="نتائج العملاء">
+          {purpose === "attach" || !selected ? <div className="customer-results" aria-label="نتائج العملاء">
             {results.map((customer) => (
               <button type="button" key={customer.id} className={selected?.id === customer.id ? "active" : ""} onClick={() => selectCustomer(customer)} disabled={submitting}>
                 <span><strong>{customer.name}</strong><small dir="ltr">{customer.mobile}</small></span>
@@ -456,7 +456,7 @@ export function CustomerPickerDialog({
               </button>
             ))}
             {!searching && results.length === 0 ? <div className="customer-empty-result">لا يوجد عميل مطابق.</div> : null}
-          </div>
+          </div> : null}
 
           {selected ? (
             <div className="customer-account-card customer-picker-selection">
@@ -465,7 +465,7 @@ export function CustomerPickerDialog({
                 {purpose === "attach" ? (
                   <button type="button" className="primary-button customer-attach-inline" onClick={() => void submitAttach()} disabled={busy || submitting}>{submitting ? "جارٍ الإضافة…" : "إضافة إلى التذكرة"}</button>
                 ) : (
-                  <button type="button" onClick={() => setSelected(null)}>تغيير</button>
+                  <button type="button" onClick={() => setSelected(null)}>تغيير العميل</button>
                 )}
               </div>
               {purpose === "credit" ? (

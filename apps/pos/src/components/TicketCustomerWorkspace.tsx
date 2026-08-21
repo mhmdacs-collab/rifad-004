@@ -138,11 +138,9 @@ export function TicketCustomerWorkspace({
   const headerBack = view === "create" ? returnToPicker : onClose;
 
   return (
-    <div className="dialog-backdrop customer-credit-backdrop ticket-customer-workspace-backdrop" role="presentation">
       <section
         className="customer-credit-dialog ticket-customer-workspace"
-        role="dialog"
-        aria-modal="true"
+        data-ticket-workspace="customer"
         aria-labelledby="ticket-customer-workspace-title"
       >
         <header className="customer-touch-header ticket-customer-workspace-header">
@@ -263,6 +261,5 @@ export function TicketCustomerWorkspace({
           </div>
         )}
       </section>
-    </div>
   );
 }

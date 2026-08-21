@@ -1,7 +1,7 @@
 # Front Office Regression Finalization Design
 
-Status: owner-directed implementation; runtime visual acceptance pending  
-Date: 2026-08-21  
+Status: owner-directed implementation; runtime visual acceptance pending
+Date: 2026-08-21
 Base: `agent/rifad-frontoffice-final-ui` at `4a30118f11b1072db71569cb73fd9aeae37e8309`
 
 ## Goal

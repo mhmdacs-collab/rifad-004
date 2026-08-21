@@ -81,7 +81,7 @@ export function ConfiguredCustomerCredit({ ticketTotal, busy, onSearch, onCreate
         <span lang="en" dir="ltr">Choose customer for credit sale</span>
       </div>
 
-      <label className="payment-credit-search">
+      {!selected ? <label className="payment-credit-search">
         <span>العميل أو رقم الجوال</span>
         <input
           autoFocus
@@ -92,14 +92,14 @@ export function ConfiguredCustomerCredit({ ticketTotal, busy, onSearch, onCreate
           disabled={busy || submitting}
         />
         <small>{searching ? "جارٍ البحث…" : `${results.length} نتيجة`}</small>
-      </label>
+      </label> : null}
 
-      <div className="payment-credit-results" aria-label="نتائج العملاء">
+      {!selected ? <div className="payment-credit-results" aria-label="نتائج العملاء">
         {results.map((customer) => (
           <button
             type="button"
             key={customer.id}
-            className={selected?.id === customer.id ? "active" : ""}
+            className=""
             onClick={() => selectCustomer(customer)}
             disabled={busy || submitting}
           >
@@ -114,13 +114,13 @@ export function ConfiguredCustomerCredit({ ticketTotal, busy, onSearch, onCreate
           </button>
         ))}
         {!searching && results.length === 0 ? <div className="payment-credit-empty">لا يوجد عميل مطابق.</div> : null}
-      </div>
+      </div> : null}
 
       {selected && debtAfterCredit ? (
         <div className="payment-credit-summary">
           <div className="payment-credit-customer">
             <span><strong>{selected.name}</strong><small dir="ltr">{selected.mobile}</small></span>
-            <button type="button" onClick={() => setSelected(null)} disabled={busy || submitting}>تغيير</button>
+            <button type="button" onClick={() => setSelected(null)} disabled={busy || submitting}>تغيير العميل</button>
           </div>
           <div><span>الدين الحالي</span><strong><MoneyAmount value={selected.debt} /></strong></div>
           <div><span>قيمة الفاتورة</span><strong><MoneyAmount value={ticketTotal} /></strong></div>

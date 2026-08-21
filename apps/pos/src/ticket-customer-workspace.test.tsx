@@ -33,7 +33,7 @@ const renderWorkspace = (input: {
   const onAttachCustomer = input.onAttachCustomer ?? vi.fn(async () => true);
   const onClose = input.onClose ?? vi.fn();
 
-  render(
+  const rendered = render(
     <TicketCustomerWorkspace
       busy={false}
       onClose={onClose}
@@ -43,10 +43,19 @@ const renderWorkspace = (input: {
     />,
   );
 
-  return { onSearch, onCreateCustomer, onAttachCustomer, onClose };
+  return { onSearch, onCreateCustomer, onAttachCustomer, onClose, container: rendered.container };
 };
 
 describe("ticket customer workspace", () => {
+  it("renders as inline cart-column content rather than a modal", async () => {
+    const { container } = renderWorkspace();
+
+    await screen.findByText("أحمد محمد");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(container.querySelector(".dialog-backdrop")).not.toBeInTheDocument();
+    expect(container.querySelector("[data-ticket-workspace='customer']")).toBeInTheDocument();
+  });
+
   it("keeps attach action inside only the selected customer card", async () => {
     const { onAttachCustomer, onClose } = renderWorkspace();
 
@@ -113,5 +122,21 @@ describe("ticket customer workspace", () => {
 
     expect(await screen.findByText("رقم الجوال يجب أن يكون 10 أرقام ويبدأ بـ05.")).toBeInTheDocument();
     expect(onCreateCustomer).not.toHaveBeenCalled();
+  });
+
+  it("returns from the create view without auto-saving the draft", async () => {
+    const onCreateCustomer = vi.fn(async () => null);
+    const onClose = vi.fn();
+    renderWorkspace({ onCreateCustomer, onClose });
+
+    await screen.findByText("أحمد محمد");
+    fireEvent.click(screen.getByRole("button", { name: "+ إضافة عميل جديد" }));
+    fireEvent.change(screen.getByLabelText(/اسم العميل/), { target: { value: "مسودة عميل" } });
+    fireEvent.change(screen.getByLabelText(/رقم الجوال/), { target: { value: "0501112233" } });
+    fireEvent.click(screen.getByRole("button", { name: "العودة إلى العملاء" }));
+
+    expect(await screen.findByText("أحمد محمد")).toBeInTheDocument();
+    expect(onCreateCustomer).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
   });
 });

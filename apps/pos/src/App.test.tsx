@@ -186,25 +186,21 @@ describe("unified ticket customer", () => {
     await openSales(user);
 
     await user.click(screen.getByRole("button", { name: "إضافة عميل إلى التذكرة" }));
-    const picker = await screen.findByRole("dialog", { name: "إضافة عميل إلى التذكرة" });
-    await user.click(within(picker).getByRole("button", { name: "+ إضافة عميل جديد" }));
+    const workspaceHeading = await screen.findByRole("heading", { name: "إضافة عميل إلى التذكرة" });
+    const workspace = workspaceHeading.closest<HTMLElement>("[data-ticket-workspace='customer']")!;
+    expect(screen.queryByRole("dialog", { name: "إضافة عميل إلى التذكرة" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /قهوة سعودية/ })).toBeInTheDocument();
+    await user.click(within(workspace).getByRole("button", { name: "+ إضافة عميل جديد" }));
 
-    await user.type(within(picker).getByLabelText("اسم العميل"), "ليان سعد");
-    const mobileInput = within(picker).getByLabelText(/^رقم الجوال/);
+    await user.type(within(workspace).getByLabelText(/اسم العميل/), "ليان سعد");
+    const mobileInput = within(workspace).getByLabelText(/^رقم الجوال/);
     await user.type(mobileInput, "05611122334");
     expect(mobileInput).toHaveValue("0561112233");
-    await user.type(within(picker).getByLabelText("العنوان (اختياري)"), "طريق الملك فهد");
-    await user.click(within(picker).getByRole("checkbox", { name: /معلومات إضافية/ }));
-    await user.type(within(picker).getByLabelText("البريد الإلكتروني"), "layan@example.com");
-    await user.type(within(picker).getByLabelText("الرقم الضريبي"), "310123456700003");
-    await user.type(within(picker).getByLabelText("رمز العميل"), "C-100");
-    await user.type(within(picker).getByLabelText("المدينة"), "الرياض");
-    await user.type(within(picker).getByLabelText("المنطقة"), "الرياض");
-    await user.type(within(picker).getByLabelText("الرمز البريدي"), "12345");
-    await user.type(within(picker).getByLabelText("الدولة"), "السعودية");
-    await user.type(within(picker).getByLabelText("ملاحظات"), "عميلة ولاء");
-    await user.click(within(picker).getByRole("button", { name: "إنشاء العميل" }));
-    await user.click(within(picker).getByRole("button", { name: "إضافة إلى التذكرة" }));
+    await user.type(within(workspace).getByLabelText(/العنوان/), "طريق الملك فهد");
+    await user.type(within(workspace).getByLabelText(/الرقم الضريبي/), "310123456700003");
+    expect(within(workspace).queryByText("البريد الإلكتروني")).not.toBeInTheDocument();
+    expect(within(workspace).queryByText("المدينة")).not.toBeInTheDocument();
+    await user.click(within(workspace).getByRole("button", { name: "حفظ وإضافة إلى التذكرة" }));
 
     expect(await screen.findByRole("button", { name: "العميل ليان سعد" })).toBeInTheDocument();
 
@@ -225,16 +221,16 @@ describe("unified ticket customer", () => {
       }>;
     };
     const customer = persisted.customers?.find((item) => item.mobile === "0561112233");
-    expect(customer?.details).toEqual({
-      email: "layan@example.com",
+    expect(customer?.details).toMatchObject({
+      email: "",
       address: "طريق الملك فهد",
-      city: "الرياض",
-      region: "الرياض",
-      postalCode: "12345",
-      country: "السعودية",
-      customerCode: "C-100",
+      city: "",
+      region: "",
+      postalCode: "",
+      country: "",
+      customerCode: "",
       taxNumber: "310123456700003",
-      note: "عميلة ولاء",
+      note: "",
     });
   });
 });
