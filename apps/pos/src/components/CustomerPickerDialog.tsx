@@ -480,7 +480,7 @@ export function CustomerPickerDialog({
           ) : <div className="customer-account-placeholder"><strong>اختر عميلًا</strong><span>أو أضف عميلًا جديدًا.</span></div>}
         </div>
 
-        <div className="customer-create-section">
+        {purpose !== "credit" ? <div className="customer-create-section">
           {!createOpen ? <button type="button" className="customer-create-toggle customer-touch-create" onClick={() => { setCreateOpen(true); setNewMobile(cleanMobileDraft(query)); }} disabled={submitting}>+ إضافة عميل جديد</button> : (
             <form className="customer-create-form customer-create-form--expanded customer-create-sheet" onSubmit={(event) => void submitCreate(event)}>
               <div className="customer-create-sheet-head">
@@ -496,7 +496,7 @@ export function CustomerPickerDialog({
               <div className="customer-create-actions"><button type="button" onClick={resetCreate}>إلغاء</button><button type="submit" className="primary-button">إنشاء العميل</button></div>
             </form>
           )}
-        </div>
+        </div> : null}
         {message ? <div className="customer-credit-message" role="status">{message}</div> : null}
       </section>
     </div>

@@ -62,9 +62,7 @@ export default function App() {
   useEffect(() => {
     if (flow.stage !== "success") return;
     setPaymentContextError(null);
-    const printButton = document.querySelector<HTMLButtonElement>(".inline-success-print");
-    printButton?.setAttribute("aria-label", "طباعة الإيصال");
-  }, [flow.stage, flow.printStatus]);
+  }, [flow.stage]);
 
   const inlineCheckoutStage = flow.stage === "payment" || flow.stage === "cash" || flow.stage === "card" || flow.stage === "success"
     ? flow.stage
@@ -275,6 +273,7 @@ export default function App() {
               onLoadCustomerLedger={flow.loadCustomerLedger}
               onChargeCredit={chargeCreditFromTicket}
               onSettleDebt={flow.settleCustomerDebt}
+              onPrintDebtCollection={flow.printDebtCollectionReceipt}
               local={local}
               creditEnabled={creditEnabled}
               onRestaurantLocalCheckout={beginAuthorizedRestaurantLocalCheckout}

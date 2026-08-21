@@ -294,9 +294,13 @@ describe("basic screen customer debt workflow", () => {
 
     expect(await within(debtBook).findByText("تم تسجيل السداد")).toBeInTheDocument();
     expect(within(debtBook).getByText("الدين قبل السداد")).toBeInTheDocument();
-    expect(within(debtBook).getByText("المبلغ المقبوض")).toBeInTheDocument();
-    expect(within(debtBook).getByText("المتبقي على العميل")).toBeInTheDocument();
+    expect(within(debtBook).getByText("المبلغ المسدد")).toBeInTheDocument();
+    expect(within(debtBook).getByText("الدين المتبقي")).toBeInTheDocument();
     expect(within(debtBook).getByLabelText("70.00 ريال سعودي")).toBeInTheDocument();
+    expect(within(debtBook).getByText("0501234567")).toBeInTheDocument();
+
+    await user.click(within(debtBook).getByRole("button", { name: "طباعة سند القبض" }));
+    expect(await within(debtBook).findByText("أُرسلت مهمة طباعة سند القبض إلى الطابعة.")).toBeInTheDocument();
 
     const persisted = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}") as {
       customers?: { id: string; debt: { halalas: number } }[];
@@ -340,6 +344,7 @@ describe("basic screen customer debt workflow", () => {
     expect(await within(creditDialog).findByText("أحمد محمد")).toBeInTheDocument();
     expect(within(creditDialog).getByText("الدين الحالي")).toBeInTheDocument();
     expect(within(creditDialog).getByText("الدين بعد العملية")).toBeInTheDocument();
+    expect(within(creditDialog).queryByRole("button", { name: "+ إضافة عميل جديد" })).not.toBeInTheDocument();
     await user.click(within(creditDialog).getByRole("button", { name: "تأكيد البيع الآجل" }));
 
     expect(await screen.findByRole("heading", { name: "تم تسجيل البيع الآجل بنجاح" })).toBeInTheDocument();

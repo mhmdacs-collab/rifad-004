@@ -8,6 +8,7 @@ import type { LoyaltyContract } from "./loyalty";
 import type {
   Customer,
   CustomerDetails,
+  DebtCollectionReceipt,
   DebtCollectionMethod,
   DebtLedgerEntry,
   DebtSettlementResult,
@@ -146,6 +147,10 @@ export interface ReceiptsContract {
 
 export interface PrintingContract {
   submit(input: { commandId: string; receiptId: string }): Promise<PrintDeliveryStatus>;
+  submitDebtCollection(input: {
+    commandId: string;
+    receipt: DebtCollectionReceipt;
+  }): Promise<PrintDeliveryStatus>;
 }
 
 /**

@@ -319,7 +319,7 @@ export function InlineCheckoutRail({
       />
 
       <footer className="inline-success-actions inline-operation-footer transaction-operation-card" aria-label="إجراءات العملية">
-        <button type="button" className="inline-success-print" onClick={onPrint} disabled={busy !== null}><Icon name="printer" size={19} />{printStatus === "failed" ? "إعادة الطباعة" : "طباعة"}</button>
+        <button type="button" className="inline-success-print" onClick={onPrint} disabled={busy !== null} aria-label={printStatus === "failed" ? "إعادة طباعة الإيصال" : "طباعة الإيصال"}><Icon name="printer" size={19} />{printStatus === "failed" ? "إعادة الطباعة" : "طباعة"}</button>
         <button type="button" className="inline-new-sale" onClick={onNewSale} disabled={busy !== null}><Icon name="plus" size={20} />بيع جديد</button>
       </footer>
     </aside>

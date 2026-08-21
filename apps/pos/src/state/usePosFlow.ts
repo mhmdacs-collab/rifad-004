@@ -7,6 +7,7 @@ import { readPrintReceiptAlways } from "../domain/posPreferences";
 import type {
   Customer,
   CustomerDetails,
+  DebtCollectionReceipt,
   DebtCollectionMethod,
   DebtLedgerEntry,
   DebtSettlementResult,
@@ -66,6 +67,7 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
   const [printStatus, setPrintStatus] = useState<PrintDeliveryStatus>("idle");
   const [lastTouchedLineId, setLastTouchedLineId] = useState<string | null>(null);
   const financialActionLock = useRef<string | null>(null);
+  const printActionLock = useRef(false);
   const deferredQuery = useDeferredValue(query);
 
   useEffect(() => {
@@ -609,6 +611,23 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
     }
   }, [runtime]);
 
+  const printDebtCollectionReceipt = useCallback(async (collectionReceipt: DebtCollectionReceipt): Promise<PrintDeliveryStatus> => {
+    if (printActionLock.current) return "queued";
+    printActionLock.current = true;
+    setBusy(`print-debt-collection:${collectionReceipt.id}`);
+    try {
+      return await runtime.printing.submitDebtCollection({
+        commandId: commandId("print-debt-collection"),
+        receipt: collectionReceipt,
+      });
+    } catch {
+      return "failed";
+    } finally {
+      printActionLock.current = false;
+      setBusy(null);
+    }
+  }, [runtime]);
+
   const openReceipts = useCallback(async () => {
     setBusy("receipts");
     setErrorMessage(null);
@@ -697,6 +716,7 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
     printReceipt,
     emailReceipt,
     printArchivedReceipt,
+    printDebtCollectionReceipt,
     openReceipts,
     newSale,
     returnToSales: () => setStage("sales"),

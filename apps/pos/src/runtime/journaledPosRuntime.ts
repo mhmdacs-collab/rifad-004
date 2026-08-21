@@ -401,6 +401,20 @@ export const withLocalPersistenceJournal = (
         ]);
         return status;
       },
+      submitDebtCollection: async (input) => {
+        await ready;
+        const status = await base.printing.submitDebtCollection(input);
+        await append([
+          domainEvent(
+            `debt.collection-receipt-print-attempted:${input.commandId}`,
+            "debt.collection-receipt-print-attempted.v1",
+            "debt-collection-receipt",
+            input.receipt.id,
+            { receipt: input.receipt, status },
+          ),
+        ]);
+        return status;
+      },
     },
   };
 };

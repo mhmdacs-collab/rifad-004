@@ -8,7 +8,7 @@ import { TicketPanel } from "../components/TicketPanel";
 import { TicketCustomerWorkspace } from "../components/TicketCustomerWorkspace";
 import { formatMoney } from "../domain/money";
 import { readPrintReceiptAlways, writePrintReceiptAlways } from "../domain/posPreferences";
-import type { Customer, CustomerDetails, DebtLedgerEntry, EmployeeSession, Product, SalePage, Ticket, TicketLine } from "../domain/models";
+import type { Customer, CustomerDetails, DebtCollectionMethod, DebtCollectionReceipt, DebtLedgerEntry, DebtSettlementResult, EmployeeSession, PrintDeliveryStatus, Product, SalePage, Ticket, TicketLine } from "../domain/models";
 import type { LocalServiceFlow } from "../state/useLocalServiceFlow";
 import type { RestaurantServiceConfig } from "../domain/restaurantService";
 
@@ -78,7 +78,8 @@ type SalesScreenProps = {
   onSetTicketCustomer: (customerId: string | null) => Promise<boolean>;
   onLoadCustomerLedger: (customerId: string) => Promise<readonly DebtLedgerEntry[]>;
   onChargeCredit: (customerId: string) => Promise<Customer | null>;
-  onSettleDebt: (customerId: string, amountHalalas: number) => Promise<Customer | null>;
+  onSettleDebt: (customerId: string, amountHalalas: number, collectionMethod: DebtCollectionMethod) => Promise<DebtSettlementResult | null>;
+  onPrintDebtCollection: (receipt: DebtCollectionReceipt) => Promise<PrintDeliveryStatus>;
   local: LocalServiceFlow;
   creditEnabled: boolean;
   onRestaurantLocalCheckout: () => Promise<boolean>;
@@ -93,7 +94,7 @@ export function SalesScreen(props: SalesScreenProps) {
     onPlacePageProduct, onRemovePageProduct, onAddProduct, onSetQuantity,
     onRemoveLine, onSaveTicket, onCheckout, onOpenReceipts,
     onSearchCustomers, onCreateCustomer, onSetTicketCustomer, onLoadCustomerLedger,
-    onChargeCredit, onSettleDebt,
+    onChargeCredit, onSettleDebt, onPrintDebtCollection,
     local, creditEnabled, onRestaurantLocalCheckout, onRestaurantDirectCheckout,
   } = props;
 
@@ -700,6 +701,7 @@ export function SalesScreen(props: SalesScreenProps) {
           onSearch={onSearchCustomers}
           onLoadLedger={onLoadCustomerLedger}
           onSettleDebt={onSettleDebt}
+          onPrintReceipt={onPrintDebtCollection}
         />
       ) : null}
 

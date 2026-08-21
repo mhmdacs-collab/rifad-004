@@ -832,7 +832,10 @@ export const createMockPosRuntime = (): MockPosRuntime => {
     setLoyaltyEarned: ({ receiptId, earned }) => store.setReceiptLoyaltyEarned(receiptId, earned),
     emailReceipt: ({ receiptId, email }) => store.emailReceipt(receiptId, email),
   };
-  const printing: PrintingContract = { submit: () => store.print() };
+  const printing: PrintingContract = {
+    submit: () => store.print(),
+    submitDebtCollection: () => store.print(),
+  };
 
   return {
     restore: () => store.restore(),

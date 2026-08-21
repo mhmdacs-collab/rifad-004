@@ -38,6 +38,13 @@ describe("debt collection", () => {
       collectionReceiptNumber: partial.receipt.number,
     }));
 
+    expect(await runtime.printing.submitDebtCollection({
+      commandId: "print-debt-partial",
+      receipt: partial.receipt,
+    })).toBe("queued");
+    expect(await runtime.receipts.list()).toHaveLength(0);
+    expect(runtime.restore().receipt).toBeNull();
+
     const exact = await runtime.debtCollection.settle({
       commandId: "debt-exact",
       customerId: CUSTOMER_ID,
