@@ -224,7 +224,6 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
         commandId: updateCommand,
         openOrderId: activeOpenOrder.id,
         ticket: flow.ticket,
-        allowSentCorrections: flow.sentCorrectionPending,
       });
       const restored = await flow.restoreTicket(updated.ticket);
       if (!restored) return false;

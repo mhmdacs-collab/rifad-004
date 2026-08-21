@@ -29,7 +29,15 @@ Current bounded results:
 - React owns Ticket Workspace, cart/customer actions and financial action locks; the removed DOM enhancers no longer rewrite these controls after render.
 - Add Customer is inline in the cart column, keeps the catalog visible, creates only on explicit submit, attaches the created customer and returns to the cart.
 - Normal-ticket attachment keeps results available and exposes an attach action in the selected card; Credit selection hides the other results and exposes a selected summary plus Change Customer.
-- Existing local/mock restaurant service preserves immutable kitchen dispatch history. Ordinary cart tools edit or clear only pending additions; sent lines remain read-only. An explicit owner-authorized correction path may append `reduce`/`cancel` deltas without rewriting prior batches.
+- Existing local/mock restaurant service preserves immutable kitchen dispatch history. In
+  the current cashier Front Office, ordinary cart tools edit or clear only pending
+  additions and sent history is completely read-only: there is no correction region,
+  button, gesture or interaction path exposing `allowSentCorrections` or staging a
+  `reduce`/`cancel` against a sent line. Existing `reduce`/`cancel` helpers may remain
+  only as internal domain/adapter characterization coverage; they are not an
+  executable cashier feature or an authorization decision. Future sent-item
+  correction/void UX and its authorization, reason, audit, kitchen notification and
+  financial consequences are deferred to the later Open Order lifecycle work.
 - Debt collection validates method and amount, persists method/receipt identity idempotently, and prints a dedicated collection receipt without creating a sales receipt.
 - The restaurant work extends the existing local/mock `RestaurantServiceContract` and adapters only. It does not introduce a new kitchen/table state machine; any broader capability must follow Capability Adoption.
 - Overall Runtime Visual status is **UNVERIFIED**. The full required viewport/state matrix has not been rerun and captured after the ownership corrections, so no current Visual PASS is claimed.

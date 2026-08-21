@@ -85,10 +85,11 @@ export const pendingTicketToKitchenAdditions = (ticket: Ticket): readonly Kitche
     .map(({ line, quantity }) => deltaLine(line, quantity, "add"));
 
 /**
- * Build explicit corrections against the already-sent line ownership.  A
+ * Build characterization corrections against already-sent line ownership. A
  * correction is intentionally separate from pending additions: changing a
  * sent line never rewrites its historical batch, it appends a reduce/cancel
- * delta for the quantity that the kitchen already accepted.
+ * delta for the quantity that the kitchen already accepted. This helper is not
+ * a cashier-facing correction or authorization flow.
  *
  * New snapshots preserve line IDs, so the primary path compares each sent
  * line by ID.  The product aggregate fallback keeps older persisted callers

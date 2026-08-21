@@ -76,7 +76,13 @@ Reopening:
 - Sent lines are immutable under ordinary cart editing, deletion, swipe and Clear Cart.
 - New additions belong to a separate pending batch; same-product aggregation occurs only inside that pending batch.
 - Clear Cart on an active order clears pending changes and restores the committed sent total/history.
-- A sent-line reduction/cancellation is a separate owner-authorized correction path. It appends a `reduce`/`cancel` kitchen delta and never rewrites the original sent batch.
+- The current cashier Front Office exposes no sent-line correction region, button,
+  gesture or `allowSentCorrections` interaction path. SENT history is completely
+  read-only; the existing `reduce`/`cancel` helpers are internal
+  domain/adapter-characterization coverage only and are not an executable cashier
+  feature or authorization decision. Future sent-item correction/void UX and its
+  authorization, reason, audit, kitchen notification and financial consequences are
+  deferred to the later Open Order lifecycle decision.
 
 ## Visual rules
 
@@ -151,7 +157,8 @@ Automated coverage must prove at minimum:
 - a reserved place can be reopened from the basket column;
 - sending additions increments the mock kitchen revision while keeping one open place;
 - sent lines remain read-only to ordinary cart tools and clearing removes pending additions only;
-- an explicitly authorized sent correction appends a reduce/cancel batch without rewriting history;
+- no cashier-facing sent correction region or control is present, and no current Front
+  Office path can stage a reduce/cancel against SENT;
 - paying a reopened local order releases the place;
 - retail/off mode hides restaurant language;
 - Basic mode does not expose restaurant task actions or restaurant staging settings;

@@ -13,8 +13,11 @@
 **Current owner override:** foundation commits `d6188b9`, `27c4ac5`, and `911df69`,
 plus regression-test commit `85e5746`, implement the latest ownership correction.
 Sent history is immutable to ordinary cart tools; pending additions are separately
-editable/clearable; `reduce`/`cancel` requires the explicit owner-authorized correction
-path. Wave 7 visual polish is halted at a safe checkpoint, MAP-02 has not started, and
+editable/clearable. The current cashier Front Office exposes no sent-line correction
+region, control, gesture or `allowSentCorrections` path. Existing `reduce`/`cancel`
+helpers remain only as internal domain/adapter characterization coverage; future
+sent-item correction/void UX and authorization are deferred to the later Open Order
+lifecycle. Wave 7 visual polish is halted at a safe checkpoint, MAP-02 has not started, and
 Runtime Visual remains `UNVERIFIED` overall.
 
 ## Global constraints
@@ -59,10 +62,10 @@ Runtime Visual remains `UNVERIFIED` overall.
 
 - [x] Add RED/GREEN pure-domain tests for add, same-product add, reduce, cancel, unchanged, and order.
 - [x] Add immutable `KitchenDispatchBatch` history and adapter idempotency coverage.
-- [x] Render immutable sent history, editable pending additions and explicitly authorized pending `reduce`/`cancel` corrections separately in the cart.
+- [x] Render immutable sent history and editable/clearable pending additions in the cart; do not expose any sent-line correction controls.
 - [x] Keep the same table/order/ticket active after Send; gate Send and Pay deterministically.
 - [x] Keep ordinary edit/delete/swipe/Clear Cart scoped to pending lines only.
-- [x] Make owner-authorized corrections explicit and never rewrite earlier dispatch batches.
+- [x] Keep existing `reduce`/`cancel` helpers isolated as internal characterization coverage without exposing an executable cashier correction flow.
 - [x] Preserve total and history through leave/reopen; free the place only after completed payment.
 - [x] Move table context, return, settings, and dialogs into React-owned structure; remove remaining DOM slots/observers.
 - [x] Add atomic assign/resume/send/leave guards and run restaurant suites.

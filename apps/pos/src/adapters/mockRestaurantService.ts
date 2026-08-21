@@ -156,7 +156,8 @@ const hasSentLineSnapshotMutation = (committed: Ticket, proposed: Ticket) => {
     return committed.lines.some((line) => {
       const candidate = proposedById.get(line.id);
       // A missing sent line is a cancellation candidate, not a snapshot
-      // mutation. The caller must still opt into the explicit correction path.
+      // mutation. Only isolated adapter characterization callers may opt in;
+      // the current cashier Front Office never supplies that flag.
       if (!candidate) return false;
       return kitchenStateOf(candidate) !== "sent"
           || candidate.productId !== line.productId

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Ticket, TicketLine } from "../domain/models";
 import type { OpenLocalOrder } from "../domain/restaurantService";
-import { isPendingKitchenLine, sentTicketToKitchenCorrections } from "../domain/kitchenDelta";
+import { isPendingKitchenLine } from "../domain/kitchenDelta";
 import { Icon } from "./Icon";
 import { MoneyAmount } from "./MoneyAmount";
 
@@ -9,8 +9,8 @@ type TicketPanelProps = {
   ticket: Ticket;
   editable?: boolean;
   lastTouchedLineId?: string | null;
-  onEditLine?: (line: TicketLine, allowSentCorrection?: boolean) => void;
-  onRemoveLine?: (lineId: string, allowSentCorrection?: boolean) => void | Promise<void>;
+  onEditLine?: (line: TicketLine) => void;
+  onRemoveLine?: (lineId: string) => void | Promise<void>;
   onCustomerClick?: () => void;
   onClearCart?: () => Promise<void>;
   clearingCart?: boolean;
@@ -49,8 +49,6 @@ export function TicketPanel({
   const suppressLineClickRef = useRef<string | null>(null);
   const [revealedLineId, setRevealedLineId] = useState<string | null>(null);
   const pendingKitchenLines = activeOrder ? ticket.lines.filter(isPendingKitchenLine) : [];
-  const pendingKitchenCorrections = activeOrder ? sentTicketToKitchenCorrections(activeOrder.ticket, ticket) : [];
-  const sentWorkingLines = activeOrder ? ticket.lines.filter((line) => !isPendingKitchenLine(line)) : [];
 
   useEffect(() => {
     if (!lastTouchedLineId || !linesRef.current) return;
@@ -69,7 +67,8 @@ export function TicketPanel({
   }, [revealedLineId, ticket.lines]);
 
   const beginSwipe = (event: React.PointerEvent<HTMLButtonElement>, lineId: string) => {
-    if (!editable || !onRemoveLine || event.button !== 0) return;
+    const line = ticket.lines.find((candidate) => candidate.id === lineId);
+    if (!editable || !onRemoveLine || !line || line.kitchenState === "sent" || event.button !== 0) return;
     swipeStartRef.current = { lineId, x: event.clientX, y: event.clientY };
   };
 
@@ -93,7 +92,7 @@ export function TicketPanel({
       return;
     }
     setRevealedLineId(null);
-    if (editable) onEditLine?.(line);
+    if (editable && line.kitchenState !== "sent") onEditLine?.(line);
   };
 
   const removeLine = (lineId: string) => {
@@ -163,7 +162,7 @@ export function TicketPanel({
               ))}
             </section>
             <section className="kitchen-pending-changes" aria-label="التغييرات غير المرسلة">
-              <header><strong>التغييرات الحالية</strong><small>{pendingKitchenLines.length > 0 || pendingKitchenCorrections.length > 0 || pendingMetadata ? "بانتظار الإرسال" : "لا توجد تغييرات"}</small></header>
+              <header><strong>التغييرات الحالية</strong><small>{pendingKitchenLines.length > 0 || pendingMetadata ? "بانتظار الإرسال" : "لا توجد تغييرات"}</small></header>
               {pendingKitchenLines.map((line) => (
                 <div className="kitchen-pending-line" key={`pending:${line.id}`}>
                   <button type="button" className="kitchen-delta-row kitchen-delta-row--pending kitchen-delta-row--add" onClick={() => editLine(line)} disabled={!editable} aria-label={`تعديل ${line.name}، بانتظار الإرسال`}>
@@ -174,29 +173,10 @@ export function TicketPanel({
                   {editable && onRemoveLine ? <button type="button" className="kitchen-pending-remove" onClick={() => removeLine(line.id)} aria-label={`حذف الإضافة ${line.name}`}>حذف</button> : null}
                 </div>
               ))}
-              {pendingKitchenCorrections.map((line) => (
-                <div className={`kitchen-delta-row kitchen-delta-row--pending kitchen-delta-row--${line.kind}`} key={`correction:${line.id}`}>
-                  <span dir="ltr"><b>{line.quantity}</b> ×</span>
-                  <strong>{line.name}</strong>
-                  <small>{line.kind === "cancel" ? "إلغاء" : "إنقاص"}</small>
-                </div>
-              ))}
               {pendingMetadata ? <p className="kitchen-metadata-pending">تغييرات بيانات التذكرة بانتظار الإرسال.</p> : null}
-              {pendingKitchenLines.length === 0 && pendingKitchenCorrections.length === 0 && !pendingMetadata ? <p className="kitchen-no-pending">كل التغييرات مرسلة.</p> : null}
+              {pendingKitchenLines.length === 0 && !pendingMetadata ? <p className="kitchen-no-pending">كل التغييرات مرسلة.</p> : null}
             </section>
-            {editable && sentWorkingLines.length > 0 ? (
-              <section className="kitchen-correction-actions" aria-label="تصحيح الطلب المرسل">
-                <header><strong>تصحيح مرسل</strong><small>مسار صريح · لا يغيّر السجل</small></header>
-                {sentWorkingLines.map((line) => (
-                  <div key={`correction-action:${line.id}`}>
-                    <span>{line.name} · {line.quantity}</span>
-                    <button type="button" disabled={interactionDisabled} onClick={() => onEditLine?.(line, true)}>تعديل الكمية المرسلة</button>
-                    <button type="button" className="danger-action" disabled={interactionDisabled} onClick={() => onRemoveLine?.(line.id, true)}>إلغاء الصنف المرسل</button>
-                  </div>
-                ))}
-              </section>
-            ) : null}
-            <p className="kitchen-sent-immutable-note">الأصناف المرسلة ثابتة أمام أدوات السلة العادية؛ التصحيح لا يتم إلا عبر المسار الصريح أعلاه.</p>
+            <p className="kitchen-sent-immutable-note">الأصناف المرسلة ثابتة وغير قابلة للتعديل من أدوات السلة الحالية.</p>
           </div>
         ) : ticket.lines.length === 0 ? (
           <div className="empty-ticket">
@@ -206,7 +186,8 @@ export function TicketPanel({
           </div>
         ) : ticket.lines.map((line) => {
           const lineTotal = { ...line.unitPrice, halalas: line.unitPrice.halalas * line.quantity };
-          const deleteRevealed = variant === "sale" && editable && onRemoveLine && revealedLineId === line.id;
+          const lineEditable = editable && line.kitchenState !== "sent";
+          const deleteRevealed = variant === "sale" && lineEditable && onRemoveLine && revealedLineId === line.id;
           return (
             <article
               className={`ticket-line ${lastTouchedLineId === line.id ? "ticket-line--latest" : ""} ${deleteRevealed ? "ticket-line--delete-revealed" : ""}`}
@@ -230,7 +211,7 @@ export function TicketPanel({
                 </div>
               ) : (
                 <>
-                  {editable && onRemoveLine ? (
+                  {lineEditable && onRemoveLine ? (
                     <button
                       type="button"
                       className="ticket-line-swipe-delete"
@@ -250,7 +231,7 @@ export function TicketPanel({
                     onPointerUp={(event) => finishSwipe(event, line.id)}
                     onPointerCancel={() => { swipeStartRef.current = null; }}
                     onClick={() => editLine(line)}
-                    disabled={!editable}
+                    disabled={!lineEditable}
                   >
                     <span className="ticket-line-copy">
                       <span className="ticket-line-main">

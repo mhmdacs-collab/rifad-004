@@ -42,8 +42,13 @@ Restaurant work is a bounded correction of the existing Rifad-owned
 `RestaurantServiceContract`, open-local-order adapter and local/mock state. It adds
 immutable kitchen dispatch batches and explicit pending/sent ownership. Ordinary cart
 editing, deletion and clearing apply to pending additions only; sent lines are
-read-only. A separate owner-authorized correction path appends `reduce`/`cancel` deltas
-without mutating or deleting prior dispatch history.
+read-only in the current cashier Front Office. No current cashier control, gesture or
+interaction path exposes `allowSentCorrections` or can stage a `reduce`/`cancel` against
+a sent line. The existing `reduce`/`cancel` helpers may remain only as internal
+domain/adapter characterization coverage; they are not an executable cashier feature
+and do not represent an authorization decision. Future sent-item correction/void UX,
+authorization, reason, audit, kitchen notification and financial consequences are
+deferred to the later Open Order lifecycle decision.
 It does not add move/merge/split/seats/reservations, a real KDS, production table
 persistence or a new domain engine.
 

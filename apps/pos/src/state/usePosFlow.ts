@@ -66,7 +66,6 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [printStatus, setPrintStatus] = useState<PrintDeliveryStatus>("idle");
   const [lastTouchedLineId, setLastTouchedLineId] = useState<string | null>(null);
-  const [sentCorrectionPending, setSentCorrectionPending] = useState(false);
   const financialActionLock = useRef<string | null>(null);
   const printActionLock = useRef(false);
   const ticketRef = useRef<Ticket | null>(ticket);
@@ -130,7 +129,6 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
       setTicket(activeTicket);
       setReceipt(null);
       setLastTouchedLineId(null);
-      setSentCorrectionPending(false);
       setStage("sales");
     } catch (error) {
       setErrorMessage(messageFrom(error));
@@ -187,7 +185,6 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
       setCashCommandId(null);
       setCardCommandId(null);
       setLastTouchedLineId(null);
-      setSentCorrectionPending(false);
       setStage("sales");
       return true;
     } catch (error) {
@@ -198,7 +195,7 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
     }
   }, [runtime]);
 
-  const setQuantity = useCallback(async (lineId: string, quantity: number, allowSentCorrection = false) => {
+  const setQuantity = useCallback(async (lineId: string, quantity: number) => {
     const operation = ticketMutationQueue.current.catch(() => undefined).then(async () => {
       const current = ticketRef.current;
       const mutationGeneration = ticketGeneration.current;
@@ -206,11 +203,10 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
       setBusy(`line:${lineId}`);
       setErrorMessage(null);
       try {
-        const updated = await runtime.sales.setLineQuantity({ ticketId: current.id, lineId, quantity, allowSentCorrection });
+        const updated = await runtime.sales.setLineQuantity({ ticketId: current.id, lineId, quantity });
         if (ticketGeneration.current !== mutationGeneration || ticketRef.current?.id !== current.id) return;
         ticketRef.current = updated;
         setTicket(updated);
-        if (allowSentCorrection) setSentCorrectionPending(true);
         setLastTouchedLineId(quantity > 0 ? lineId : null);
       } catch (error) {
         setErrorMessage(messageFrom(error));
@@ -222,7 +218,7 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
     return operation;
   }, [runtime]);
 
-  const removeLine = useCallback(async (lineId: string, allowSentCorrection = false) => {
+  const removeLine = useCallback(async (lineId: string) => {
     const operation = ticketMutationQueue.current.catch(() => undefined).then(async () => {
       const current = ticketRef.current;
       const mutationGeneration = ticketGeneration.current;
@@ -230,11 +226,10 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
       setBusy(`line:${lineId}`);
       setErrorMessage(null);
       try {
-        const updated = await runtime.sales.removeLine({ ticketId: current.id, lineId, allowSentCorrection });
+        const updated = await runtime.sales.removeLine({ ticketId: current.id, lineId });
         if (ticketGeneration.current !== mutationGeneration || ticketRef.current?.id !== current.id) return;
         ticketRef.current = updated;
         setTicket(updated);
-        if (allowSentCorrection) setSentCorrectionPending(true);
         setLastTouchedLineId(updated.lines.at(-1)?.id ?? null);
       } catch (error) {
         setErrorMessage(messageFrom(error));
@@ -267,7 +262,6 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
           ticketRef.current = updated;
           setTicket(updated);
         }
-        setSentCorrectionPending(false);
         setLastTouchedLineId(null);
       } catch (error) {
         setErrorMessage(messageFrom(error));
@@ -768,7 +762,6 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
       setCardCommandId(null);
       setPrintStatus("idle");
       setLastTouchedLineId(null);
-      setSentCorrectionPending(false);
       setQuery("");
       setCategoryId("all");
       setStage("sales");
@@ -797,7 +790,6 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
     errorMessage,
     printStatus,
     lastTouchedLineId,
-    sentCorrectionPending,
     setQuery,
     setCategoryId,
     setActivePageId,

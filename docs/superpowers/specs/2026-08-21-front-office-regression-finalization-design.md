@@ -9,9 +9,13 @@ Base: `agent/rifad-frontoffice-final-ui` at `4a30118f11b1072db71569cb73fd9aeae37
 The later owner override supersedes any ordinary-cart correction behavior described by
 the original design below. A dispatched line is immutable/read-only to ordinary edit,
 delete, swipe and Clear Cart. New additions belong to a separate pending batch and may
-be edited or cleared without changing sent history. A separate explicitly
-owner-authorized correction path may append `reduce`/`cancel` deltas; it never rewrites
-the original batch.
+be edited or cleared without changing sent history. The current cashier Front Office
+exposes no sent-line correction region, control, gesture or `allowSentCorrections` path.
+Existing `reduce`/`cancel` helpers may remain only as internal domain/adapter
+characterization coverage; they are not an executable cashier feature or an
+authorization decision. Future sent-item correction/void UX and its authorization,
+reason, audit, kitchen notification and financial consequences are deferred to the
+later Open Order lifecycle.
 
 This is a bounded extension of the existing local/mock `RestaurantServiceContract` and
 adapters, not a new kitchen/table state machine. Broader capability must follow
@@ -83,10 +87,10 @@ Legacy snapshots are normalized by synthesizing one revision-1 batch from their 
 When no table is active, `TicketPanel` renders ordinary editable ticket rows. When a table is active it renders:
 
 - immutable sent batches/history;
-- pending `add` rows from the pending-owned batch, plus `reduce`/`cancel` rows only when the separate correction path is explicitly authorized;
+- pending `add` rows from the pending-owned batch; no current cashier UI exposes pending sent-line corrections;
 - the current outstanding total from the working ticket.
 
-Adding the same product after a send creates or aggregates a separate pending-owned line; it never increases the earlier sent line. Sent rows are read-only to ordinary cart tools. Reducing/cancelling sent quantity uses the separate explicit correction action, produces a negative delta and never rewrites dispatch history.
+Adding the same product after a send creates or aggregates a separate pending-owned line; it never increases the earlier sent line. Sent rows are completely read-only in the current cashier UI. The internal characterization helpers can model `reduce`/`cancel` without rewriting dispatch history, but no current Front Office interaction can invoke them; future correction/void behavior is deferred to Open Order lifecycle work.
 
 ### React-owned transaction workspace
 

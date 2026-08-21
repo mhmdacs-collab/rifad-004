@@ -86,9 +86,11 @@ Restaurant wording is optional and follows the existing design authority:
 For an already-open local order, sent lines are read-only to ordinary cart controls.
 New additions live in a separate pending batch and may be edited or cleared without
 changing sent history. The visible **إرسال** state gates payment until pending work
-is sent successfully. A sent-line reduction/cancellation uses only the separate
-owner-authorized correction path and appends a delta; it never rewrites the original
-batch. This visual record does not fake kitchen transport or claim the later production
+is sent successfully. The current cashier Front Office exposes no sent-line correction
+region, control, gesture or `allowSentCorrections` path. Existing `reduce`/`cancel`
+helpers are internal domain/adapter characterization only; future sent-item
+correction/void UX and authorization are deferred to the later Open Order lifecycle.
+This visual record does not fake kitchen transport or claim the later production
 contract exists today.
 
 ## Payment rule

@@ -511,7 +511,7 @@
   min-width: 0;
 }
 
-.sale-screen-touch :is(.kitchen-sent-history, .kitchen-pending-changes, .kitchen-correction-actions) {
+.sale-screen-touch :is(.kitchen-sent-history, .kitchen-pending-changes) {
   min-width: 0;
   padding: 12px;
   border: 1px solid var(--fo-border);
@@ -602,58 +602,6 @@
   background: var(--fo-danger-soft);
   font-size: 11px;
   font-weight: 750;
-}
-
-.sale-screen-touch .kitchen-correction-actions > header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.sale-screen-touch .kitchen-correction-actions > header small {
-  color: var(--fo-muted);
-  font-size: 11px;
-}
-
-.sale-screen-touch .kitchen-correction-actions > div {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.sale-screen-touch .kitchen-correction-actions > div + div {
-  margin-top: 7px;
-}
-
-.sale-screen-touch .kitchen-correction-actions span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 12px;
-  font-weight: 750;
-}
-
-.sale-screen-touch .kitchen-correction-actions button {
-  min-height: 44px;
-  padding: 5px 8px;
-  border: 1px solid var(--fo-border-strong);
-  border-radius: 8px;
-  color: #46534d;
-  background: var(--fo-surface);
-  font: inherit;
-  font-size: 11px;
-  font-weight: 750;
-}
-
-.sale-screen-touch .kitchen-correction-actions .danger-action {
-  color: var(--fo-danger);
-  border-color: #efd0d0;
-  background: var(--fo-danger-soft);
 }
 
 .sale-screen-touch .kitchen-sent-immutable-note {

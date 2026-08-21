@@ -10,7 +10,7 @@ import { formatMoney } from "../domain/money";
 import { readPrintReceiptAlways, writePrintReceiptAlways } from "../domain/posPreferences";
 import type { Customer, CustomerDetails, DebtCollectionMethod, DebtCollectionReceipt, DebtLedgerEntry, DebtSettlementResult, EmployeeSession, PrintDeliveryStatus, Product, SalePage, Ticket, TicketLine } from "../domain/models";
 import type { LocalServiceFlow } from "../state/useLocalServiceFlow";
-import { isPendingKitchenLine, isSentKitchenLine, sentTicketToKitchenCorrections } from "../domain/kitchenDelta";
+import { isPendingKitchenLine, isSentKitchenLine } from "../domain/kitchenDelta";
 import type { RestaurantServiceConfig } from "../domain/restaurantService";
 
 type SalesScreenMode = "touch" | "basic";
@@ -69,8 +69,8 @@ type SalesScreenProps = {
   onPlacePageProduct: (pageId: string, slotIndex: number, productId: string) => void;
   onRemovePageProduct: (pageId: string, slotIndex: number) => void;
   onAddProduct: (productId: string) => void;
-  onSetQuantity: (lineId: string, quantity: number, allowSentCorrection?: boolean) => void | Promise<void>;
-  onRemoveLine: (lineId: string, allowSentCorrection?: boolean) => void | Promise<void>;
+  onSetQuantity: (lineId: string, quantity: number) => void | Promise<void>;
+  onRemoveLine: (lineId: string) => void | Promise<void>;
   onClearTicket?: () => void | Promise<void>;
   onSaveTicket: () => void;
   onCheckout: () => void;
@@ -122,7 +122,6 @@ export function SalesScreen(props: SalesScreenProps) {
   const [renamingPage, setRenamingPage] = useState<SalePage | null>(null);
   const [renameName, setRenameName] = useState("");
   const [editingLine, setEditingLine] = useState<TicketLine | null>(null);
-  const [editingSentCorrection, setEditingSentCorrection] = useState(false);
   const [localDialogMode, setLocalDialogMode] = useState<"assign" | "open" | null>(null);
   const [clearingCart, setClearingCart] = useState(false);
   const [inlineCustomerWorkspaceOverride, setInlineCustomerWorkspaceOverride] = useState(false);
@@ -188,9 +187,7 @@ export function SalesScreen(props: SalesScreenProps) {
   const showTicketOrderType = !isBasicMode && itemCount > 0 && visibleOrderTypes.length > 0;
   const orderTypeRequired = showTicketOrderType && visibleOrderTypes.length > 1 && !effectiveOrderType;
   const draftQuantity = Number(draftQuantityInput);
-  const validDraftQuantity = Number.isSafeInteger(draftQuantity)
-    && draftQuantity >= 1
-    && (!editingSentCorrection || !editingLine || draftQuantity <= editingLine.quantity);
+  const validDraftQuantity = Number.isSafeInteger(draftQuantity) && draftQuantity >= 1;
   const draftQuantityChanged = Boolean(editingLine) && validDraftQuantity && draftQuantity !== editingLine?.quantity;
 
   useEffect(() => {
@@ -212,10 +209,9 @@ export function SalesScreen(props: SalesScreenProps) {
     ticket.updatedAt,
   ]);
 
-  const openLineEditor = (line: TicketLine, allowSentCorrection = false) => {
-    if (activeOpenOrder && isSentKitchenLine(line) && !allowSentCorrection) return;
+  const openLineEditor = (line: TicketLine) => {
+    if (activeOpenOrder && isSentKitchenLine(line)) return;
     setEditingLine(line);
-    setEditingSentCorrection(allowSentCorrection);
     setQuantityKeypadFresh(true);
     setDraftQuantityInput(String(line.quantity));
   };
@@ -230,7 +226,6 @@ export function SalesScreen(props: SalesScreenProps) {
     const normalized = digits.replace(/^0+(?=\d)/, "");
     const value = Number(normalized);
     if (Number.isSafeInteger(value)) {
-      if (editingSentCorrection && editingLine && value > editingLine.quantity) return;
       setDraftQuantityInput(normalized);
       setQuantityKeypadFresh(false);
     }
@@ -240,7 +235,6 @@ export function SalesScreen(props: SalesScreenProps) {
     const next = quantityKeypadFresh
       ? (value === "00" ? "0" : value)
       : `${draftQuantityInput}${value}`;
-    if (editingSentCorrection && editingLine && Number(next) > editingLine.quantity) return;
     setDraftQuantityInput(next);
     setQuantityKeypadFresh(false);
   };
@@ -253,8 +247,7 @@ export function SalesScreen(props: SalesScreenProps) {
   const adjustDraftQuantity = (delta: number) => {
     const current = Number(draftQuantityInput);
     const base = Number.isSafeInteger(current) && current >= 1 ? current : 1;
-    const max = editingSentCorrection && editingLine ? editingLine.quantity : Number.MAX_SAFE_INTEGER;
-    const next = Math.min(max, Math.max(1, base + delta));
+    const next = Math.max(1, base + delta);
     if (Number.isSafeInteger(next)) setDraftQuantityInput(String(next));
   };
 
@@ -347,7 +340,7 @@ export function SalesScreen(props: SalesScreenProps) {
   const activeOpenOrder = local.activeOpenOrder;
   const localBusy = local.localBusy !== null;
   const hasPendingOpenOrderLines = activeOpenOrder ? ticket.lines.some(isPendingKitchenLine) : false;
-  const hasPendingOpenOrderCorrections = activeOpenOrder ? sentTicketToKitchenCorrections(activeOpenOrder.ticket, ticket).length > 0 : false;
+  const hasSentTicketLines = ticket.lines.some(isSentKitchenLine);
   // A line/product mutation is asynchronous. Keep every other ticket action
   // locked while it is in flight so a stale closure cannot overwrite the
   // latest ticket snapshot. Catalog search is the one non-mutating busy state
@@ -483,7 +476,7 @@ export function SalesScreen(props: SalesScreenProps) {
     />
   ) : (
     <>
-      <TicketPanel ticket={ticket} editable={!ticketMutationLocked} interactionDisabled={ticketMutationLocked} lastTouchedLineId={lastTouchedLineId} onEditLine={openLineEditor} onRemoveLine={onRemoveLine} onCustomerClick={openCustomerPicker} onClearCart={activeOpenOrder ? (local.hasUnsentOpenOrderChanges ? clearCart : undefined) : (ticket.lines.length > 0 ? clearCart : undefined)} clearingCart={clearingCart} serviceLabel={local.activeServiceLabel} onReturn={local.activeOpenOrder ? local.leaveOpenOrder : undefined} activeOrder={local.activeOpenOrder} pendingMetadata={Boolean(activeOpenOrder && local.hasUnsentOpenOrderChanges && !hasPendingOpenOrderLines && !hasPendingOpenOrderCorrections)} />
+      <TicketPanel ticket={ticket} editable={!ticketMutationLocked} interactionDisabled={ticketMutationLocked} lastTouchedLineId={lastTouchedLineId} onEditLine={openLineEditor} onRemoveLine={onRemoveLine} onCustomerClick={openCustomerPicker} onClearCart={activeOpenOrder ? (local.hasUnsentOpenOrderChanges ? clearCart : undefined) : (ticket.lines.length > 0 && !hasSentTicketLines ? clearCart : undefined)} clearingCart={clearingCart} serviceLabel={local.activeServiceLabel} onReturn={local.activeOpenOrder ? local.leaveOpenOrder : undefined} activeOrder={local.activeOpenOrder} pendingMetadata={Boolean(activeOpenOrder && local.hasUnsentOpenOrderChanges && !hasPendingOpenOrderLines)} />
       {renderOrderTypeSelector()}
       {renderTicketActions()}
     </>
@@ -722,7 +715,7 @@ export function SalesScreen(props: SalesScreenProps) {
       {editingLine ? (
         <div className="dialog-backdrop" role="presentation">
           <section className="layout-dialog line-editor" role="dialog" aria-modal="true" aria-labelledby="line-editor-title">
-            <header><button type="button" onClick={() => { setEditingLine(null); setEditingSentCorrection(false); }} aria-label="إغلاق">×</button><h2 id="line-editor-title">{editingSentCorrection ? "تصحيح الكمية المرسلة · " : ""}{editingLine.name} · {formatMoney(editingLine.unitPrice)}</h2></header>
+            <header><button type="button" onClick={() => setEditingLine(null)} aria-label="إغلاق">×</button><h2 id="line-editor-title">{editingLine.name} · {formatMoney(editingLine.unitPrice)}</h2></header>
             <label htmlFor="line-quantity-input">الكمية</label>
             <div className="line-quantity-editor">
               <button type="button" aria-label="تقليل الكمية" onClick={() => adjustDraftQuantity(-1)}><Icon name="minus" /></button>
@@ -752,8 +745,8 @@ export function SalesScreen(props: SalesScreenProps) {
               <button type="button" className="line-quantity-key line-quantity-key--backspace" aria-label="حذف رقم" onClick={backspaceQuantityKey}>⌫</button>
             </div>
             <div className="line-editor-actions">
-              <button type="button" className="delete-line" onClick={() => { onRemoveLine(editingLine.id, editingSentCorrection); setEditingLine(null); setEditingSentCorrection(false); }}><Icon name="trash" size={18} />{editingSentCorrection ? "إلغاء الصنف المرسل" : "حذف"}</button>
-              <button type="button" className="primary-button" disabled={!draftQuantityChanged} onClick={() => { if (!draftQuantityChanged) return; onSetQuantity(editingLine.id, draftQuantity, editingSentCorrection); setEditingLine(null); setEditingSentCorrection(false); }}>{editingSentCorrection ? "إرسال التصحيح" : "حفظ"}</button>
+              <button type="button" className="delete-line" onClick={() => { onRemoveLine(editingLine.id); setEditingLine(null); }}><Icon name="trash" size={18} />حذف</button>
+              <button type="button" className="primary-button" disabled={!draftQuantityChanged} onClick={() => { if (!draftQuantityChanged) return; onSetQuantity(editingLine.id, draftQuantity); setEditingLine(null); }}>حفظ</button>
             </div>
           </section>
         </div>

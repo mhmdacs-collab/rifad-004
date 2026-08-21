@@ -251,7 +251,7 @@ describe("POS-FLOW-002 local restaurant service", () => {
     expect(screen.getByRole("button", { name: "دفع وإغلاق طاولة 4" })).toBeEnabled();
   });
 
-  it("uses a separate explicit correction path for sent lines", async () => {
+  it("keeps sent history read-only with no cashier correction controls", async () => {
     setRestaurantConfig(true, true);
     const user = userEvent.setup();
     render(<App />);
@@ -259,46 +259,22 @@ describe("POS-FLOW-002 local restaurant service", () => {
 
     const productGrid = () => within(document.querySelector(".product-grid") as HTMLElement);
     const coffee = () => productGrid().getByRole("button", { name: /قهوة سعودية/ });
-    const latte = () => productGrid().getByRole("button", { name: /لاتيه/ });
     await user.click(coffee());
     await waitFor(() => expect(coffee()).toBeEnabled());
     await user.click(coffee());
-    await waitFor(() => expect(latte()).toBeEnabled());
-    await user.click(latte());
     await user.click(await screen.findByRole("button", { name: "محلي، اختيار مكان" }));
     await user.click(await screen.findByRole("button", { name: "طاولة 5، الحالة: متاحة" }));
     await user.click(await screen.findByRole("button", { name: "الطلبات المفتوحة، 1" }));
     await user.click(await screen.findByRole("button", { name: "طاولة 5، الحالة: محجوزة" }));
 
-    const corrections = await screen.findByRole("region", { name: "تصحيح الطلب المرسل" });
-    expect(within(corrections).getAllByRole("button", { name: "تعديل الكمية المرسلة" })).toHaveLength(2);
-    expect(screen.queryByRole("button", { name: "تعديل الكمية" })).not.toBeInTheDocument();
-
-    await user.click(within(corrections).getAllByRole("button", { name: "تعديل الكمية المرسلة" })[0]!);
-    const quantity = screen.getByRole("textbox", { name: "الكمية" });
-    await user.clear(quantity);
-    await user.type(quantity, "1");
-    await user.click(screen.getByRole("button", { name: "إرسال التصحيح" }));
-
-    const updatedCorrections = await screen.findByRole("region", { name: "التغييرات غير المرسلة" });
-    await waitFor(() => expect(within(updatedCorrections).getByText("إنقاص")).toBeInTheDocument());
-    expect(screen.getByRole("button", { name: "إرسال تغييرات طاولة 5 للمطبخ" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "الدفع غير متاح حتى إرسال تغييرات المطبخ" })).toBeDisabled();
-
-    await waitFor(() => expect(screen.getAllByRole("button", { name: "إلغاء الصنف المرسل" })[1]).toBeEnabled());
-    await user.click(screen.getAllByRole("button", { name: "إلغاء الصنف المرسل" })[1]!);
-    await waitFor(() => expect(within(screen.getByRole("region", { name: "التغييرات غير المرسلة" })).getByText("إلغاء")).toBeInTheDocument());
-    await user.click(screen.getByRole("button", { name: "إرسال تغييرات طاولة 5 للمطبخ" }));
-
-    await waitFor(() => {
-      const snapshot = JSON.parse(window.localStorage.getItem(RESTAURANT_SERVICE_STORAGE_KEY) ?? "{}") as { openOrders?: { kitchenBatches?: { lines?: { productId?: string; quantity?: number; kind?: string }[] }[] }[] };
-      expect(snapshot.openOrders?.[0]?.kitchenBatches).toHaveLength(2);
-      expect(snapshot.openOrders?.[0]?.kitchenBatches?.[1]?.lines).toEqual(expect.arrayContaining([
-        expect.objectContaining({ productId: "p-001", quantity: 1, kind: "reduce" }),
-        expect.objectContaining({ productId: "p-002", quantity: 1, kind: "cancel" }),
-      ]));
-    });
-  }, 15000);
+    const sent = await screen.findByRole("region", { name: "الأصناف المرسلة للمطبخ" });
+    expect(within(sent).getByText("2", { selector: "b" })).toBeInTheDocument();
+    expect(within(sent).queryAllByRole("button")).toHaveLength(0);
+    expect(screen.queryByRole("region", { name: "تصحيح الطلب المرسل" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "تعديل الكمية المرسلة" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "إلغاء الصنف المرسل" })).not.toBeInTheDocument();
+    expect(screen.getByText("الأصناف المرسلة ثابتة وغير قابلة للتعديل من أدوات السلة الحالية.")).toBeInTheDocument();
+  });
 
   it("hides restaurant language in retail/direct mode", async () => {
     setRestaurantConfig(false, false);

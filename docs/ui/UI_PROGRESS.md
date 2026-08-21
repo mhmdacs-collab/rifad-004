@@ -17,7 +17,13 @@ keeps the locked shell and closes the following already-executable UI regression
 - Ticket/cart controls are React-owned, with quantity save disabled when unchanged, delete-only swipe reveal, immediate Clear Cart and guarded Pay/Send actions.
 - Add Customer replaces the Ticket Workspace content in place with four fields (required name/mobile; optional tax number/address), no auto-save, and automatic attach/return after success. The product catalog remains visible.
 - Normal-ticket customer attachment keeps the result list and an attach action in the selected card. Credit selection instead collapses results to a selected-customer summary with Change Customer.
-- Local restaurant staging shows immutable sent history separately from editable/clearable pending additions. Ordinary cart controls cannot mutate sent lines; the explicit owner-authorized correction path appends `reduce`/`cancel` deltas without rewriting prior batches. Table totals survive send/leave/reopen and Pay remains blocked while unsent changes exist.
+- Local restaurant staging shows immutable SENT history separately from editable/clearable
+  PENDING additions. Ordinary cart controls cannot mutate sent lines, and the current
+  cashier Front Office exposes no sent-correction region, control, gesture or
+  `allowSentCorrections` path. Existing `reduce`/`cancel` helpers remain only for
+  internal domain/adapter characterization; future sent-item correction/void UX and
+  authorization belong to later Open Order lifecycle work. Table totals survive
+  send/leave/reopen and Pay remains blocked while unsent changes exist.
 - Debt settlement requires a valid amount and collection method, distinguishes cash/network, prevents overpayment and duplicate submission, and exposes a readable dedicated collection receipt and print action.
 - App-like focus, pressed, disabled, scrolling, sticky-action and contrast corrections live only in `apps/pos/src/front-office.css`.
 

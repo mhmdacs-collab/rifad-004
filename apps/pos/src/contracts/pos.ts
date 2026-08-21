@@ -57,8 +57,8 @@ export interface SalesContract {
   addItem(input: { commandId: string; ticketId: string; productId: string }): Promise<Ticket>;
   /**
    * Ordinary cart edits cannot mutate a line already sent to the kitchen.
-   * The explicit correction path opts in and is kept separate from swipe,
-   * delete and clear-cart actions.
+   * The optional correction flag is retained only for isolated adapter/domain
+   * characterization; the current cashier Front Office never supplies it.
    */
   setLineQuantity(input: { ticketId: string; lineId: string; quantity: number; allowSentCorrection?: boolean }): Promise<Ticket>;
   removeLine(input: { ticketId: string; lineId: string; allowSentCorrection?: boolean }): Promise<Ticket>;

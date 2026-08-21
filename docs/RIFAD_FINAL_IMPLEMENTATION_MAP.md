@@ -27,7 +27,7 @@ credit/debt and printing UI without changing the master dependency position belo
 
 - Customer creation is an inline Ticket Workspace state; it is not a separate modal.
 - Normal-ticket customer attachment and Credit customer selection intentionally use different selection states.
-- Restaurant changes refine the existing local/mock `RestaurantServiceContract`: sent batches remain immutable; ordinary cart tools edit/clear pending additions only; an explicit owner-authorized correction path appends `reduce`/`cancel` deltas without rewriting history; table totals, send/pay gates and release-after-payment remain deterministic.
+- Restaurant changes refine the existing local/mock `RestaurantServiceContract`: sent batches remain immutable; ordinary cart tools edit/clear pending additions only; the current cashier Front Office exposes no sent-line correction controls or `allowSentCorrections` path. Existing `reduce`/`cancel` helpers remain internal domain/adapter characterization only, while future sent-item correction/void UX and authorization are deferred to Open Order lifecycle work. Table totals, send/pay gates and release-after-payment remain deterministic.
 - Debt collection persists the selected collection method and a dedicated collection-receipt identity; its printing path is separate from completed-sale receipts.
 - This evidence is `CURRENT-MOCK`. It does **not** promote MAP-04, MAP-05, production KDS, production payment accounting, production persistence, hardware printing or synchronization.
 - This is a bounded extension of the existing local/mock contract and adapters, not a new kitchen/table state machine. Any broader capability must follow Capability Adoption.
