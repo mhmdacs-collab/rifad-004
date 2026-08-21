@@ -79,6 +79,7 @@ export type DebtCollectionReceipt = Readonly<{
   number: string;
   customerId: string;
   customerName: string;
+  customerMobile: string;
   amount: Money;
   collectionMethod: DebtCollectionMethod;
   previousDebt: Money;

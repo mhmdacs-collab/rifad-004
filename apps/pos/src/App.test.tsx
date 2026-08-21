@@ -48,11 +48,15 @@ describe("POS-FLOW-001", () => {
     await user.click(screen.getByRole("button", { name: /نقدًا/ }));
 
     await screen.findByRole("heading", { name: /ريال سعودي/ });
-    await user.click(screen.getByRole("button", { name: "سداد" }));
+    const completeCashButton = screen.getByRole("button", { name: "سداد" });
+    fireEvent.click(completeCashButton);
+    fireEvent.click(completeCashButton);
 
     await screen.findByRole("heading", { name: "تمت عملية البيع بنجاح" });
     expect(screen.getByText("محفوظ محليًا")).toBeInTheDocument();
     expect(window.localStorage.getItem(STORAGE_KEY)).toContain('"receipt"');
+    const persisted = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}") as { receipts?: unknown[] };
+    expect(persisted.receipts).toHaveLength(1);
   });
 });
 
@@ -276,32 +280,41 @@ describe("basic screen customer debt workflow", () => {
 
     const feedback = within(debtBook).getByRole("status");
     expect(within(feedback).getByText("المتبقي بعد السداد")).toBeInTheDocument();
-    expect(within(feedback).getByText("أدخل مبلغًا أكبر من صفر ولا يتجاوز الرصيد الحالي.")).toBeInTheDocument();
+    expect(within(feedback).getByText("أدخل مبلغًا أكبر من صفر ولا يتجاوز الدين الحالي.")).toBeInTheDocument();
     expect(within(feedback).getByLabelText("120.00 ريال سعودي")).toBeInTheDocument();
 
     await user.clear(amountInput);
     await user.type(amountInput, "50.00");
     expect(within(feedback).getByLabelText("70.00 ريال سعودي")).toBeInTheDocument();
+    await user.click(within(debtBook).getByRole("button", { name: "نقدي" }));
 
     const confirmButton = within(debtBook).getByRole("button", { name: "تأكيد سداد 50.00 ر.س" });
     fireEvent.click(confirmButton);
     fireEvent.click(confirmButton);
 
     expect(await within(debtBook).findByText("تم تسجيل السداد")).toBeInTheDocument();
-    expect(within(debtBook).getByText("الرصيد قبل السداد")).toBeInTheDocument();
-    expect(within(debtBook).getByText("المبلغ المسدد")).toBeInTheDocument();
+    expect(within(debtBook).getByText("الدين قبل السداد")).toBeInTheDocument();
+    expect(within(debtBook).getByText("المبلغ المقبوض")).toBeInTheDocument();
     expect(within(debtBook).getByText("المتبقي على العميل")).toBeInTheDocument();
     expect(within(debtBook).getByLabelText("70.00 ريال سعودي")).toBeInTheDocument();
 
     const persisted = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}") as {
       customers?: { id: string; debt: { halalas: number } }[];
-      debtPayments?: { amount: { halalas: number } }[];
-      debtLedger?: { kind: string; customerId: string; amount: { halalas: number } }[];
+      debtPayments?: { amount: { halalas: number }; collectionMethod?: string; collectionReceiptId?: string }[];
+      debtLedger?: { kind: string; customerId: string; amount: { halalas: number }; collectionMethod?: string; collectionReceiptId?: string; collectionReceiptNumber?: string }[];
     };
     expect(persisted.customers?.find((customer) => customer.id === "customer-001")?.debt.halalas).toBe(7000);
     expect(persisted.debtPayments).toHaveLength(1);
     expect(persisted.debtPayments?.[0]?.amount.halalas).toBe(5000);
-    expect(persisted.debtLedger?.filter((entry) => entry.kind === "payment" && entry.customerId === "customer-001")).toHaveLength(1);
+    expect(persisted.debtPayments?.[0]?.collectionMethod).toBe("cash");
+    expect(persisted.debtPayments?.[0]?.collectionReceiptId).toMatch(/^debt-collection:/);
+    const paymentEntries = persisted.debtLedger?.filter((entry) => entry.kind === "payment" && entry.customerId === "customer-001") ?? [];
+    expect(paymentEntries).toHaveLength(1);
+    expect(paymentEntries[0]).toEqual(expect.objectContaining({
+      collectionMethod: "cash",
+      collectionReceiptId: expect.stringMatching(/^debt-collection:/),
+      collectionReceiptNumber: expect.stringMatching(/^DC-/),
+    }));
 
     await user.click(within(debtBook).getByRole("button", { name: "تم" }));
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "دفتر الديون" })).not.toBeInTheDocument());

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ConfiguredCustomerCredit } from "./components/ConfiguredCustomerCredit";
@@ -33,5 +33,29 @@ describe("configured customer credit", () => {
     await user.click(screen.getByRole("button", { name: "تغيير العميل" }));
     expect(screen.getByRole("textbox", { name: "بحث العميل للبيع الآجل" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /سارة/ })).toBeInTheDocument();
+  });
+
+  it("submits a selected credit sale only once on a double action", async () => {
+    let finish!: (value: Customer | null) => void;
+    const onChargeCredit = vi.fn(() => new Promise<Customer | null>((resolve) => { finish = resolve; }));
+    const user = userEvent.setup();
+    render(
+      <ConfiguredCustomerCredit
+        ticketTotal={{ halalas: 1_500, currency: "SAR" }}
+        busy={false}
+        onSearch={vi.fn(async () => customers)}
+        onCreateCustomer={vi.fn(async () => null)}
+        onChargeCredit={onChargeCredit}
+      />,
+    );
+
+    await user.click(await screen.findByRole("button", { name: /أحمد/ }));
+    const submit = screen.getByRole("button", { name: "تسجيل آجل" });
+    fireEvent.click(submit);
+    fireEvent.click(submit);
+    expect(onChargeCredit).toHaveBeenCalledTimes(1);
+
+    finish(customers[0]!);
+    await waitFor(() => expect(submit).toBeDisabled());
   });
 });

@@ -1,4 +1,4 @@
-import { useCallback, useDeferredValue, useEffect, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useRef, useState } from "react";
 import { PosContractError } from "../contracts/pos";
 import type { PosRuntimeContract } from "../contracts/pos";
 import type { LoyaltyRedemptionQuote, LoyaltyStatus } from "../domain/loyalty";
@@ -65,6 +65,7 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [printStatus, setPrintStatus] = useState<PrintDeliveryStatus>("idle");
   const [lastTouchedLineId, setLastTouchedLineId] = useState<string | null>(null);
+  const financialActionLock = useRef<string | null>(null);
   const deferredQuery = useDeferredValue(query);
 
   useEffect(() => {
@@ -355,7 +356,8 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
   }, [runtime]);
 
   const chargeTicketToCustomer = useCallback(async (customerId: string): Promise<Customer | null> => {
-    if (!ticket || ticket.lines.length === 0) return null;
+    if (!ticket || ticket.lines.length === 0 || financialActionLock.current) return null;
+    financialActionLock.current = "customer-credit";
     setBusy("customer-credit");
     setErrorMessage(null);
     try {
@@ -367,6 +369,7 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
       setErrorMessage(messageFrom(error));
       return null;
     } finally {
+      financialActionLock.current = null;
       setBusy(null);
     }
   }, [completeCustomerLoyalty, finalizeCompletedReceipt, runtime, ticket]);
@@ -380,6 +383,8 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
       setErrorMessage("اختر طريقة تحصيل السداد.");
       return null;
     }
+    if (financialActionLock.current) return null;
+    financialActionLock.current = "customer-settlement";
     setBusy("customer-settlement");
     setErrorMessage(null);
     try {
@@ -393,6 +398,7 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
       setErrorMessage(messageFrom(error));
       return null;
     } finally {
+      financialActionLock.current = null;
       setBusy(null);
     }
   }, [runtime]);
@@ -531,7 +537,8 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
   }, [checkoutId, runtime]);
 
   const completeCash = useCallback(async (tenderedHalalas: number) => {
-    if (!checkoutId || !cashCommandId) return;
+    if (!checkoutId || !cashCommandId || financialActionLock.current) return;
+    financialActionLock.current = "complete-cash";
     setBusy("complete-cash");
     setErrorMessage(null);
     try {
@@ -541,12 +548,14 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
     } catch (error) {
       setErrorMessage(messageFrom(error));
     } finally {
+      financialActionLock.current = null;
       setBusy(null);
     }
   }, [cashCommandId, checkoutId, completeCustomerLoyalty, finalizeCompletedReceipt, runtime]);
 
   const completeCard = useCallback(async () => {
-    if (!checkoutId || !cardCommandId) return;
+    if (!checkoutId || !cardCommandId || financialActionLock.current) return;
+    financialActionLock.current = "complete-card";
     setBusy("complete-card");
     setErrorMessage(null);
     try {
@@ -556,6 +565,7 @@ export const usePosFlow = (runtime: PosRuntimeContract) => {
     } catch (error) {
       setErrorMessage(messageFrom(error));
     } finally {
+      financialActionLock.current = null;
       setBusy(null);
     }
   }, [cardCommandId, checkoutId, completeCustomerLoyalty, finalizeCompletedReceipt, runtime]);

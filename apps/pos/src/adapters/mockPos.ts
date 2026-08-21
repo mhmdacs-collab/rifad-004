@@ -19,6 +19,7 @@ import type {
   Customer,
   CustomerDetails,
   CustomerReference,
+  DebtCollectionMethod,
   DebtLedgerEntry,
   DeviceSession,
   EmployeeSession,
@@ -77,6 +78,9 @@ type DebtPaymentRecord = {
   customerId: string;
   amount: Money;
   createdAt: string;
+  collectionMethod?: DebtCollectionMethod;
+  collectionReceiptId?: string;
+  collectionReceiptNumber?: string;
 };
 
 type Persisted = {
@@ -548,16 +552,44 @@ class MockStore {
     return { customer: this.customerWithBalance(updatedCustomer), receipt };
   }
 
-  async settleCustomerDebt(commandId: string, customerId: string, amount: Money): Promise<Customer> {
+  async settleCustomerDebt(
+    commandId: string,
+    customerId: string,
+    amount: Money,
+    collectionMethod?: DebtCollectionMethod,
+    collectionReceiptId?: string,
+    collectionReceiptNumber?: string,
+    collectedAt?: string,
+  ): Promise<Customer> {
     await pause();
     const prior = this.state.debtPayments.find((record) => record.commandId === commandId);
     if (prior) return this.requireCustomer(prior.customerId);
     const customer = this.requireCustomer(customerId);
     if (!Number.isSafeInteger(amount.halalas) || amount.halalas <= 0) throw new PosContractError("INVALID_DEBT_PAYMENT", "أدخل مبلغ سداد أكبر من صفر.");
     if (amount.halalas > customer.debt.halalas) throw new PosContractError("DEBT_PAYMENT_EXCEEDS_BALANCE", "مبلغ السداد أكبر من دين العميل.");
-    const createdAt = new Date().toISOString();
-    const payment: DebtPaymentRecord = { id: createId("debt-payment"), commandId, customerId, amount, createdAt };
-    const ledgerEntry: DebtLedgerEntry = { id: createId("debt-entry"), customerId, kind: "payment", direction: "credit", amount, createdAt, ticketSequence: null };
+    const createdAt = collectedAt ?? new Date().toISOString();
+    const payment: DebtPaymentRecord = {
+      id: createId("debt-payment"),
+      commandId,
+      customerId,
+      amount,
+      createdAt,
+      collectionMethod,
+      collectionReceiptId,
+      collectionReceiptNumber,
+    };
+    const ledgerEntry: DebtLedgerEntry = {
+      id: createId("debt-entry"),
+      customerId,
+      kind: "payment",
+      direction: "credit",
+      amount,
+      createdAt,
+      ticketSequence: null,
+      collectionMethod,
+      collectionReceiptId,
+      collectionReceiptNumber,
+    };
     const updatedCustomer = { ...customer, debt: money(customer.debt.halalas - amount.halalas) };
     this.state = {
       ...this.state,
@@ -785,7 +817,8 @@ export const createMockPosRuntime = (): MockPosRuntime => {
     update: ({ customerId, name, mobile, details }) => store.updateCustomer(customerId, name, mobile, details),
     ledger: ({ customerId }) => store.listCustomerLedger(customerId),
     chargeTicket: ({ commandId, customerId, ticketId }) => store.chargeTicketToCustomer(commandId, customerId, ticketId),
-    settle: ({ commandId, customerId, amount }) => store.settleCustomerDebt(commandId, customerId, amount),
+    settle: ({ commandId, customerId, amount, collectionMethod, collectionReceiptId, collectionReceiptNumber, collectedAt }) =>
+      store.settleCustomerDebt(commandId, customerId, amount, collectionMethod, collectionReceiptId, collectionReceiptNumber, collectedAt),
   };
   const checkout: CheckoutContract = {
     begin: ({ ticketId }) => store.begin(ticketId),

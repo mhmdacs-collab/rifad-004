@@ -264,19 +264,26 @@ export const withLocalPersistenceJournal = (
     debtCollection: {
       settle: async (input) => {
         await ready;
+        const collectedAt = now();
+        const collectionReceiptId = `debt-collection:${input.commandId}`;
+        const collectionReceiptNumber = debtReceiptNumber(input.commandId);
         const customer = await base.customerCredit.settle({
           commandId: input.commandId,
           customerId: input.customerId,
           amount: input.amount,
+          collectionMethod: input.collectionMethod,
+          collectionReceiptId,
+          collectionReceiptNumber,
+          collectedAt,
         });
-        const collectedAt = now();
         const employee = base.restore().employee;
         const device = base.restore().device;
         const receipt = {
-          id: `debt-collection:${input.commandId}`,
-          number: debtReceiptNumber(input.commandId),
+          id: collectionReceiptId,
+          number: collectionReceiptNumber,
           customerId: customer.id,
           customerName: customer.name,
+          customerMobile: customer.mobile,
           amount: input.amount,
           collectionMethod: input.collectionMethod,
           previousDebt: {

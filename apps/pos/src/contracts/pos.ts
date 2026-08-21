@@ -107,6 +107,10 @@ export interface CustomerCreditContract {
     commandId: string;
     customerId: string;
     amount: Money;
+    collectionMethod?: DebtCollectionMethod;
+    collectionReceiptId?: string;
+    collectionReceiptNumber?: string;
+    collectedAt?: string;
   }): Promise<Customer>;
 }
 

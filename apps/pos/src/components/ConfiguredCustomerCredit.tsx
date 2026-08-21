@@ -21,6 +21,7 @@ export function ConfiguredCustomerCredit({ ticketTotal, busy, onSearch, onCreate
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const searchSequence = useRef(0);
+  const actionLocked = useRef(false);
 
   useEffect(() => {
     const sequence = ++searchSequence.current;
@@ -43,12 +44,14 @@ export function ConfiguredCustomerCredit({ ticketTotal, busy, onSearch, onCreate
 
   const submitCreate = async (event: FormEvent) => {
     event.preventDefault();
-    if (busy || submitting) return;
+    if (busy || submitting || actionLocked.current) return;
+    actionLocked.current = true;
     setSubmitting(true);
     setMessage(null);
     const created = await onCreateCustomer(newName, newMobile);
     setSubmitting(false);
     if (!created) {
+      actionLocked.current = false;
       setMessage("تعذر إضافة العميل. تحقق من الاسم ورقم الجوال.");
       return;
     }
@@ -56,14 +59,17 @@ export function ConfiguredCustomerCredit({ ticketTotal, busy, onSearch, onCreate
     setNewName("");
     setNewMobile("");
     selectCustomer(created);
+    actionLocked.current = false;
   };
 
   const submitCredit = async () => {
-    if (!selected || busy || submitting) return;
+    if (!selected || busy || submitting || actionLocked.current) return;
+    actionLocked.current = true;
     setSubmitting(true);
     setMessage(null);
     const updated = await onChargeCredit(selected.id);
     if (!updated) {
+      actionLocked.current = false;
       setSubmitting(false);
       setMessage("تعذر تسجيل البيع الآجل.");
     }
@@ -108,7 +114,7 @@ export function ConfiguredCustomerCredit({ ticketTotal, busy, onSearch, onCreate
               <small dir="ltr">{customer.mobile}</small>
             </span>
             <span>
-              <small>الرصيد</small>
+              <small>الدين</small>
               <strong><MoneyAmount value={customer.debt} /></strong>
             </span>
           </button>

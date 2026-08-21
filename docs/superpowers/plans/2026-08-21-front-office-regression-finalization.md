@@ -68,12 +68,14 @@ Wave verification: typecheck PASS; `kitchen-delta.test.ts` + `local-service.test
 
 **Files:** payment rail, debt dialog, POS domain/contract/adapter/journal/state, affected tests.
 
-- [ ] Preserve direct payment and dine-in no-Delivery behavior.
-- [ ] Complete partial/exact/invalid/overpayment debt settlement rules.
-- [ ] Persist cash/card collection method plus receipt identifiers on the debt ledger entry.
-- [ ] Keep collection method and confirmation reachable while debt content scrolls.
-- [ ] Add atomic Pay/Credit/Debt guards and targeted double-submit tests.
-- [ ] Commit this wave independently.
+- [x] Preserve direct payment and dine-in no-Delivery behavior.
+- [x] Complete partial/exact/invalid/overpayment debt settlement rules.
+- [x] Persist cash/card collection method plus receipt identifiers on the debt ledger entry.
+- [x] Keep collection method and confirmation reachable while debt content scrolls.
+- [x] Add atomic Pay/Credit/Debt guards and targeted double-submit tests.
+- [x] Commit this wave independently.
+
+Wave verification: typecheck PASS; payment/credit/debt targeted suites PASS (23/23); full Vitest suite PASS (27 files, 83 tests).
 
 ## Wave 5 — Collection receipt, print, and app polish
 
