@@ -4,6 +4,21 @@ Status: owner-directed implementation; runtime visual acceptance pending
 Date: 2026-08-21
 Base: `agent/rifad-frontoffice-final-ui` at `4a30118f11b1072db71569cb73fd9aeae37e8309`
 
+## Owner override and current checkpoint
+
+The later owner override supersedes any ordinary-cart correction behavior described by
+the original design below. A dispatched line is immutable/read-only to ordinary edit,
+delete, swipe and Clear Cart. New additions belong to a separate pending batch and may
+be edited or cleared without changing sent history. A separate explicitly
+owner-authorized correction path may append `reduce`/`cancel` deltas; it never rewrites
+the original batch.
+
+This is a bounded extension of the existing local/mock `RestaurantServiceContract` and
+adapters, not a new kitchen/table state machine. Broader capability must follow
+Capability Adoption. Wave 7 visual polish is halted at a safe checkpoint, MAP-02 has
+not started, and overall Runtime Visual status remains `UNVERIFIED` until the complete
+required viewport/state matrix is actually rerun and captured.
+
 ## Goal
 
 Finish the existing Rifad POS Front Office without changing its catalog/transaction-rail layout. Correct the current functional regressions, make restaurant updates explicit kitchen deltas, complete debt collection receipt printing through the Rifad printing boundary, and consolidate the cashier visual language in `front-office.css`.
@@ -68,10 +83,10 @@ Legacy snapshots are normalized by synthesizing one revision-1 batch from their 
 When no table is active, `TicketPanel` renders ordinary editable ticket rows. When a table is active it renders:
 
 - immutable sent batches/history;
-- pending `add`, `reduce`, or `cancel` rows derived from the last sent ticket versus the working ticket;
+- pending `add` rows from the pending-owned batch, plus `reduce`/`cancel` rows only when the separate correction path is explicitly authorized;
 - the current outstanding total from the working ticket.
 
-Adding the same product after a send may still use the existing sales ticket internally, but the presentation/domain diff exposes only the new quantity as pending. Sent rows are read-only. Reducing/cancelling sent quantity uses an explicit correction action and produces a negative delta; it never rewrites the dispatch history.
+Adding the same product after a send creates or aggregates a separate pending-owned line; it never increases the earlier sent line. Sent rows are read-only to ordinary cart tools. Reducing/cancelling sent quantity uses the separate explicit correction action, produces a negative delta and never rewrites dispatch history.
 
 ### React-owned transaction workspace
 
@@ -119,3 +134,7 @@ Only `front-office.css` receives new Front Office polish. It will own semantic t
 Automated coverage will prove the 24 owner acceptance behaviors where the current mock/local contracts can represent them. Runtime review will cover 1366×768, 1440×900, 1920×1080, and 1024×768 landscape for the cart, payment, table/open orders, credit, add customer, debt, collection receipt, and settings surfaces. A viewport can be marked PASS only after the application is actually running and the rendered result is observed or captured at that size. If browser runtime is unavailable, record `UNVERIFIED` and do not mark the task done.
 
 Completion reporting must distinguish current mock/local proof from production capability gaps.
+
+Current checkpoint result: fresh typecheck, the serialized POS suite (27 files / 94
+tests, exit 0), and the production build (146 modules) pass. Runtime Visual remains
+`UNVERIFIED` overall.

@@ -10,6 +10,13 @@
 
 **Spec:** `docs/superpowers/specs/2026-08-21-front-office-regression-finalization-design.md`
 
+**Current owner override:** foundation commits `d6188b9`, `27c4ac5`, and `911df69`,
+plus regression-test commit `85e5746`, implement the latest ownership correction.
+Sent history is immutable to ordinary cart tools; pending additions are separately
+editable/clearable; `reduce`/`cancel` requires the explicit owner-authorized correction
+path. Wave 7 visual polish is halted at a safe checkpoint, MAP-02 has not started, and
+Runtime Visual remains `UNVERIFIED` overall.
+
 ## Global constraints
 
 - Base is `agent/rifad-frontoffice-final-ui` at SHA `4a30118f11b1072db71569cb73fd9aeae37e8309`, confirmed equal to its remote tracking ref before implementation.
@@ -52,9 +59,10 @@
 
 - [x] Add RED/GREEN pure-domain tests for add, same-product add, reduce, cancel, unchanged, and order.
 - [x] Add immutable `KitchenDispatchBatch` history and adapter idempotency coverage.
-- [x] Render immutable sent history and pending add/reduce/cancel separately in the cart.
+- [x] Render immutable sent history, editable pending additions and explicitly authorized pending `reduce`/`cancel` corrections separately in the cart.
 - [x] Keep the same table/order/ticket active after Send; gate Send and Pay deterministically.
-- [x] Make corrections explicit and never rewrite earlier dispatch batches.
+- [x] Keep ordinary edit/delete/swipe/Clear Cart scoped to pending lines only.
+- [x] Make owner-authorized corrections explicit and never rewrite earlier dispatch batches.
 - [x] Preserve total and history through leave/reopen; free the place only after completed payment.
 - [x] Move table context, return, settings, and dialogs into React-owned structure; remove remaining DOM slots/observers.
 - [x] Add atomic assign/resume/send/leave guards and run restaurant suites.
@@ -62,7 +70,8 @@
 
 Capability Adoption audit: this wave is a bounded correction of the existing Rifad-owned `RestaurantServiceContract`, `OpenLocalOrder`, and mock/local persistence path. It does not add an external donor or a new tables state machine; move/merge/split/seats/reservations and real KDS transport remain out of scope.
 
-Wave verification: typecheck PASS; `kitchen-delta.test.ts` + `local-service.test.tsx` PASS (13/13). The full suite is reduced from the 16-failure baseline to three failures, all assigned to Wave 4/5 debt/receipt assertions rather than Restaurant/Kitchen behavior.
+Historical Wave 3 verification is superseded by the ownership follow-up. Current fresh
+verification is recorded under Wave 6.
 
 ## Wave 4 — Payments, Credit, and Debt
 
@@ -75,7 +84,9 @@ Wave verification: typecheck PASS; `kitchen-delta.test.ts` + `local-service.test
 - [x] Add atomic Pay/Credit/Debt guards and targeted double-submit tests.
 - [x] Commit this wave independently.
 
-Wave verification: typecheck PASS; payment/credit/debt targeted suites PASS (23/23); full Vitest suite PASS (27 files, 83 tests).
+Historical Wave 4 verification before the ownership follow-up: typecheck PASS;
+payment/credit/debt targeted suites PASS (23/23); full Vitest suite PASS (27 files,
+83 tests). This is provenance, not the current final result.
 
 ## Wave 5 — Collection receipt, print, and app polish
 
@@ -87,16 +98,26 @@ Wave verification: typecheck PASS; payment/credit/debt targeted suites PASS (23/
 - [x] Consolidate semantic colors, states, focus-visible, pressed/disabled behavior, overflow, and responsive rules in `front-office.css` only.
 - [x] Commit receipt/print separately from the final CSS polish when the diff would otherwise mix concerns.
 
-Wave verification: typecheck PASS; targeted receipt/customer/restaurant suites PASS (37/37); production build PASS. The application was run in the in-app browser and actually observed at 1024×768, 1366×768, 1440×900, and 1920×1080. Verified states include inline customer creation with catalog retained and no body horizontal overflow, tables, sent/pending Kitchen Delta, payment total/method contrast, Credit selected-summary behavior, Debt keypad with sticky method/confirmation actions, collection receipt fields/actions, print status, and settings. Browser console warnings/errors: none.
+Historical Wave 5 automated evidence predates the latest ownership corrections. It is
+retained as provenance only and does not establish current Runtime Visual PASS.
 
 ## Wave 6 — Full verification and handoff
 
 **Files:** UI manifest, naming/field register, progress/status/handoff documents.
 
 - [x] Reconcile authority docs without promoting MAP-04/05 or production capability.
-- [x] Run fresh typecheck, targeted tests, full tests, and build; compare with the 16-failure baseline.
-- [x] Run the app and observe/capture cart, customer, tables, payment, credit, debt, receipt, print, and settings at 1366×768, 1440×900, 1920×1080, and 1024×768.
-- [x] Record exact PASS/FAIL/UNVERIFIED evidence and remaining issues.
+- [x] Run fresh typecheck, serialized full tests and build after the ownership follow-up; compare with the 16-failure baseline.
+- [ ] Run the app and observe/capture cart, customer, tables, payment, credit, debt, receipt, print, and settings at 1366×768, 1440×900, 1920×1080, and 1024×768.
+- [x] Record the current Runtime Visual result as `UNVERIFIED` and retain remaining issues.
 - [x] Inspect status/diff, push the branch, and create or reuse a Draft PR targeting `agent/rifad-frontoffice-final-ui`.
 
-Final verification: typecheck PASS; targeted Front Office suites PASS (7 files, 29 tests); full POS suite PASS (27 files, 83 tests) versus the pinned-base baseline of 16 failed / 52 passed; production build PASS (148 modules). Runtime visual inspection PASS at all four required viewports with no console warnings/errors or page-level horizontal overflow. Physical printer output and production persistence remain UNVERIFIED and are not claimed by this lane.
+Current verification: `npm run typecheck` PASS; serialized full POS suite PASS (27
+files / 94 tests, exit 0); `npm run build` PASS (146 modules transformed). Runtime
+Visual is `UNVERIFIED` overall because the full required viewport/state matrix has not
+been rerun and captured after the ownership corrections. Physical printer output and
+production persistence also remain `UNVERIFIED`.
+
+## Wave 7 — halted safe checkpoint
+
+Wave 7 visual polish was stopped by owner override. Do not resume it until the
+foundation scenario is accepted. Do not start MAP-02 before explicit owner approval.

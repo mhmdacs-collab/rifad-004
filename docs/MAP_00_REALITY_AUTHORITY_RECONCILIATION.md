@@ -8,6 +8,10 @@ Repository: `mhmdacs-collab/rifad-004`
 
 Active branch: `agent/pos-visual-pass-01`
 
+Historical provenance note: this MAP-00 record keeps its original branch identity.
+Current Front Office foundation corrections continue separately on
+`agent/frontoffice-regression-finalization`; they do not reopen or promote MAP-00/01.
+
 Pull request: PR #2 — keep **Draft** and **unmerged** until explicit owner approval.
 
 ---
@@ -176,11 +180,15 @@ The current contract therefore already represents much more than the original re
 
 ### 5.2 Current durable model gaps
 
-Current `TicketLine` is still fundamentally:
+For production sale truth, `TicketLine` is still fundamentally:
 
 `product + name snapshot + unit price + quantity`.
 
-It does not yet carry the production truth needed for selected pricing options, add-ons, discounts, taxes, fulfillment, price context or preparation deltas.
+The current local/mock restaurant correction adds an optional `kitchenState`
+(`pending | sent`) ownership marker, while immutable dispatch batches live on the open
+local order. This bounded marker does not complete the production truth needed for
+selected pricing options, add-ons, discounts, taxes, fulfillment, price context or a
+production preparation lifecycle.
 
 Current `Receipt` uses one `paymentMethod` value (`cash | card | credit`). That is sufficient for the current proof but cannot be the final split-payment-ready model.
 

@@ -8,16 +8,24 @@ Pinned base SHA: `4a30118f11b1072db71569cb73fd9aeae37e8309`
 
 Draft pull request: `#4` targeting `agent/rifad-frontoffice-final-ui`; unmerged.
 
-## Scope completed
+Foundation follow-up commits: `d6188b9`, `27c4ac5`, `911df69`; regression-test
+follow-up: `85e5746`.
 
-The branch closes the Front Office regression scope in six separately committed waves:
+## Current checkpoint
+
+The branch retains the six separately committed regression waves below:
 
 1. baseline and root-cause isolation;
 2. Ticket Workspace, customer and cart ownership;
 3. existing restaurant/kitchen/table lifecycle correction;
 4. payment, Credit and debt collection safeguards;
 5. dedicated collection receipt printing and app-like CSS polish;
-6. authority reconciliation and full verification.
+6. authority reconciliation and verification.
+
+The subsequent Wave 7 visual-polish continuation was stopped at the first safe
+checkpoint by owner override. The ownership corrections above are allowed foundation
+work, not a resumption of visual polish. The Front Office is not visually accepted yet,
+and MAP-02 has not started.
 
 ## Binding customer decisions
 
@@ -32,33 +40,38 @@ The branch closes the Front Office regression scope in six separately committed 
 
 Restaurant work is a bounded correction of the existing Rifad-owned
 `RestaurantServiceContract`, open-local-order adapter and local/mock state. It adds
-immutable kitchen dispatch batches, add/reduce/cancel deltas and deterministic gates.
+immutable kitchen dispatch batches and explicit pending/sent ownership. Ordinary cart
+editing, deletion and clearing apply to pending additions only; sent lines are
+read-only. A separate owner-authorized correction path appends `reduce`/`cancel` deltas
+without mutating or deleting prior dispatch history.
 It does not add move/merge/split/seats/reservations, a real KDS, production table
 persistence or a new domain engine.
+
+This remains an extension of the existing local/mock contract and adapters. A broader
+kitchen/table capability or state machine must stop and follow Capability Adoption.
 
 Debt settlement and collection-receipt printing remain local/mock. The dedicated
 printing call does not create a sales receipt. Physical printer delivery, production
 database behavior and payment accounting are not claimed.
 
-## Runtime evidence
+## Runtime visual status
 
-The app was actually run and inspected at 1024×768, 1366×768, 1440×900 and
-1920×1080. Cart, inline customer creation, tables/open orders, kitchen sent/pending
-states, payment/Credit, debt keypad/receipt and settings were inspected. Console
-errors/warnings and page-level horizontal overflow were absent during the review.
+**UNVERIFIED overall.** Earlier handoff text recorded a four-viewport review before the
+latest ownership corrections, but the complete required viewport/state matrix has not
+been rerun and captured for the current checkpoint. Do not report Runtime Visual PASS
+until the running application is actually observed or captured at every required size.
 
 Physical printer output and production persistence remain `UNVERIFIED`.
 
-## Fresh final verification
+## Fresh automated verification
 
 - TypeScript: `npm run typecheck` — PASS.
-- Targeted Front Office suites: 7 files, 29 tests — PASS.
-- Full POS Vitest suite: 27 files, 83 tests — PASS.
-- Production bundle: `npm run build` — PASS (148 modules transformed).
-- Baseline comparison: the pinned base produced 16 failed / 52 passed tests; the final branch produces 0 failed / 83 passed tests.
-- One CustomerFlow test timed out only during an intentionally concurrent verification run. It passed immediately in isolation (2/2), in the sequential targeted run, and in the sequential full suite; it is recorded as resource contention rather than hidden as a pass.
+- Serialized POS suite: `npm test -- --run --maxWorkers=1 --minWorkers=1 --no-file-parallelism --reporter=dot` — PASS, 27 files / 94 tests, exit 0.
+- Production bundle: `npm run build` — PASS, 146 modules transformed.
+- The pinned-base baseline remains 16 failed / 52 passed tests for comparison only.
 
 ## Review order
 
-Review the commits in wave order. Do not squash domain, CSS and receipt work during
-review because the separation is intentional and required for regression isolation.
+Review the original commits in wave order, then review `d6188b9`, `27c4ac5`,
+`911df69`, and `85e5746` in that order. Do not squash domain, CSS, receipt and
+foundation work together; the separation is intentional for regression isolation.
