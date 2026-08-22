@@ -1,8 +1,8 @@
 # Rifad POS UI Naming and Field Register
 
-Last updated: 2026-08-20
+Last updated: 2026-08-21
 
-Status: **CURRENT — MAP-01 payment/direct-impact/delivery-collection closeout reconciled**
+Status: **CURRENT — MAP-01 closeout and Front Office ownership checkpoint reconciled**
 
 This register is the canonical traceability index between visible POS/Back Office concepts and durable Rifad-owned meanings. It prevents UI-first work from silently creating unnamed database/business facts.
 
@@ -97,6 +97,27 @@ Manager override fields are CURRENT-MOCK: actor employee, approver employee, cap
 ### Required later sold-line fields
 
 `REQUIRED-GAP` for MAP-03 includes resolved pricing-option identity/value, selected add-ons and exact added amounts, discount snapshot, tax snapshot and any other sale-line choice that changes durable sold truth.
+
+### Front Office regression meanings — `CURRENT-MOCK`
+
+| Field / concept | Canonical meaning | Class | Notes |
+| --- | --- | --- | --- |
+| inline customer workspace state | presentation mode replacing the cart content while the catalog stays visible | `UI-ONLY` | never a modal and never an auto-save authority |
+| selected normal-ticket customer | candidate shown in the retained result list before explicit attachment | `UI-ONLY` | attachment is owned by `SalesContract.setCustomer` |
+| selected Credit customer summary | collapsed payment-customer selection after an explicit choice | `UI-ONLY` | Change Customer restores search/results |
+| ticket-line kitchen ownership | `pending` or `sent` on the current local/mock `TicketLine` | `CURRENT-MOCK` | ordinary cart tools may mutate only `pending`; a missing legacy marker normalizes through the compatibility rules |
+| kitchen dispatch batch ID | immutable identity of one sent local/mock kitchen revision | `CURRENT-MOCK` | prevents a later same-product addition from rewriting sent history |
+| kitchen delta kind | `add`, `reduce` or `cancel` | `CURRENT-MOCK` / `INTERNAL-CHARACTERIZATION` | ordinary cashier Send emits pending `add`; `reduce`/`cancel` helpers are retained only for adapter/domain characterization and never expose a cashier correction action or rewrite prior batches |
+| pending kitchen batch | editable/clearable additions that have not crossed the kitchen boundary | `CURRENT-MOCK` | same-product lines aggregate only inside the same pending batch, never into a sent line |
+| sent quantity snapshot | active quantity represented by immutable kitchen batches and any already-recorded internal characterization deltas | `CURRENT-MOCK` | current cashier SENT history is read-only and remains durable when pending changes are cleared or the order is reopened |
+| deferred sent-correction intent | internal/test-only command shape for future `reduce`/`cancel` characterization | `INTERNAL-CHARACTERIZATION` | not a current cashier authorization; `allowSentCorrections` is not exposed by Front Office interaction paths; UX, authorization, reason, audit, kitchen notification and financial consequences are deferred to Open Order lifecycle work |
+| last local-order mutation command ID | most recently accepted update, including metadata-only updates | `CURRENT-MOCK` | supports deterministic retry without changing the stable creation command identity |
+| local-order mutation command IDs | bounded memory of accepted update command identities | `CURRENT-MOCK` | prevents an older retry from creating a duplicate kitchen revision after later mutations |
+| debt collection method | merchant collection rail selected for settlement (`cash` or `network`) | `CURRENT-MOCK` | required before settlement; separate from sale Payment Type configuration |
+| debt collection receipt ID / number | stable identity and cashier-facing number for one idempotent settlement | `CURRENT-MOCK` | does not create a completed-sale receipt |
+| debt receipt customer mobile | mobile snapshot printed on the collection receipt | `CURRENT-MOCK` | collection-receipt presentation fact |
+| debt before / paid / remaining | exact Money snapshots around the accepted settlement | `CURRENT-MOCK` | overpayment and zero payment are rejected |
+| `PrintingContract.submitDebtCollection` | dedicated collection-receipt print boundary | `CURRENT-MOCK` | separate from sale `submit`/reprint paths; hardware delivery remains unverified |
 
 ## 6. Payment methods — current MAP-01 meaning
 
@@ -304,7 +325,7 @@ Current mock Card/Mada behavior must not be interpreted as production terminal s
 ## 14. Immediate roadmap implications
 
 - **MAP-01 PASS:** effective configuration, authorization, payment direct impact, N-method selection and bounded delivery COD collection context.
-- **MAP-02 next:** Shift + Cash Drawer Ledger + Time Clock. Cash-drawer expected balance must consume `directImpact = cash`; it must not infer cash from payment labels.
+- **MAP-02 next only after the Front Office owner-acceptance gate:** Shift + Cash Drawer Ledger + Time Clock. Cash-drawer expected balance must consume `directImpact = cash`; it must not infer cash from payment labels.
 - **MAP-03:** sold tax/discount/pricing-option/add-on truth.
 - **MAP-04:** open-ticket lifecycle.
 - **MAP-05:** normalized payment records, split payment across any enabled methods, receipt detail/refunds and later payment/settlement lifecycle.
@@ -312,4 +333,5 @@ Current mock Card/Mada behavior must not be interpreted as production terminal s
 - **MAP-10:** synchronization provider.
 - **MAP-11:** real Back Office ↔ POS transport.
 
-Do not start MAP-02 automatically. Stop for owner review after MAP-01 closeout.
+MAP-02 has not started. Do not start it before explicit owner acceptance of the current
+Front Office checkpoint.

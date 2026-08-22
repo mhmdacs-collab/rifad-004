@@ -2,9 +2,15 @@
  * Keep touch targets and Arabic text human-sized; never shrink content just to fit the rail.
  */
 
-.ticket-column,
-.mobile-ticket-surface {
+.ticket-column {
   position: relative;
+}
+
+/* The compact ticket is a viewport surface. Keep it out of the catalog's
+ * normal flow; otherwise it starts below the product grid and leaves a large
+ * blank band above the customer task on narrow screens. */
+.mobile-ticket-surface {
+  position: fixed;
 }
 
 .ticket-workspace-host--active {

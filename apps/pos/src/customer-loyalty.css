@@ -301,6 +301,17 @@
   cursor: default;
 }
 
+.customer-change-selection {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 8px;
+  border: 1px solid #b8d0c4;
+  border-radius: 9px;
+  color: var(--brand-dark, #07523a);
+  background: #f7fbf8;
+  font-weight: 800;
+}
+
 .customer-history-shell {
   display: flex;
   flex-direction: column;

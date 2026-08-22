@@ -1,6 +1,6 @@
 # Rifad Documentation Map
 
-Last updated: 2026-08-19
+Last updated: 2026-08-21
 
 This directory separates binding Rifad decisions from current execution records and historical/research evidence.
 
@@ -12,8 +12,9 @@ When resuming current work, read in this order:
 2. `architecture/CURRENT_DECISIONS.md`;
 3. `RIFAD_FINAL_IMPLEMENTATION_MAP.md`;
 4. `MAP_00_REALITY_AUTHORITY_RECONCILIATION.md` while MAP-00 is active/recent;
-5. `CURRENT_WORK_HANDOFF_2026-08-18.md`;
-6. the authority map below.
+5. `CURRENT_WORK_HANDOFF_2026-08-21.md` for the bounded Front Office regression lane;
+6. `CURRENT_WORK_HANDOFF_2026-08-18.md` for the wider cross-domain checkpoint;
+7. the authority map below.
 
 For the current Back Office/Loyverse evidence:
 
@@ -38,7 +39,7 @@ When documents conflict, use this order:
 6. `ui/DESIGN_AUTHORITY.md` for POS interaction/visual authority.
 7. `ui/POS_UI_NAMING_AND_FIELD_REGISTER.md` for canonical labels and UI-to-data field traceability.
 8. `ui/UI_PROGRESS.md` and current UI/product plans.
-9. `CURRENT_WORK_HANDOFF_2026-08-18.md` for the latest continuation checkpoint when it does not conflict with higher authority.
+9. `CURRENT_WORK_HANDOFF_2026-08-21.md`, then `CURRENT_WORK_HANDOFF_2026-08-18.md`, for continuation checkpoints when they do not conflict with higher authority.
 10. Research/historical proposals as evidence only.
 
 A product/visual discussion can be documented before implementation while remaining explicitly not manifest-authorized. Restaurant local service has a bounded executable prototype under `POS-FLOW-002`; the bounded Back Office catalog family is `BO-FLOW-002`; online-order/delivery connector implementation remains pending separate scope.
@@ -92,6 +93,7 @@ Keep separate:
 
 - `RIFAD_FINAL_IMPLEMENTATION_MAP.md` — owner-approved dependency-ordered execution roadmap.
 - `MAP_00_REALITY_AUTHORITY_RECONCILIATION.md` — code/product/docs reality audit and MAP-00 evidence.
+- `CURRENT_WORK_HANDOFF_2026-08-21.md` — bounded Front Office regression-finalization handoff; explicitly does not promote MAP-04/MAP-05.
 - `CURRENT_WORK_HANDOFF_2026-08-18.md` — cross-domain continuation checkpoint; updated by MAP-00 when current sequencing changes.
 - `architecture/CURRENT_DECISIONS.md` — binding current decisions, including D-030/D-032/D-033.
 - `architecture/RIFAD_ARCHITECTURE.md` — overall capability/module direction.

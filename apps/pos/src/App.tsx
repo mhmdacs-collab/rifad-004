@@ -5,9 +5,6 @@ import { ConfiguredPaymentMethodRail } from "./components/ConfiguredPaymentMetho
 import { InlineCheckoutRail } from "./components/InlineCheckoutRail";
 import { LocalServiceEnhancer } from "./components/LocalServiceEnhancer";
 import { ManagerOverrideDialog } from "./components/ManagerOverrideDialog";
-import { TicketWorkspaceEnhancer } from "./components/TicketWorkspaceEnhancer";
-import { TransactionOperationEnhancer } from "./components/TransactionOperationEnhancer";
-import { installQuantityKeypad } from "./quantity-keypad";
 import { createPosRuntimeAdapter } from "./runtime/posRuntimeAdapter";
 import {
   createRestaurantServiceAdapter,
@@ -45,8 +42,6 @@ export default function App() {
     lastSaleTicket.current = flow.ticket;
   }
 
-  useEffect(() => installQuantityKeypad(), []);
-
   useEffect(() => {
     let active = true;
     if (flow.stage !== "success" || !flow.receipt) {
@@ -64,9 +59,7 @@ export default function App() {
   useEffect(() => {
     if (flow.stage !== "success") return;
     setPaymentContextError(null);
-    const printButton = document.querySelector<HTMLButtonElement>(".inline-success-print");
-    printButton?.setAttribute("aria-label", "طباعة الإيصال");
-  }, [flow.stage, flow.printStatus]);
+  }, [flow.stage]);
 
   const inlineCheckoutStage = flow.stage === "payment" || flow.stage === "cash" || flow.stage === "card" || flow.stage === "success"
     ? flow.stage
@@ -266,8 +259,9 @@ export default function App() {
               onPlacePageProduct={(pageId, slotIndex, productId) => void flow.placeSalePageProduct(pageId, slotIndex, productId)}
               onRemovePageProduct={(pageId, slotIndex) => void flow.removeSalePageProduct(pageId, slotIndex)}
               onAddProduct={(id) => void flow.addProduct(id)}
-              onSetQuantity={(id, value) => void flow.setQuantity(id, value)}
-              onRemoveLine={(id) => void flow.removeLine(id)}
+              onSetQuantity={flow.setQuantity}
+              onRemoveLine={flow.removeLine}
+              onClearTicket={flow.clearTicket}
               onSaveTicket={() => void flow.saveOpenTicket()}
               onCheckout={() => void beginAuthorizedCheckout()}
               onOpenReceipts={() => void flow.openReceipts()}
@@ -275,33 +269,13 @@ export default function App() {
               onCreateCustomer={flow.createCustomer}
               onSetTicketCustomer={flow.setTicketCustomer}
               onLoadCustomerLedger={flow.loadCustomerLedger}
-              onChargeCredit={flow.chargeTicketToCustomer}
-              onSettleDebt={flow.settleCustomerDebt}
-            />
-
-            <TicketWorkspaceEnhancer
-              active={flow.stage === "sales"}
-              ticket={saleTicket}
-              local={local}
-              creditEnabled={creditEnabled}
-              legacyFixture={legacyOrderTypeFixture}
-              busy={flow.busy}
-              onCheckout={beginAuthorizedCheckout}
-              onRestaurantLocalCheckout={beginAuthorizedRestaurantLocalCheckout}
-              onRestaurantDirectCheckout={beginAuthorizedRestaurantDirectCheckout}
-              onSearchCustomers={flow.searchCustomers}
-              onCreateCustomer={(name, mobile, details) => flow.createCustomer(name, mobile, details)}
-              onSetTicketCustomer={flow.setTicketCustomer}
-              onLoadCustomerLedger={flow.loadCustomerLedger}
               onChargeCredit={chargeCreditFromTicket}
               onSettleDebt={flow.settleCustomerDebt}
-            />
-
-            <TransactionOperationEnhancer
-              showClearCart={flow.stage === "sales" && saleTicket.lines.length > 0}
-              onClearCart={async () => {
-                await Promise.all(saleTicket.lines.map((line) => flow.removeLine(line.id)));
-              }}
+              onPrintDebtCollection={flow.printDebtCollectionReceipt}
+              local={local}
+              creditEnabled={creditEnabled}
+              onRestaurantLocalCheckout={beginAuthorizedRestaurantLocalCheckout}
+              onRestaurantDirectCheckout={beginAuthorizedRestaurantDirectCheckout}
             />
 
             <LocalServiceEnhancer local={local} legacyFixture={legacyOrderTypeFixture} />
@@ -312,6 +286,7 @@ export default function App() {
                 paymentMethods={effectiveConfiguration.configuration?.paymentMethods ?? []}
                 delivery={effectiveConfiguration.configuration?.delivery}
                 serviceMode={local.checkoutServiceContext?.mode ?? null}
+                serviceLabel={local.checkoutServiceContext?.label ?? null}
                 configurationLoading={effectiveConfiguration.loading}
                 configurationError={effectiveConfiguration.errorMessage}
                 busy={flow.busy}
@@ -334,6 +309,7 @@ export default function App() {
                 ticket={saleTicket}
                 receipt={flow.receipt}
                 deliveryContext={completedDelivery}
+                serviceLabel={local.checkoutServiceContext?.label ?? null}
                 printStatus={flow.printStatus}
                 busy={flow.busy}
                 errorMessage={paymentContextError ?? flow.errorMessage}

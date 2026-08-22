@@ -1,16 +1,54 @@
 # Rifad Current Execution Status
 
-Last updated: 2026-08-20
+Last updated: 2026-08-21
 
-Branch: `agent/pos-visual-pass-01`
+Active implementation branch: `agent/frontoffice-regression-finalization`
+
+MAP-01 provenance branch: `agent/pos-visual-pass-01`
 
 Current completed map item: **MAP-01 — Effective POS Configuration + Authorization + Payment/Collection Configuration**
 
 Status: **PASS — owner policy → effective local POS configuration → local authorization + configuration-driven payment/delivery collection semantics proven**
 
+## Front Office regression finalization — supplemental lane
+
+As of 2026-08-21, `agent/frontoffice-regression-finalization` contains a bounded,
+test-backed correction of behavior that was already executable on
+`agent/rifad-frontoffice-final-ui` (`4a30118f11b1072db71569cb73fd9aeae37e8309`).
+
+The lane was implemented in isolated waves: baseline/root causes; Ticket/Customer/Cart;
+Restaurant/Kitchen/Tables; Payments/Credit/Debt; Receipt/Print/app polish; and
+verification. A later Wave 7 visual-polish continuation was stopped at the first safe
+checkpoint by owner override. Foundation corrections then continued in focused commits
+`d6188b9`, `27c4ac5`, and `911df69`, followed by regression-test commit `85e5746`;
+this does not reopen visual acceptance, change the map dependency position, or
+authorize a new production capability.
+
+Current bounded results:
+
+- React owns Ticket Workspace, cart/customer actions and financial action locks; the removed DOM enhancers no longer rewrite these controls after render.
+- Add Customer is inline in the cart column, keeps the catalog visible, creates only on explicit submit, attaches the created customer and returns to the cart.
+- Normal-ticket attachment keeps results available and exposes an attach action in the selected card; Credit selection hides the other results and exposes a selected summary plus Change Customer.
+- Existing local/mock restaurant service preserves immutable kitchen dispatch history. In
+  the current cashier Front Office, ordinary cart tools edit or clear only pending
+  additions and sent history is completely read-only: there is no correction region,
+  button, gesture or interaction path exposing `allowSentCorrections` or staging a
+  `reduce`/`cancel` against a sent line. Existing `reduce`/`cancel` helpers may remain
+  only as internal domain/adapter characterization coverage; they are not an
+  executable cashier feature or an authorization decision. Future sent-item
+  correction/void UX and its authorization, reason, audit, kitchen notification and
+  financial consequences are deferred to the later Open Order lifecycle work.
+- Debt collection validates method and amount, persists method/receipt identity idempotently, and prints a dedicated collection receipt without creating a sales receipt.
+- The restaurant work extends the existing local/mock `RestaurantServiceContract` and adapters only. It does not introduce a new kitchen/table state machine; any broader capability must follow Capability Adoption.
+- Overall Runtime Visual status is **UNVERIFIED**. The full required viewport/state matrix has not been rerun and captured after the ownership corrections, so no current Visual PASS is claimed.
+- Fresh automated verification passes: TypeScript, the serialized POS suite (27 files / 94 tests, exit 0), and the production build (146 modules transformed).
+
+Classification remains `CURRENT-MOCK`; MAP-04 and MAP-05 remain future gates.
+MAP-02 has not started and remains blocked until explicit owner acceptance of the Front Office checkpoint.
+
 ## Dependency position
 
-`MAP-00 PASS → MAP-01 PASS → MAP-02 next`
+`MAP-00 PASS → MAP-01 PASS → owner acceptance gate → MAP-02 next`
 
 Do **not** start MAP-03 or any later map item before its dependency gate. Do not resume synchronization adoption before MAP-10. Production local database selection remains MAP-06.
 

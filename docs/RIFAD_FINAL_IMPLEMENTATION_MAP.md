@@ -4,11 +4,36 @@ Status: **OWNER-APPROVED EXECUTION ROADMAP — MAP-01 PASS**
 
 Date: 2026-08-20
 
+Supplemental Front Office update: 2026-08-21
+
 Repository: `mhmdacs-collab/rifad-004`
 
-Active branch: `agent/pos-visual-pass-01`
+Active implementation branch: `agent/frontoffice-regression-finalization`
 
-Pull request: PR #2 — keep **Draft** and **unmerged** until explicit owner approval.
+MAP-01 provenance branch: `agent/pos-visual-pass-01`
+
+MAP-01 provenance pull request: PR #2 — kept **Draft** and **unmerged** pending its
+recorded owner gate. The current Front Office lane is tracked separately in Draft PR #4.
+
+---
+
+## Supplemental Front Office regression lane — 2026-08-21
+
+Branch `agent/frontoffice-regression-finalization` is a bounded correction lane based on
+`agent/rifad-frontoffice-final-ui` at `4a30118f11b1072db71569cb73fd9aeae37e8309`.
+Review is tracked in Draft PR #4 and remains unmerged pending owner approval.
+It closes regressions in the already executable retail/customer, restaurant staging,
+credit/debt and printing UI without changing the master dependency position below.
+
+- Customer creation is an inline Ticket Workspace state; it is not a separate modal.
+- Normal-ticket customer attachment and Credit customer selection intentionally use different selection states.
+- Restaurant changes refine the existing local/mock `RestaurantServiceContract`: sent batches remain immutable; ordinary cart tools edit/clear pending additions only; the current cashier Front Office exposes no sent-line correction controls or `allowSentCorrections` path. Existing `reduce`/`cancel` helpers remain internal domain/adapter characterization only, while future sent-item correction/void UX and authorization are deferred to Open Order lifecycle work. Table totals, send/pay gates and release-after-payment remain deterministic.
+- Debt collection persists the selected collection method and a dedicated collection-receipt identity; its printing path is separate from completed-sale receipts.
+- This evidence is `CURRENT-MOCK`. It does **not** promote MAP-04, MAP-05, production KDS, production payment accounting, production persistence, hardware printing or synchronization.
+- This is a bounded extension of the existing local/mock contract and adapters, not a new kitchen/table state machine. Any broader capability must follow Capability Adoption.
+- Wave 7 visual polish is halted at a safe checkpoint. Runtime Visual acceptance remains `UNVERIFIED`, and MAP-02 has not started.
+
+The original MAP-01 status and dependency sequence remain authoritative.
 
 ---
 
@@ -732,10 +757,11 @@ Applicable evidence must include:
 
 **Do not start MAP-03, production database selection or synchronization.**
 
-The next dependency-safe product capability is:
+After explicit owner acceptance of the current Front Office checkpoint, the next
+dependency-safe product capability is:
 
 **`MAP-02 — Shift + Cash Drawer Ledger + Time Clock`.**
 
 MAP-02 must reuse the MAP-01 effective feature/permission model instead of creating a parallel authorization mechanism. Relevant existing policy keys include `shifts`, `time-clock`, `view-shift-report` and `open-cash-drawer-without-sale`.
 
-Stop after MAP-01 closeout for owner review. MAP-02 is not started by this document update.
+MAP-02 has not started. Do not begin it before that explicit owner gate.

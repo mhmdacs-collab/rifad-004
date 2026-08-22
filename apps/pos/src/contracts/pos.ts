@@ -8,6 +8,7 @@ import type { LoyaltyContract } from "./loyalty";
 import type {
   Customer,
   CustomerDetails,
+  DebtCollectionReceipt,
   DebtCollectionMethod,
   DebtLedgerEntry,
   DebtSettlementResult,
@@ -51,9 +52,16 @@ export interface CatalogContract {
 
 export interface SalesContract {
   startTicket(input: { commandId: string }): Promise<Ticket>;
+  /** Restore a durable ticket snapshot (for example when reopening a table). */
+  restoreTicket(input: { commandId: string; ticket: Ticket }): Promise<Ticket>;
   addItem(input: { commandId: string; ticketId: string; productId: string }): Promise<Ticket>;
-  setLineQuantity(input: { ticketId: string; lineId: string; quantity: number }): Promise<Ticket>;
-  removeLine(input: { ticketId: string; lineId: string }): Promise<Ticket>;
+  /**
+   * Ordinary cart edits cannot mutate a line already sent to the kitchen.
+   * The optional correction flag is retained only for isolated adapter/domain
+   * characterization; the current cashier Front Office never supplies it.
+   */
+  setLineQuantity(input: { ticketId: string; lineId: string; quantity: number; allowSentCorrection?: boolean }): Promise<Ticket>;
+  removeLine(input: { ticketId: string; lineId: string; allowSentCorrection?: boolean }): Promise<Ticket>;
   saveOpenTicket(input: { commandId: string; ticketId: string }): Promise<Ticket>;
   setCustomer(input: { commandId: string; ticketId: string; customerId: string | null }): Promise<Ticket>;
   setLoyaltyRedemption(input: { commandId: string; ticketId: string; amount: Money }): Promise<Ticket>;
@@ -107,6 +115,10 @@ export interface CustomerCreditContract {
     commandId: string;
     customerId: string;
     amount: Money;
+    collectionMethod?: DebtCollectionMethod;
+    collectionReceiptId?: string;
+    collectionReceiptNumber?: string;
+    collectedAt?: string;
   }): Promise<Customer>;
 }
 
@@ -142,6 +154,10 @@ export interface ReceiptsContract {
 
 export interface PrintingContract {
   submit(input: { commandId: string; receiptId: string }): Promise<PrintDeliveryStatus>;
+  submitDebtCollection(input: {
+    commandId: string;
+    receipt: DebtCollectionReceipt;
+  }): Promise<PrintDeliveryStatus>;
 }
 
 /**

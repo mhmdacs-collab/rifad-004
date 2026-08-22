@@ -15,6 +15,7 @@ type InlineCheckoutRailProps = {
   ticket: Ticket;
   receipt: Receipt | null;
   deliveryContext?: DeliveryCollectionRecord | null;
+  serviceLabel?: string | null;
   printStatus: PrintDeliveryStatus;
   busy: string | null;
   errorMessage: string | null;
@@ -54,6 +55,7 @@ export function InlineCheckoutRail({
   ticket,
   receipt,
   deliveryContext,
+  serviceLabel = null,
   printStatus,
   busy,
   errorMessage,
@@ -152,7 +154,7 @@ export function InlineCheckoutRail({
       <aside className="inline-checkout-rail inline-checkout-rail--payment" aria-label="الدفع">
         <header className="inline-checkout-head">
           <button type="button" className="inline-checkout-back" onClick={onBackToSales} aria-label="العودة إلى السلة"><Icon name="arrow" size={20} /></button>
-          <div><strong>اختيار طريقة الدفع</strong><span>تذكرة #{ticket.sequence}</span></div>
+          <div><strong>اختيار طريقة الدفع</strong><span>تذكرة #{ticket.sequence}</span>{serviceLabel ? <span className="local-checkout-context">{serviceLabel}</span> : null}</div>
         </header>
 
         <div className="inline-checkout-body">
@@ -193,7 +195,7 @@ export function InlineCheckoutRail({
       <aside className="inline-checkout-rail inline-checkout-rail--cash" aria-label="الدفع نقدًا">
         <header className="inline-checkout-head">
           <button type="button" className="inline-checkout-back" onClick={onBackToPayment} aria-label="العودة إلى طرق الدفع"><Icon name="arrow" size={20} /></button>
-          <div><strong>الدفع نقدًا</strong><span>تذكرة #{ticket.sequence}</span></div>
+          <div><strong>الدفع نقدًا</strong><span>تذكرة #{ticket.sequence}</span>{serviceLabel ? <span className="local-checkout-context">{serviceLabel}</span> : null}</div>
         </header>
 
         <div className="inline-checkout-body inline-cash-body">
@@ -262,7 +264,7 @@ export function InlineCheckoutRail({
       <aside className="inline-checkout-rail inline-checkout-rail--card" aria-label="الدفع عبر شبكة أو مدى">
         <header className="inline-checkout-head">
           <button type="button" className="inline-checkout-back" onClick={onBackToPayment} aria-label="العودة إلى طرق الدفع"><Icon name="arrow" size={20} /></button>
-          <div><strong>شبكة / مدى</strong><span>تذكرة #{ticket.sequence}</span></div>
+          <div><strong>شبكة / مدى</strong><span>تذكرة #{ticket.sequence}</span>{serviceLabel ? <span className="local-checkout-context">{serviceLabel}</span> : null}</div>
         </header>
 
         <div className="inline-checkout-body inline-card-body">
@@ -317,7 +319,7 @@ export function InlineCheckoutRail({
       />
 
       <footer className="inline-success-actions inline-operation-footer transaction-operation-card" aria-label="إجراءات العملية">
-        <button type="button" className="inline-success-print" onClick={onPrint} disabled={busy !== null}><Icon name="printer" size={19} />{printStatus === "failed" ? "إعادة الطباعة" : "طباعة"}</button>
+        <button type="button" className="inline-success-print" onClick={onPrint} disabled={busy !== null} aria-label={printStatus === "failed" ? "إعادة طباعة الإيصال" : "طباعة الإيصال"}><Icon name="printer" size={19} />{printStatus === "failed" ? "إعادة الطباعة" : "طباعة"}</button>
         <button type="button" className="inline-new-sale" onClick={onNewSale} disabled={busy !== null}><Icon name="plus" size={20} />بيع جديد</button>
       </footer>
     </aside>

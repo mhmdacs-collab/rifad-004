@@ -34,6 +34,8 @@ export interface RestaurantServiceContract {
     commandId: string;
     openOrderId: string;
     ticket: Ticket;
+    /** Internal characterization-only opt-in; not exposed by the cashier UI. */
+    allowSentCorrections?: boolean;
   }): Promise<OpenLocalOrder>;
   closeOpenOrder(input: { openOrderId: string }): Promise<void>;
 }

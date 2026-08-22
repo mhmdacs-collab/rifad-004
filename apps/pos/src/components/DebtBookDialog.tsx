@@ -6,6 +6,7 @@ import type {
   DebtCollectionReceipt,
   DebtLedgerEntry,
   DebtSettlementResult,
+  PrintDeliveryStatus,
 } from "../domain/models";
 
 type DebtBookDialogProps = {
@@ -18,6 +19,7 @@ type DebtBookDialogProps = {
     amountHalalas: number,
     collectionMethod: DebtCollectionMethod,
   ) => Promise<Customer | DebtSettlementResult | null>;
+  onPrintReceipt: (receipt: DebtCollectionReceipt) => Promise<PrintDeliveryStatus>;
 };
 
 const formatHalalasForInput = (halalas: number) => {
@@ -61,12 +63,32 @@ const ledgerDate = (value: string) => {
   }
 };
 
+const receiptDate = (value: string) => new Intl.DateTimeFormat("ar-SA", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+}).format(new Date(value));
+
+const receiptTime = (value: string) => new Intl.DateTimeFormat("ar-SA", {
+  hour: "2-digit",
+  minute: "2-digit",
+}).format(new Date(value));
+
+const printStatusMessage: Record<PrintDeliveryStatus, string | null> = {
+  idle: null,
+  queued: "أُرسلت مهمة طباعة سند القبض إلى الطابعة.",
+  printed: "تمت طباعة سند القبض.",
+  failed: "تعذرت طباعة سند القبض. السداد محفوظ ويمكن إعادة المحاولة.",
+  "delivery-unknown": "تعذر تأكيد وصول مهمة الطباعة. تحقق من الطابعة قبل إعادة المحاولة.",
+};
+
 export function DebtBookDialog({
   busy,
   onClose,
   onSearch,
   onLoadLedger,
   onSettleDebt,
+  onPrintReceipt,
 }: DebtBookDialogProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<readonly Customer[]>([]);
@@ -81,9 +103,12 @@ export function DebtBookDialog({
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<DebtCollectionReceipt | null>(null);
+  const [printing, setPrinting] = useState(false);
+  const [printStatus, setPrintStatus] = useState<PrintDeliveryStatus>("idle");
   const searchSequence = useRef(0);
   const ledgerSequence = useRef(0);
   const actionLocked = useRef(false);
+  const printLocked = useRef(false);
 
   useEffect(() => {
     if (success) return;
@@ -215,14 +240,25 @@ export function DebtBookDialog({
     ? `تأكيد سداد ${formatHalalasForInput(settlementHalalas)} ر.س`
     : "تأكيد السداد";
 
+  const printCollectionReceipt = async () => {
+    if (!success || printLocked.current) return;
+    printLocked.current = true;
+    setPrinting(true);
+    setPrintStatus("queued");
+    const status = await onPrintReceipt(success);
+    setPrintStatus(status);
+    setPrinting(false);
+    printLocked.current = false;
+  };
+
   return (
     <div className="dialog-backdrop customer-credit-backdrop" role="presentation">
       <section className={`customer-credit-dialog debt-book-dialog${selected ? " debt-book-dialog--selected" : ""}${success ? " debt-book-dialog--success" : ""}`} role="dialog" aria-modal="true" aria-labelledby="debt-book-title">
         <header>
           <button type="button" onClick={onClose} aria-label="إغلاق" disabled={submitting}>×</button>
           <div>
-            <h2 id="debt-book-title">دفتر الديون</h2>
-            <span>{success ? "سند قبض السداد" : "ابحث عن العميل وسجّل السداد."}</span>
+            <h2 id="debt-book-title">{success ? "سند قبض" : "دفتر الديون"}</h2>
+            <span>{success ? `رقم السند ${success.number}` : "ابحث عن العميل وسجّل السداد."}</span>
           </div>
         </header>
 
@@ -232,13 +268,19 @@ export function DebtBookDialog({
               <div className="debt-book-success-mark" aria-hidden="true">✓</div>
               <div className="debt-book-success-copy">
                 <span>تم تسجيل السداد</span>
-                <strong>سند قبض {success.number}</strong>
-                <small>{success.customerName}</small>
+                <strong>{success.customerName}</strong>
+                <small dir="ltr">{success.customerMobile}</small>
+              </div>
+
+              <div className="debt-book-success-amount" aria-label="المبلغ المسدد والمقبوض">
+                <span>المبلغ المسدد</span>
+                <strong><MoneyAmount value={success.amount} /></strong>
               </div>
 
               <div className="debt-book-success-receipt-meta" aria-label="بيانات سند القبض">
                 <span><b>طريقة التحصيل</b><strong>{collectionMethodLabel(success.collectionMethod)}</strong></span>
-                <span><b>التاريخ والوقت</b><strong>{ledgerDate(success.collectedAt)}</strong></span>
+                <span><b>التاريخ</b><strong>{receiptDate(success.collectedAt)}</strong></span>
+                <span><b>الوقت</b><strong>{receiptTime(success.collectedAt)}</strong></span>
                 <span><b>الكاشير</b><strong>{success.employeeName}</strong></span>
                 {success.branchName ? <span><b>الفرع</b><strong>{success.branchName}</strong></span> : null}
               </div>
@@ -248,12 +290,8 @@ export function DebtBookDialog({
                   <span>الدين قبل السداد</span>
                   <strong><MoneyAmount value={success.previousDebt} /></strong>
                 </div>
-                <div>
-                  <span>المبلغ المقبوض</span>
-                  <strong><MoneyAmount value={success.amount} /></strong>
-                </div>
                 <div className="debt-book-success-remaining">
-                  <span>{success.remainingDebt.halalas > 0 ? "المتبقي على العميل" : "الرصيد المتبقي"}</span>
+                  <span>الدين المتبقي</span>
                   <strong><MoneyAmount value={success.remainingDebt} /></strong>
                 </div>
               </div>
@@ -264,7 +302,11 @@ export function DebtBookDialog({
             </div>
 
             <footer className="debt-book-success-footer">
-              <button type="button" className="primary-button" onClick={onClose}>تم</button>
+              <button type="button" className="debt-collection-print" onClick={() => void printCollectionReceipt()} disabled={printing}>
+                {printing ? "جارٍ إرسال الطباعة…" : "طباعة سند القبض"}
+              </button>
+              <button type="button" className="primary-button" onClick={onClose} disabled={printing}>تم</button>
+              {printStatusMessage[printStatus] ? <small className={`debt-collection-print-status is-${printStatus}`} role="status">{printStatusMessage[printStatus]}</small> : null}
             </footer>
           </div>
         ) : (
@@ -404,39 +446,41 @@ export function DebtBookDialog({
                       </>
                     ) : null}
 
-                    <div className="debt-collection-method" role="group" aria-label="طريقة تحصيل سداد الدين">
-                      <strong>طريقة التحصيل</strong>
-                      <div>
-                        <button
-                          type="button"
-                          className={collectionMethod === "cash" ? "active" : ""}
-                          aria-pressed={collectionMethod === "cash"}
-                          onClick={() => { setCollectionMethod("cash"); setMessage(null); }}
-                          disabled={submitting}
-                        >
-                          نقدي
-                        </button>
-                        <button
-                          type="button"
-                          className={collectionMethod === "card" ? "active" : ""}
-                          aria-pressed={collectionMethod === "card"}
-                          onClick={() => { setCollectionMethod("card"); setMessage(null); }}
-                          disabled={submitting}
-                        >
-                          شبكة / مدى
-                        </button>
+                    <div className="debt-settlement-actions">
+                      <div className="debt-collection-method" role="group" aria-label="طريقة تحصيل سداد الدين">
+                        <strong>طريقة التحصيل</strong>
+                        <div>
+                          <button
+                            type="button"
+                            className={collectionMethod === "cash" ? "active" : ""}
+                            aria-pressed={collectionMethod === "cash"}
+                            onClick={() => { setCollectionMethod("cash"); setMessage(null); }}
+                            disabled={submitting}
+                          >
+                            نقدي
+                          </button>
+                          <button
+                            type="button"
+                            className={collectionMethod === "card" ? "active" : ""}
+                            aria-pressed={collectionMethod === "card"}
+                            onClick={() => { setCollectionMethod("card"); setMessage(null); }}
+                            disabled={submitting}
+                          >
+                            شبكة / مدى
+                          </button>
+                        </div>
+                        <small>{collectionMethod ? `سيُسجل التحصيل على ${collectionMethodLabel(collectionMethod)}.` : "اختر أين تم استلام المبلغ قبل التأكيد."}</small>
                       </div>
-                      <small>{collectionMethod ? `سيُسجل التحصيل على ${collectionMethodLabel(collectionMethod)}.` : "اختر أين تم استلام المبلغ قبل التأكيد."}</small>
-                    </div>
 
-                    <button
-                      type="button"
-                      className="primary-button debt-settlement-submit"
-                      onClick={() => void submitSettlement()}
-                      disabled={busy || submitting || settlementInvalid || !collectionMethod}
-                    >
-                      {submitting ? "جارٍ تسجيل السداد…" : confirmationLabel}
-                    </button>
+                      <button
+                        type="button"
+                        className="primary-button debt-settlement-submit"
+                        onClick={() => void submitSettlement()}
+                        disabled={busy || submitting || settlementInvalid || !collectionMethod}
+                      >
+                        {submitting ? "جارٍ تسجيل السداد…" : confirmationLabel}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ) : (

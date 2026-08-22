@@ -19,6 +19,7 @@ import type {
   Customer,
   CustomerDetails,
   CustomerReference,
+  DebtCollectionMethod,
   DebtLedgerEntry,
   DeviceSession,
   EmployeeSession,
@@ -32,6 +33,7 @@ import type {
   Ticket,
   TicketLine,
 } from "../domain/models";
+import { kitchenStateOf, isSentKitchenLine } from "../domain/kitchenDelta";
 
 export const MOCK_POS_STORAGE_KEY = "rifad.pos.mock.v1";
 const STORAGE_KEY = MOCK_POS_STORAGE_KEY;
@@ -77,6 +79,9 @@ type DebtPaymentRecord = {
   customerId: string;
   amount: Money;
   createdAt: string;
+  collectionMethod?: DebtCollectionMethod;
+  collectionReceiptId?: string;
+  collectionReceiptNumber?: string;
 };
 
 type Persisted = {
@@ -197,12 +202,21 @@ const receiptItems = (ticket: Ticket): readonly ReceiptItem[] => ticket.lines.ma
 
 const normalizeTicket = (ticket: Ticket | null | undefined): Ticket | null => {
   if (!ticket) return null;
-  const subtotal = ticket.subtotal ?? lineSubtotal(ticket.lines ?? []);
+  const lines = ticket.lines ?? [];
+  const computedSubtotal = lineSubtotal(lines);
+  const persistedSubtotal = ticket.subtotal?.halalas ?? 0;
+  // A legacy open-ticket snapshot can contain real lines with a persisted
+  // zero subtotal. Recompute that impossible value from the stored price
+  // snapshots so reopening cannot silently turn a table total into SAR 0.00.
+  const subtotal = lines.length > 0 && persistedSubtotal <= 0
+    ? computedSubtotal
+    : ticket.subtotal ?? computedSubtotal;
   const rawRedemption = ticket.loyaltyRedemption?.halalas ?? 0;
   const loyaltyRedemption = money(Math.min(Math.max(0, rawRedemption), subtotal.halalas));
   const total = money(Math.max(0, subtotal.halalas - loyaltyRedemption.halalas));
   return {
     ...ticket,
+    lines: lines.map((line) => ({ ...line, kitchenState: kitchenStateOf(line) })),
     customer: normalizeCustomerReference(ticket.customer),
     subtotal,
     loyaltyRedemption,
@@ -548,16 +562,44 @@ class MockStore {
     return { customer: this.customerWithBalance(updatedCustomer), receipt };
   }
 
-  async settleCustomerDebt(commandId: string, customerId: string, amount: Money): Promise<Customer> {
+  async settleCustomerDebt(
+    commandId: string,
+    customerId: string,
+    amount: Money,
+    collectionMethod?: DebtCollectionMethod,
+    collectionReceiptId?: string,
+    collectionReceiptNumber?: string,
+    collectedAt?: string,
+  ): Promise<Customer> {
     await pause();
     const prior = this.state.debtPayments.find((record) => record.commandId === commandId);
     if (prior) return this.requireCustomer(prior.customerId);
     const customer = this.requireCustomer(customerId);
     if (!Number.isSafeInteger(amount.halalas) || amount.halalas <= 0) throw new PosContractError("INVALID_DEBT_PAYMENT", "أدخل مبلغ سداد أكبر من صفر.");
     if (amount.halalas > customer.debt.halalas) throw new PosContractError("DEBT_PAYMENT_EXCEEDS_BALANCE", "مبلغ السداد أكبر من دين العميل.");
-    const createdAt = new Date().toISOString();
-    const payment: DebtPaymentRecord = { id: createId("debt-payment"), commandId, customerId, amount, createdAt };
-    const ledgerEntry: DebtLedgerEntry = { id: createId("debt-entry"), customerId, kind: "payment", direction: "credit", amount, createdAt, ticketSequence: null };
+    const createdAt = collectedAt ?? new Date().toISOString();
+    const payment: DebtPaymentRecord = {
+      id: createId("debt-payment"),
+      commandId,
+      customerId,
+      amount,
+      createdAt,
+      collectionMethod,
+      collectionReceiptId,
+      collectionReceiptNumber,
+    };
+    const ledgerEntry: DebtLedgerEntry = {
+      id: createId("debt-entry"),
+      customerId,
+      kind: "payment",
+      direction: "credit",
+      amount,
+      createdAt,
+      ticketSequence: null,
+      collectionMethod,
+      collectionReceiptId,
+      collectionReceiptNumber,
+    };
     const updatedCustomer = { ...customer, debt: money(customer.debt.halalas - amount.halalas) };
     this.state = {
       ...this.state,
@@ -664,6 +706,13 @@ class MockStore {
     return ticket;
   }
 
+  async restoreTicket(ticket: Ticket): Promise<Ticket> {
+    await pause();
+    const restored = normalizeTicket(ticket);
+    if (!restored) throw new PosContractError("INVALID_TICKET", "تعذر استعادة التذكرة.");
+    return this.saveTicket(restored);
+  }
+
   async addItem(ticketId: string, productId: string): Promise<Ticket> {
     await pause();
     const ticket = this.requireTicket(ticketId);
@@ -675,22 +724,32 @@ class MockStore {
     } catch {
       throw new PosContractError("PRODUCT_NOT_FOUND", "العنصر غير متاح.");
     }
-    const existing = ticket.lines.find((line) => line.productId === product.id);
+    // A sent line is an immutable kitchen fact. Additions after dispatch must
+    // create/merge only within the current pending batch, even for the same
+    // product.
+    const existing = ticket.lines.find((line) => line.productId === product.id && !isSentKitchenLine(line));
     const lines = existing
       ? ticket.lines.map((line) => line.id === existing.id ? { ...line, quantity: line.quantity + 1 } : line)
-      : [...ticket.lines, { id: createId("line"), productId: product.id, name: product.name, unitPrice: product.price, quantity: 1, tone: product.tone } satisfies TicketLine];
+      : [...ticket.lines, { id: createId("line"), productId: product.id, name: product.name, unitPrice: product.price, quantity: 1, tone: product.tone, kitchenState: "pending" } satisfies TicketLine];
     return this.saveTicket(this.createTicket(lines, ticket.sequence, ticket.id, ticket.customer, ticket.loyaltyRedemption));
   }
 
-  async setLineQuantity(ticketId: string, lineId: string, quantity: number): Promise<Ticket> {
+  async setLineQuantity(ticketId: string, lineId: string, quantity: number, allowSentCorrection = false): Promise<Ticket> {
     await pause();
     const ticket = this.requireTicket(ticketId);
     if (!Number.isSafeInteger(quantity) || quantity < 0) throw new PosContractError("INVALID_QUANTITY", "الكمية غير صالحة.");
+    const target = ticket.lines.find((line) => line.id === lineId);
+    if (target && isSentKitchenLine(target) && !allowSentCorrection) {
+      throw new PosContractError("SENT_LINE_IMMUTABLE", "الصنف المرسل للمطبخ ثابت ولا يمكن تعديله من السلة.");
+    }
+    if (target && isSentKitchenLine(target) && allowSentCorrection && quantity > target.quantity) {
+      throw new PosContractError("SENT_LINE_IMMUTABLE", "لا يمكن زيادة صنف مرسل؛ أضف الكمية الجديدة كسطر بانتظار الإرسال.");
+    }
     const lines = quantity === 0 ? ticket.lines.filter((line) => line.id !== lineId) : ticket.lines.map((line) => line.id === lineId ? { ...line, quantity } : line);
     return this.saveTicket(this.createTicket(lines, ticket.sequence, ticket.id, ticket.customer, ticket.loyaltyRedemption));
   }
 
-  async removeLine(ticketId: string, lineId: string) { return this.setLineQuantity(ticketId, lineId, 0); }
+  async removeLine(ticketId: string, lineId: string, allowSentCorrection = false) { return this.setLineQuantity(ticketId, lineId, 0, allowSentCorrection); }
 
   async saveOpenTicket(ticketId: string): Promise<Ticket> {
     await pause();
@@ -772,9 +831,10 @@ export const createMockPosRuntime = (): MockPosRuntime => {
   };
   const sales: SalesContract = {
     startTicket: () => store.startTicket(),
+    restoreTicket: ({ ticket }) => store.restoreTicket(ticket),
     addItem: ({ ticketId, productId }) => store.addItem(ticketId, productId),
-    setLineQuantity: ({ ticketId, lineId, quantity }) => store.setLineQuantity(ticketId, lineId, quantity),
-    removeLine: ({ ticketId, lineId }) => store.removeLine(ticketId, lineId),
+    setLineQuantity: ({ ticketId, lineId, quantity, allowSentCorrection }) => store.setLineQuantity(ticketId, lineId, quantity, allowSentCorrection),
+    removeLine: ({ ticketId, lineId, allowSentCorrection }) => store.removeLine(ticketId, lineId, allowSentCorrection),
     saveOpenTicket: ({ ticketId }) => store.saveOpenTicket(ticketId),
     setCustomer: ({ ticketId, customerId }) => store.setTicketCustomer(ticketId, customerId),
     setLoyaltyRedemption: ({ ticketId, amount }) => store.setLoyaltyRedemption(ticketId, amount),
@@ -785,7 +845,8 @@ export const createMockPosRuntime = (): MockPosRuntime => {
     update: ({ customerId, name, mobile, details }) => store.updateCustomer(customerId, name, mobile, details),
     ledger: ({ customerId }) => store.listCustomerLedger(customerId),
     chargeTicket: ({ commandId, customerId, ticketId }) => store.chargeTicketToCustomer(commandId, customerId, ticketId),
-    settle: ({ commandId, customerId, amount }) => store.settleCustomerDebt(commandId, customerId, amount),
+    settle: ({ commandId, customerId, amount, collectionMethod, collectionReceiptId, collectionReceiptNumber, collectedAt }) =>
+      store.settleCustomerDebt(commandId, customerId, amount, collectionMethod, collectionReceiptId, collectionReceiptNumber, collectedAt),
   };
   const checkout: CheckoutContract = {
     begin: ({ ticketId }) => store.begin(ticketId),
@@ -799,7 +860,10 @@ export const createMockPosRuntime = (): MockPosRuntime => {
     setLoyaltyEarned: ({ receiptId, earned }) => store.setReceiptLoyaltyEarned(receiptId, earned),
     emailReceipt: ({ receiptId, email }) => store.emailReceipt(receiptId, email),
   };
-  const printing: PrintingContract = { submit: () => store.print() };
+  const printing: PrintingContract = {
+    submit: () => store.print(),
+    submitDebtCollection: () => store.print(),
+  };
 
   return {
     restore: () => store.restore(),

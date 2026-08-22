@@ -48,11 +48,15 @@ describe("POS-FLOW-001", () => {
     await user.click(screen.getByRole("button", { name: /نقدًا/ }));
 
     await screen.findByRole("heading", { name: /ريال سعودي/ });
-    await user.click(screen.getByRole("button", { name: "سداد" }));
+    const completeCashButton = screen.getByRole("button", { name: "سداد" });
+    fireEvent.click(completeCashButton);
+    fireEvent.click(completeCashButton);
 
     await screen.findByRole("heading", { name: "تمت عملية البيع بنجاح" });
     expect(screen.getByText("محفوظ محليًا")).toBeInTheDocument();
     expect(window.localStorage.getItem(STORAGE_KEY)).toContain('"receipt"');
+    const persisted = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}") as { receipts?: unknown[] };
+    expect(persisted.receipts).toHaveLength(1);
   });
 });
 
@@ -154,6 +158,41 @@ describe("always print receipt", () => {
 });
 
 describe("unified ticket customer", () => {
+  it("mounts one customer workspace when the mobile ticket surface is open", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await openSales(user);
+
+    // The compact checkout toggle is disabled for an empty ticket; add one
+    // catalog item so the mobile surface can be opened deterministically.
+    await user.click(await screen.findByRole("button", { name: /قهوة سعودية/ }));
+    await user.click(screen.getByRole("button", { name: /عرض التذكرة/ }));
+    const mobileTicket = screen.getByRole("region", { name: "التذكرة الحالية على الهاتف" });
+    await user.click(within(mobileTicket).getByRole("button", { name: "إضافة عميل إلى التذكرة" }));
+
+    expect(screen.getAllByRole("region", { name: "إضافة عميل إلى التذكرة" })).toHaveLength(1);
+    expect(screen.getAllByRole("textbox", { name: "بحث العميل" })).toHaveLength(1);
+  });
+
+  it("returns the ticket workspace to the desktop rail after a viewport resize", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await openSales(user);
+    await user.click(await screen.findByRole("button", { name: /قهوة سعودية/ }));
+    await user.click(screen.getByRole("button", { name: /عرض التذكرة/ }));
+    expect(screen.getByRole("region", { name: "التذكرة الحالية على الهاتف" })).toBeInTheDocument();
+
+    const originalInnerWidth = window.innerWidth;
+    try {
+      Object.defineProperty(window, "innerWidth", { configurable: true, value: 1024 });
+      fireEvent(window, new Event("resize"));
+      await waitFor(() => expect(screen.queryByRole("region", { name: "التذكرة الحالية على الهاتف" })).not.toBeInTheDocument());
+      expect(screen.getByRole("complementary", { name: "التذكرة الحالية" })).toBeInTheDocument();
+    } finally {
+      Object.defineProperty(window, "innerWidth", { configurable: true, value: originalInnerWidth });
+    }
+  });
+
   it("attaches one customer to the ticket and carries the same identity to the cash receipt", async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -186,25 +225,21 @@ describe("unified ticket customer", () => {
     await openSales(user);
 
     await user.click(screen.getByRole("button", { name: "إضافة عميل إلى التذكرة" }));
-    const picker = await screen.findByRole("dialog", { name: "إضافة عميل إلى التذكرة" });
-    await user.click(within(picker).getByRole("button", { name: "+ إضافة عميل جديد" }));
+    const workspaceHeading = await screen.findByRole("heading", { name: "إضافة عميل إلى التذكرة" });
+    const workspace = workspaceHeading.closest<HTMLElement>("[data-ticket-workspace='customer']")!;
+    expect(screen.queryByRole("dialog", { name: "إضافة عميل إلى التذكرة" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /قهوة سعودية/ })).toBeInTheDocument();
+    await user.click(within(workspace).getByRole("button", { name: "+ إضافة عميل جديد" }));
 
-    await user.type(within(picker).getByLabelText("اسم العميل"), "ليان سعد");
-    const mobileInput = within(picker).getByLabelText(/^رقم الجوال/);
+    await user.type(within(workspace).getByLabelText(/اسم العميل/), "ليان سعد");
+    const mobileInput = within(workspace).getByLabelText(/^رقم الجوال/);
     await user.type(mobileInput, "05611122334");
     expect(mobileInput).toHaveValue("0561112233");
-    await user.type(within(picker).getByLabelText("العنوان (اختياري)"), "طريق الملك فهد");
-    await user.click(within(picker).getByRole("checkbox", { name: /معلومات إضافية/ }));
-    await user.type(within(picker).getByLabelText("البريد الإلكتروني"), "layan@example.com");
-    await user.type(within(picker).getByLabelText("الرقم الضريبي"), "310123456700003");
-    await user.type(within(picker).getByLabelText("رمز العميل"), "C-100");
-    await user.type(within(picker).getByLabelText("المدينة"), "الرياض");
-    await user.type(within(picker).getByLabelText("المنطقة"), "الرياض");
-    await user.type(within(picker).getByLabelText("الرمز البريدي"), "12345");
-    await user.type(within(picker).getByLabelText("الدولة"), "السعودية");
-    await user.type(within(picker).getByLabelText("ملاحظات"), "عميلة ولاء");
-    await user.click(within(picker).getByRole("button", { name: "إنشاء العميل" }));
-    await user.click(within(picker).getByRole("button", { name: "إضافة إلى التذكرة" }));
+    await user.type(within(workspace).getByLabelText(/العنوان/), "طريق الملك فهد");
+    await user.type(within(workspace).getByLabelText(/الرقم الضريبي/), "310123456700003");
+    expect(within(workspace).queryByText("البريد الإلكتروني")).not.toBeInTheDocument();
+    expect(within(workspace).queryByText("المدينة")).not.toBeInTheDocument();
+    await user.click(within(workspace).getByRole("button", { name: "حفظ وإضافة إلى التذكرة" }));
 
     expect(await screen.findByRole("button", { name: "العميل ليان سعد" })).toBeInTheDocument();
 
@@ -225,16 +260,16 @@ describe("unified ticket customer", () => {
       }>;
     };
     const customer = persisted.customers?.find((item) => item.mobile === "0561112233");
-    expect(customer?.details).toEqual({
-      email: "layan@example.com",
+    expect(customer?.details).toMatchObject({
+      email: "",
       address: "طريق الملك فهد",
-      city: "الرياض",
-      region: "الرياض",
-      postalCode: "12345",
-      country: "السعودية",
-      customerCode: "C-100",
+      city: "",
+      region: "",
+      postalCode: "",
+      country: "",
+      customerCode: "",
       taxNumber: "310123456700003",
-      note: "عميلة ولاء",
+      note: "",
     });
   });
 });
@@ -280,32 +315,45 @@ describe("basic screen customer debt workflow", () => {
 
     const feedback = within(debtBook).getByRole("status");
     expect(within(feedback).getByText("المتبقي بعد السداد")).toBeInTheDocument();
-    expect(within(feedback).getByText("أدخل مبلغًا أكبر من صفر ولا يتجاوز الرصيد الحالي.")).toBeInTheDocument();
+    expect(within(feedback).getByText("أدخل مبلغًا أكبر من صفر ولا يتجاوز الدين الحالي.")).toBeInTheDocument();
     expect(within(feedback).getByLabelText("120.00 ريال سعودي")).toBeInTheDocument();
 
     await user.clear(amountInput);
     await user.type(amountInput, "50.00");
     expect(within(feedback).getByLabelText("70.00 ريال سعودي")).toBeInTheDocument();
+    await user.click(within(debtBook).getByRole("button", { name: "نقدي" }));
 
     const confirmButton = within(debtBook).getByRole("button", { name: "تأكيد سداد 50.00 ر.س" });
     fireEvent.click(confirmButton);
     fireEvent.click(confirmButton);
 
     expect(await within(debtBook).findByText("تم تسجيل السداد")).toBeInTheDocument();
-    expect(within(debtBook).getByText("الرصيد قبل السداد")).toBeInTheDocument();
+    expect(within(debtBook).getByText("الدين قبل السداد")).toBeInTheDocument();
     expect(within(debtBook).getByText("المبلغ المسدد")).toBeInTheDocument();
-    expect(within(debtBook).getByText("المتبقي على العميل")).toBeInTheDocument();
+    expect(within(debtBook).getByText("الدين المتبقي")).toBeInTheDocument();
     expect(within(debtBook).getByLabelText("70.00 ريال سعودي")).toBeInTheDocument();
+    expect(within(debtBook).getByText("0501234567")).toBeInTheDocument();
+
+    await user.click(within(debtBook).getByRole("button", { name: "طباعة سند القبض" }));
+    expect(await within(debtBook).findByText("أُرسلت مهمة طباعة سند القبض إلى الطابعة.")).toBeInTheDocument();
 
     const persisted = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}") as {
       customers?: { id: string; debt: { halalas: number } }[];
-      debtPayments?: { amount: { halalas: number } }[];
-      debtLedger?: { kind: string; customerId: string; amount: { halalas: number } }[];
+      debtPayments?: { amount: { halalas: number }; collectionMethod?: string; collectionReceiptId?: string }[];
+      debtLedger?: { kind: string; customerId: string; amount: { halalas: number }; collectionMethod?: string; collectionReceiptId?: string; collectionReceiptNumber?: string }[];
     };
     expect(persisted.customers?.find((customer) => customer.id === "customer-001")?.debt.halalas).toBe(7000);
     expect(persisted.debtPayments).toHaveLength(1);
     expect(persisted.debtPayments?.[0]?.amount.halalas).toBe(5000);
-    expect(persisted.debtLedger?.filter((entry) => entry.kind === "payment" && entry.customerId === "customer-001")).toHaveLength(1);
+    expect(persisted.debtPayments?.[0]?.collectionMethod).toBe("cash");
+    expect(persisted.debtPayments?.[0]?.collectionReceiptId).toMatch(/^debt-collection:/);
+    const paymentEntries = persisted.debtLedger?.filter((entry) => entry.kind === "payment" && entry.customerId === "customer-001") ?? [];
+    expect(paymentEntries).toHaveLength(1);
+    expect(paymentEntries[0]).toEqual(expect.objectContaining({
+      collectionMethod: "cash",
+      collectionReceiptId: expect.stringMatching(/^debt-collection:/),
+      collectionReceiptNumber: expect.stringMatching(/^DC-/),
+    }));
 
     await user.click(within(debtBook).getByRole("button", { name: "تم" }));
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "دفتر الديون" })).not.toBeInTheDocument());
@@ -331,6 +379,7 @@ describe("basic screen customer debt workflow", () => {
     expect(await within(creditDialog).findByText("أحمد محمد")).toBeInTheDocument();
     expect(within(creditDialog).getByText("الدين الحالي")).toBeInTheDocument();
     expect(within(creditDialog).getByText("الدين بعد العملية")).toBeInTheDocument();
+    expect(within(creditDialog).queryByRole("button", { name: "+ إضافة عميل جديد" })).not.toBeInTheDocument();
     await user.click(within(creditDialog).getByRole("button", { name: "تأكيد البيع الآجل" }));
 
     expect(await screen.findByRole("heading", { name: "تم تسجيل البيع الآجل بنجاح" })).toBeInTheDocument();

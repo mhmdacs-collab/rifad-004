@@ -21,6 +21,7 @@ export function ConfiguredCustomerCredit({ ticketTotal, busy, onSearch, onCreate
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const searchSequence = useRef(0);
+  const actionLocked = useRef(false);
 
   useEffect(() => {
     const sequence = ++searchSequence.current;
@@ -43,12 +44,14 @@ export function ConfiguredCustomerCredit({ ticketTotal, busy, onSearch, onCreate
 
   const submitCreate = async (event: FormEvent) => {
     event.preventDefault();
-    if (busy || submitting) return;
+    if (busy || submitting || actionLocked.current) return;
+    actionLocked.current = true;
     setSubmitting(true);
     setMessage(null);
     const created = await onCreateCustomer(newName, newMobile);
     setSubmitting(false);
     if (!created) {
+      actionLocked.current = false;
       setMessage("تعذر إضافة العميل. تحقق من الاسم ورقم الجوال.");
       return;
     }
@@ -56,14 +59,17 @@ export function ConfiguredCustomerCredit({ ticketTotal, busy, onSearch, onCreate
     setNewName("");
     setNewMobile("");
     selectCustomer(created);
+    actionLocked.current = false;
   };
 
   const submitCredit = async () => {
-    if (!selected || busy || submitting) return;
+    if (!selected || busy || submitting || actionLocked.current) return;
+    actionLocked.current = true;
     setSubmitting(true);
     setMessage(null);
     const updated = await onChargeCredit(selected.id);
     if (!updated) {
+      actionLocked.current = false;
       setSubmitting(false);
       setMessage("تعذر تسجيل البيع الآجل.");
     }
@@ -81,7 +87,7 @@ export function ConfiguredCustomerCredit({ ticketTotal, busy, onSearch, onCreate
         <span lang="en" dir="ltr">Choose customer for credit sale</span>
       </div>
 
-      <label className="payment-credit-search">
+      {!selected ? <label className="payment-credit-search">
         <span>العميل أو رقم الجوال</span>
         <input
           autoFocus
@@ -92,14 +98,14 @@ export function ConfiguredCustomerCredit({ ticketTotal, busy, onSearch, onCreate
           disabled={busy || submitting}
         />
         <small>{searching ? "جارٍ البحث…" : `${results.length} نتيجة`}</small>
-      </label>
+      </label> : null}
 
-      <div className="payment-credit-results" aria-label="نتائج العملاء">
+      {!selected ? <div className="payment-credit-results" aria-label="نتائج العملاء">
         {results.map((customer) => (
           <button
             type="button"
             key={customer.id}
-            className={selected?.id === customer.id ? "active" : ""}
+            className=""
             onClick={() => selectCustomer(customer)}
             disabled={busy || submitting}
           >
@@ -108,19 +114,19 @@ export function ConfiguredCustomerCredit({ ticketTotal, busy, onSearch, onCreate
               <small dir="ltr">{customer.mobile}</small>
             </span>
             <span>
-              <small>الرصيد</small>
+              <small>الدين</small>
               <strong><MoneyAmount value={customer.debt} /></strong>
             </span>
           </button>
         ))}
         {!searching && results.length === 0 ? <div className="payment-credit-empty">لا يوجد عميل مطابق.</div> : null}
-      </div>
+      </div> : null}
 
       {selected && debtAfterCredit ? (
         <div className="payment-credit-summary">
           <div className="payment-credit-customer">
             <span><strong>{selected.name}</strong><small dir="ltr">{selected.mobile}</small></span>
-            <button type="button" onClick={() => setSelected(null)} disabled={busy || submitting}>تغيير</button>
+            <button type="button" onClick={() => setSelected(null)} disabled={busy || submitting}>تغيير العميل</button>
           </div>
           <div><span>الدين الحالي</span><strong><MoneyAmount value={selected.debt} /></strong></div>
           <div><span>قيمة الفاتورة</span><strong><MoneyAmount value={ticketTotal} /></strong></div>

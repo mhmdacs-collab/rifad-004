@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RestaurantServiceContract } from "../contracts/restaurantService";
 import { PosContractError } from "../contracts/pos";
 import type { Ticket } from "../domain/models";
+import { kitchenStateOf } from "../domain/kitchenDelta";
 import type { OpenLocalOrder, PlaceGroup, RestaurantServiceConfig } from "../domain/restaurantService";
 import type { usePosFlow } from "./usePosFlow";
 
@@ -15,23 +16,30 @@ const commandId = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
 const localMessage = (error: unknown) => error instanceof PosContractError ? error.message : "تعذر تنفيذ العملية المحلية. حاول مرة أخرى.";
 
 const INITIAL_CONFIG: RestaurantServiceConfig = {
-  restaurantServiceEnabled: true,
-  placeManagementEnabled: true,
+  restaurantServiceEnabled: false,
+  placeManagementEnabled: false,
 };
 
 const sameTicketContent = (working: Ticket | null, sent: Ticket) => {
   if (!working) return false;
-  if ((working.customer?.id ?? null) !== (sent.customer?.id ?? null)) return false;
-  if (working.lines.length !== sent.lines.length) return false;
+  if (JSON.stringify(working.customer) !== JSON.stringify(sent.customer)) return false;
+  if (JSON.stringify(working.subtotal) !== JSON.stringify(sent.subtotal)) return false;
+  if (JSON.stringify(working.loyaltyRedemption) !== JSON.stringify(sent.loyaltyRedemption)) return false;
+  if (JSON.stringify(working.taxIncluded) !== JSON.stringify(sent.taxIncluded)) return false;
+  if (JSON.stringify(working.total) !== JSON.stringify(sent.total)) return false;
 
-  return working.lines.every((line, index) => {
-    const baseline = sent.lines[index];
-    return baseline
-      && line.productId === baseline.productId
-      && line.quantity === baseline.quantity
-      && line.unitPrice.halalas === baseline.unitPrice.halalas
-      && line.unitPrice.currency === baseline.unitPrice.currency;
-  });
+  const normalize = (ticket: Ticket) => ticket.lines
+    .map((line) => ({
+      id: line.id,
+      productId: line.productId,
+      name: line.name,
+      quantity: line.quantity,
+      unitPrice: line.unitPrice,
+      tone: line.tone,
+      kitchenState: kitchenStateOf(line),
+    }))
+    .sort((left, right) => `${left.kitchenState}:${left.id}:${left.productId}:${left.unitPrice.halalas}:${left.quantity}`.localeCompare(`${right.kitchenState}:${right.id}:${right.productId}:${right.unitPrice.halalas}:${right.quantity}`));
+  return JSON.stringify(normalize(working)) === JSON.stringify(normalize(sent));
 };
 
 /**
@@ -46,6 +54,11 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
   const [checkoutServiceContext, setCheckoutServiceContext] = useState<CheckoutServiceContext>(null);
   const [pendingSettlementSequence, setPendingSettlementSequence] = useState<number | null>(null);
   const settlementClosing = useRef(false);
+  const initialRefreshComplete = useRef(false);
+  const initialOrderReconciled = useRef(false);
+  const actionLock = useRef<string | null>(null);
+  const pendingAssignCommand = useRef<{ servicePlaceId: string; ticketId: string; ticketUpdatedAt: string; commandId: string } | null>(null);
+  const pendingUpdateCommand = useRef<{ openOrderId: string; ticketUpdatedAt: string; commandId: string } | null>(null);
   const [localBusy, setLocalBusy] = useState<string | null>(null);
   const [localNotice, setLocalNotice] = useState<string | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -59,6 +72,7 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
     setConfig(nextConfig);
     setPlaceGroups(groups);
     setOpenLocalOrders(orders);
+    initialRefreshComplete.current = true;
   }, [service]);
 
   useEffect(() => {
@@ -71,7 +85,28 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
     return () => window.clearTimeout(timer);
   }, [localNotice]);
 
+  // A browser/app restart restores the POS ticket before this hook fetches
+  // restaurant orders. Re-associate that ticket with its one open order so a
+  // sent table cannot silently fall back to an ordinary editable sale rail.
+  // This runs only for the initial hydration; later tickets are explicitly
+  // assigned/reopened by the cashier.
+  useEffect(() => {
+    if (initialOrderReconciled.current || !initialRefreshComplete.current || !flow.ticket) return;
+    initialOrderReconciled.current = true;
+    if (openLocalOrders.length === 0) return;
+    const matches = openLocalOrders.filter((order) =>
+      order.ticket.id === flow.ticket?.id && order.ticket.sequence === flow.ticket?.sequence);
+    if (matches.length !== 1) return;
+    const [order] = matches;
+    if (!order) return;
+    setActiveOpenOrder(order);
+    setCheckoutServiceContext({ mode: "dine_in", label: `محلي · ${order.servicePlaceName}` });
+    pendingUpdateCommand.current = null;
+  }, [flow.ticket, openLocalOrders]);
+
   const updateConfig = useCallback(async (next: RestaurantServiceConfig) => {
+    if (actionLock.current) return false;
+    actionLock.current = "config";
     setLocalBusy("config");
     setLocalError(null);
     try {
@@ -82,6 +117,7 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
       setLocalError(localMessage(error));
       return false;
     } finally {
+      actionLock.current = null;
       setLocalBusy(null);
     }
   }, [service]);
@@ -105,12 +141,19 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
 
   const assignToPlace = useCallback(async (servicePlaceId: string) => {
     const ticket = flow.ticket;
-    if (!ticket || ticket.lines.length === 0) return false;
+    if (!ticket || ticket.lines.length === 0 || actionLock.current) return false;
+    actionLock.current = "assign-place";
     setLocalBusy("assign-place");
     setLocalError(null);
     try {
+      const assignCommand = pendingAssignCommand.current?.servicePlaceId === servicePlaceId
+        && pendingAssignCommand.current.ticketId === ticket.id
+        && pendingAssignCommand.current.ticketUpdatedAt === ticket.updatedAt
+        ? pendingAssignCommand.current.commandId
+        : commandId("local-order");
+      pendingAssignCommand.current = { servicePlaceId, ticketId: ticket.id, ticketUpdatedAt: ticket.updatedAt, commandId: assignCommand };
       const order = await service.createOpenOrder({
-        commandId: commandId("local-order"),
+        commandId: assignCommand,
         ticket,
         servicePlaceId,
       });
@@ -118,11 +161,13 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
       setLocalNotice(`تم إرسال الطلب للمطبخ · ${order.servicePlaceName}`);
       setCheckoutServiceContext(null);
       await flow.newSale();
+      pendingAssignCommand.current = null;
       return true;
     } catch (error) {
       setLocalError(localMessage(error));
       return false;
     } finally {
+      actionLock.current = null;
       setLocalBusy(null);
     }
   }, [flow, service]);
@@ -133,25 +178,19 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
       setLocalError("ابدأ من سلة فارغة قبل فتح طلب محلي محفوظ.");
       return false;
     }
-
-    for (const line of order.ticket.lines) {
-      for (let index = 0; index < line.quantity; index += 1) {
-        await flow.addProduct(line.productId);
-      }
-    }
-    if (order.ticket.customer) {
-      await flow.setTicketCustomer(order.ticket.customer.id);
-    }
-    return true;
+    return flow.restoreTicket(order.ticket);
   }, [flow]);
 
   const resumeOpenOrder = useCallback(async (openOrderId: string) => {
+    if (actionLock.current) return false;
+    actionLock.current = "resume-order";
     setLocalBusy("resume-order");
     setLocalError(null);
     try {
       const order = await service.getOpenOrder({ openOrderId });
       const rebuilt = await rebuildOpenOrderIntoWorkingTicket(order);
       if (!rebuilt) return false;
+      pendingUpdateCommand.current = null;
       setActiveOpenOrder(order);
       setCheckoutServiceContext({ mode: "dine_in", label: `محلي · ${order.servicePlaceName}` });
       setLocalNotice(`تم فتح ${order.servicePlaceName}`);
@@ -160,6 +199,7 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
       setLocalError(localMessage(error));
       return false;
     } finally {
+      actionLock.current = null;
       setLocalBusy(null);
     }
   }, [rebuildOpenOrderIntoWorkingTicket, service]);
@@ -170,17 +210,26 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
   );
 
   const sendOpenOrderUpdate = useCallback(async () => {
-    if (!activeOpenOrder || !flow.ticket || !hasUnsentOpenOrderChanges) return false;
+    if (!activeOpenOrder || !flow.ticket || !hasUnsentOpenOrderChanges || actionLock.current) return false;
+    actionLock.current = "send-order-update";
     setLocalBusy("send-order-update");
     setLocalError(null);
     try {
+      const updateCommand = pendingUpdateCommand.current?.openOrderId === activeOpenOrder.id
+        && pendingUpdateCommand.current.ticketUpdatedAt === flow.ticket.updatedAt
+        ? pendingUpdateCommand.current.commandId
+        : commandId("local-order-update");
+      pendingUpdateCommand.current = { openOrderId: activeOpenOrder.id, ticketUpdatedAt: flow.ticket.updatedAt, commandId: updateCommand };
       const updated = await service.updateOpenOrder({
-        commandId: commandId("local-order-update"),
+        commandId: updateCommand,
         openOrderId: activeOpenOrder.id,
         ticket: flow.ticket,
       });
+      const restored = await flow.restoreTicket(updated.ticket);
+      if (!restored) return false;
       setOpenLocalOrders(await service.listOpenOrders());
       setActiveOpenOrder(updated);
+      pendingUpdateCommand.current = null;
       setCheckoutServiceContext({ mode: "dine_in", label: `محلي · ${updated.servicePlaceName}` });
       setLocalNotice(`تم إرسال التحديث للمطبخ · ${updated.servicePlaceName}`);
       return true;
@@ -188,9 +237,36 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
       setLocalError(localMessage(error));
       return false;
     } finally {
+      actionLock.current = null;
       setLocalBusy(null);
     }
-  }, [activeOpenOrder, flow.ticket, hasUnsentOpenOrderChanges, service]);
+  }, [activeOpenOrder, flow, flow.ticket, hasUnsentOpenOrderChanges, service]);
+
+  /**
+   * Discard only the uncommitted working batch. The restaurant snapshot is the
+   * sent floor, so restoring it atomically cannot erase kitchen history or
+   * briefly expose a ticket total below what the table already owes.
+   */
+  const clearPendingOpenOrder = useCallback(async () => {
+    if (!activeOpenOrder || !flow.ticket || actionLock.current) return false;
+    if (!hasUnsentOpenOrderChanges) return true;
+    actionLock.current = "clear-pending-order";
+    setLocalBusy("clear-pending-order");
+    setLocalError(null);
+    try {
+      const restored = await flow.restoreTicket(activeOpenOrder.ticket);
+      if (!restored) return false;
+      pendingUpdateCommand.current = null;
+      setLocalNotice(`تم مسح التغييرات غير المرسلة · ${activeOpenOrder.servicePlaceName}`);
+      return true;
+    } catch (error) {
+      setLocalError(localMessage(error));
+      return false;
+    } finally {
+      actionLock.current = null;
+      setLocalBusy(null);
+    }
+  }, [activeOpenOrder, flow, hasUnsentOpenOrderChanges]);
 
   /**
    * Leave an already-synchronised table ticket without paying it. Unsent edits
@@ -198,15 +274,17 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
    * before leaving this working copy.
    */
   const leaveOpenOrder = useCallback(async () => {
-    if (!activeOpenOrder) return false;
+    if (!activeOpenOrder || actionLock.current) return false;
     if (hasUnsentOpenOrderChanges) {
       setLocalError("أرسل تعديلات الطاولة قبل الرجوع إلى شاشة البيع.");
       return false;
     }
+    actionLock.current = "leave-open-order";
     setLocalBusy("leave-open-order");
     setLocalError(null);
     try {
       setActiveOpenOrder(null);
+      pendingUpdateCommand.current = null;
       setCheckoutServiceContext(null);
       setPendingSettlementSequence(null);
       await flow.newSale();
@@ -215,6 +293,7 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
       setLocalError(localMessage(error));
       return false;
     } finally {
+      actionLock.current = null;
       setLocalBusy(null);
     }
   }, [activeOpenOrder, flow, hasUnsentOpenOrderChanges]);
@@ -288,6 +367,7 @@ export const useLocalServiceFlow = (flow: PosFlow, service: RestaurantServiceCon
     assignToPlace,
     resumeOpenOrder,
     sendOpenOrderUpdate,
+    clearPendingOpenOrder,
     leaveOpenOrder,
     markSettlementPending,
     abandonActiveResume,

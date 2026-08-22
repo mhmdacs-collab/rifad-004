@@ -142,6 +142,12 @@ export const withLocalPersistenceJournal = (
         await commit();
         return ticket;
       },
+      restoreTicket: async (input) => {
+        await ready;
+        const ticket = await base.sales.restoreTicket(input);
+        await commit();
+        return ticket;
+      },
       addItem: async (input) => {
         await ready;
         const ticket = await base.sales.addItem(input);
@@ -264,19 +270,26 @@ export const withLocalPersistenceJournal = (
     debtCollection: {
       settle: async (input) => {
         await ready;
+        const collectedAt = now();
+        const collectionReceiptId = `debt-collection:${input.commandId}`;
+        const collectionReceiptNumber = debtReceiptNumber(input.commandId);
         const customer = await base.customerCredit.settle({
           commandId: input.commandId,
           customerId: input.customerId,
           amount: input.amount,
+          collectionMethod: input.collectionMethod,
+          collectionReceiptId,
+          collectionReceiptNumber,
+          collectedAt,
         });
-        const collectedAt = now();
         const employee = base.restore().employee;
         const device = base.restore().device;
         const receipt = {
-          id: `debt-collection:${input.commandId}`,
-          number: debtReceiptNumber(input.commandId),
+          id: collectionReceiptId,
+          number: collectionReceiptNumber,
           customerId: customer.id,
           customerName: customer.name,
+          customerMobile: customer.mobile,
           amount: input.amount,
           collectionMethod: input.collectionMethod,
           previousDebt: {
@@ -390,6 +403,20 @@ export const withLocalPersistenceJournal = (
             "receipt",
             input.receiptId,
             { receiptId: input.receiptId, status },
+          ),
+        ]);
+        return status;
+      },
+      submitDebtCollection: async (input) => {
+        await ready;
+        const status = await base.printing.submitDebtCollection(input);
+        await append([
+          domainEvent(
+            `debt.collection-receipt-print-attempted:${input.commandId}`,
+            "debt.collection-receipt-print-attempted.v1",
+            "debt-collection-receipt",
+            input.receipt.id,
+            { receipt: input.receipt, status },
           ),
         ]);
         return status;

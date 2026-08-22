@@ -1,7 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
-import { installVisualPass18ProductPrices } from "./visual-pass-18";
 import "./cairo-self-hosted.css";
 import "./styles.css";
 import "./visual-pass.css";
@@ -70,8 +69,6 @@ import "./sale-completion.css";
 import "./ticket-workspace.css";
 import "./customer-picker-sheet.css";
 import "./front-office.css";
-
-installVisualPass18ProductPrices();
 
 createRoot(document.getElementById("root")!).render(<StrictMode><App /></StrictMode>);
 

@@ -136,10 +136,23 @@
 }
 
 .sale-screen-touch button.catalog-product::after {
+  content: none !important;
+  display: none !important;
+}
+
+.sale-screen-touch button.catalog-product > .catalog-product-price {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  direction: ltr;
   color: #1b2721 !important;
   background: rgb(255 255 255 / 66%) !important;
-  border-top-color: rgb(35 58 47 / 10%) !important;
+  border-top: 1px solid rgb(35 58 47 / 10%) !important;
   font-weight: 800 !important;
+  font-size: .86rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .sale-screen-touch .sale-page-tabs {
@@ -299,6 +312,17 @@
   transition: transform .08s ease, background .1s ease, border-color .1s ease;
 }
 
+.sale-screen-touch .ticket-clear-cart strong,
+.sale-screen-touch .ticket-clear-cart .ticket-clear-cart-icon {
+  color: var(--fo-danger) !important;
+}
+
+.sale-screen-touch .ticket-clear-cart:disabled,
+.sale-screen-touch .ticket-clear-cart:disabled strong,
+.sale-screen-touch .ticket-clear-cart:disabled .ticket-clear-cart-icon {
+  color: #9f8b8b !important;
+}
+
 .sale-screen-touch .ticket-clear-cart:active:not(:disabled) {
   transform: scale(.988);
   background: #ffe8e8 !important;
@@ -373,6 +397,14 @@
   font-variant-numeric: tabular-nums;
 }
 
+.inline-checkout-rail .inline-checkout-total-card :is(span, strong, h1) {
+  color: var(--fo-ink) !important;
+}
+
+.inline-checkout-rail .inline-checkout-total-card .riyal-symbol {
+  filter: none !important;
+}
+
 .inline-checkout-rail .inline-payment-methods {
   gap: 10px;
   scrollbar-gutter: stable;
@@ -414,6 +446,424 @@
   color: #7a4b20 !important;
   background: #fff8ef !important;
   border-color: #ead0ad !important;
+}
+
+/* ---------- Keyboard, touch, and state semantics ---------- */
+.sale-flow-shell :is(button, input, textarea, [role="button"]):focus-visible {
+  outline: 3px solid rgb(10 113 78 / 28%) !important;
+  outline-offset: 2px;
+}
+
+.sale-flow-shell button:disabled,
+.sale-flow-shell [aria-disabled="true"] {
+  cursor: not-allowed;
+  filter: saturate(.65);
+}
+
+.sale-flow-shell button[aria-pressed="true"],
+.sale-flow-shell button.active {
+  border-color: var(--fo-brand) !important;
+}
+
+/* ---------- Inline customer ticket workspace ---------- */
+.sale-screen-touch .ticket-column,
+.sale-screen-touch .ticket-customer-workspace,
+.sale-screen-touch .ticket-customer-picker-view,
+.sale-screen-touch .ticket-customer-create-view,
+.sale-screen-touch .ticket-customer-create-form,
+.sale-screen-touch .ticket-customer-create-fields {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.sale-screen-touch .ticket-customer-workspace {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.sale-screen-touch .ticket-customer-create-view[data-customer-create-view="slide-up"] {
+  animation: fo-customer-slide-up .2s ease-out both;
+}
+
+.sale-screen-touch .ticket-customer-create-fields {
+  grid-template-columns: 1fr;
+}
+
+.sale-screen-touch .ticket-customer-create-fields input {
+  width: 100%;
+  min-width: 0;
+  font-size: 16px;
+}
+
+@keyframes fo-customer-slide-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- Kitchen delta workspace ---------- */
+.sale-screen-touch .kitchen-ticket-workspace {
+  display: grid;
+  gap: 12px;
+  padding: 4px 0 16px;
+  min-width: 0;
+}
+
+.sale-screen-touch :is(.kitchen-sent-history, .kitchen-pending-changes) {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--fo-border);
+  border-radius: var(--fo-radius-md);
+  background: var(--fo-surface);
+}
+
+.sale-screen-touch .kitchen-sent-history {
+  background: #f5f8f6;
+}
+
+.sale-screen-touch .kitchen-pending-changes {
+  border-color: #e9d7b7;
+  background: #fffaf1;
+}
+
+.sale-screen-touch :is(.kitchen-sent-history, .kitchen-pending-changes) > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.sale-screen-touch :is(.kitchen-sent-history, .kitchen-pending-changes) > header strong {
+  color: var(--fo-ink);
+  font-size: 14px;
+}
+
+.sale-screen-touch :is(.kitchen-sent-history, .kitchen-pending-changes) > header small {
+  color: var(--fo-muted);
+  font-size: 11px;
+}
+
+.sale-screen-touch .kitchen-dispatch-batch + .kitchen-dispatch-batch {
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px dashed var(--fo-border-strong);
+}
+
+.sale-screen-touch .kitchen-dispatch-batch > small {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--fo-muted);
+  font-weight: 700;
+}
+
+.sale-screen-touch .kitchen-delta-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 7px 8px;
+  border-radius: 9px;
+}
+
+.sale-screen-touch .kitchen-pending-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.sale-screen-touch .kitchen-pending-line + .kitchen-pending-line {
+  margin-top: 4px;
+}
+
+.sale-screen-touch .kitchen-pending-line .kitchen-delta-row {
+  width: 100%;
+  border: 0;
+  text-align: start;
+  font: inherit;
+  cursor: pointer;
+}
+
+.sale-screen-touch .kitchen-pending-line .kitchen-delta-row:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.sale-screen-touch .kitchen-pending-remove {
+  min-height: 44px;
+  padding: 4px 8px;
+  border: 1px solid #efd0d0;
+  border-radius: 8px;
+  color: var(--fo-danger);
+  background: var(--fo-danger-soft);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.sale-screen-touch .kitchen-sent-immutable-note {
+  margin: 10px 0 0;
+  color: var(--fo-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.sale-screen-touch .kitchen-delta-row + .kitchen-delta-row {
+  margin-top: 4px;
+}
+
+.sale-screen-touch .kitchen-delta-row > strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sale-screen-touch .kitchen-delta-row--sent {
+  color: #405048;
+  background: #edf3f0;
+}
+
+.sale-screen-touch .kitchen-delta-row--pending {
+  color: #704b1c;
+  background: #fff0d4;
+}
+
+.sale-screen-touch :is(.kitchen-delta-row--reduce, .kitchen-delta-row--cancel) {
+  color: #8d3939;
+  background: #fff0f0;
+}
+
+.sale-screen-touch .kitchen-no-pending {
+  margin: 4px 0 0;
+  color: var(--fo-muted);
+  font-size: 12px;
+}
+
+.sale-screen-touch .kitchen-metadata-pending {
+  margin: 4px 0 0;
+  color: #704b1c;
+  font-size: 12px;
+}
+
+/* ---------- Debt settlement and collection receipt ---------- */
+.sale-flow-shell .debt-book-dialog,
+.sale-flow-shell .debt-book-dialog * {
+  box-sizing: border-box;
+}
+
+.sale-flow-shell .debt-book-dialog {
+  max-width: min(1180px, calc(100vw - 28px));
+  max-height: min(860px, calc(100dvh - 24px));
+  overflow: hidden;
+}
+
+.sale-flow-shell .debt-book-body,
+.sale-flow-shell .debt-account-view,
+.sale-flow-shell .debt-settlement-box,
+.sale-flow-shell .debt-settlement-actions {
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.sale-flow-shell .debt-account-view {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
+.sale-flow-shell .debt-ledger {
+  min-height: 0;
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+.sale-flow-shell .debt-settlement-box {
+  position: relative;
+  max-height: min(520px, 62dvh);
+  padding: 12px 14px 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.sale-flow-shell .debt-settlement-actions {
+  position: sticky;
+  z-index: 5;
+  bottom: 0;
+  margin: 10px -14px 0;
+  padding: 10px 14px 14px;
+  border-top: 1px solid var(--fo-border);
+  background: rgb(255 255 255 / 97%);
+  box-shadow: 0 -8px 18px rgb(27 48 40 / 7%);
+  backdrop-filter: blur(8px);
+}
+
+.sale-flow-shell .debt-collection-method > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.sale-flow-shell .debt-collection-method button {
+  min-width: 0;
+  min-height: 42px;
+  border-radius: 10px;
+}
+
+.sale-flow-shell .debt-collection-method button[aria-pressed="true"] {
+  color: #fff;
+  background: var(--fo-brand);
+}
+
+.sale-flow-shell .debt-settlement-submit {
+  min-height: 50px;
+  margin-top: 9px;
+}
+
+.sale-flow-shell .debt-book-dialog--success .debt-book-success {
+  min-height: 0;
+  overflow: auto;
+  background: #f5f8f6;
+}
+
+.sale-flow-shell .debt-book-success-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px 16px;
+  width: min(760px, 100%);
+  margin: 0 auto;
+  padding: 24px;
+  border: 1px solid var(--fo-border);
+  border-radius: var(--fo-radius-lg);
+  background: var(--fo-surface);
+  box-shadow: var(--fo-shadow-soft);
+}
+
+.sale-flow-shell .debt-book-success-copy {
+  align-self: center;
+  min-width: 0;
+  text-align: start;
+}
+
+.sale-flow-shell .debt-book-success-copy > strong {
+  display: block;
+  color: var(--fo-ink);
+  font-size: clamp(21px, 2.4vw, 30px);
+  line-height: 1.35;
+}
+
+.sale-flow-shell .debt-book-success-copy > small {
+  display: block;
+  margin-top: 3px;
+  color: var(--fo-muted);
+  font-size: 15px;
+}
+
+.sale-flow-shell .debt-book-success-amount,
+.sale-flow-shell .debt-book-success-receipt-meta,
+.sale-flow-shell .debt-book-success-summary,
+.sale-flow-shell .debt-book-success-note {
+  grid-column: 1 / -1;
+}
+
+.sale-flow-shell .debt-book-success-amount {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: 13px;
+  color: #fff;
+  background: var(--fo-brand);
+}
+
+.sale-flow-shell .debt-book-success-amount > span {
+  font-weight: 800;
+}
+
+.sale-flow-shell .debt-book-success-amount > strong {
+  color: #fff;
+  font-size: clamp(25px, 3vw, 36px);
+  font-variant-numeric: tabular-nums;
+}
+
+.sale-flow-shell .debt-book-success-amount :is(span, strong) {
+  color: #fff !important;
+}
+
+.sale-flow-shell .debt-book-success-amount .riyal-symbol {
+  filter: brightness(0) invert(1);
+}
+
+.sale-flow-shell .debt-book-success-receipt-meta {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.sale-flow-shell .debt-book-success-receipt-meta > span {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--fo-border);
+  border-radius: 10px;
+  background: var(--fo-surface-soft);
+}
+
+.sale-flow-shell .debt-book-success-receipt-meta :is(b, strong) {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.sale-flow-shell .debt-book-success-receipt-meta b {
+  margin-bottom: 5px;
+  color: var(--fo-muted);
+  font-size: 11px;
+}
+
+.sale-flow-shell .debt-book-success-summary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.sale-flow-shell .debt-book-success-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  width: min(760px, 100%);
+  margin: 14px auto 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.sale-flow-shell .debt-book-success-footer > button {
+  width: 100% !important;
+  min-height: 52px;
+  margin: 0 !important;
+  border-radius: 11px;
+  font: inherit;
+  font-weight: 800;
+}
+
+.sale-flow-shell .debt-collection-print {
+  color: var(--fo-brand-strong);
+  border: 1px solid #b9d2c7;
+  background: var(--fo-surface);
+}
+
+.sale-flow-shell .debt-collection-print-status {
+  grid-column: 1 / -1;
+  padding: 9px 11px;
+  border-radius: 9px;
+  color: #355146;
+  background: var(--fo-brand-soft);
+  text-align: center;
+}
+
+.sale-flow-shell .debt-collection-print-status:is(.is-failed, .is-delivery-unknown) {
+  color: #893b3b;
+  background: var(--fo-danger-soft);
 }
 
 /* ---------- Responsive cashier geometry ---------- */
@@ -494,6 +944,23 @@
     min-height: 42px;
     font-size: 12px;
   }
+
+  .sale-flow-shell .debt-book-dialog {
+    max-width: calc(100vw - 12px);
+    max-height: calc(100dvh - 12px);
+  }
+
+  .sale-flow-shell .debt-book-success-main {
+    padding: 16px;
+  }
+
+  .sale-flow-shell .debt-book-success-receipt-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sale-flow-shell .debt-book-success-footer {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -504,5 +971,597 @@
     transition-duration: .01ms !important;
     animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;
+  }
+}
+
+/* ---------- Wave 7: application-surface polish ----------
+ * This layer is deliberately visual-only. It does not introduce new states,
+ * change button labels, or alter the existing Front Office contracts. */
+.sale-flow-shell {
+  --fo-canvas-deep: #eef2f0;
+  --fo-surface-muted: #f4f7f5;
+  --fo-focus: rgb(10 113 78 / 26%);
+  --fo-number-font: "Inter", "Segoe UI", system-ui, sans-serif;
+  min-width: 0;
+  width: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+  isolation: isolate;
+  font-variant-numeric: proportional-nums;
+}
+
+.sale-flow-shell *,
+.sale-flow-shell *::before,
+.sale-flow-shell *::after {
+  box-sizing: border-box;
+}
+
+.sale-flow-shell :is(img, svg) {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+
+.sale-flow-shell ::selection {
+  color: inherit;
+  background: rgb(10 113 78 / 16%);
+}
+
+.sale-flow-shell :is(button, [role="button"]) {
+  font-family: inherit;
+  font-variant-numeric: inherit;
+}
+
+.sale-flow-shell :is(button, input, textarea, [role="button"]):focus-visible {
+  outline-color: var(--fo-focus) !important;
+}
+
+/* The touch layout is a quiet canvas with two unmistakable working surfaces. */
+.sale-screen-touch.loyverse-shell {
+  background: var(--fo-canvas-deep);
+}
+
+.sale-screen-touch.loyverse-shell .sales-catalog {
+  background: var(--fo-canvas-deep);
+}
+
+.sale-screen-touch.loyverse-shell .workspace-header {
+  background: linear-gradient(120deg, #075d42 0%, #0a714e 58%, #13855f 100%);
+  box-shadow: 0 5px 18px rgb(4 58 39 / 15%);
+}
+
+.sale-screen-touch.loyverse-shell .product-area {
+  padding: 18px;
+  background:
+    radial-gradient(circle at 0 0, rgb(255 255 255 / 82%), transparent 36%),
+    var(--fo-canvas-deep);
+}
+
+.sale-screen-touch.loyverse-shell .product-grid {
+  min-height: 0;
+  align-content: start;
+  gap: 14px;
+}
+
+.sale-screen-touch.loyverse-shell .catalog-product {
+  position: relative;
+  isolation: isolate;
+  min-height: 148px;
+  align-content: end;
+  justify-items: stretch;
+  padding: 0 14px 13px !important;
+  border-color: rgb(179 195 187 / 80%) !important;
+  border-radius: 15px !important;
+  background-color: var(--fo-surface) !important;
+  box-shadow: 0 4px 12px rgb(27 48 40 / 7%) !important;
+}
+
+.sale-screen-touch.loyverse-shell .catalog-product::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  opacity: .92;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 84% 18%, rgb(255 255 255 / 74%) 0 13%, transparent 14%),
+    radial-gradient(circle at 12% 24%, rgb(255 255 255 / 32%) 0 18%, transparent 19%),
+    linear-gradient(145deg, rgb(255 255 255 / 22%), transparent 58%);
+  pointer-events: none;
+}
+
+.sale-screen-touch.loyverse-shell .catalog-product.tone-rose {
+  background: linear-gradient(145deg, #f3d9d8 0%, #faeeed 100%) !important;
+}
+
+.sale-screen-touch.loyverse-shell .catalog-product.tone-sky {
+  background: linear-gradient(145deg, #d6e7e9 0%, #f0f7f7 100%) !important;
+}
+
+.sale-screen-touch.loyverse-shell .catalog-product.tone-amber {
+  background: linear-gradient(145deg, #f0d6a8 0%, #fff6e8 100%) !important;
+}
+
+.sale-screen-touch.loyverse-shell .catalog-product.tone-mint {
+  background: linear-gradient(145deg, #cee5da 0%, #f1f9f5 100%) !important;
+}
+
+.sale-screen-touch.loyverse-shell .catalog-product.tone-sand {
+  background: linear-gradient(145deg, #eadcc4 0%, #fbf6ec 100%) !important;
+}
+
+.sale-screen-touch.loyverse-shell .catalog-product.tone-stone {
+  background: linear-gradient(145deg, #dfe3e1 0%, #f5f7f6 100%) !important;
+}
+
+.sale-screen-touch.loyverse-shell .catalog-product > strong {
+  z-index: 1;
+  align-self: end;
+  max-width: 100%;
+  padding: 10px 0 0 !important;
+  color: #1b2923;
+  font-size: clamp(.92rem, .9vw, 1.04rem);
+  font-weight: 850 !important;
+  line-height: 1.45;
+  text-align: start;
+  text-shadow: 0 1px rgb(255 255 255 / 38%);
+}
+
+.sale-screen-touch.loyverse-shell .catalog-product::after {
+  content: none !important;
+  display: none !important;
+}
+
+.sale-screen-touch.loyverse-shell .catalog-product > .catalog-product-price {
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 35px;
+  margin: 0 -14px -13px;
+  padding-inline: 14px !important;
+  color: #153b2d !important;
+  background: rgb(255 255 255 / 76%) !important;
+  border-top: 1px solid rgb(26 60 45 / 10%) !important;
+  font-family: var(--fo-number-font);
+  font-size: .84rem;
+  font-weight: 900 !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.sale-screen-touch.loyverse-shell .blank-layout-slot {
+  border: 1px dashed #d4dfda;
+  border-radius: 15px;
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 68%), rgb(239 244 241 / 72%)),
+    repeating-linear-gradient(135deg, transparent 0 18px, rgb(196 210 203 / 15%) 18px 19px);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 58%);
+}
+
+.sale-screen-touch.loyverse-shell .blank-layout-slot::after {
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #d6e2dc;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 54%);
+  transform: translate(-50%, -50%);
+}
+
+/* Ticket rail: header, rows and totals read as one deliberate work surface. */
+.sale-screen-touch.loyverse-shell .ticket-column {
+  background: var(--fo-surface);
+  border-inline-end: 1px solid #d7e0db;
+  box-shadow: 5px 0 20px rgb(27 48 40 / 6%);
+}
+
+.sale-screen-touch.loyverse-shell .ticket-header {
+  min-height: 82px;
+  padding: 14px 18px;
+  background: linear-gradient(180deg, #fff, #f9fbfa);
+  box-shadow: 0 3px 10px rgb(27 48 40 / 5%);
+}
+
+.sale-screen-touch.loyverse-shell .ticket-title-block {
+  gap: 5px;
+}
+
+.sale-screen-touch.loyverse-shell .ticket-title-block h2 {
+  font-size: 1.16rem;
+  letter-spacing: -.02em;
+}
+
+.sale-screen-touch.loyverse-shell .ticket-title-block > span {
+  width: fit-content;
+  min-width: 30px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #eef4f1;
+  color: #587168;
+  font-family: var(--fo-number-font);
+  font-size: .7rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.sale-screen-touch.loyverse-shell .ticket-header-tools {
+  gap: 9px;
+}
+
+.sale-screen-touch.loyverse-shell .ticket-more {
+  color: #8a9891;
+  font-size: 1.55rem;
+}
+
+.sale-screen-touch.loyverse-shell .ticket-customer-button {
+  min-width: 42px;
+  border: 1px solid #cfe1d9;
+  background: #eef8f3;
+  color: var(--fo-brand-strong);
+}
+
+.sale-screen-touch.loyverse-shell .ticket-customer-button--linked {
+  width: auto;
+  padding-inline: 11px;
+  background: #e7f5ee;
+}
+
+.sale-screen-touch.loyverse-shell .ticket-clear-cart-slot {
+  padding: 10px 14px 0;
+  background: #fff;
+}
+
+.sale-screen-touch.loyverse-shell .ticket-clear-cart {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  border-radius: 10px !important;
+  font-size: .76rem;
+  font-weight: 800;
+}
+
+.sale-screen-touch.loyverse-shell .ticket-lines {
+  padding: 10px 14px 12px;
+  background: #fbfcfb;
+}
+
+.sale-screen-touch.loyverse-shell .ticket-line {
+  padding: 7px 0;
+  border-bottom-color: #e6eeea;
+}
+
+.sale-screen-touch.loyverse-shell .ticket-line-button--structured {
+  min-height: 74px;
+  padding: 11px 12px;
+  border: 1px solid #e3ebe7;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgb(27 48 40 / 4%);
+}
+
+.sale-screen-touch.loyverse-shell .ticket-line--latest .ticket-line-button--structured {
+  border-color: #c9e2d7;
+  background: #f3faf6;
+}
+
+.sale-screen-touch.loyverse-shell .ticket-quantity-inline {
+  gap: 5px;
+}
+
+.sale-screen-touch.loyverse-shell .ticket-quantity-inline b {
+  min-width: 25px;
+  min-height: 25px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #edf4f1;
+  color: #426257;
+  font-family: var(--fo-number-font);
+  font-size: .72rem;
+}
+
+.sale-screen-touch.loyverse-shell .ticket-product-name {
+  font-size: .8rem;
+  font-weight: 820;
+}
+
+.sale-screen-touch.loyverse-shell .ticket-unit-price {
+  color: #718179;
+  font-size: .67rem;
+}
+
+.sale-screen-touch.loyverse-shell .ticket-line-total {
+  color: #1a3127;
+  font-family: var(--fo-number-font);
+  font-size: .78rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.sale-screen-touch.loyverse-shell .ticket-totals {
+  padding: 13px 14px 9px;
+  background: #fff;
+  border-top: 1px solid #dce7e1;
+}
+
+.sale-screen-touch.loyverse-shell .ticket-totals > div {
+  margin: 7px 0;
+  font-size: .72rem;
+}
+
+.sale-screen-touch.loyverse-shell .ticket-grand-total {
+  min-height: 64px;
+  align-items: center;
+  margin-top: 10px !important;
+  padding: 12px 13px !important;
+  border: 1px solid #bcdaca !important;
+  border-radius: 12px;
+  background: #eaf6f0;
+  color: #16382a !important;
+}
+
+.sale-screen-touch.loyverse-shell .ticket-grand-total > strong:first-child {
+  font-size: .88rem;
+  font-weight: 850;
+}
+
+.sale-screen-touch.loyverse-shell .ticket-grand-total > strong:last-child {
+  color: #075b40 !important;
+  font-family: var(--fo-number-font);
+  font-size: 1.22rem;
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+}
+
+.sale-screen-touch.loyverse-shell .ticket-actions {
+  gap: 9px;
+  padding: 10px 14px 14px;
+  background: #fff;
+}
+
+.sale-screen-touch.loyverse-shell .ticket-actions > button {
+  min-height: 54px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font-size: .87rem;
+  font-weight: 850;
+}
+
+/* Checkout rail: a total card and payment methods with consistent affordances. */
+.inline-checkout-rail {
+  background: linear-gradient(180deg, #fff, #f7faf8);
+  box-shadow: 5px 0 20px rgb(27 48 40 / 6%);
+}
+
+.inline-checkout-rail .inline-checkout-head {
+  min-height: 76px;
+  padding: 12px 16px;
+  background: #fff;
+}
+
+.inline-checkout-rail .inline-checkout-total-card {
+  margin: 13px 14px 16px;
+  padding: 17px 16px;
+  border-color: #c8ddd3;
+  border-radius: 15px;
+  background: linear-gradient(145deg, #edf8f3, #f9fcfa);
+  box-shadow: 0 4px 12px rgb(27 48 40 / 5%);
+}
+
+.inline-checkout-rail .inline-checkout-total-card h1 {
+  margin-top: 5px;
+  color: #12392a !important;
+  font-family: var(--fo-number-font);
+  font-size: clamp(1.75rem, 3vw, 2.35rem);
+  font-weight: 950;
+  letter-spacing: -.035em;
+}
+
+.inline-checkout-rail .inline-payment-section {
+  padding-inline: 14px;
+}
+
+.inline-checkout-rail .inline-payment-methods {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.inline-checkout-rail .inline-payment-method,
+.inline-checkout-rail .payment-special-action {
+  min-height: 104px;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 8px;
+  padding: 13px;
+  border: 1px solid #d7e4dd !important;
+  border-radius: 14px !important;
+  background: #fff !important;
+  text-align: start;
+}
+
+.inline-checkout-rail .inline-payment-method:hover:not(:disabled),
+.inline-checkout-rail .payment-special-action:hover:not(:disabled) {
+  border-color: #94c4ae !important;
+  background: #f6fbf8 !important;
+  box-shadow: 0 5px 15px rgb(27 48 40 / 8%) !important;
+}
+
+.inline-checkout-rail .payment-method-art {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  padding: 7px;
+  border-radius: 10px;
+  background: #edf7f3;
+  color: var(--fo-brand-strong);
+}
+
+.inline-checkout-rail .inline-payment-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.inline-checkout-rail .inline-payment-copy strong {
+  color: #1d3028;
+  font-size: .82rem;
+  font-weight: 850;
+}
+
+.inline-checkout-rail .inline-payment-english {
+  color: #7c8b84;
+  font-size: .66rem;
+}
+
+/* Customer and debt surfaces share the same neutral card language. */
+.sale-flow-shell .customer-credit-dialog,
+.sale-flow-shell .ticket-customer-workspace {
+  border: 1px solid #d7e3dd;
+  border-radius: 18px;
+  background: #f8fbf9;
+  box-shadow: 0 22px 62px rgb(27 48 40 / 18%);
+}
+
+.sale-flow-shell .customer-touch-header {
+  min-height: 74px;
+  padding: 13px 18px;
+  border-bottom-color: #dfe9e4;
+  background: #fff;
+}
+
+.sale-flow-shell .customer-touch-header h2 {
+  color: #172e23;
+  font-size: 1.08rem;
+  font-weight: 900;
+}
+
+.sale-flow-shell .customer-search-form,
+.sale-flow-shell .payment-credit-search {
+  margin: 12px 14px 0;
+  border-color: #cbdcd4;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.sale-flow-shell .customer-results,
+.sale-flow-shell .payment-credit-results {
+  gap: 7px;
+  padding: 11px 14px;
+}
+
+.sale-flow-shell .customer-results > button,
+.sale-flow-shell .payment-credit-results > button {
+  min-height: 62px;
+  padding: 10px 12px;
+  border: 1px solid #dce7e1;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgb(27 48 40 / 4%);
+}
+
+.sale-flow-shell .customer-results > button:hover,
+.sale-flow-shell .payment-credit-results > button:hover,
+.sale-flow-shell .customer-results > button.active,
+.sale-flow-shell .payment-credit-results > button.active {
+  border-color: #9bcab5;
+  background: #f0f9f4;
+}
+
+.sale-flow-shell .customer-account-card,
+.sale-flow-shell .payment-credit-summary {
+  margin: 0 14px 12px;
+  border: 1px solid #cfe2d8;
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: 0 3px 10px rgb(27 48 40 / 5%);
+}
+
+.sale-flow-shell .customer-create-toggle,
+.sale-flow-shell .payment-credit-create-toggle {
+  min-height: 45px;
+  margin: 0 14px 14px;
+  border: 1px dashed #abcdbb;
+  border-radius: 11px;
+  background: #f2faf6;
+  color: #075b40;
+  font-weight: 800;
+}
+
+/* Tables/open orders keep status as a readable chip, not a decorative colour. */
+.sale-flow-shell .local-service-dialog {
+  border: 1px solid #d6e2dc;
+  border-radius: 20px;
+  background: #f5f8f6;
+  box-shadow: 0 26px 70px rgb(23 36 30 / 26%);
+}
+
+.sale-flow-shell .local-service-head {
+  min-height: 82px;
+  padding-inline: 20px;
+}
+
+.sale-flow-shell .local-place-card {
+  border-color: #d7e4dd;
+  border-radius: 14px;
+  box-shadow: 0 3px 10px rgb(27 48 40 / 5%);
+}
+
+.sale-flow-shell .local-place-card > strong {
+  font-size: 1.06rem;
+}
+
+.sale-flow-shell .local-place-total {
+  font-family: var(--fo-number-font);
+}
+
+/* Receipt/settlement success is intentionally printable at a glance. */
+.sale-flow-shell .debt-book-success-main {
+  border-color: #cadfd4;
+  border-radius: 17px;
+  box-shadow: 0 6px 18px rgb(27 48 40 / 7%);
+}
+
+.sale-flow-shell .debt-book-success-amount {
+  background: linear-gradient(120deg, #075b40, #0a714e);
+  box-shadow: 0 7px 18px rgb(10 113 78 / 15%);
+}
+
+.sale-flow-shell .debt-book-success-amount > strong {
+  font-family: var(--fo-number-font);
+  font-variant-numeric: tabular-nums;
+}
+
+.sale-flow-shell .debt-book-success-receipt-meta > span {
+  min-height: 62px;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  background: #f7faf8;
+}
+
+@media (max-width: 920px) {
+  .inline-checkout-rail .inline-payment-methods {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 780px) {
+  .sale-screen-touch.loyverse-shell .product-area {
+    padding: 12px;
+  }
+
+  .sale-screen-touch.loyverse-shell .catalog-product {
+    min-height: 132px;
+  }
+
+  .sale-screen-touch.loyverse-shell .ticket-lines {
+    padding-inline: 10px;
   }
 }

@@ -31,6 +31,7 @@ describe("POS runtime adapter boundary", () => {
     expect(typeof runtime.sales.startTicket).toBe("function");
     expect(typeof runtime.checkout.begin).toBe("function");
     expect(typeof runtime.printing.submit).toBe("function");
+    expect(typeof runtime.printing.submitDebtCollection).toBe("function");
   });
 
   it("runs the reusable Rifad sale conformance probe against the selected adapter", async () => {

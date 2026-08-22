@@ -1,10 +1,12 @@
 # POS-FLOW-002 — Restaurant Local Service Prototype
 
-Last updated: 2026-08-20
+Last updated: 2026-08-21
 
 ## Status
 
-Implemented mock/local UI slice on `agent/pos-visual-pass-01`; owner visual/product review remains iterative.
+Implemented mock/local UI slice on `agent/frontoffice-regression-finalization`;
+owner visual/product review remains iterative and overall Runtime Visual status is
+`UNVERIFIED` for the current ownership checkpoint.
 
 This executable subset proves the local-service interaction, open-place lifecycle and a replaceable Rifad-owned restaurant-service adapter boundary. It does **not** claim a real KDS, kitchen printer, multi-device table sync, or production restaurant persistence layer.
 
@@ -71,6 +73,16 @@ Reopening:
 - **دفع** on a reopened dine-in order uses the existing checkout flow. When payment succeeds, the matching open place is released.
 - Cancelling checkout does not delete the stored local order.
 - Customer-credit completion of a reopened local order participates in the same pending-settlement closeout signal as Cash/Card; the place must not remain occupied merely because the payment method was Credit.
+- Sent lines are immutable under ordinary cart editing, deletion, swipe and Clear Cart.
+- New additions belong to a separate pending batch; same-product aggregation occurs only inside that pending batch.
+- Clear Cart on an active order clears pending changes and restores the committed sent total/history.
+- The current cashier Front Office exposes no sent-line correction region, button,
+  gesture or `allowSentCorrections` interaction path. SENT history is completely
+  read-only; the existing `reduce`/`cancel` helpers are internal
+  domain/adapter-characterization coverage only and are not an executable cashier
+  feature or authorization decision. Future sent-item correction/void UX and its
+  authorization, reason, audit, kitchen notification and financial consequences are
+  deferred to the later Open Order lifecycle decision.
 
 ## Visual rules
 
@@ -111,6 +123,10 @@ Rules now enforced by code structure:
 
 A future Odoo, open-source donor, remote API, local embedded engine or Rifad-native implementation replaces the composition-root factory and must conform to the same contract.
 
+The ownership correction is a bounded extension of this existing local/mock contract
+and adapters. It does not create a new kitchen/table state machine. Any broader
+capability must stop and follow the repository Capability Adoption workflow.
+
 See `docs/architecture/RESTAURANT_SERVICE_ADAPTER_BOUNDARY.md`.
 
 ## Explicit non-goals
@@ -123,6 +139,7 @@ See `docs/architecture/RESTAURANT_SERVICE_ADAPTER_BOUNDARY.md`.
 - atomic production kitchen-delta/outbox semantics;
 - delivery-platform integration;
 - production fiscal cancellation behavior;
+- MAP-02 shift/cash/time-clock execution;
 - claiming that every external restaurant system can be connected without a mapping adapter or conformance work.
 
 ## Acceptance evidence
@@ -139,6 +156,9 @@ Automated coverage must prove at minimum:
 - open-order action appears on an empty basket;
 - a reserved place can be reopened from the basket column;
 - sending additions increments the mock kitchen revision while keeping one open place;
+- sent lines remain read-only to ordinary cart tools and clearing removes pending additions only;
+- no cashier-facing sent correction region or control is present, and no current Front
+  Office path can stage a reduce/cancel against SENT;
 - paying a reopened local order releases the place;
 - retail/off mode hides restaurant language;
 - Basic mode does not expose restaurant task actions or restaurant staging settings;

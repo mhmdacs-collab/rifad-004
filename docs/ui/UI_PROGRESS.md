@@ -1,10 +1,42 @@
 # Rifad UI Progress
 
-Last updated: 2026-08-20
+Last updated: 2026-08-21
 
 Status: **MAP-01 PASS — payment/direct-impact/delivery-collection closeout included**
 
-Active branch: `agent/pos-visual-pass-01`
+Active implementation branch: `agent/frontoffice-regression-finalization`
+
+MAP-01 provenance branch: `agent/pos-visual-pass-01`
+
+## 0. Supplemental Front Office verification — 2026-08-21
+
+The correction branch `agent/frontoffice-regression-finalization`, based on
+`agent/rifad-frontoffice-final-ui` at `4a30118f11b1072db71569cb73fd9aeae37e8309`,
+keeps the locked shell and closes the following already-executable UI regressions:
+
+- Ticket/cart controls are React-owned, with quantity save disabled when unchanged, delete-only swipe reveal, immediate Clear Cart and guarded Pay/Send actions.
+- Add Customer replaces the Ticket Workspace content in place with four fields (required name/mobile; optional tax number/address), no auto-save, and automatic attach/return after success. The product catalog remains visible.
+- Normal-ticket customer attachment keeps the result list and an attach action in the selected card. Credit selection instead collapses results to a selected-customer summary with Change Customer.
+- Local restaurant staging shows immutable SENT history separately from editable/clearable
+  PENDING additions. Ordinary cart controls cannot mutate sent lines, and the current
+  cashier Front Office exposes no sent-correction region, control, gesture or
+  `allowSentCorrections` path. Existing `reduce`/`cancel` helpers remain only for
+  internal domain/adapter characterization; future sent-item correction/void UX and
+  authorization belong to later Open Order lifecycle work. Table totals survive
+  send/leave/reopen and Pay remains blocked while unsent changes exist.
+- Debt settlement requires a valid amount and collection method, distinguishes cash/network, prevents overpayment and duplicate submission, and exposes a readable dedicated collection receipt and print action.
+- App-like focus, pressed, disabled, scrolling, sticky-action and contrast corrections live only in `apps/pos/src/front-office.css`.
+
+Runtime Visual status for the current ownership checkpoint is **UNVERIFIED**. Earlier
+records predate the latest foundation corrections, and the complete required
+viewport/state matrix has not been rerun and captured. Physical printer output and
+production persistence also remain unverified.
+
+Wave 7 visual polish is halted at its safe checkpoint. Fresh typecheck, the serialized
+POS suite (27 files / 94 tests, exit 0), and the production build (146 modules) pass.
+MAP-02 has not started and remains gated by explicit owner acceptance.
+
+This section does not promote MAP-04/MAP-05 or change the master map status.
 
 ## 1. Current executable POS truth
 
@@ -184,6 +216,8 @@ Canonical execution status:
 
 MAP-01 remains **PASS** after this closeout.
 
-Next dependency-safe map item is **MAP-02 — Shift + Cash Drawer Ledger + Time Clock**, which must consume MAP-01 direct-impact meanings instead of inventing separate cash/bank classifications.
+After the Front Office owner-acceptance gate, the next dependency-safe map item is
+**MAP-02 — Shift + Cash Drawer Ledger + Time Clock**, which must consume MAP-01
+direct-impact meanings instead of inventing separate cash/bank classifications.
 
-Do not start MAP-02 automatically; stop for owner review.
+MAP-02 has not started. Do not start it before explicit owner acceptance.

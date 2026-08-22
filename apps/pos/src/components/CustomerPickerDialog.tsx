@@ -16,6 +16,8 @@ type CustomerPickerDialogProps = {
   onClose: () => void;
   onSearch: (query: string) => Promise<readonly Customer[]>;
   onCreateCustomer: (name: string, mobile: string, details: CustomerDetails) => Promise<Customer | null>;
+  /** Route normal ticket creation through the inline Ticket Workspace. */
+  onOpenInlineCustomerCreate?: () => void;
   onAttachCustomer: (customerId: string | null) => Promise<boolean>;
   onChargeCredit: (customerId: string) => Promise<Customer | null>;
 };
@@ -60,6 +62,7 @@ export function CustomerPickerDialog({
   onClose,
   onSearch,
   onCreateCustomer,
+  onOpenInlineCustomerCreate,
   onAttachCustomer,
   onChargeCredit,
 }: CustomerPickerDialogProps) {
@@ -75,6 +78,8 @@ export function CustomerPickerDialog({
   const loyaltyRedemption = ticket?.loyaltyRedemption ?? { halalas: 0, currency: "SAR" as const };
 
   const [view, setView] = useState<CustomerView>(purpose === "attach" && attachedCustomer ? "profile" : "picker");
+  const [creditAttachedChanged, setCreditAttachedChanged] = useState(false);
+  const [manualCustomerChange, setManualCustomerChange] = useState(false);
   const [query, setQuery] = useState(attachedCustomer?.mobile ?? "");
   const [results, setResults] = useState<readonly Customer[]>([]);
   const [selected, setSelected] = useState<Customer | null>(null);
@@ -122,14 +127,14 @@ export function CustomerPickerDialog({
       .then((items) => {
         if (sequence !== searchSequence.current) return;
         setResults(items);
-        if (attachedCustomer && !selected) {
+        if (attachedCustomer && !selected && !manualCustomerChange) {
           setSelected(items.find((customer) => customer.id === attachedCustomer.id) ?? null);
         }
       })
       .finally(() => {
         if (sequence === searchSequence.current) setSearching(false);
       });
-  }, [attachedCustomer, onSearch, query, selected, view]);
+  }, [attachedCustomer, manualCustomerChange, onSearch, query, selected, view]);
 
   useEffect(() => {
     if (purpose !== "attach" || !attachedCustomer || view !== "profile" || selected?.id === attachedCustomer.id) return;
@@ -169,6 +174,24 @@ export function CustomerPickerDialog({
     setSelected(customer);
     resetCreate();
     setMessage(null);
+  };
+
+  const changeCustomer = () => {
+    setCreditAttachedChanged(true);
+    setManualCustomerChange(true);
+    setView("picker");
+    setQuery("");
+    setSelected(null);
+    setMessage(null);
+  };
+
+  const openCustomerCreate = () => {
+    if (purpose === "attach" && onOpenInlineCustomerCreate) {
+      onOpenInlineCustomerCreate();
+      return;
+    }
+    setCreateOpen(true);
+    setNewMobile(cleanMobileDraft(query));
   };
 
   const submitCreate = async (event: FormEvent) => {
@@ -309,7 +332,7 @@ export function CustomerPickerDialog({
     ? loyaltyStatus.qualifyingPurchases % loyaltyStatus.program.purchasesRequired
     : 0;
 
-  if (purpose === "credit" && attachedCustomer) {
+  if (purpose === "credit" && attachedCustomer && !creditAttachedChanged) {
     return (
       <div className="dialog-backdrop customer-credit-backdrop" role="presentation" onClick={() => { if (!submitting) onClose(); }}>
         <section className="customer-credit-dialog customer-credit-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="credit-confirm-title" onClick={(event) => event.stopPropagation()}>
@@ -323,6 +346,7 @@ export function CustomerPickerDialog({
               <div className="customer-balance-row"><span>الدين الحالي</span><strong><MoneyAmount value={selected.debt} /></strong></div>
               <div className="customer-balance-row"><span>قيمة البيع الآجل</span><strong><MoneyAmount value={ticketTotal} /></strong></div>
               {debtAfterCredit ? <div className="customer-balance-row customer-balance-row--total"><span>الدين بعد العملية</span><strong><MoneyAmount value={debtAfterCredit} /></strong></div> : null}
+              <button type="button" className="customer-change-selection" onClick={changeCustomer} disabled={submitting}>تغيير العميل</button>
               <button type="button" className="primary-button customer-credit-submit customer-touch-primary" onClick={() => void submitCredit()} disabled={busy || submitting}>{submitting ? "جارٍ التسجيل…" : "تأكيد البيع الآجل"}</button>
             </div>
           ) : (
@@ -377,6 +401,7 @@ export function CustomerPickerDialog({
 
               <div className="customer-profile-actions">
                 <button type="button" className="customer-touch-action" onClick={openEdit}>تعديل الملف الشخصي</button>
+                <button type="button" className="customer-touch-action" onClick={changeCustomer}>تغيير العميل</button>
                 <button type="button" className="customer-touch-action" onClick={() => { setRedeemDigits(loyaltyRedemption.halalas > 0 ? String(loyaltyRedemption.halalas) : ""); setView("redeem"); }} disabled={loyaltyStatus?.program.mode !== "cashback" || (loyaltyStatus?.balance.halalas ?? 0) <= 0 || ticketSubtotal.halalas <= 0}>استبدال النقاط</button>
                 <button type="button" className="customer-touch-action" onClick={() => setView("history")}>عرض المشتريات</button>
               </div>
@@ -442,13 +467,13 @@ export function CustomerPickerDialog({
           <div><h2 id="customer-picker-title">{purpose === "credit" ? "بيع آجل" : "إضافة عميل إلى التذكرة"}</h2><span>{purpose === "credit" ? "اختر العميل الذي ستُسجل عليه قيمة التذكرة." : "ابحث بالاسم أو رقم الجوال، أو أضف عميلًا جديدًا."}</span></div>
         </header>
 
-        <div className="customer-search-form customer-search-form--live">
+        {purpose === "attach" || !selected ? <div className="customer-search-form customer-search-form--live">
           <label><span>العميل أو رقم الجوال</span><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابدأ بالاسم أو 0501234567" aria-label="بحث العميل" disabled={submitting} /></label>
           <span className="customer-live-search-status" role="status">{searching ? "جارٍ البحث…" : `${results.length} نتيجة`}</span>
-        </div>
+        </div> : null}
 
         <div className="customer-credit-body">
-          <div className="customer-results" aria-label="نتائج العملاء">
+          {purpose === "attach" || !selected ? <div className="customer-results" aria-label="نتائج العملاء">
             {results.map((customer) => (
               <button type="button" key={customer.id} className={selected?.id === customer.id ? "active" : ""} onClick={() => selectCustomer(customer)} disabled={submitting}>
                 <span><strong>{customer.name}</strong><small dir="ltr">{customer.mobile}</small></span>
@@ -456,7 +481,7 @@ export function CustomerPickerDialog({
               </button>
             ))}
             {!searching && results.length === 0 ? <div className="customer-empty-result">لا يوجد عميل مطابق.</div> : null}
-          </div>
+          </div> : null}
 
           {selected ? (
             <div className="customer-account-card customer-picker-selection">
@@ -465,7 +490,7 @@ export function CustomerPickerDialog({
                 {purpose === "attach" ? (
                   <button type="button" className="primary-button customer-attach-inline" onClick={() => void submitAttach()} disabled={busy || submitting}>{submitting ? "جارٍ الإضافة…" : "إضافة إلى التذكرة"}</button>
                 ) : (
-                  <button type="button" onClick={() => setSelected(null)}>تغيير</button>
+                  <button type="button" onClick={() => setSelected(null)}>تغيير العميل</button>
                 )}
               </div>
               {purpose === "credit" ? (
@@ -480,8 +505,8 @@ export function CustomerPickerDialog({
           ) : <div className="customer-account-placeholder"><strong>اختر عميلًا</strong><span>أو أضف عميلًا جديدًا.</span></div>}
         </div>
 
-        <div className="customer-create-section">
-          {!createOpen ? <button type="button" className="customer-create-toggle customer-touch-create" onClick={() => { setCreateOpen(true); setNewMobile(cleanMobileDraft(query)); }} disabled={submitting}>+ إضافة عميل جديد</button> : (
+        {purpose !== "credit" ? <div className="customer-create-section">
+          {!createOpen ? <button type="button" className="customer-create-toggle customer-touch-create" onClick={openCustomerCreate} disabled={submitting}>+ إضافة عميل جديد</button> : (
             <form className="customer-create-form customer-create-form--expanded customer-create-sheet" onSubmit={(event) => void submitCreate(event)}>
               <div className="customer-create-sheet-head">
                 <strong>إضافة عميل جديد</strong>
@@ -496,7 +521,7 @@ export function CustomerPickerDialog({
               <div className="customer-create-actions"><button type="button" onClick={resetCreate}>إلغاء</button><button type="submit" className="primary-button">إنشاء العميل</button></div>
             </form>
           )}
-        </div>
+        </div> : null}
         {message ? <div className="customer-credit-message" role="status">{message}</div> : null}
       </section>
     </div>
